@@ -5,6 +5,7 @@ let nexusPreviewTelemetry=null,nexusTelemetryRequestInFlight=false;
 const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","cpu.load_1m","cpu.load_5m","cpu.load_15m","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"];
 const GRID=8;
+let nexusSharedMacros={};
 const NEXUS_MAX_SCREENS=256, NEXUS_MAX_TOTAL_WIDGETS=4096;
 const totalNexusWidgets=()=>cfg?.screens.reduce((sum,s)=>sum+s.widgets.length,0)||0;
 function formatNexusClock(settings={},now=new Date()){
@@ -250,7 +251,7 @@ $('screen').addEventListener('keydown',event=>{
 });
 
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if($('displayBrightness'))$('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
+async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await loadSharedMacroProfiles();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if($('displayBrightness'))$('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
@@ -270,8 +271,7 @@ function relinkScreenID(screen, newID){
  const previousID=screen.id;screen.id=newID;
  for(const widget of screen.widgets){
   if(widget.type==='button'&&widget.action==='screen'&&widget.target===previousID)widget.target=newID;
-  if(widget.type==='macro'||(widget.type==='button'&&widget.action==='macro'))
-   for(const step of widget.steps||[])if(step.type==='screen'&&step.value===previousID)step.value=newID;
+
  }
  return screen;
 }
@@ -338,9 +338,7 @@ $('duplicateScreen')?.addEventListener('click',()=>{
  duplicate.id=newID;duplicate.name=name;
  for(const widget of duplicate.widgets){
   if(widget.type==='button'&&widget.action==='screen'&&widget.target===source.id)widget.target=newID;
-  if(widget.type==='macro'||(widget.type==='button'&&widget.action==='macro')){
-   for(const step of widget.steps||[])if(step.type==='screen'&&step.value===source.id)step.value=newID;
-  }
+
  }
  const at=cfg.screens.findIndex(s=>s.id===source.id);
  cfg.screens.splice(at+1,0,duplicate);
@@ -355,14 +353,20 @@ $('deleteScreen').onclick=()=>{
  // Keep existing screen-navigation actions valid when their destination disappears.
  for(const screen of cfg.screens)for(const w of screen.widgets){
   if(w.type==='button'&&w.action==='screen'&&w.target===removed)w.target=fallback;
-  if(w.type==='macro'||(w.type==='button'&&w.action==='macro')){
-   for(const step of w.steps||[])if(step.type==='screen'&&step.value===removed)step.value=fallback;
-  }
+
  }
  for(const [appID,target] of Object.entries(cfg.applicationScreens||{}))if(target===removed)cfg.applicationScreens[appID]=fallback;
  cfg.activeScreenId=fallback;selected=null;refreshScreens();
  message('Screen removed. Navigation links to it now point to '+cfg.screens[0].name+'. Save Layout to apply.');
 };
+async function loadSharedMacroProfiles(){
+ try{
+  const response=await fetch('/api/macro/');
+  if(!response.ok)throw Error('Unable to load saved macros');
+  const json=await response.json();
+  nexusSharedMacros=(json?.status===1&&json.data&&typeof json.data==='object')?json.data:{};
+ }catch(_err){nexusSharedMacros={}}
+}
 function renderWidgetColors(w,panel){
  if(!['button','macro','metric','bar','graph','text','clock','image'].includes(w.type))return;
  for(const [key,name,defaultColor] of [['backgroundColor','Background','#1b2935'],['textColor','Text & icon','#ebf5fc'],['borderColor','Border','#80bdd9']]){
@@ -385,7 +389,7 @@ function renderTouchProperties(w,panel){
   input.value=value;input.onchange=()=>{change(input.value);render()};
   label.append(input);panel.append(label);
  };
- const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['device','Device RGB control'],['macro','Run macro'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text']];
+ const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['device','Device RGB control'],['macro','Run saved macro'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text']];
  const hardwareActions=[['rgb-on','Enable device RGB'],['rgb-off','Disable device RGB']];
  const media=[['play-pause','Play/Pause'],['stop','Stop'],['volume-up','Volume +'],['volume-down','Volume -'],['next-track','Next track'],['previous-track','Previous track']];
  const targets=cfg.screens.map(s=>[s.id,s.name]);
@@ -444,7 +448,13 @@ function renderTouchProperties(w,panel){
   panel.append(wrapper,upload);
  }
  if(w.type==='button'){
-  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='device'?'rgb-on':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
+  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='device'?'rgb-on':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro')w.target=Object.keys(nexusSharedMacros)[0]||'1'});
+  if(w.action==='macro'){
+   const macros=Object.entries(nexusSharedMacros).map(([id,m])=>[id,m.name||('Macro #'+id)]);
+   if(macros.length)field('Saved macro',w.target,macros,v=>w.target=v);
+   else {const note=document.createElement('small');note.textContent='No saved macros found. Create one in OpenLinkHub Macros.';panel.append(note)}
+   const link=document.createElement('a');link.href='/macros';link.textContent='Open macro editor';link.target='_blank';link.rel='noopener noreferrer';panel.append(link);
+  }
   if(w.action==='screen')field('Target screen',w.target,targets,v=>w.target=v);
   if(w.action==='hotkey')shortcutInput('Shortcut',w.target,v=>w.target=v);
   if(w.action==='text'){
@@ -466,106 +476,15 @@ function renderTouchProperties(w,panel){
   if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.customIcon&&(!w.settings?.icon||w.settings.icon===old)){w.settings??={};w.settings.icon=v}});
  }
 
- if(w.type==='macro'||w.action==='macro'){
-  const steps=Array.isArray(w.steps)?w.steps:[];
-  const editor=document.createElement('div');
-  editor.className='nexus-macro-editor';
-  editor.setAttribute('aria-label','Visual macro editor');
-  const heading=document.createElement('strong');
-  heading.textContent='Macro steps';
-  editor.append(heading);
-  const kinds=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],
-   ['media','Media control'],['device','Device RGB control'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text'],['delay','Wait']];
-  const defaultStep=kind=>{
-   if(kind==='screen')return {type:kind,value:cfg.screens[0].id};
-   if(kind==='media')return {type:kind,value:'play-pause'};
-   if(kind==='device')return {type:kind,value:'rgb-on'};
-   if(kind==='hotkey')return {type:kind,value:'Ctrl+Alt+T'};
-   if(kind==='text')return {type:kind,value:'Hello'};
-   if(kind==='mouse')return {type:kind,value:'left'};
-   if(kind==='url')return {type:kind,value:'https://example.com'};
-   if(kind==='application')return {type:kind,value:'org.gnome.Terminal.desktop'};
-   if(kind==='delay')return {type:kind,delayMs:500};
-   return {type:kind};
-  };
-  const makeSelect=(options,value,label,changed)=>{
-   const select=document.createElement('select');
-   select.setAttribute('aria-label',label);
-   for(const [id,title] of options)select.add(new Option(title,id));
-   select.value=value;
-   select.addEventListener('change',()=>changed(select.value));
-   return select;
-  };
-  steps.forEach((step,index)=>{
-   const row=document.createElement('div');row.className='nexus-macro-step';
-   const position=document.createElement('span');position.textContent=String(index+1)+'.';
-   row.append(position);
-   row.append(makeSelect(kinds,step.type,'Step '+(index+1)+' action',value=>{
-    steps[index]=defaultStep(value);w.steps=steps;render();
-   }));
-   if(step.type==='screen')row.append(makeSelect(targets,step.value,'Step '+(index+1)+' screen',value=>{
-    step.value=value;
-   }));
-   if(step.type==='device')row.append(makeSelect(hardwareActions,step.value,'Step '+(index+1)+' device action',value=>{
-    step.value=value;
-   }));
-   if(step.type==='media')row.append(makeSelect(media,step.value,'Step '+(index+1)+' media',value=>{
-    step.value=value;
-   }));
-   if(step.type==='mouse')row.append(makeSelect(mouseActions,step.value,'Step '+(index+1)+' mouse',value=>{
-    step.value=value;
-   }));
-   if(step.type==='url'||step.type==='application'){
-    const input=document.createElement('input');input.type='text';input.maxLength=step.type==='url'?256:128;
-    input.value=step.value||'';input.placeholder=step.type==='url'?'https://example.com':'org.gnome.Terminal.desktop';
-    input.setAttribute('aria-label','Step '+(index+1)+' '+(step.type==='url'?'URL':'desktop entry ID'));
-    input.addEventListener('change',()=>{step.value=input.value.trim()});row.append(input);
-   }
-   if(step.type==='text'){
-    const input=document.createElement('input');input.type='text';input.maxLength=80;
-    input.value=step.value||'';input.placeholder='Type this text';
-    input.setAttribute('aria-label','Step '+(index+1)+' text entry');
-    input.addEventListener('change',()=>{step.value=input.value});
-    row.append(input);
-   }
-   if(step.type==='hotkey'){
-    const input=document.createElement('input');input.type='text';input.maxLength=80;
-    input.value=step.value||'';input.placeholder='Ctrl+Alt+T';
-    input.setAttribute('aria-label','Step '+(index+1)+' shortcut');
-    input.addEventListener('change',()=>{step.value=input.value.trim()});
-    row.append(input);
-   }
-   if(step.type==='delay'){
-    const delay=document.createElement('input');delay.type='number';delay.min=0;delay.max=5000;delay.step=50;
-    delay.value=String(step.delayMs||0);
-    delay.setAttribute('aria-label','Step '+(index+1)+' delay milliseconds');
-    delay.addEventListener('change',()=>{step.delayMs=clamp(Math.round(Number(delay.value)||0),5000);delay.value=String(step.delayMs)});
-    row.append(delay);
-    const unit=document.createElement('span');unit.textContent='ms';row.append(unit);
-   }
-   const control=(title,disabled,callback)=>{
-    const button=document.createElement('button');button.type='button';button.textContent=title;
-    button.disabled=disabled;button.setAttribute('aria-label',title+' step '+(index+1));
-    button.addEventListener('click',callback);row.append(button);
-   };
-   control('Up',index===0,()=>{[steps[index-1],steps[index]]=[steps[index],steps[index-1]];render()});
-   control('Down',index===steps.length-1,()=>{[steps[index],steps[index+1]]=[steps[index+1],steps[index]];render()});
-   control('Remove',steps.length<=1,()=>{steps.splice(index,1);w.steps=steps;render()});
-   editor.append(row);
-  });
-  const add=document.createElement('button');add.type='button';add.textContent='Add macro step';
-  add.disabled=steps.length>=12;
-  add.addEventListener('click',()=>{if(steps.length>=12)return;steps.push(defaultStep('next'));w.steps=steps;render()});
-  editor.append(add);
-  const note=document.createElement('small');
-  note.textContent='1–12 actions, at most 5 seconds per wait and 15 seconds total. Save Layout to apply.';
-  editor.append(note);
-  panel.append(editor);
- }
 
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
-$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addImage')?.addEventListener('click',()=>addWidget('image'));$('addBar').onclick=()=>addWidget('bar');$('addGraph')?.addEventListener('click',()=>addWidget('graph'));$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;render()}
+$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addImage')?.addEventListener('click',()=>addWidget('image'));$('addBar').onclick=()=>addWidget('bar');$('addGraph')?.addEventListener('click',()=>addWidget('graph'));$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>{
+ if(!Object.keys(nexusSharedMacros).length)return message('Create a macro in OpenLinkHub Macros first.');
+ addWidget('button');
+ const w=current()?.widgets.find(x=>x.id===selected);
+ if(w){w.action='macro';w.target=Object.keys(nexusSharedMacros)[0];w.settings.label='Macro';render()}
+});
 $('copyWidget')?.addEventListener('click',()=>{
  const source=current()?.widgets.find(w=>w.id===selected);
  if(!source)return;
@@ -813,7 +732,6 @@ $('addApplicationScreen')?.addEventListener('click',()=>{
  message('Application screen mapping added. Save Layout to apply.');
 });
 
-
 (function setupNexusRightFlyouts(){
  const backdrop=document.getElementById('nexus-flyout-backdrop');
  if(!backdrop)return;
@@ -874,6 +792,7 @@ $('addApplicationScreen')?.addEventListener('click',()=>{
  document.addEventListener('keydown',event=>{if(active&&event.key==='Escape'){event.preventDefault();close()}});
  window.addEventListener('resize',place);
 })();
+
 
 // A visual click indication also works with keyboard activation in the editor.
 $('screen')?.addEventListener('pointerdown',event=>{
