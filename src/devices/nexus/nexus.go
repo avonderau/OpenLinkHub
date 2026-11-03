@@ -1074,6 +1074,7 @@ func (d *Device) backendListener() {
 					d.processCustomTouchReport(data, &touchGesture)
 					continue
 				}
+				touchGesture=touchGestureState{} // Reset pending gesture outside custom-screen mode.
 				if d.Keyboard {
 					active := data[5] // Touch activation
 					if active == 1 && blocked == false {
