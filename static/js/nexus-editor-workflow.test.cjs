@@ -309,3 +309,18 @@ test('gradient controls edit a widget without changing its opacity',async()=>{
  assert.equal(screen.widgets[0].settings.opacity,'60');
  assert.equal(screen.widgets[0].settings.gradientColor,'#0b1824');
 });
+
+test('Nexus utility panels are right-side flyouts in integrated and standalone editors',()=>{
+ for(const html of [integrated,standalone]){
+  for(const name of ['Widget library','Background','Layout files']){
+   assert.match(html,new RegExp('data-nexus-flyout="(?:library|background|layout)"[^>]*>'+name));
+  }
+  for(const id of ['library','background','layout']){
+   assert.match(html,new RegExp('<aside id="nexus-flyout-'+id+'"[^>]*hidden>'));
+  }
+  assert.match(html,/id="nexus-flyout-backdrop"/);
+ }
+ assert.match(editorSource,/rightSpace>=340/);
+ assert.match(editorSource,/nexus-flyout-docked/);
+ assert.match(style,/\.nexus-flyout\.nexus-flyout-docked/);
+});
