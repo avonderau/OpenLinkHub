@@ -149,3 +149,5 @@
 /* Graph previews indicate a history trace without fabricating live metrics. */
 #nexus-editor .widget.nexus-graph-widget{font-size:10px}
 #nexus-editor .widget.nexus-graph-widget::after{content:'History graph';position:absolute;right:4px;bottom:2px;font-size:9px;color:var(--text-muted,#a1a1a1);opacity:.85}
+
+#nexus-editor #moveScreenUp:disabled,#nexus-editor #moveScreenDown:disabled,#nexus-editor #copyWidget:disabled,#nexus-editor #pasteWidget:disabled{opacity:.45;cursor:not-allowed}

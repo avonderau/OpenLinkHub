@@ -149,3 +149,32 @@ test('visual macro builder adds, moves and removes steps without raw JSON editin
  remove.listeners.click();
  assert.equal(screen.widgets[0].steps.length,1);
 });
+
+
+test('screen order and cross-screen widget clipboard survive Save Layout',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ node('newScreenPreset').value='media-deck';
+ await node('addScreen').onclick();
+ const screens=vm.runInContext('cfg.screens',context);
+ const added=screens[1].id;
+ assert.equal(node('moveScreenUp').disabled,false);
+ node('moveScreenUp').listeners.click();
+ assert.equal(screens[0].id,added);
+ assert.equal(screens[1].id,'existing');
+ const sourceScreen=screens[0];const source=sourceScreen.widgets[0];
+ vm.runInContext("selected=cfg.screens[0].widgets[0].id;render()",context);
+ node('copyWidget').listeners.click();
+ node('screens').value='existing';node('screens').onchange();
+ assert.equal(node('pasteWidget').disabled,false);
+ node('pasteWidget').listeners.click();
+ assert.equal(screens[1].widgets.length,1);
+ const pasted=screens[1].widgets[0];
+ assert.notEqual(pasted.id,source.id);
+ assert.equal(pasted.action,source.action);
+ pasted.settings.label='Changed copy';
+ assert.notEqual(source.settings.label,'Changed copy');
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].id,added);
+ assert.equal(writes.at(-1).screens[1].widgets.length,1);
+});

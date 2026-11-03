@@ -58,6 +58,8 @@
 </select></label>
 <button id="addScreen" type="button">Add screen</button>
 <button id="replaceScreenWithPreset" type="button" disabled>Replace selected</button>
+<button id="moveScreenUp" type="button">Move up</button>
+<button id="moveScreenDown" type="button">Move down</button>
 <button id="renameScreen" type="button">Rename</button>
 <button id="duplicateScreen" type="button">Duplicate screen</button>
 <button id="deleteScreen" type="button">Delete screen</button>
@@ -70,7 +72,7 @@
 <fieldset class="nexus-panel" id="nexus-selected-panel"><legend>Selected Widget</legend>
 <div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
 <div id="properties"></div>
-<div class="nexus-widget-actions"><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
+<div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
 </fieldset>
 <fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset>

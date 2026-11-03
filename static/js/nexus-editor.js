@@ -1,6 +1,6 @@
 'use strict';
 const $=id=>document.getElementById(id);
-let cfg=null,selected=null,serial='',drag=null;
+let cfg=null,selected=null,serial='',drag=null,copiedWidget=null;
 const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate'];
 const GRID=8;
@@ -23,6 +23,9 @@ function refreshActionButtons(){
  const screen=current(),count=cfg?.screens.length||0;
  for(const id of ['renameScreen','duplicateScreen'])if($(id))$(id).disabled=!screen||(id==='duplicateScreen'&&count>=32);
  if($('deleteScreen'))$('deleteScreen').disabled=count<=1;
+ const index=cfg?.screens.findIndex(s=>s.id===selectedScreenID())??-1;
+ if($('moveScreenUp'))$('moveScreenUp').disabled=index<=0;
+ if($('moveScreenDown'))$('moveScreenDown').disabled=index<0||index>=count-1;
  if($('replaceScreenWithPreset'))$('replaceScreenWithPreset').disabled=!screen||$('newScreenPreset')?.value==='blank';
 }
 const snapPosition=(value,max)=>clamp(snap(value),Math.floor(max/GRID)*GRID);
@@ -35,6 +38,8 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
  if(remove)remove.disabled=!widget;
  if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64;
+ if($('copyWidget'))$('copyWidget').disabled=!widget;
+ if($('pasteWidget'))$('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64;
  if(status){
   status.replaceChildren();
   if(widget && (widget.type==='button'||widget.type==='macro')){
@@ -160,6 +165,17 @@ $('replaceScreenWithPreset')?.addEventListener('click',async()=>{
   message('Screen replaced in the editor. Click Save Layout to apply.');
  }catch(e){message(e.message)}
 });
+function moveSelectedScreen(direction){
+ if(!cfg)return;
+ const index=cfg.screens.findIndex(screen=>screen.id===selectedScreenID());
+ const to=index+direction;
+ if(index<0||to<0||to>=cfg.screens.length)return;
+ [cfg.screens[index],cfg.screens[to]]=[cfg.screens[to],cfg.screens[index]];
+ cfg.activeScreenId=selectedScreenID();
+ refreshScreens();message('Screen order changed. Save Layout to apply.');
+}
+$('moveScreenUp')?.addEventListener('click',()=>moveSelectedScreen(-1));
+$('moveScreenDown')?.addEventListener('click',()=>moveSelectedScreen(1));
 $('renameScreen')?.addEventListener('click',()=>{
  const s=current();if(!s)return;
  const name=prompt('Rename screen',s.name)?.trim();
@@ -354,6 +370,23 @@ function renderTouchProperties(w,panel){
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
 $('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addGraph')?.addEventListener('click',()=>addWidget('graph'));$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
+$('copyWidget')?.addEventListener('click',()=>{
+ const source=current()?.widgets.find(w=>w.id===selected);
+ if(!source)return;
+ copiedWidget=JSON.parse(JSON.stringify(source));
+ render();message('Widget copied. Select a screen and click Paste widget.');
+});
+$('pasteWidget')?.addEventListener('click',()=>{
+ const screen=current();
+ if(!screen||!copiedWidget)return;
+ if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+ const copy=JSON.parse(JSON.stringify(copiedWidget));
+ copy.id=uniqueID('widget',new Set(screen.widgets.map(w=>w.id)));
+ copy.x=snapPosition(copy.x+16,640-copy.width);
+ copy.y=snapPosition(copy.y+8,48-copy.height);
+ screen.widgets.push(copy);selected=copy.id;render();
+ message('Widget pasted. Save Layout to apply.');
+});
 $('duplicateWidget')?.addEventListener('click',()=>{
  const screen=current();if(!screen)return;
  const source=screen.widgets.find(w=>w.id===selected);
