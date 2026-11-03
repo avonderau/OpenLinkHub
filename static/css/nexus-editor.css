@@ -105,14 +105,6 @@
 #nexus-editor .nexus-screen-actions button,#nexus-editor .nexus-widget-actions button{margin:.15rem}
 #nexus-editor .nexus-screen-actions button:disabled,#nexus-editor .nexus-widget-actions button:disabled{opacity:.45;cursor:not-allowed;filter:none}
 
-/* Ready-made screen templates add a screen; they never replace existing work. */
-#nexus-editor .nexus-starter-panel{margin:.75rem 0}
-#nexus-editor .nexus-template-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}
-#nexus-editor .nexus-template-actions label{display:inline-flex;align-items:center;gap:.4rem;margin:.15rem}
-#nexus-editor .nexus-template-actions select{min-width:190px}
-#nexus-editor .nexus-template-actions button{margin:.15rem}
-#nexus-editor #addStarterTemplate:disabled{opacity:.45;cursor:not-allowed;filter:none}
-#nexus-editor #starterTemplateDescription{margin:.35rem 0 0}
 
 /* Built-in themes mirror the renderer's five generated backgrounds. */
 #nexus-editor #screen.nexus-bg-preset_aurora{background:#112c3d;background-image:radial-gradient(ellipse at 30% 55%,rgba(55,205,163,.6),transparent 60%),linear-gradient(110deg,#0a1930,#144768,#0a2635);}
@@ -126,3 +118,15 @@
 /* Flat/outline styles reveal built-in or uploaded backgrounds on all widget types. */
 #nexus-editor .widget.nexus-colored-widget.nexus-style-outline{background:transparent;border:1px solid var(--button-border)}
 #nexus-editor .widget.nexus-colored-widget.nexus-style-flat{background:transparent;border-color:transparent}
+
+/* Nexus device settings follow the site's grey text and native system-select styles. */
+.nexus-device-column .nexus-cycle-settings label,
+.nexus-device-column .nexus-cycle-settings small{color:var(--text-muted,#a1a1a1);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase}
+.nexus-device-column .nexus-cycle-settings select,
+.nexus-device-column .nexus-cycle-settings select:hover,
+.nexus-device-column .nexus-cycle-settings select:focus{color:var(--text-muted,#a1a1a1)}
+.nexus-device-column #save{width:100%;padding:.55rem .75rem;margin-top:.35rem;border:1px solid var(--border-mid,rgba(255,255,255,.1));border-radius:10px;background:var(--bg-card,#1b1b1c);color:var(--text-muted,#a1a1a1);font:inherit;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.nexus-device-column #save:hover,.nexus-device-column #save:focus-visible{border-color:rgba(255,255,255,.25);color:var(--text-main,#e6e6e6)}
+#nexus-editor label,#nexus-editor legend{color:var(--text-muted,#a1a1a1)}
+#nexus-editor .nexus-new-screen-choice{display:inline-flex;gap:.35rem;align-items:center}
+#nexus-editor #replaceScreenWithPreset:disabled{opacity:.45;cursor:not-allowed}

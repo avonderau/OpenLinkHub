@@ -102,3 +102,24 @@ selection without deleting the uploaded image.
 
 The storage, renderer support, upload API and UI are fork-owned files except
 for the minimal API route registration in `src/server/server.go`.
+
+## Stock Nexus screens and cycling settings
+
+Five editable example screens are bundled as **ordinary screen configuration JSON**
+files in `static/nexus/templates/`: System Overview, Performance Bars,
+Network & Storage, Media Controls and Screen Navigation (animated pulse).
+Their generated backgrounds are part of the Nexus renderer. The animated
+pulse is procedural rather than a copied iCUE GIF.
+
+On first setup, Nexus loads the five JSON examples as the default screen
+collection. Saved user layouts always take precedence and are never
+automatically replaced. Existing users can also choose a blank or stock
+screen from **New screen** beside the main screen selector and choose
+**Add screen**. **Replace selected** requires an explicit confirmation and
+retains the selected screen's identifier. Added/replaced screens are ordinary
+editable screens and do not change the device until **Save Layout** is used.
+
+The integrated Nexus page places **Save Layout** with the firmware/cycling
+controls in the device settings card. The Interval dropdown remains selectable
+in all cycling modes and is retained when Manual or Off is selected; it takes
+effect only in Automatic mode. Colors use the site's `--text-muted` palette.

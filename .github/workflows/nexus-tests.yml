@@ -7,6 +7,8 @@ on:
       - 'go.mod'
       - 'go.sum'
       - '.github/workflows/nexus-tests.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   nexus:

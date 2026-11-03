@@ -15,13 +15,13 @@
                                 </div>
 
                                 <div class="settings-row nexus-cycle-settings">
-                                    <label for="cyclingMode">Screen cycling</label>
+                                    <label for="cyclingMode" class="settings-label">Screen cycling</label>
                                     <select id="cyclingMode" class="form-select system-select">
                                         <option value="manual">Manual (touch edges)</option>
                                         <option value="automatic">Automatic</option>
                                         <option value="off">Off (fixed screen)</option>
                                     </select>
-                                    <label for="cyclingSeconds">Interval</label>
+                                    <label for="cyclingSeconds" class="settings-label">Interval</label>
                                     <select id="cyclingSeconds" class="form-select system-select">
                                         <option value="5">5 seconds</option>
                                         <option value="10">10 seconds</option>
@@ -34,7 +34,8 @@
                                         <option value="1800">30 minutes</option>
                                         <option value="3600">1 hour</option>
                                     </select>
-                                    <small>Save layout to apply cycling settings.</small>
+                                    <small class="nexus-cycle-note">Interval applies when cycling is set to Automatic.</small>
+                                    <button id="save" type="button">Save Layout</button>
                                 </div>
                             </div>
                         </div>
@@ -43,22 +44,24 @@
                 <div class="nexus-editor-column">
                     <section id="nexus-editor" class="card system-card"><div class="card-body">
 
-<div class="nexus-editor-heading"><button id="save" type="button">Save Layout</button></div>
 <p id="message" role="status" aria-live="polite"></p>
-<div class="nexus-screen-actions"><label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="renameScreen">Rename</button><button id="duplicateScreen">Duplicate screen</button><button id="deleteScreen">Delete screen</button></div>
-<fieldset class="nexus-panel nexus-starter-panel"><legend>Starter Templates</legend>
-<div class="nexus-template-actions">
-<label for="starterTemplate">Template <select id="starterTemplate">
+<div class="nexus-screen-actions">
+<label>Screen <select id="screens"></select></label>
+<label class="nexus-new-screen-choice" for="newScreenPreset">New screen
+<select id="newScreenPreset" aria-label="New screen layout">
+<option value="blank">Blank</option>
 <option value="system-overview">System Overview</option>
 <option value="performance-bars">Performance Bars</option>
 <option value="network-and-storage">Network &amp; Storage</option>
 <option value="media-deck">Media Controls</option>
-<option value="navigation">Screen Navigation</option>
+<option value="navigation">Screen Navigation (animated)</option>
 </select></label>
-<button id="addStarterTemplate" type="button">Add as new screen</button><button id="replaceWithStarterTemplate" type="button">Replace selected screen</button>
+<button id="addScreen" type="button">Add screen</button>
+<button id="replaceScreenWithPreset" type="button" disabled>Replace selected</button>
+<button id="renameScreen" type="button">Rename</button>
+<button id="duplicateScreen" type="button">Duplicate screen</button>
+<button id="deleteScreen" type="button">Delete screen</button>
 </div>
-<p class="nexus-panel-description" id="starterTemplateDescription">Editable example screens with built-in themed backgrounds.</p>
-</fieldset>
 <div id="preview"><div id="screen"></div></div>
 <fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
