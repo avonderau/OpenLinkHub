@@ -81,7 +81,7 @@ Existing saved JSON layouts remain valid across updates.
     definitions with independent IDs and safe references.
 12. **Typography/layout [font sizing and horizontal alignment implemented]**: font sizes, alignment, vertical centering, shadows
     and adaptive text clipping; keep editor and physical Nexus consistent.
-13. **Animated widgets/icons**: GIF artwork on buttons/widgets, with independent
+13. **Animated widgets/icons [GIF button icons implemented]**: GIF artwork on buttons/widgets, with independent
     animation timers, disposal handling, memory and size caps.
 14. **Screen navigation [screen reordering implemented]**: true left/right swipe gestures, reorder screens,
     overview and configurable behavior around button hit targets.
@@ -184,3 +184,14 @@ background playback. Missing or implausible sensors remain unavailable instead
 of showing invented readings. NVIDIA VRAM, GPU clocks and per-device Corsair
 coolant/fan sensors still need dedicated providers; the generic fan reading
 must not be labelled as a specific Corsair device.
+
+### Animated GIF button icons
+
+The Custom icon picker accepts PNG/JPEG and transparent GIF uploads. GIFs are
+limited to 512 KiB, 128×128 source dimensions and 32 frames, normalized to
+32×32 preserving aspect ratio. Disposal modes and frame delays are decoded
+once and cached for rendering. The Nexus LCD renders animated icons at up to
+five updates per second; static icons retain normal update cadence. Browser
+previews display the original GIF through the icon API. Re-uploading an icon
+with a different format removes the obsolete file. Multiple independent
+animated widgets and richer per-widget animation rates remain future work.
