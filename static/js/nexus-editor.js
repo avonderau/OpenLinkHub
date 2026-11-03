@@ -167,7 +167,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   const direction=document.createElement('select');direction.setAttribute('aria-label','Background gradient direction');
   for(const [value,name] of [['none','None'],['horizontal','Left to right'],['vertical','Top to bottom']])direction.add(new Option(name,value));
   direction.value=w.settings?.gradientDirection||'none';
-  direction.addEventListener('change',()=>{w.settings??={};w.settings.gradientDirection=direction.value;render()});
+  direction.addEventListener('change',()=>{w.settings??={};w.settings.gradientDirection=direction.value;if(direction.value!=='none'&&!w.settings.gradientColor)w.settings.gradientColor='#0b1824';render()});
   directionLabel.append(direction);appearanceRow.append(directionLabel);
   if(direction.value!=='none'){
    const label=document.createElement('label');label.textContent='Gradient end color ';
