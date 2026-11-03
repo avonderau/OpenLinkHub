@@ -127,17 +127,21 @@ test('Nexus uses existing saved macros and does not expose the old macro builder
  const {context,node}=makeEditor();
  await vm.runInContext('load()',context);
  vm.runInContext("nexusSharedMacros={'7':{name:'Desktop macro'}}",context);
- node('addMacro').listeners.click();
+ node('addButton').listeners.click();
  const widget=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
- assert.equal(widget.type,'button');
- assert.equal(widget.action,'macro');
- assert.equal(widget.target,'7');
- assert.equal(widget.steps,undefined);
  const find=(root,predicate)=>{
   if(predicate(root))return root;
   for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=find(child,predicate);if(hit)return hit}}
   return null;
  };
+ const action=find(node('properties'),el=>el.options?.some(option=>option.label==='Run saved macro'));
+ assert.ok(action,'macro must be a button action');
+ action.value='macro';
+ (action.listeners.change||action.onchange)();
+ assert.equal(widget.type,'button');
+ assert.equal(widget.action,'macro');
+ assert.equal(widget.target,'7');
+ assert.equal(widget.steps,undefined);
  assert.equal(find(node('properties'),el=>el.className==='nexus-macro-editor'),null);
  const choice=find(node('properties'),el=>el.options?.some(option=>option.label==='Desktop macro'));
  assert.ok(choice,'saved OpenLinkHub macro appears in Nexus widget settings');
