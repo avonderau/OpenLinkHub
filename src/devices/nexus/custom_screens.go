@@ -200,6 +200,7 @@ func (d *Device) executeTouchAction(action,target string) {
   for _,s:=range d.customScreens.Screens {if s.ID==target {d.customScreens.ActiveScreenID=target;break}}
   d.lastCycle=time.Now()
   d.mutex.Unlock()
+ case "hotkey":executeKeyChord(target)
  case "media":
   codes:=map[string]uint16{"volume-up":1,"volume-down":2,"stop":4,"previous-track":5,"play-pause":6,"next-track":7}
   if code:=codes[target];code!=0 {inputmanager.InputControlKeyboard(code,false)}

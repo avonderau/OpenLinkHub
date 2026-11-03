@@ -208,9 +208,17 @@ function renderTouchProperties(w,panel){
   input.value=value;input.onchange=()=>{change(input.value);render()};
   label.append(input);panel.append(label);
  };
- const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['macro','Run macro']];
+ const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['macro','Run macro'],['hotkey','Keyboard shortcut']];
  const media=[['play-pause','Play/Pause'],['stop','Stop'],['volume-up','Volume +'],['volume-down','Volume -'],['next-track','Next track'],['previous-track','Previous track']];
  const targets=cfg.screens.map(s=>[s.id,s.name]);
+ const shortcutInput=(name,value,update)=>{
+  const label=document.createElement('label');label.textContent=name+' ';
+  const input=document.createElement('input');input.type='text';input.maxLength=80;
+  input.placeholder='Ctrl+Alt+T';input.value=value||'';
+  input.setAttribute('aria-label',name);
+  input.addEventListener('change',()=>{update(input.value.trim());message('Shortcut updated. Save Layout to apply.')});
+  label.append(input);panel.append(label);
+ };
  if(w.type==='button'||w.type==='macro'){
   field('Style',w.settings?.style||'solid',[['solid','Solid'],['outline','Outline'],['flat','Transparent']],v=>{w.settings??={};w.settings.style=v});
  }
@@ -243,8 +251,9 @@ function renderTouchProperties(w,panel){
   panel.append(wrapper,upload);
  }
  if(w.type==='button'){
-  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
+  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='hotkey'?'Ctrl+Alt+T':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
   if(w.action==='screen')field('Target screen',w.target,targets,v=>w.target=v);
+  if(w.action==='hotkey')shortcutInput('Shortcut',w.target,v=>w.target=v);
   if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.customIcon&&(!w.settings?.icon||w.settings.icon===old)){w.settings??={};w.settings.icon=v}});
  }
  if(w.type==='macro'||w.action==='macro'){
@@ -255,7 +264,7 @@ function renderTouchProperties(w,panel){
    try{const steps=JSON.parse(area.value);if(!Array.isArray(steps)||steps.length<1||steps.length>12)throw Error('Use 1–12 steps');w.steps=steps;message('Macro steps updated. Save layout to apply.')}catch(e){message(e.message)}
   };
   label.append(area);panel.append(label);panel.append(apply);
-  const help=document.createElement('small');help.textContent='Step types: next, previous, screen (value: screen ID), media (value: play-pause, stop, volume-up, volume-down, next-track, previous-track), delay (delayMs: 0–5000). Max 15 seconds total delays.';panel.append(help);
+  const help=document.createElement('small');help.textContent='Step types: next, previous, screen (value: screen ID), media (value: play-pause, stop, volume-up, volume-down, next-track, previous-track), hotkey (value: Ctrl+Alt+T), delay (delayMs: 0–5000). Max 15 seconds total delays.';panel.append(help);
  }
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
