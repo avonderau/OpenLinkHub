@@ -233,3 +233,43 @@ test('image widgets are separate from touch buttons and expose image upload',asy
   'custom image upload control not available');
  assert.equal(widget.action,undefined,'non-interactive images must not have a touch action');
 });
+
+test('selected widget settings group opacity percentage and preserve it on save',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'opacity_test',type:'button',action:'next',target:'',x:0,y:0,width:80,height:40,settings:{label:'Demo'}});
+ vm.runInContext("selected='opacity_test';render()",context);
+ const walk=(root,predicate)=>{
+  if(predicate(root))return root;
+  for(const child of root.children||[]){if(child&&typeof child==='object'){const found=walk(child,predicate);if(found)return found}}
+  return null;
+ };
+ const properties=node('properties');
+ const sections=properties.children.filter(child=>child.className==='nexus-property-section');
+ assert.equal(sections.length,4);
+ assert.deepEqual(sections.map(item=>item.children[0].textContent),['Position & size','Appearance','Text & data','Actions & icons']);
+ assert.equal(sections[0].open,true);
+ assert.equal(sections[1].open,true);
+ const appearance=sections[1];
+ const opacitySlider=walk(appearance,item=>item.type==='range');
+ assert.ok(opacitySlider);
+ const opacityLabel=walk(appearance,item=>item.className==='nexus-opacity-control');
+ assert.ok(opacityLabel);
+ const opacityNumber=walk(opacityLabel,item=>item.type==='number');
+ assert.ok(opacityNumber);
+ assert.equal(opacityNumber.value,'100');
+ opacitySlider.value='45';
+ opacitySlider.listeners.input();
+ assert.equal(screen.widgets[0].settings.opacity,'45');
+ assert.equal(opacityNumber.value,'45');
+ opacityNumber.value='62';
+ opacityNumber.listeners.change();
+ assert.equal(screen.widgets[0].settings.opacity,'62');
+ assert.equal(opacitySlider.value,'62');
+ const noFill=walk(sections[3],item=>item.options?.some(option=>option.label==='No fill'));
+ assert.ok(noFill,'style label should distinguish no fill from opacity');
+ assert.equal(noFill.options.some(option=>option.label==='Transparent'),false);
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].widgets[0].settings.opacity,'62');
+});
