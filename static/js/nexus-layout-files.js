@@ -9,6 +9,7 @@ globalThis.NexusLayoutFiles=(()=>{
  const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"]);
  const actions=new Set(['next','previous','screen','media','device','hotkey','mouse','url','application','text','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
+ const hardware=new Set(['rgb-on','rgb-off']);
  const mouse=new Set(['left','double-left','right','middle','back','forward','scroll-up','scroll-down','scroll-left','scroll-right']);
  const stepTypes=new Set(['next','previous','screen','media','hotkey','mouse','url','application','text','delay']);
  const clone=value=>JSON.parse(JSON.stringify(value));
@@ -21,6 +22,8 @@ globalThis.NexusLayoutFiles=(()=>{
    if(!screenIDs.has(step.value))throw Error('Macro links to a missing screen');
   }else if(step.type==='media'){
    if(!media.has(step.value))throw Error('Invalid macro media action');
+  }else if(step.type==='device'){
+   if(!hardware.has(step.value))throw Error('Invalid macro hardware action');
   }else if(step.type==='mouse'){
    if(!mouse.has(step.value))throw Error('Invalid macro mouse action');
   }else if(step.type==='url'||step.type==='application'){
@@ -78,6 +81,7 @@ globalThis.NexusLayoutFiles=(()=>{
      if(!actions.has(widget.action))throw Error('Unsupported touch action');
      if(widget.action==='screen'&&!screenIDs.has(widget.target))throw Error('Button links to missing screen');
      if(widget.action==='media'&&!media.has(widget.target))throw Error('Invalid media action');
+     if(widget.action==='device'&&!hardware.has(widget.target))throw Error('Invalid hardware action');
      if(widget.action==='mouse'&&!mouse.has(widget.target))throw Error('Invalid mouse action');
      if((widget.action==='url'||widget.action==='application')&&!(typeof widget.target==='string'&&widget.target.length>0&&widget.target.length<=(widget.action==='url'?256:128)))throw Error('Invalid launch action');
      if(widget.action==='hotkey'&&!(typeof widget.target==='string'&&widget.target.length>0&&widget.target.length<=80))throw Error('Invalid shortcut');
