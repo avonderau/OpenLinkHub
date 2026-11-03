@@ -227,3 +227,18 @@
 .nexus-editor-tabpanel fieldset{min-width:0;max-width:100%;box-sizing:border-box}
 .nexus-editor-tabpanel label{color:var(--text-muted,#a7bac7)}
 @media(max-width:600px){.nexus-editor-tablist [role=tab]{flex:1 1 auto;padding:.5rem}.nexus-add-combo{flex-wrap:wrap}}
+
+
+/* File-folder tabs attach directly to their shared panel below the preview. */
+#nexus-editor .nexus-editor-tabs,.nexus-editor-tabs{margin:1rem 0 0;min-width:0}
+#nexus-editor .nexus-editor-tablist,.nexus-editor-tablist{display:flex;align-items:flex-end;flex-wrap:wrap;column-gap:2px;row-gap:4px;padding:0 .2rem;border-bottom:1px solid var(--border-subtle,#496275)}
+#nexus-editor .nexus-editor-tablist [role=tab],.nexus-editor-tablist [role=tab]{appearance:none;position:relative;top:1px;z-index:1;min-width:0;margin:0;padding:.58rem .9rem;border:1px solid var(--border-subtle,#496275);border-bottom-color:var(--border-subtle,#496275);border-radius:8px 8px 0 0;background:var(--bg-secondary,#1b2935);color:var(--text-muted,#a7bac7);font-family:inherit;font-size:.86rem;font-weight:500;white-space:normal;cursor:pointer;box-shadow:none}
+#nexus-editor .nexus-editor-tablist [role=tab][aria-selected=true],.nexus-editor-tablist [role=tab][aria-selected=true]{z-index:3;background:var(--bg-card,#202b37);color:var(--text-main,#e8eff5);border-bottom-color:var(--bg-card,#202b37);font-weight:600}
+#nexus-editor .nexus-editor-tabcontent,.nexus-editor-tabcontent{position:relative;z-index:2;min-width:0;padding:.8rem;border:1px solid var(--border-subtle,#496275);border-top:0;border-radius:0 0 8px 8px;background:var(--bg-card,#202b37)}
+#nexus-editor .nexus-editor-tabpanel,.nexus-editor-tabpanel{min-width:0;padding:0}
+#nexus-editor .nexus-editor-tabpanel[hidden],.nexus-editor-tabpanel[hidden]{display:none!important}
+#nexus-editor .nexus-editor-tabpanel>fieldset,.nexus-editor-tabpanel>fieldset{margin:.3rem 0 .8rem}
+#nexus-editor .nexus-create-actions,.nexus-create-actions{display:flex;flex-wrap:wrap;gap:.45rem}
+#nexus-editor .nexus-selected-widget-type,.nexus-selected-widget-type{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.5rem;width:fit-content;max-width:100%;color:var(--text-muted,#a7bac7);margin:.4rem 0}
+#nexus-editor .nexus-selected-widget-type select,.nexus-selected-widget-type select{min-width:120px}
+@media(max-width:640px){#nexus-editor .nexus-editor-tablist [role=tab],.nexus-editor-tablist [role=tab]{flex:1 1 auto;padding:.5rem}.nexus-editor-tabcontent{padding:.6rem}}

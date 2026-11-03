@@ -37,6 +37,32 @@ const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
 function message(t){$('message').textContent=t}
 function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
 function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render();refreshApplicationScreenMappings()}
+// Change only the representation within a widget family. Geometry, colors,
+// placement and a metric's source remain unchanged when its display changes.
+function changeSelectedWidgetType(widget,type){
+ const metric=['metric','bar','graph'],content=['text','image','clock'];
+ const allowed=metric.includes(widget.type)?metric:content.includes(widget.type)?content:[];
+ if(!allowed.includes(type))return false;
+ const previous=widget.type;
+ widget.type=type;
+ widget.settings??={};
+ if(metric.includes(type)){
+  widget.metric ||= 'cpu.temperature';
+ }else{
+  widget.metric='';
+  if(previous==='image'&&type!=='image'){
+   delete widget.settings.customIcon;
+   delete widget.settings.icon;
+  }
+  if(type==='text')widget.settings.text ||= 'New text';
+  if(type==='clock')widget.settings.clockFormat ||= '24h';
+  if(type==='image'){
+   widget.settings.style ??= 'flat';
+   widget.settings.icon='custom';
+  }
+ }
+ return true;
+}
 function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();refreshActionButtons();
  const widget=s?.widgets.find(w=>w.id===selected);
  const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
@@ -95,6 +121,24 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  }
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;
  const properties=$('properties');
+ const metricTypes=[['metric','Value'],['bar','Bar'],['graph','Graph']];
+ const contentTypes=[['text','Text'],['image','Image'],['clock','Clock']];
+ const family=['metric','bar','graph'].includes(w.type)?metricTypes:['text','image','clock'].includes(w.type)?contentTypes:null;
+ if(family){
+  const typeLabel=document.createElement('label');
+  typeLabel.className='nexus-selected-widget-type';
+  typeLabel.textContent=family===metricTypes?'Metric display ':'Content type ';
+  const typeSelect=document.createElement('select');
+  typeSelect.setAttribute('aria-label',family===metricTypes?'Selected metric display':'Selected content type');
+  for(const [value,label] of family)typeSelect.add(new Option(label,value));
+  typeSelect.value=w.type;
+  typeSelect.addEventListener('change',()=>{
+   changeSelectedWidgetType(w,typeSelect.value);
+   render();
+  });
+  typeLabel.append(typeSelect);
+  properties.append(typeLabel);
+ }
  const dimensionsRow=document.createElement('div');dimensionsRow.className='nexus-properties-row nexus-dimensions-row';dimensionsRow.setAttribute('aria-label','Widget dimensions');
  const colorsRow=document.createElement('div');colorsRow.className='nexus-properties-row nexus-colors-row';colorsRow.setAttribute('aria-label','Widget colors');
  const styleRow=document.createElement('div');styleRow.className='nexus-properties-row nexus-style-row';styleRow.setAttribute('aria-label','Widget style and settings');
@@ -205,7 +249,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  }
  if(w.type==='button'||w.type==='macro'||w.type==='image')renderTouchProperties(w,touchRow);
 }
-$('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
+$('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;selectNexusEditorTab('widget');const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
 $('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
 $('screen').addEventListener('pointerup',()=>{drag=null;render()});$('screen').addEventListener('pointercancel',()=>{drag=null;render()});
 const editKeys=new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown']);
@@ -478,12 +522,9 @@ function renderTouchProperties(w,panel){
 
 
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;render()}
-$('addMetric').onclick=()=>{const kind=$('metricDisplayType')?.value;addWidget(['metric','bar','graph'].includes(kind)?kind:'metric')};
-$('addContent')?.addEventListener('click',()=>{
- const type=$('contentWidgetType')?.value;
- if(['text','image','clock'].includes(type))addWidget(type);
-});
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;selectNexusEditorTab('widget');render()}
+$('addMetric').onclick=()=>addWidget('metric');
+$('addContent')?.addEventListener('click',()=>addWidget('text'));
 $('addButton')?.addEventListener('click',()=>addWidget('button'));
 $('copyWidget')?.addEventListener('click',()=>{
  const source=current()?.widgets.find(w=>w.id===selected);
@@ -732,66 +773,7 @@ $('addApplicationScreen')?.addEventListener('click',()=>{
  message('Application screen mapping added. Save Layout to apply.');
 });
 
-(function setupNexusRightFlyouts(){
- const backdrop=document.getElementById('nexus-flyout-backdrop');
- if(!backdrop)return;
- const triggers=[...(document.querySelectorAll?.('.nexus-flyout-toolbar [data-nexus-flyout]')||[])];
- if(!triggers.length)return;
- const panels=triggers.map(button=>document.getElementById(button.getAttribute('aria-controls'))).filter(Boolean);
- let active=null,origin=null;
- function close(){
-  if(!active)return;
-  active.hidden=true;active.classList.remove('nexus-flyout-docked');
-  active.style.right='';active.style.top='';active.style.width='';
-  active.setAttribute('aria-modal','true');
-  backdrop.hidden=true;
-  for(const trigger of triggers)trigger.setAttribute('aria-expanded','false');
-  active=null;
-  const focus=origin;origin=null;
-  focus?.focus?.();
- }
- function place(){
-  if(!active)return;
-  const editor=document.getElementById('nexus-editor')||document.getElementById('preview');
-  const rect=editor?.getBoundingClientRect?.();
-  const rightSpace=rect?window.innerWidth-rect.right:0;
-  const dock=rightSpace>=340;
-  active.classList.toggle('nexus-flyout-docked',dock);
-  active.setAttribute('aria-modal',dock?'false':'true');
-  backdrop.hidden=dock;
-  if(dock){
-   const width=Math.min(420,rightSpace-20);
-   active.style.width=width+'px';
-   active.style.right='12px';
-   active.style.top=Math.max(12,Math.min(rect.top,window.innerHeight-160))+'px';
-  }else{
-   active.style.width='';active.style.right='';active.style.top='';
-  }
- }
- for(const trigger of triggers)trigger.addEventListener('click',()=>{
-  const panel=document.getElementById(trigger.getAttribute('aria-controls'));
-  if(!panel)return;
-  if(active===panel){close();return}
-  close();
-  origin=trigger;active=panel;active.hidden=false;
-  trigger.setAttribute('aria-expanded','true');
-  place();active.focus();
- });
- for(const panel of panels){
-  panel.querySelector('.nexus-flyout-close')?.addEventListener('click',close);
-  panel.addEventListener('keydown',event=>{
-   if(event.key!=='Tab'||panel.classList.contains('nexus-flyout-docked'))return;
-   const elements=[...panel.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]')].filter(el=>!el.hidden);
-   if(!elements.length){event.preventDefault();return}
-   const first=elements[0],last=elements[elements.length-1];
-   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
-   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
-  });
- }
- backdrop.addEventListener('click',close);
- document.addEventListener('keydown',event=>{if(active&&event.key==='Escape'){event.preventDefault();close()}});
- window.addEventListener('resize',place);
-})();
+
 
 
 // A visual click indication also works with keyboard activation in the editor.
@@ -804,30 +786,34 @@ $('screen')?.addEventListener('pointerup',()=>{
  for(const item of $('screen').children)item.classList?.remove?.('nexus-pressed-preview');
 });
 
-/* Keep configuration in one panel rather than multiple overlapping flyouts. */
-(function setupNexusEditorTabs(){
- const names=['background','applications','layout'];
- const tabs=names.map(name=>$('nexus-tab-'+name));
- const panels=names.map(name=>$('nexus-panel-'+name));
- if(tabs.some(tab=>!tab)||panels.some(panel=>!panel))return;
- function selectTab(index,focus=false){
-  names.forEach((_,i)=>{
-   const selected=i===index;
-   tabs[i].setAttribute('aria-selected',String(selected));
-   tabs[i].setAttribute('tabindex',selected?'0':'-1');
-   panels[i].hidden=!selected;
-  });
-  if(focus)tabs[index].focus();
+/* Five file tabs share a single editor workspace below the screen preview. */
+function selectNexusEditorTab(name,focus=false){
+ const names=['widget','library','background','layout','applications'];
+ const index=names.indexOf(name);
+ if(index<0)return;
+ for(const [i,id] of names.entries()){
+  const tab=$('nexus-tab-'+id),panel=$('nexus-panel-'+id);
+  if(!tab||!panel)return;
+  const active=i===index;
+  tab.setAttribute('aria-selected',String(active));
+  tab.setAttribute('tabindex',active?'0':'-1');
+  panel.hidden=!active;
  }
- tabs.forEach((tab,index)=>{
-  tab.addEventListener('click',()=>selectTab(index));
+ if(focus)$('nexus-tab-'+name).focus();
+}
+(function setupNexusEditorTabs(){
+ const names=['widget','library','background','layout','applications'];
+ if(names.some(name=>!$('nexus-tab-'+name)||!$('nexus-panel-'+name)))return;
+ names.forEach((name,index)=>{
+  const tab=$('nexus-tab-'+name);
+  tab.addEventListener('click',()=>selectNexusEditorTab(name));
   tab.addEventListener('keydown',event=>{
    const offset=event.key==='ArrowRight'?1:event.key==='ArrowLeft'?-1:0;
-   if(offset===0&&event.key!=='Home'&&event.key!=='End')return;
+   if(!offset&&event.key!=='Home'&&event.key!=='End')return;
    event.preventDefault();
-   const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+offset+tabs.length)%tabs.length;
-   selectTab(next,true);
+   const next=event.key==='Home'?0:event.key==='End'?names.length-1:(index+offset+names.length)%names.length;
+   selectNexusEditorTab(names[next],true);
   });
  });
- selectTab(0);
+ selectNexusEditorTab('widget');
 })();
