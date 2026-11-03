@@ -51,6 +51,11 @@ globalThis.NexusLayoutFiles=(()=>{
    screenIDs.add(screen.id);
   }
   if(!screenIDs.has(value.activeScreenId))throw Error('Active screen not found');
+  const appScreens=value.applicationScreens||{};
+  if(!object(appScreens)||Object.keys(appScreens).length>64)throw Error('Invalid application screen bindings');
+  for(const [appID,screenID] of Object.entries(appScreens)){
+   if(!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(appID)||!screenIDs.has(screenID))throw Error('Invalid application screen target');
+  }
   for(const screen of value.screens){
    const widgetIDs=new Set();
    for(const widget of screen.widgets){
