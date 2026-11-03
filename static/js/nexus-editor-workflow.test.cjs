@@ -258,7 +258,7 @@ test('selected widget settings group opacity percentage and preserve it on save'
  const sections=properties.children.filter(child=>child.className==='nexus-property-section');
  assert.equal(sections.length,4);
  assert.deepEqual(sections.map(item=>item.children[0].textContent),['Position & size','Appearance','Text & data','Actions & icons']);
- assert.equal(sections[0].open,true);
+ assert.equal(sections[0].open,false);
  assert.equal(sections[1].open,true);
  const appearance=sections[1];
  const opacitySlider=walk(appearance,item=>item.type==='range');
@@ -434,7 +434,7 @@ test('approved mockup fidelity includes real icon-led visual controls, full-widt
  assert.match(shell,/querySelector\('a\[href="\/settings"\]'\)/);
  for(const html of [integrated,standalone]){
   assert.match(html,/class="nexus-preview-heading"/);
-  assert.match(html,/class="bi bi-display"/);
+  assert.match(html,/class="bi bi-info-circle"/);
   assert.match(html,/class="bi bi-plus-square"/);
   assert.match(html,/class="bi bi-sliders2"/);
   assert.match(html,/class="bi bi-speedometer2"/);
