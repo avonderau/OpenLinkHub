@@ -126,6 +126,8 @@ type Device struct {
 	LCDProfiles       *LCDProfiles
 	Keyboard          bool
 	instance          *common.Device
+	customScreens ScreenConfiguration
+	customSampler CounterSampler
 }
 
 var (
@@ -187,6 +189,7 @@ func Init(vendorId, productId uint16, serial, _ string) *common.Device {
 	d.setAutoRefresh()     // Set auto device refresh
 	d.saveDeviceProfile()  // Save profile
 	d.loadLcdProfiles()    // LCD profiles
+	d.loadCustomScreens() // Custom screens
 	d.loadLcdFonts()       // LCD fonts
 	d.loadLcdBackground()  // LCD background
 	d.setupLCD()           // LCD
@@ -748,6 +751,13 @@ func (d *Device) UpdateDeviceLcdProfile(profileName string) uint8 {
 		return 2
 	}
 
+	if profileName == "custom-screens" {
+		d.DeviceProfile.LCDMode = profileName
+		d.DeviceProfile.DynamicMode = false
+		d.Keyboard = false
+		d.saveDeviceProfile()
+		return 1
+	}
 	if val, ok := d.LCDProfiles.Profiles[profileName]; ok {
 		if profileName == "gpu-info" && systeminfo.GetInfo().GPU == nil {
 			return 0
@@ -962,6 +972,8 @@ func (d *Device) setupLCD() {
 					}
 				} else {
 					switch lcdMode {
+					case "custom-screens":
+						if frame := d.renderCustomScreen(); frame != nil { d.transfer(frame) }
 					case "cpu-info":
 						{
 							cpuTemp := dashboard.GetDashboard().TemperatureToString(d.CpuTemp)
@@ -1055,6 +1067,16 @@ func (d *Device) backendListener() {
 					continue
 				}
 
+				if d.DeviceProfile.LCDMode == "custom-screens" {
+					active := data[5]
+					if active == 1 && !blocked {
+						blocked = true
+						position := binary.LittleEndian.Uint16(data[6:8])
+						if position < 70 { d.navigateCustomScreen(false) }
+						if position > 570 { d.navigateCustomScreen(true) }
+					} else if active == 0 { blocked = false }
+					continue
+				}
 				if d.Keyboard {
 					active := data[5] // Touch activation
 					if active == 1 && blocked == false {
