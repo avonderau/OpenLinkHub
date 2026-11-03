@@ -812,3 +812,13 @@ $('addApplicationScreen')?.addEventListener('click',()=>{
  refreshApplicationScreenMappings();
  message('Application screen mapping added. Save Layout to apply.');
 });
+
+// A visual click indication also works with keyboard activation in the editor.
+$('screen')?.addEventListener('pointerdown',event=>{
+ const target=event.target.closest?.('.widget.nexus-button-style');
+ if(!target)return;
+ target.classList.add('nexus-pressed-preview');
+});
+$('screen')?.addEventListener('pointerup',()=>{
+ for(const item of $('screen').children)item.classList?.remove?.('nexus-pressed-preview');
+});
