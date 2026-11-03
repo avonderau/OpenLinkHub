@@ -149,6 +149,11 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   details.open=opened;
   const summary=document.createElement('summary');
   summary.textContent=title;
+  const icons={'Position & size':'bounding-box','Appearance':'palette','Text & data':'type','Actions & icons':'lightning-charge'};
+  const symbol=document.createElement('i');
+  symbol.className='bi bi-'+(icons[title]||'sliders');
+  symbol.setAttribute('aria-hidden','true');
+  summary.prepend(symbol);
   details.append(summary);
   properties.append(details);
   return details;
