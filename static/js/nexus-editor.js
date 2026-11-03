@@ -489,6 +489,9 @@ function renderTouchProperties(w,panel){
    if(step.type==='screen')row.append(makeSelect(targets,step.value,'Step '+(index+1)+' screen',value=>{
     step.value=value;
    }));
+   if(step.type==='device')row.append(makeSelect(hardwareActions,step.value,'Step '+(index+1)+' device action',value=>{
+    step.value=value;
+   }));
    if(step.type==='media')row.append(makeSelect(media,step.value,'Step '+(index+1)+' media',value=>{
     step.value=value;
    }));
