@@ -47,3 +47,8 @@
 
 #nexus-editor #properties textarea{display:block;max-width:100%;font:12px monospace;background:var(--bg-card,#202022);color:var(--text-main,#fff);border:1px solid var(--border-subtle,#617c90);border-radius:6px}
 #nexus-editor #properties small{display:block;max-width:650px;color:var(--text-muted,#aaa)}
+
+/* Touchscreen media icons and compact preset toolbar. */
+#nexus-editor .nexus-icon-widget{display:flex;align-items:center;justify-content:center;gap:4px;padding:2px;color:#eaf6ff}
+#nexus-editor .nexus-icon{font-family:system-ui,sans-serif;font-size:20px;line-height:1;color:#d8f3ff;flex-shrink:0}
+#nexus-editor #mediaPreset{min-width:128px}
