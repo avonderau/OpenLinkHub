@@ -30,3 +30,26 @@ func TestRenderColoredMetricBarAndText(t *testing.T){
   })
  }
 }
+
+func TestRenderRoundedAndTransparentWidgets(t *testing.T){
+ background:=color.RGBA{12,19,27,255}
+ for _,tc:=range []struct{name string;settings map[string]string;corner color.RGBA;middle color.RGBA}{
+  {"rounded",map[string]string{"backgroundColor":"#ff0000","cornerRadius":"8"},background,color.RGBA{255,0,0,255}},
+  {"invisible",map[string]string{"backgroundColor":"#ff0000","opacity":"0"},background,background},
+  {"opaque",map[string]string{"backgroundColor":"#ff0000","opacity":"100"},color.RGBA{255,0,0,255},color.RGBA{255,0,0,255}},
+ }{
+  t.Run(tc.name,func(t *testing.T){
+   w:=Widget{ID:"shape",Type:"text",X:0,Y:0,Width:60,Height:30,Settings:tc.settings}
+   img,err:=RenderScreen(Screen{ID:"shape",Name:"Shape",Widgets:[]Widget{w}},nil)
+   if err!=nil{t.Fatal(err)}
+   if got:=img.RGBAAt(0,0);got!=tc.corner{t.Fatalf("corner: got %v want %v",got,tc.corner)}
+   if got:=img.RGBAAt(20,5);got!=tc.middle{t.Fatalf("interior: got %v want %v",got,tc.middle)}
+  })
+ }
+}
+func TestRenderRejectsInvalidAppearance(t *testing.T){
+ for _,settings:=range []map[string]string{{"cornerRadius":"25"},{"cornerRadius":"-1"},{"opacity":"101"},{"opacity":"bad"}}{
+  screen:=Screen{ID:"invalid",Name:"Invalid",Widgets:[]Widget{{ID:"bad",Type:"text",X:0,Y:0,Width:50,Height:30,Settings:settings}}}
+  if _,err:=RenderScreen(screen,nil);err==nil{t.Fatalf("accepted invalid appearance: %v",settings)}
+ }
+}
