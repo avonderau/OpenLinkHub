@@ -217,8 +217,12 @@ test('software dimming remains full by default and saves a selected level',async
 test('image widgets are separate from touch buttons and expose image upload',async()=>{
  const {context,node}=makeEditor();
  await vm.runInContext('load()',context);
- node('contentWidgetType').value='image';
  node('addContent').listeners.click();
+ const selectType=(root)=>{if(root.options?.some(x=>x.label==='Image'))return root;for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=selectType(child);if(hit)return hit}}return null};
+ const contentType=selectType(node('properties'));
+ assert.ok(contentType);
+ contentType.value='image';
+ contentType.listeners.change();
  const widget=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
  assert.equal(widget.type,'image');
  assert.equal(widget.settings.style,'flat');
@@ -280,17 +284,8 @@ test('new widgets use the full 48 pixel Nexus height without modifying existing 
  await vm.runInContext('load()',context);
  const existing=vm.runInContext('cfg.screens[0]',context);
  existing.widgets.push({id:'old',type:'text',x:0,y:0,width:80,height:24,settings:{text:'Existing'}});
- const cases=[
-  ['addMetric','metricDisplayType','metric','metric'],
-  ['addMetric','metricDisplayType','bar','bar'],
-  ['addMetric','metricDisplayType','graph','graph'],
-  ['addContent','contentWidgetType','text','text'],
-  ['addContent','contentWidgetType','image','image'],
-  ['addContent','contentWidgetType','clock','clock'],
-  ['addButton',null,null,'button']
- ];
- for(const [id,select,value,expected] of cases){
-  if(select)node(select).value=value;
+ const cases=[['addMetric','metric'],['addContent','text'],['addButton','button']];
+ for(const [id,expected] of cases){
   const handler=node(id).listeners.click||node(id).onclick;
   assert.equal(typeof handler,'function',id+' handler');
   handler();
@@ -321,42 +316,80 @@ test('gradient controls edit a widget without changing its opacity',async()=>{
  assert.equal(screen.widgets[0].settings.gradientColor,'#0b1824');
 });
 
-test('consolidated widget actions and configuration tabs exist in both editor modes',()=>{
+test('preview is above five file-style tabs and only three widget add buttons exist',()=>{
  for(const html of [integrated,standalone]){
-  for(const id of ['addMetric','metricDisplayType','addContent','contentWidgetType','addButton'])assert.match(html,new RegExp('id="'+id+'"'));
-  for(const removed of ['addMacro','addText','addImage','addClock','addBar','addGraph'])assert.doesNotMatch(html,new RegExp('id="'+removed+'"'));
-  for(const name of ['background','applications','layout']){
+  for(const id of ['addMetric','addContent','addButton'])assert.match(html,new RegExp('id="'+id+'"'));
+  for(const removed of ['addMacro','addText','addImage','addClock','addBar','addGraph','metricDisplayType','contentWidgetType'])assert.doesNotMatch(html,new RegExp('id="'+removed+'"'));
+  const preview=html.indexOf('id="preview"');
+  const tabs=html.indexOf('class="nexus-editor-tabs"');
+  const add=html.indexOf('id="nexus-add-panel"');
+  assert.ok(preview>0&&tabs>preview&&add>tabs,'preview must appear before the tab bar and add-widget controls');
+  for(const name of ['widget','library','background','layout','applications']){
    assert.match(html,new RegExp('id="nexus-tab-'+name+'"[^>]*role="tab"'));
    assert.match(html,new RegExp('id="nexus-panel-'+name+'"[^>]*role="tabpanel"'));
   }
-  assert.match(html,/id="nexus-flyout-library"/);
-  assert.doesNotMatch(html,/id="nexus-flyout-background"|id="nexus-flyout-layout"/);
-  assert.match(html,/id="applicationScreenMappings"/);
-  assert.match(html,/id="background"/);
-  assert.match(html,/id="layoutImportMode"/);
+  for(const id of ['widgetLibrarySelect','background','layoutImportMode','applicationScreenMappings'])assert.match(html,new RegExp('id="'+id+'"'));
+  assert.doesNotMatch(html,/id="nexus-flyout-library"|class="nexus-flyout-toolbar"/);
  }
+ assert.match(style,/nexus-editor-tablist.*?border-radius:8px 8px 0 0/s);
+ assert.match(style,/nexus-editor-tabcontent/);
 });
 
-test('configuration tabs activate exclusively and support keyboard selection',async()=>{
- const {context,node}=makeEditor();
+test('all five file tabs switch exclusively and support keyboard navigation',()=>{
+ const {node}=makeEditor();
  const attributes=new Map();
- for(const id of ['background','applications','layout']){
-  const n=node('nexus-tab-'+id);
-  n.setAttribute=(name,value)=>attributes.set(id+':'+name,value);
-  n.focus=()=>{n.focused=true};
+ for(const name of ['widget','library','background','layout','applications']){
+  const tab=node('nexus-tab-'+name);
+  tab.setAttribute=(key,value)=>attributes.set(name+':'+key,value);
+  tab.focus=()=>{tab.focused=true};
  }
- vm.runInContext('void 0',context);
- assert.equal(node('nexus-panel-background').hidden,false);
- assert.equal(node('nexus-panel-applications').hidden,true);
- assert.equal(node('nexus-panel-layout').hidden,true);
- node('nexus-tab-layout').listeners.click();
+ assert.equal(node('nexus-panel-widget').hidden,false);
+ assert.equal(node('nexus-panel-library').hidden,true);
  assert.equal(node('nexus-panel-background').hidden,true);
+ node('nexus-tab-layout').listeners.click();
+ assert.equal(node('nexus-panel-widget').hidden,true);
  assert.equal(node('nexus-panel-layout').hidden,false);
  assert.equal(attributes.get('layout:aria-selected'),'true');
  let prevented=false;
  node('nexus-tab-layout').listeners.keydown({key:'ArrowRight',preventDefault(){prevented=true}});
  assert.equal(prevented,true);
- assert.equal(node('nexus-panel-background').hidden,false);
+ assert.equal(node('nexus-panel-applications').hidden,false);
  assert.equal(node('nexus-panel-layout').hidden,true);
- assert.equal(node('nexus-tab-background').focused,true);
+ assert.equal(node('nexus-tab-applications').focused,true);
+});
+
+test('metric display switches Value Bar Graph within Selected Widget and keeps settings',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ node('addMetric').onclick();
+ const metric=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
+ metric.settings.opacity='65';metric.metric='gpu.temperature';
+ const find=(root,predicate)=>{if(predicate(root))return root;for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=find(child,predicate);if(hit)return hit}}return null};
+ for(const expected of ['bar','graph','metric']){
+  const select=find(node('properties'),el=>el.options?.some(option=>option.label==='Graph'&&option.value==='graph'));
+  assert.ok(select,'metric display selector missing');
+  select.value=expected;select.listeners.change();
+  assert.equal(metric.type,expected);
+  assert.equal(metric.metric,'gpu.temperature');
+  assert.equal(metric.settings.opacity,'65');
+  assert.equal(metric.height,48);
+ }
+});
+
+test('content type changes Text Image Clock from Selected Widget',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ node('addContent').listeners.click();
+ const item=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
+ const find=(root,predicate)=>{if(predicate(root))return root;for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=find(child,predicate);if(hit)return hit}}return null};
+ for(const expected of ['image','clock','text']){
+  const select=find(node('properties'),el=>el.options?.some(option=>option.label==='Clock'&&option.value==='clock'));
+  assert.ok(select,'content type selector missing');
+  select.value=expected;select.listeners.change();
+  assert.equal(item.type,expected);
+  assert.equal(item.metric,'');
+  assert.equal(item.height,48);
+  if(expected==='text')assert.equal(item.settings.text,'New text');
+  if(expected==='clock')assert.equal(item.settings.clockFormat,'24h');
+ }
 });
