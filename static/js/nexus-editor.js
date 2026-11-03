@@ -817,7 +817,8 @@ $('addApplicationScreen')?.addEventListener('click',()=>{
 (function setupNexusRightFlyouts(){
  const backdrop=document.getElementById('nexus-flyout-backdrop');
  if(!backdrop)return;
- const triggers=[...document.querySelectorAll('.nexus-flyout-toolbar [data-nexus-flyout]')];
+ const triggers=[...(document.querySelectorAll?.('.nexus-flyout-toolbar [data-nexus-flyout]')||[])];
+ if(!triggers.length)return;
  const panels=triggers.map(button=>document.getElementById(button.getAttribute('aria-controls'))).filter(Boolean);
  let active=null,origin=null;
  function close(){
