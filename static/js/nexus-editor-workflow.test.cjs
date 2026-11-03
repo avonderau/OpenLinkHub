@@ -290,3 +290,22 @@ test('new widgets use the full 48 pixel Nexus height without modifying existing 
  }
  assert.equal(existing.widgets[0].height,24);
 });
+
+test('gradient controls edit a widget without changing its opacity',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'gradient_test',type:'text',x:0,y:0,width:80,height:40,settings:{text:'Demo',opacity:'60'}});
+ vm.runInContext("selected='gradient_test';render()",context);
+ const walk=(root,predicate)=>{
+  if(predicate(root))return root;
+  for(const child of root.children||[]){if(child&&typeof child==='object'){const found=walk(child,predicate);if(found)return found}}
+  return null;
+ };
+ const select=walk(node('properties'),x=>x.options?.some(option=>option.label==='Left to right'));
+ assert.ok(select);
+ select.value='horizontal';select.listeners.change();
+ assert.equal(screen.widgets[0].settings.gradientDirection,'horizontal');
+ assert.equal(screen.widgets[0].settings.opacity,'60');
+ assert.equal(screen.widgets[0].settings.gradientColor,'#0b1824');
+});

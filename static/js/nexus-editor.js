@@ -72,7 +72,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  display.style.backgroundSize=uploaded?'100% 100%':'';
  display.style.backgroundRepeat=uploaded?'no-repeat':'';
  display.style.filter='brightness('+(cfg.brightness||100)+'%)';
- for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.borderRadius=Math.min(Number(st.cornerRadius)||0,Math.floor(Math.min(w.width,w.height)/2))+'px';el.style.opacity=String((st.opacity===undefined?100:Number(st.opacity))/100);el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid');el.style.fontSize=st.fontSize==='small'?'10px':st.fontSize==='large'?'17px':'11px';el.style.textAlign=st.textAlign||'left';el.style.textShadow=st.textShadow==='soft'?'1px 1px 1px rgba(0,0,0,.7)':st.textShadow==='strong'?'2px 2px 2px rgba(0,0,0,.85)':'none';if((w.type==='text'||((w.type==='button'||w.type==='macro')&&!st.icon&&!st.customIcon))&&st.verticalAlign&&st.verticalAlign!=='top'){
+ for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');if((st.style||'solid')==='solid'&&['horizontal','vertical'].includes(st.gradientDirection))el.style.backgroundImage='linear-gradient('+(st.gradientDirection==='horizontal'?'90deg':'180deg')+','+(st.backgroundColor||'#1b2935')+','+(st.gradientColor||'#1b2935')+')';el.style.borderRadius=Math.min(Number(st.cornerRadius)||0,Math.floor(Math.min(w.width,w.height)/2))+'px';el.style.opacity=String((st.opacity===undefined?100:Number(st.opacity))/100);el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid');el.style.fontSize=st.fontSize==='small'?'10px':st.fontSize==='large'?'17px':'11px';el.style.textAlign=st.textAlign||'left';el.style.textShadow=st.textShadow==='soft'?'1px 1px 1px rgba(0,0,0,.7)':st.textShadow==='strong'?'2px 2px 2px rgba(0,0,0,.85)':'none';if((w.type==='text'||((w.type==='button'||w.type==='macro')&&!st.icon&&!st.customIcon))&&st.verticalAlign&&st.verticalAlign!=='top'){
  el.style.display='flex';el.style.alignItems=st.verticalAlign==='middle'?'center':'flex-end';el.style.justifyContent=st.textAlign==='right'?'flex-end':st.textAlign==='center'?'center':'flex-start'
  }}if(w.type==='graph')el.classList.add('nexus-graph-widget');el.textContent=w.type==='image'?'':w.type==='graph'?(w.settings?.label||'History: '+w.metric):w.type==='clock'?formatNexusClock(w.settings):w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro'||w.type==='image')&&w.settings?.customIcon){
   el.classList.add('nexus-icon-widget');
@@ -163,6 +163,22 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   opacityInput.addEventListener('change',()=>updateOpacity(opacityInput.value));
   opacityLabel.append(opacitySlider,opacityInput,'%');
   appearanceRow.append(opacityLabel);
+  const directionLabel=document.createElement('label');directionLabel.textContent='Gradient ';
+  const direction=document.createElement('select');direction.setAttribute('aria-label','Background gradient direction');
+  for(const [value,name] of [['none','None'],['horizontal','Left to right'],['vertical','Top to bottom']])direction.add(new Option(name,value));
+  direction.value=w.settings?.gradientDirection||'none';
+  direction.addEventListener('change',()=>{w.settings??={};w.settings.gradientDirection=direction.value;if(direction.value!=='none'&&!w.settings.gradientColor)w.settings.gradientColor='#0b1824';render()});
+  directionLabel.append(direction);appearanceRow.append(directionLabel);
+  if(direction.value!=='none'){
+   const label=document.createElement('label');label.textContent='Gradient end color ';
+   const input=document.createElement('input');input.type='color';
+   const candidate=w.settings?.gradientColor;
+   input.value=/^#[0-9a-fA-F]{6}$/.test(candidate||'')?candidate:'#0b1824';
+   input.setAttribute('aria-label','Gradient end color');
+   input.addEventListener('input',()=>{w.settings??={};w.settings.gradientColor=input.value;const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el)el.style.backgroundImage='linear-gradient('+(direction.value==='horizontal'?'90deg':'180deg')+','+(w.settings.backgroundColor||'#1b2935')+','+input.value+')'});
+   input.addEventListener('change',()=>{w.settings.gradientColor=input.value;render()});
+   label.append(input);appearanceRow.append(label);
+  }
  }
  if(['text','clock','metric','bar','graph','button','macro'].includes(w.type)){
   const control=(name,key,options)=>{
