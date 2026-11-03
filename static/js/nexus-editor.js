@@ -127,6 +127,48 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
 $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
 $('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
 $('screen').addEventListener('pointerup',()=>{drag=null;render()});$('screen').addEventListener('pointercancel',()=>{drag=null;render()});
+const editKeys=new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown']);
+$('screen').addEventListener('keydown',event=>{
+ const screen=current();if(!screen)return;
+ const focus=event.target;
+ if(focus!==$('screen')&&focus?.closest?.('input, textarea, select'))return;
+ const widgets=screen.widgets;
+ if(event.key==='['||event.key===']'){
+  if(!widgets.length)return;
+  event.preventDefault();
+  const at=widgets.findIndex(widget=>widget.id===selected);
+  const shift=event.key===']'?1:-1;
+  const index=at<0?(shift===1?0:widgets.length-1):(at+shift+widgets.length)%widgets.length;
+  selected=widgets[index].id;render();return;
+ }
+ if(event.key==='Escape'){event.preventDefault();selected=null;render();return}
+ const widget=widgets.find(item=>item.id===selected);
+ if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='c'&&widget){
+  event.preventDefault();$('copyWidget')?.click();return;
+ }
+ if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='v'&&copiedWidget){
+  event.preventDefault();$('pasteWidget')?.click();return;
+ }
+ if(!widget)return;
+ if(event.key==='Delete'&&!event.ctrlKey&&!event.metaKey){
+  event.preventDefault();$('deleteWidget')?.click();return;
+ }
+ if(!editKeys.has(event.key)||event.ctrlKey||event.altKey||event.metaKey)return;
+ event.preventDefault();
+ const horizontal=event.key==='ArrowLeft'||event.key==='ArrowRight';
+ const positive=event.key==='ArrowRight'||event.key==='ArrowDown';
+ const delta=positive?GRID:-GRID;
+ if(event.shiftKey){
+  if(horizontal){widget.width=snapSize(widget.width+delta,640-widget.x)}
+  else{widget.height=snapSize(widget.height+delta,48-widget.y)}
+ }else{
+  if(horizontal){widget.x=snapPosition(widget.x+delta,640-widget.width)}
+  else{widget.y=snapPosition(widget.y+delta,48-widget.height)}
+ }
+ render();
+ message('Widget position updated. Save Layout to apply.');
+});
+
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
 async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();refreshScreens();refreshWidgetLibrary();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));

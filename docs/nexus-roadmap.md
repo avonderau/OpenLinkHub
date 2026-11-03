@@ -249,3 +249,12 @@ histories. This endpoint exposes only finite, already-cached supported metrics
 returns empty history when the device sample is older than ten seconds. The
 browser polls only while the layout contains graph widgets and the page is
 visible, about once per 1.5 seconds. No simulated sensor values are shown.
+
+### Keyboard-accessible layout editing
+
+The Nexus display preview is focusable as an accessible group. In the editor,
+`[` and `]` cycle selected widgets, the arrow keys move the selected widget
+one 8-pixel grid step, Shift+arrow resizes within the display, and Delete
+removes the selection. Ctrl+C/Ctrl+V reuse the existing widget clipboard.
+Escape clears selection. Keyboard editing applies only when the preview is
+focused, so text inputs retain normal typing and arrow-key behavior.
