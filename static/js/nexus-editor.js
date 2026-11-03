@@ -25,7 +25,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
    input.addEventListener('input',()=>{
     widget.settings??={};widget.settings.label=input.value;
     const el=[...$('screen').children].find(el=>el.dataset.id===widget.id);
-    if(el){const icon=el.querySelector('.nexus-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
+    if(el){const icon=el.querySelector('.nexus-icon, .nexus-custom-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
    });
    label.append(input);status.append(label);
   }else{
@@ -34,7 +34,18 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  }
  if(!s)return;
  $('background').value=s.background||'';
- for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){el.classList.add('nexus-icon-widget');const glyph=document.createElement('span');glyph.className='nexus-icon';glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)}el.dataset.id=w.id;$('screen').append(el)}
+ for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
+  el.classList.add('nexus-icon-widget');
+  const picture=document.createElement('img');
+  picture.className='nexus-custom-icon';
+  picture.alt='';
+  picture.src='/api/nexus/icon?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(w.settings.customIcon);
+  picture.draggable=false;el.prepend(picture);
+ }else if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){
+  el.classList.add('nexus-icon-widget');
+  const glyph=document.createElement('span');glyph.className='nexus-icon';
+  glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)
+ }el.dataset.id=w.id;$('screen').append(el)}
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;
  const properties=$('properties');
  const dimensionsRow=document.createElement('div');dimensionsRow.className='nexus-properties-row nexus-dimensions-row';dimensionsRow.setAttribute('aria-label','Widget dimensions');
@@ -86,11 +97,38 @@ function renderTouchProperties(w,panel){
  if(w.type==='button'||w.type==='macro'){
   field('Style',w.settings?.style||'solid',[['solid','Solid'],['outline','Outline'],['flat','Transparent']],v=>{w.settings??={};w.settings.style=v});
  }
- field('Icon',w.settings?.icon||'none',[['none','No icon'],...Object.keys(mediaGlyphs).map(id=>[id,id])],v=>{w.settings??={};if(v==='none')delete w.settings.icon;else w.settings.icon=v});
+ field('Icon',w.settings?.customIcon?'custom':w.settings?.icon||'none',[['none','No icon'],...Object.keys(mediaGlyphs).map(id=>[id,id]),['custom','Custom image']],v=>{
+  w.settings??={};
+  if(v!=='custom')delete w.settings.customIcon;
+  if(v==='none'||v==='custom')delete w.settings.icon;else w.settings.icon=v;
+ });
+ if(w.settings?.customIcon || (!w.settings?.icon && !w.settings?.customIcon)){
+  const wrapper=document.createElement('label');wrapper.className='nexus-custom-icon-upload';
+  wrapper.textContent='Custom icon (PNG/JPEG) ';
+  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg';
+  file.setAttribute('aria-label','Upload custom icon');
+  wrapper.append(file);
+  const upload=document.createElement('button');upload.type='button';upload.textContent='Upload icon';
+  upload.onclick=async()=>{
+   const source=file.files?.[0];
+   if(!source)return message('Choose a PNG or JPEG icon first');
+   if(source.size>512*1024)return message('Icon exceeds 512 KiB');
+   if(!['image/png','image/jpeg'].includes(source.type))return message('Select a PNG or JPEG image');
+   upload.disabled=true;
+   try{
+    const id='icon_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+    const res=await fetch('/api/nexus/icon?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(id),{method:'POST',headers:{'Content-Type':source.type},body:source});
+    if(!res.ok)throw Error(await res.text());
+    w.settings??={};w.settings.customIcon=id;delete w.settings.icon;
+    render();message('Custom icon uploaded. Save Layout to apply it.');
+   }catch(e){message(e.message);upload.disabled=false}
+  };
+  panel.append(wrapper,upload);
+ }
  if(w.type==='button'){
-  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':'';if(v==='media'){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
+  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
   if(w.action==='screen')field('Target screen',w.target,targets,v=>w.target=v);
-  if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.icon||w.settings.icon===old){w.settings??={};w.settings.icon=v}});
+  if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.customIcon&&(!w.settings?.icon||w.settings.icon===old)){w.settings??={};w.settings.icon=v}});
  }
  if(w.type==='macro'||w.action==='macro'){
   const label=document.createElement('label');label.textContent='Macro steps (JSON) ';

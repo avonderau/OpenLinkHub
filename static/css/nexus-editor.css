@@ -93,3 +93,8 @@
 #nexus-editor .nexus-colors-row label{display:inline-flex;align-items:center;gap:.35rem;white-space:nowrap;margin:.15rem}
 #nexus-editor .nexus-style-row label{margin:.15rem}
 #nexus-editor .nexus-style-row textarea{max-width:100%}
+
+/* Uploaded Nexus icons are scaled to the physical 32px artwork size. */
+#nexus-editor .widget .nexus-custom-icon{width:32px;height:32px;max-width:calc(100% - 4px);max-height:calc(100% - 4px);object-fit:contain;pointer-events:none;flex-shrink:1}
+#nexus-editor .nexus-custom-icon-upload{display:inline-flex;align-items:center;gap:.35rem;flex-wrap:wrap}
+#nexus-editor .nexus-custom-icon-upload input[type=file]{width:min(230px,100%);margin:0}
