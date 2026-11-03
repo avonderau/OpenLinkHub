@@ -28,6 +28,10 @@ type MetricSnapshot map[string]float64
 // RenderScreen draws a validated screen to the Nexus's native 640x48 RGBA
 // framebuffer. It does not interact with HID and can be tested independently.
 func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
+ return renderNexusScreen(screen,values,nil)
+}
+
+func renderNexusScreen(screen Screen,values MetricSnapshot, iconDir string)(*image.RGBA,error){
  cfg:=ScreenConfiguration{Version:1,ActiveScreenID:screen.ID,Screens:[]Screen{screen}}
  if err:=cfg.Validate();err!=nil{return nil,err}
  canvas:=image.NewRGBA(image.Rect(0,0,ScreenWidth,ScreenHeight))
@@ -45,7 +49,23 @@ func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
   if label=="" {label=w.Metric}
   if w.Type=="text" {label=w.Settings["text"]}
   if w.Type=="button" || w.Type=="macro" {if label=="" && w.Settings["icon"]=="" {label="Touch"} }
-  if (w.Type=="button" || w.Type=="macro") && w.Settings["icon"]!="" && w.Settings["icon"]!="none" {
+  if (w.Type=="button" || w.Type=="macro") && w.Settings["customIcon"]!="" && iconDir!="" {
+   icon,err:=ReadCustomIcon(iconDir,w.Settings["customIcon"])
+   if err==nil {
+    size:=32
+    if max:=bounds.Dx()-4;max<size{size=max}
+    if max:=bounds.Dy()-4;max<size{size=max}
+    if size>0 {
+     cx:=(bounds.Min.X+bounds.Max.X)/2; cy:=(bounds.Min.Y+bounds.Max.Y)/2
+     if label!="" && bounds.Dy()>30 {cy-=5}
+     destination:=image.Rect(cx-size/2,cy-size/2,cx+(size+1)/2,cy+(size+1)/2).Intersect(bounds)
+     xdraw.CatmullRom.Scale(canvas,destination,icon,icon.Bounds(),draw.Over,nil)
+    }
+    if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),ink)}
+    continue
+   }
+  }
+  if (w.Type=="button" || w.Type=="macro") && w.Settings["icon"]!="" && w.Settings["icon"]!="none" && w.Settings["icon"]!="custom" {
    drawMediaIcon(canvas,bounds,w.Settings["icon"],ink)
    if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),ink)}
    continue
@@ -86,7 +106,11 @@ func clipText(s string,width int)string{
 // RenderScreenWithBackground composites a trusted, decoded image behind widgets.
 // Images are scaled to the exact Nexus framebuffer dimensions.
 func RenderScreenWithBackground(screen Screen, values MetricSnapshot, background image.Image)(*image.RGBA,error){
- frame,err:=RenderScreen(screen,values)
+ return RenderScreenWithBackgroundAndIcons(screen,values,background,"")
+}
+
+func RenderScreenWithBackgroundAndIcons(screen Screen,values MetricSnapshot,background image.Image,iconDir string)(*image.RGBA,error){
+ frame,err:=renderNexusScreen(screen,values,iconDir)
  if err!=nil||background==nil{return frame,err}
  base:=image.NewRGBA(frame.Bounds())
  xdraw.CatmullRom.Scale(base,base.Bounds(),background,background.Bounds(),draw.Src,nil)

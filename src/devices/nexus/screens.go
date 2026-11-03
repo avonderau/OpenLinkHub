@@ -101,6 +101,10 @@ func (c ScreenConfiguration) Validate() error {
      if val!="" && !validHexColor(val) {return fmt.Errorf("invalid %s for widget %q",key,w.ID)}
     }
    }
+   if v:=w.Settings["customIcon"];v!="" {
+    if w.Type!="button" && w.Type!="macro"{return fmt.Errorf("custom icons are only supported on buttons")}
+    if !safeID.MatchString(v){return fmt.Errorf("invalid custom icon ID for widget %q",w.ID)}
+   }
    if len(w.Settings)>16 {return errors.New("too many widget settings")}
    for k,v:=range w.Settings {if len(k)>64||len(v)>256 {return errors.New("widget setting too long")}}
   }

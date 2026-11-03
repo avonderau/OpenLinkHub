@@ -89,7 +89,7 @@ func (d *Device) renderCustomScreen() []byte {
   if screen.ID==c.ActiveScreenID {
    var background image.Image
    if screen.Background!="" {background,_=ReadBackground(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background)}
-   frame,err:=RenderScreenWithBackground(screen,values,background)
+   frame,err:=RenderScreenWithBackgroundAndIcons(screen,values,background,filepath.Join(pwd,"database","nexus","icons"))
    if err!=nil{return nil}
    return renderImageToBytes(frame)
   }
@@ -137,6 +137,15 @@ func (d *Device) SetCustomScreens(c ScreenConfiguration) error {
  if err:=SaveScreens(d.customScreenPath(),c);err!=nil{return err}
  d.customScreens=cloneScreenConfiguration(c)
  return nil
+}
+func (d *Device) SaveCustomIcon(id string,content []byte)(string,error){
+ return SaveCustomIcon(filepath.Join(pwd,"database","nexus","icons"),id,content)
+}
+func (d *Device) CustomIconPath(id string)(string,error){
+ if !safeID.MatchString(id){return "",fmt.Errorf("invalid icon ID")}
+ path:=filepath.Join(pwd,"database","nexus","icons",id+".png")
+ if _,err:=ReadCustomIcon(filepath.Dir(path),id);err!=nil{return "",err}
+ return path,nil
 }
 func (d *Device) SaveCustomBackground(id string,content []byte)(string,error){
  return SaveBackground(filepath.Join(pwd,"database","nexus","backgrounds"),id,content)
