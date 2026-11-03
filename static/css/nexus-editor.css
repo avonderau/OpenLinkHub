@@ -52,3 +52,10 @@
 #nexus-editor .nexus-icon-widget{display:flex;align-items:center;justify-content:center;gap:4px;padding:2px;color:#eaf6ff}
 #nexus-editor .nexus-icon{font-family:system-ui,sans-serif;font-size:20px;line-height:1;color:#d8f3ff;flex-shrink:0}
 #nexus-editor #mediaPreset{min-width:128px}
+
+/* Eight-pixel placement guides match snapping in nexus-editor.js. */
+#nexus-editor #screen{
+ background-color:#182b38;
+ background-image:linear-gradient(to right,rgba(155,195,215,.15) 1px,transparent 1px),linear-gradient(to bottom,rgba(155,195,215,.15) 1px,transparent 1px);
+ background-size:8px 8px;
+}
