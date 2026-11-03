@@ -44,7 +44,7 @@ func TestMediaButtonIconAppearsOnRenderedScreen(t *testing.T) {
 func TestStyledMacroButtonRender(t *testing.T){
  screen:=Screen{ID:"styled",Name:"Styled",Widgets:[]Widget{{
   ID:"action",Type:"button",X:0,Y:0,Width:96,Height:48,Action:"macro",
-  Steps:[]MacroStep{{Type:"media",Value:"play-pause"}},
+  Target:"1",
   Settings:map[string]string{"icon":"play-pause","backgroundColor":"#123456","textColor":"#aabbcc","borderColor":"#ff9900","style":"solid"},
  }}}
  result,err:=RenderScreen(screen,nil)
