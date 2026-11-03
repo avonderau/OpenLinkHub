@@ -66,6 +66,12 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
 <div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addImage">Add image</button><button id="addBar">Add bar</button><button id="addGraph">Add graph</button><button id="addClock">Add clock</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button></div>
 </fieldset>
+<fieldset class="nexus-panel nexus-application-screens"><legend>Automatic application screens</legend>
+<p class="nexus-panel-description">Requires OpenLinkHub Application Monitor and an enabled application profile. Enter its application ID; the selected Nexus screen will activate while that app runs and restore afterward.</p>
+<div class="nexus-app-controls"><label>Application ID <input id="applicationScreenID" type="text" maxlength="128" placeholder="Existing application profile ID"></label>
+<label>Show screen <select id="applicationScreenTarget"></select></label>
+<button id="addApplicationScreen" type="button">Add mapping</button></div>
+<div id="applicationScreenMappings" aria-live="polite"></div></fieldset>
 <fieldset id="nexus-selected-panel"><legend>Selected Widget</legend>
 <div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
 <div id="properties"></div>
