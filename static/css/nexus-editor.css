@@ -172,3 +172,7 @@
 #nexus-editor #nexus-keyboard-hint{color:var(--text-muted,#a1a1a1);font-size:.75rem;margin:.35rem 0 .65rem}
 
 .nexus-device-column #displayBrightness{color:var(--text-muted,#a1a1a1)}
+
+/* Keep controls editable; item alpha and radius are set per widget by the editor. */
+#nexus-editor .nexus-style-row input[type=number]{width:72px;min-width:0}
+#nexus-editor .widget{box-sizing:border-box;overflow:hidden}
