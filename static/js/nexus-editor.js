@@ -479,12 +479,13 @@ function renderTouchProperties(w,panel){
 
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;render()}
-$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addImage')?.addEventListener('click',()=>addWidget('image'));$('addBar').onclick=()=>addWidget('bar');$('addGraph')?.addEventListener('click',()=>addWidget('graph'));$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>{
- if(!Object.keys(nexusSharedMacros).length)return message('Create a macro in OpenLinkHub Macros first.');
- addWidget('button');
- const w=current()?.widgets.find(x=>x.id===selected);
- if(w){w.action='macro';w.target=Object.keys(nexusSharedMacros)[0];w.settings.label='Macro';render()}
+$('addMetric').onclick=()=>addWidget($('metricDisplayType')?.value==='bar'?'bar':'metric');
+$('addContent')?.addEventListener('click',()=>{
+ const type=$('contentWidgetType')?.value;
+ if(['text','image','clock'].includes(type))addWidget(type);
 });
+$('addGraph')?.addEventListener('click',()=>addWidget('graph'));
+$('addButton')?.addEventListener('click',()=>addWidget('button'));
 $('copyWidget')?.addEventListener('click',()=>{
  const source=current()?.widgets.find(w=>w.id===selected);
  if(!source)return;
@@ -803,3 +804,31 @@ $('screen')?.addEventListener('pointerdown',event=>{
 $('screen')?.addEventListener('pointerup',()=>{
  for(const item of $('screen').children)item.classList?.remove?.('nexus-pressed-preview');
 });
+
+/* Keep configuration in one panel rather than multiple overlapping flyouts. */
+(function setupNexusEditorTabs(){
+ const names=['background','applications','layout'];
+ const tabs=names.map(name=>$('nexus-tab-'+name));
+ const panels=names.map(name=>$('nexus-panel-'+name));
+ if(tabs.some(tab=>!tab)||panels.some(panel=>!panel))return;
+ function selectTab(index,focus=false){
+  names.forEach((_,i)=>{
+   const selected=i===index;
+   tabs[i].setAttribute('aria-selected',String(selected));
+   tabs[i].setAttribute('tabindex',selected?'0':'-1');
+   panels[i].hidden=!selected;
+  });
+  if(focus)tabs[index].focus();
+ }
+ tabs.forEach((tab,index)=>{
+  tab.addEventListener('click',()=>selectTab(index));
+  tab.addEventListener('keydown',event=>{
+   const offset=event.key==='ArrowRight'?1:event.key==='ArrowLeft'?-1:0;
+   if(offset===0&&event.key!=='Home'&&event.key!=='End')return;
+   event.preventDefault();
+   const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+offset+tabs.length)%tabs.length;
+   selectTab(next,true);
+  });
+ });
+ selectTab(0);
+})();
