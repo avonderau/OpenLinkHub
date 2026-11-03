@@ -48,6 +48,11 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   label:=w.Settings["label"]
   if label=="" {label=w.Metric}
   if w.Type=="text" {label=w.Settings["text"]}
+  if w.Type=="clock" {
+   if label!="" {writeWidgetText(canvas,w.X+3,w.Y+12,clipText(label,w.Width),ink)}
+   writeWidgetText(canvas,w.X+3,w.Y+27,clipText(formatNexusClock(w.Settings,time.Now()),w.Width),ink)
+   continue
+  }
   if w.Type=="button" || w.Type=="macro" {if label=="" && w.Settings["icon"]=="" && w.Settings["customIcon"]=="" {label="Touch"} }
   if (w.Type=="button" || w.Type=="macro") && w.Settings["customIcon"]!="" && iconDir!="" {
    icon,err:=ReadCustomIcon(iconDir,w.Settings["customIcon"])

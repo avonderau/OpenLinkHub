@@ -4,6 +4,13 @@ let cfg=null,selected=null,serial='',drag=null;
 const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate'];
 const GRID=8;
+function formatNexusClock(settings={},now=new Date()){
+ const value=settings.clockFormat||'24h';
+ if(value==='12h')return now.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',hour12:true});
+ if(value==='date')return now.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+ if(value==='datetime')return now.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+now.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',hour12:false});
+ return now.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',hour12:false});
+}
 const snap=(value)=>Math.round(value/GRID)*GRID;
 const clamp=(value,max)=>Math.max(0,Math.min(value,max));
 function uniqueID(prefix,used){
@@ -55,7 +62,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  display.style.backgroundImage=uploaded?'url("/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(s.background)+'")':'';
  display.style.backgroundSize=uploaded?'100% 100%':'';
  display.style.backgroundRepeat=uploaded?'no-repeat':'';
- for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
+ for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text','clock'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='clock'?formatNexusClock(w.settings):w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
   el.classList.add('nexus-icon-widget');
   const picture=document.createElement('img');
   picture.className='nexus-custom-icon';
@@ -74,11 +81,19 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  const styleRow=document.createElement('div');styleRow.className='nexus-properties-row nexus-style-row';styleRow.setAttribute('aria-label','Widget style and settings');
  properties.append(dimensionsRow,colorsRow,styleRow);
  const fields=(w.type==='button'||w.type==='macro')?[['x','number'],['y','number'],['width','number'],['height','number']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
- for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
+ for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='clock'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
  const label=document.createElement('label');label.textContent=key+' ';
  let input;if(type==='select'){input=document.createElement('select');for(const m of metrics)input.add(new Option(m,m));input.value=w.metric}else{input=document.createElement('input');input.type=type;input.value=(key in w?w[key]:(w.settings||{})[key])??''}
  input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=snapSize(v,640);if(key==='height')w.height=snapSize(v,48);if(key==='x')w.x=snapPosition(v,640-w.width);if(key==='y')w.y=snapPosition(v,48-w.height);w.x=snapPosition(w.x,640-w.width);w.y=snapPosition(w.y,48-w.height)}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);(['x','y','width','height'].includes(key)?dimensionsRow:styleRow).append(label)}
  renderWidgetColors(w,colorsRow);
+ if(w.type==='clock'){
+  const label=document.createElement('label');label.textContent='Clock format ';
+  const input=document.createElement('select');
+  for(const [value,title] of [['24h','24-hour time'],['12h','12-hour time'],['date','Date'],['datetime','Date and time']])input.add(new Option(title,value));
+  input.value=w.settings?.clockFormat||'24h';
+  input.addEventListener('change',()=>{w.settings??={};w.settings.clockFormat=input.value;render()});
+  label.append(input);styleRow.append(label);
+ }
  if(w.type==='button'||w.type==='macro')renderTouchProperties(w,styleRow);
 }
 $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
@@ -187,7 +202,7 @@ $('deleteScreen').onclick=()=>{
  message('Screen removed. Navigation links to it now point to '+cfg.screens[0].name+'. Save Layout to apply.');
 };
 function renderWidgetColors(w,panel){
- if(!['button','macro','metric','bar','text'].includes(w.type))return;
+ if(!['button','macro','metric','bar','text','clock'].includes(w.type))return;
  for(const [key,name,defaultColor] of [['backgroundColor','Background','#1b2935'],['textColor','Text & icon','#ebf5fc'],['borderColor','Border','#80bdd9']]){
   const label=document.createElement('label');label.textContent=name+' ';
   const input=document.createElement('input');input.type='color';input.value=w.settings?.[key]||defaultColor;
@@ -269,8 +284,8 @@ function renderTouchProperties(w,panel){
   const help=document.createElement('small');help.textContent='Step types: next, previous, screen (value: screen ID), media (value: play-pause, stop, volume-up, volume-down, next-track, previous-track), hotkey (value: Ctrl+Alt+T), mouse (value: left, double-left, right, middle, back, forward, scroll-up, scroll-down, scroll-left, scroll-right), delay (delayMs: 0–5000). Max 15 seconds total delays.';panel.append(help);
  }
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
-$('addMetric').onclick=()=>addWidget('metric');$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
+$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));
 $('duplicateWidget')?.addEventListener('click',()=>{
  const screen=current();if(!screen)return;
  const source=screen.widgets.find(w=>w.id===selected);
@@ -302,3 +317,13 @@ if ($('deviceId')) {
 } else if ($('device')) {
   loadDevices();
 }
+
+// Clock preview updates without re-rendering the editor or interrupting drag.
+function refreshNexusClockPreviews(){
+ const active=current();if(!active)return;
+ for(const el of $('screen').children){
+  const widget=active.widgets.find(w=>w.id===el.dataset.id);
+  if(widget?.type==='clock')el.textContent=formatNexusClock(widget.settings);
+ }
+}
+if(typeof setInterval==='function')setInterval(refreshNexusClockPreviews,1000);
