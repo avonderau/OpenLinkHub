@@ -407,3 +407,14 @@ test('site-wide fork theme loads after upstream CSS without replacing the upstre
  assert.match(overlay,/#nexus-editor #nexus-selected-panel/);
  assert.doesNotMatch(overlay,/!important\s*;?\s*\}\s*\*\s*\{/);
 });
+
+test('OpenLinkHub Nexus fork branding is present without renaming upstream routes',()=>{
+ const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
+ const sidebar=fs.readFileSync(path.join(__dirname,'..','..','web','sidebar.html'),'utf8');
+ const css=fs.readFileSync(path.join(__dirname,'..','css','openlinkhub-fork-theme.css'),'utf8');
+ assert.match(head,/<title>\{\{ \.Title \}\} \| OpenLinkHub Nexus<\/title>/);
+ assert.match(sidebar,/class="olh-fork-brand" aria-label="OpenLinkHub Nexus"/);
+ assert.match(sidebar,/id="sidebarToggle"/);
+ assert.match(sidebar,/href="\/macros"/);
+ assert.match(css,/\.sidebar\.collapsed \.olh-fork-brand \{display:none\}/);
+});
