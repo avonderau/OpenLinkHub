@@ -812,3 +812,64 @@ $('addApplicationScreen')?.addEventListener('click',()=>{
  refreshApplicationScreenMappings();
  message('Application screen mapping added. Save Layout to apply.');
 });
+
+
+(function setupNexusRightFlyouts(){
+ const backdrop=document.getElementById('nexus-flyout-backdrop');
+ if(!backdrop)return;
+ const triggers=[...document.querySelectorAll('.nexus-flyout-toolbar [data-nexus-flyout]')];
+ const panels=triggers.map(button=>document.getElementById(button.getAttribute('aria-controls'))).filter(Boolean);
+ let active=null,origin=null;
+ function close(){
+  if(!active)return;
+  active.hidden=true;active.classList.remove('nexus-flyout-docked');
+  active.style.right='';active.style.top='';active.style.width='';
+  active.setAttribute('aria-modal','true');
+  backdrop.hidden=true;
+  for(const trigger of triggers)trigger.setAttribute('aria-expanded','false');
+  active=null;
+  const focus=origin;origin=null;
+  focus?.focus?.();
+ }
+ function place(){
+  if(!active)return;
+  const editor=document.getElementById('nexus-editor')||document.getElementById('preview');
+  const rect=editor?.getBoundingClientRect?.();
+  const rightSpace=rect?window.innerWidth-rect.right:0;
+  const dock=rightSpace>=340;
+  active.classList.toggle('nexus-flyout-docked',dock);
+  active.setAttribute('aria-modal',dock?'false':'true');
+  backdrop.hidden=dock;
+  if(dock){
+   const width=Math.min(420,rightSpace-20);
+   active.style.width=width+'px';
+   active.style.right='12px';
+   active.style.top=Math.max(12,Math.min(rect.top,window.innerHeight-160))+'px';
+  }else{
+   active.style.width='';active.style.right='';active.style.top='';
+  }
+ }
+ for(const trigger of triggers)trigger.addEventListener('click',()=>{
+  const panel=document.getElementById(trigger.getAttribute('aria-controls'));
+  if(!panel)return;
+  if(active===panel){close();return}
+  close();
+  origin=trigger;active=panel;active.hidden=false;
+  trigger.setAttribute('aria-expanded','true');
+  place();active.focus();
+ });
+ for(const panel of panels){
+  panel.querySelector('.nexus-flyout-close')?.addEventListener('click',close);
+  panel.addEventListener('keydown',event=>{
+   if(event.key!=='Tab'||panel.classList.contains('nexus-flyout-docked'))return;
+   const elements=[...panel.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href]')].filter(el=>!el.hidden);
+   if(!elements.length){event.preventDefault();return}
+   const first=elements[0],last=elements[elements.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+  });
+ }
+ backdrop.addEventListener('click',close);
+ document.addEventListener('keydown',event=>{if(active&&event.key==='Escape'){event.preventDefault();close()}});
+ window.addEventListener('resize',place);
+})();
