@@ -239,3 +239,13 @@ or Bottom vertical alignment. The physical Nexus text baseline uses the actual
 selected font ascent/descent; the browser preview follows the same choice.
 This setting is optional and does not change existing saved layouts. Icon
 placement and multi-line clock/metric layout remain unchanged.
+
+### Live graph preview
+
+The integrated and standalone Nexus editors use a read-only
+`/api/nexus/telemetry?serial=...` endpoint to draw current 60-second graph
+histories. This endpoint exposes only finite, already-cached supported metrics
+(no new GPU/sysfs reads), preserves missing samples as JSON null gaps, and
+returns empty history when the device sample is older than ten seconds. The
+browser polls only while the layout contains graph widgets and the page is
+visible, about once per 1.5 seconds. No simulated sensor values are shown.
