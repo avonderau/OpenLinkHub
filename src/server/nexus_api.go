@@ -33,7 +33,7 @@ func nexusScreensAPI(w http.ResponseWriter,r *http.Request){
  }
  if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
  if !strings.HasPrefix(r.Header.Get("Content-Type"),"application/json"){http.Error(w,"JSON required",415);return}
- r.Body=http.MaxBytesReader(w,r.Body,1024*1024)
+ r.Body=http.MaxBytesReader(w,r.Body,nexus.MaxScreenConfigBytes)
  defer r.Body.Close()
  var cfg nexus.ScreenConfiguration
  dec:=json.NewDecoder(r.Body);dec.DisallowUnknownFields()
