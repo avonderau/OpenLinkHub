@@ -100,9 +100,9 @@ function renderTouchProperties(w,panel){
  field('Icon',w.settings?.customIcon?'custom':w.settings?.icon||'none',[['none','No icon'],...Object.keys(mediaGlyphs).map(id=>[id,id]),['custom','Custom image']],v=>{
   w.settings??={};
   if(v!=='custom')delete w.settings.customIcon;
-  if(v==='none'||v==='custom')delete w.settings.icon;else w.settings.icon=v;
+  if(v==='none')delete w.settings.icon;else w.settings.icon=v;
  });
- if(w.settings?.customIcon || (!w.settings?.icon && !w.settings?.customIcon)){
+ if(w.settings?.customIcon || w.settings?.icon==='custom'){
   const wrapper=document.createElement('label');wrapper.className='nexus-custom-icon-upload';
   wrapper.textContent='Custom icon (PNG/JPEG) ';
   const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg';
