@@ -56,6 +56,28 @@ function renderTouchProperties(w){
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id='widget_'+Date.now();const w={id,type,metric:(type==='text'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:150,height:40,settings:type==='text'?{text:'New text'}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
 $('addMetric').onclick=()=>addWidget('metric');$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
+const mediaPresets=[['previous-track','Previous'],['play-pause','Play/Pause'],['next-track','Next'],['stop','Stop'],['volume-down','Volume -'],['volume-up','Volume +']];
+let mediaID=0;
+function makeMediaWidget(action,x,width=98){
+ return {id:'media_'+Date.now()+'_'+(++mediaID),type:'button',x,y:0,width,height:48,action:'media',target:action,settings:{label:'',icon:action}};
+}
+$('addMediaButton')?.addEventListener('click',()=>{
+ const screen=current();if(!screen)return;
+ if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+ const width=98;let x=-1;
+ for(let pos=0;pos<=640-width;pos+=2){
+  if(screen.widgets.every(w=>!['button','macro'].includes(w.type)||pos+width<=w.x||pos>=w.x+w.width)){x=pos;break}
+ }
+ if(x<0)return message('No free touch-button space');
+ const widget=makeMediaWidget($('mediaPreset').value,x);screen.widgets.push(widget);selected=widget.id;render();
+});
+$('addMediaSet')?.addEventListener('click',()=>{
+ const screen=current();if(!screen)return;
+ if(screen.widgets.length+6>64)return message('Maximum 64 widgets');
+ if(screen.widgets.some(w=>['button','macro'].includes(w.type)))return message('Create the media set on a screen without existing touch buttons');
+ const widgets=mediaPresets.map(([action],i)=>makeMediaWidget(action,i*106,100));
+ screen.widgets.push(...widgets);selected=widgets[0].id;render();message('Six media buttons added. Save layout to apply.');
+});
 $('deleteWidget').onclick=()=>{const s=current();if(!s)return;s.widgets=s.widgets.filter(w=>w.id!==selected);selected=null;render()};
 $('background').onchange=()=>{const s=current();if(s)s.background=$('background').value.trim()};
 $('upload').onclick=async()=>{try{const f=$('image').files[0];if(!f||!current())return message('Choose an image and load a screen');if(f.size>4*1024*1024)throw Error('Image exceeds 4 MiB');const id='background_'+Date.now();const res=await fetch('/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+id,{method:'POST',headers:{'Content-Type':f.type},body:f});if(!res.ok)throw Error(await res.text());current().background=id;render();message('Background uploaded. Save layout to apply it.')}catch(e){message(e.message)}};
