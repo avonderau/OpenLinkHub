@@ -27,6 +27,16 @@ CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
 
 Do not use the upstream installer, PPA, Copr, or upstream releases if you intend to install this fork's experimental features. The legacy installation sections below document **upstream distribution channels**, not builds of this fork.
 
+## AI-Assisted Development
+
+This fork of OpenLinkHub is developed with assistance from OpenAI's ChatGPT.
+
+AI tools are used to assist with code development, debugging, testing, documentation, and identifying potential improvements. Development decisions, project direction, and acceptance of changes remain under human oversight.
+
+AI-generated or AI-assisted code should not be assumed to be free of defects. Contributions and changes are subject to testing and review, and some features may require validation on physical hardware.
+
+This project is independently maintained and is not affiliated with or endorsed by OpenAI, Corsair, or the original OpenLinkHub maintainers.
+
 ## Original project and attribution
 
 The original OpenLinkHub project was created and is maintained upstream by [Nikola Jurkovic](https://github.com/jurkovic-nikola/OpenLinkHub). This fork is not an official upstream release or an official Corsair product. Original copyright notices and the repository's GPL license remain in place.
