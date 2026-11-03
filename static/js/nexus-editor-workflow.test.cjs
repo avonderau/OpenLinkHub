@@ -67,14 +67,17 @@ test('the integrated and standalone editors have no separate starter template se
  }
 });
 
-test('Save Layout is prominent in the integrated Nexus page header',()=>{
+test('Save Screen stays in the compact toolbar while device settings remain available',()=>{
  const header=integrated.indexOf('class="nexus-page-heading"');
- const left=integrated.indexOf('nexus-device-column');
- const right=integrated.indexOf('nexus-editor-column');
+ const editor=integrated.indexOf('nexus-editor-column');
+ const toolbar=integrated.indexOf('class="nexus-screen-actions"');
  const save=integrated.indexOf('id="save"');
- assert.ok(header>=0 && save>header && save<left && left<right);
+ const preview=integrated.indexOf('class="nexus-preview-strip"');
+ assert.ok(header>=0 && editor>header && toolbar>editor && save>toolbar && preview>save);
  assert.equal(integrated.split('id="save"').length-1,1);
+ assert.match(integrated,/class="nexus-screen-overflow"/);
  assert.match(integrated,/class="nexus-device-settings"/);
+ assert.match(integrated,/id="cyclingSeconds"/);
  assert.match(style,/nexus-cycle-settings.*?--text-muted/s);
 });
 
@@ -427,7 +430,7 @@ test('approved mockup fidelity includes real icon-led visual controls, full-widt
  const shell=fs.readFileSync(path.join(__dirname,'openlinkhub-nexus-shell.js'),'utf8');
  assert.match(head,/\/static\/js\/openlinkhub-nexus-shell\.js/);
  assert.match(shell,/className='olh-app-topbar'/);
- assert.match(shell,/bi bi-layers-half/);
+ assert.match(shell,/bi bi-link-45deg/);
  assert.match(shell,/querySelector\('a\[href="\/settings"\]'\)/);
  for(const html of [integrated,standalone]){
   assert.match(html,/class="nexus-preview-heading"/);
@@ -446,4 +449,27 @@ test('approved mockup fidelity includes real icon-led visual controls, full-widt
  assert.match(overlay,/#nexus-editor #properties > \.nexus-property-section > summary/);
  assert.match(overlay,/#nexus-editor \.nexus-widget-actions button/);
  assert.match(standalone,/\/static\/css\/openlinkhub-fork-theme\.css/);
+});
+
+test('render fidelity styles load last and expose real compact controls',()=>{
+ const nexus=fs.readFileSync(path.join(__dirname,'..','..','web','nexus.html'),'utf8');
+ const source=fs.readFileSync(path.join(__dirname,'..','css','nexus-render-fidelity.css'),'utf8');
+ const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
+ assert.ok(nexus.indexOf('nexus-render-fidelity.css')>nexus.indexOf('nexus-editor.css'));
+ assert.match(standalone,/nexus-render-fidelity.css/);
+ assert.match(head,/openlinkhub-nexus-shell.js/);
+ assert.match(source,/\.nexus-preview-strip\s*\{/);
+ assert.match(source,/#nexus-editor #nexus-add-panel/);
+ assert.match(source,/grid-template-columns:165px minmax\(0,1fr\) 110px/);
+ assert.match(source,/#nexus-editor \.nexus-selected-hero/);
+ assert.match(source,/#nexus-editor #properties/);
+ for(const html of [integrated,standalone]){
+  assert.match(html,/id="nexusPreviewFullscreen"/);
+  assert.match(html,/class="nexus-selected-hero"/);
+  assert.match(html,/class="nexus-screen-overflow"/);
+  assert.match(html,/class="nexus-preview-strip"/);
+  for(const id of ['save','addScreen','duplicateScreen','moveScreenUp','moveScreenDown','renameScreen','deleteScreen','newScreenPreset','screens'])
+   assert.equal(html.split('id="'+id+'"').length-1,1,id+' must be unique');
+ }
+ assert.match(editorSource,/nexusPreviewFullscreen/);
 });
