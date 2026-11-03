@@ -12,6 +12,8 @@ import (
  "time"
 )
 func defaultCustomScreens() ScreenConfiguration {
+ // On a fresh device, use the same fully editable JSON screens offered in the editor.
+ if stock,err:=stockStarterScreens();err==nil{return stock}
  return ScreenConfiguration{Version:1,ActiveScreenID:"system",CyclingMode:"manual",CyclingSeconds:15,Screens:[]Screen{
  {ID:"system",Name:"System",Widgets:[]Widget{
  {ID:"cpu",Type:"metric",Metric:"cpu.temperature",X:75,Y:0,Width:150,Height:48,Settings:map[string]string{"label":"CPU","unit":" C"}},
