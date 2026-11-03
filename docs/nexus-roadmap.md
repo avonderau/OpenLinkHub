@@ -67,7 +67,7 @@ Existing saved JSON layouts remain valid across updates.
    device/system data.
 7. **Clock/date widgets [implemented; user-tested: basic formats]**: local date/time formatting, update cadence,
    timezone support and font fitting in 640 × 48.
-8. **History graphs**: bounded rolling sensor data, sparkline/area/line
+8. **History graphs [implemented: bounded 60-second sparklines]**: bounded rolling sensor data, sparkline/area/line
    widgets with explicit sampling intervals, memory caps and clipping.
 9. **Hardware actions**: only expose RGB/profile, fan/pump, headset and mouse
    DPI controls where the detected OpenLinkHub device safely supports them;
@@ -122,3 +122,12 @@ widgets display the host's local time with 24-hour, 12-hour, date, or
 date-and-time formatting. Additional rich typography, locale controls and
 additional cross-device compatibility tests remain on the roadmap. The existing keyboard/mouse actions
 do not imply that application launch or all iCUE macros are complete.
+
+### History graph implementation
+
+Graph widgets use real CPU/GPU, memory, network or disk telemetry from the
+same metrics as number/bar widgets. The per-device sampler retains at most
+60 one-second snapshots per metric. Missing data produces gaps rather than
+fabricated values. Utilization graphs use a fixed 0–100% axis; other metrics
+use their available sample range. The editor shows an indicative graph label
+because it does not stream live telemetry over the configuration API.
