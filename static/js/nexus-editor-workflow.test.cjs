@@ -121,3 +121,31 @@ test('pre-made JSON screens are normal screens to edit, add, replace and save',a
  assert.equal(writes.at(-1).screens[1].id,addedID);
  assert.equal(writes.at(-1).screens[1].background,'preset_pulse');
 });
+
+
+test('visual macro builder adds, moves and removes steps without raw JSON editing',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'macro_test',type:'macro',x:0,y:0,width:160,height:40,steps:[{type:'next'}],settings:{}});
+ vm.runInContext("selected='macro_test';render()",context);
+ const find=(root,predicate)=>{
+  if(predicate(root))return root;
+  for(const child of root.children||[]){const match=find(child,predicate);if(match)return match}
+  return null;
+ };
+ let editor=find(node('properties'),el=>el.className==='nexus-macro-editor');
+ assert.ok(editor,'visual macro editor is shown');
+ assert.equal(find(editor,el=>el.textContent==='Macro steps (JSON)'),null);
+ let add=find(editor,el=>el.textContent==='Add macro step');
+ assert.ok(add && !add.disabled);
+ add.listeners.click();
+ assert.equal(screen.widgets[0].steps.length,2);
+ editor=find(node('properties'),el=>el.className==='nexus-macro-editor');
+ let down=find(editor,el=>el.textContent==='Down'&&!el.disabled);
+ assert.ok(down,'move controls available');
+ let remove=find(editor,el=>el.textContent==='Remove'&&!el.disabled);
+ assert.ok(remove,'remove control available');
+ remove.listeners.click();
+ assert.equal(screen.widgets[0].steps.length,1);
+});
