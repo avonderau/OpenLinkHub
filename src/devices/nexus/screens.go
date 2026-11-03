@@ -122,7 +122,8 @@ func (c ScreenConfiguration) Validate() error {
      number,err:=strconv.Atoi(val);maximum:=24;if key=="opacity"{maximum=100}
      if err!=nil||number<0||number>maximum{return fmt.Errorf("invalid %s for widget %q",key,w.ID)}
     }
-    for _,key:=range []string{"backgroundColor","textColor","borderColor"}{
+    if direction:=w.Settings["gradientDirection"];direction!=""&&direction!="none"&&direction!="horizontal"&&direction!="vertical"{return fmt.Errorf("invalid widget gradient direction for %q",w.ID)}
+    for _,key:=range []string{"backgroundColor","gradientColor","textColor","borderColor"}{
      val:=w.Settings[key]
      if val!="" && !validHexColor(val) {return fmt.Errorf("invalid %s for widget %q",key,w.ID)}
     }
