@@ -5,7 +5,7 @@ globalThis.NexusLayoutFiles=(()=>{
  const safeID=/^[A-Za-z0-9_-]{1,64}$/;
  const hex=/^#[0-9A-Fa-f]{6}$/;
  const types=new Set(['text','metric','bar','graph','clock','button','macro']);
- const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate']);
+ const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization"]);
  const actions=new Set(['next','previous','screen','media','hotkey','mouse','url','application','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
  const mouse=new Set(['left','double-left','right','middle','back','forward','scroll-up','scroll-down','scroll-left','scroll-right']);

@@ -87,6 +87,21 @@ func (d *Device) renderCustomScreen() []byte {
    }
   }
  }
+ // Optional kernel telemetry is sampled at most once per second even if
+ // an animated background refreshes the framebuffer more frequently.
+ now:=time.Now()
+ d.mutex.Lock()
+ optional:=d.customSampler.extended
+ refreshOptional:=d.customSampler.extendedAt.IsZero()||now.Sub(d.customSampler.extendedAt)>=time.Second
+ d.mutex.Unlock()
+ if refreshOptional{
+  optional=ReadLinuxExtendedMetrics(defaultLinuxExtendedMetricPaths())
+  d.mutex.Lock()
+  d.customSampler.extended=optional
+  d.customSampler.extendedAt=now
+  d.mutex.Unlock()
+ }
+ for name,reading:=range optional{values[name]=reading}
  // Record 60 one-second samples per supported metric for sparkline widgets.
  d.mutex.Lock()
  d.customSampler.history.add(values,time.Now())

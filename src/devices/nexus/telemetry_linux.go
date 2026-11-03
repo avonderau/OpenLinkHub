@@ -26,6 +26,8 @@ type LinuxRates struct {
 }
 type CounterSampler struct {
  history metricHistory
+ extended MetricSnapshot
+ extendedAt time.Time
  previous LinuxCounters
  at time.Time
  initialized bool
