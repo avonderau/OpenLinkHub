@@ -67,12 +67,14 @@ test('the integrated and standalone editors have no separate starter template se
  }
 });
 
-test('Save Layout belongs to the integrated device settings card',()=>{
+test('Save Layout is prominent in the integrated Nexus page header',()=>{
+ const header=integrated.indexOf('class="nexus-page-heading"');
  const left=integrated.indexOf('nexus-device-column');
  const right=integrated.indexOf('nexus-editor-column');
  const save=integrated.indexOf('id="save"');
- assert.ok(left>=0 && save>left && save<right);
+ assert.ok(header>=0 && save>header && save<left && left<right);
  assert.equal(integrated.split('id="save"').length-1,1);
+ assert.match(integrated,/class="nexus-device-settings"/);
  assert.match(style,/nexus-cycle-settings.*?--text-muted/s);
 });
 
@@ -417,4 +419,31 @@ test('OpenLinkHub Nexus fork branding is present without renaming upstream route
  assert.match(sidebar,/id="sidebarToggle"/);
  assert.match(sidebar,/\( \.Dict "page" "macros" "url" "\/macros"/);
  assert.match(css,/\.sidebar\.collapsed \.olh-fork-brand \{display:none\}/);
+});
+
+test('approved mockup fidelity includes real icon-led visual controls, full-width editor and branded site header',()=>{
+ const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
+ const overlay=fs.readFileSync(path.join(__dirname,'..','css','openlinkhub-fork-theme.css'),'utf8');
+ const shell=fs.readFileSync(path.join(__dirname,'openlinkhub-nexus-shell.js'),'utf8');
+ assert.match(head,/\/static\/js\/openlinkhub-nexus-shell\.js/);
+ assert.match(shell,/className='olh-app-topbar'/);
+ assert.match(shell,/bi bi-layers-half/);
+ assert.match(shell,/querySelector\('a\[href="\/settings"\]'\)/);
+ for(const html of [integrated,standalone]){
+  assert.match(html,/class="nexus-preview-heading"/);
+  assert.match(html,/class="bi bi-display"/);
+  assert.match(html,/class="bi bi-plus-square"/);
+  assert.match(html,/class="bi bi-sliders2"/);
+  assert.match(html,/class="bi bi-speedometer2"/);
+  assert.match(html,/class="bi bi-copy"/);
+  assert.match(html,/class="bi bi-trash3"/);
+  for(const tab of ['widget','library','background','layout','applications'])
+   assert.match(html,new RegExp('id="nexus-tab-'+tab+'"[^>]*><i class="bi bi-'));
+ }
+ assert.ok(integrated.indexOf('class="nexus-page-heading"')<integrated.indexOf('id="preview"'));
+ assert.ok(integrated.indexOf('id="preview"')<integrated.indexOf('class="nexus-editor-tabs"'));
+ assert.match(overlay,/\.nexus-workspace\s*\{\s*display:grid!important;\s*grid-template-columns:minmax\(0,1fr\)!important/);
+ assert.match(overlay,/#nexus-editor #properties > \.nexus-property-section > summary/);
+ assert.match(overlay,/#nexus-editor \.nexus-widget-actions button/);
+ assert.match(standalone,/\/static\/css\/openlinkhub-fork-theme\.css/);
 });
