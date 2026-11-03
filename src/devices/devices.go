@@ -959,3 +959,14 @@ func initializeDevice(productId uint16, key, productPath string) {
 		}
 	}
 }
+
+// Register only explicitly supported Nexus actions. The Nexus package does not
+// import the device registry, avoiding a package cycle and arbitrary dispatch.
+func init(){
+ nexus.RegisterHardwareActionHandler(func(action string){
+  switch action {
+  case "rgb-on": ControlDeviceRgb(true)
+  case "rgb-off": ControlDeviceRgb(false)
+  }
+ })
+}
