@@ -106,7 +106,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <button id="duplicateScreen" type="button">Duplicate screen</button>
 <button id="deleteScreen" type="button">Delete screen</button>
 </div>
-<div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
+<div class="nexus-preview-heading"><div><strong>Screen Preview</strong><small>640 × 48 pixels · Select a widget to edit</small></div><span class="nexus-preview-resolution">640 × 48</span></div><div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
 <p id="nexus-keyboard-hint" class="nexus-panel-description">Keyboard editing: [ / ] select widget, arrows move, Shift + arrows resize, Delete removes, Ctrl + C/V copies and pastes.</p>
 <section class="nexus-editor-tabs" aria-label="Nexus editor workspace"><div class="nexus-editor-tablist" role="tablist" aria-label="Nexus editor sections"><button type="button" id="nexus-tab-widget" role="tab" aria-controls="nexus-panel-widget" aria-selected="true" tabindex="0">Widget</button>
 <button type="button" id="nexus-tab-library" role="tab" aria-controls="nexus-panel-library" aria-selected="false" tabindex="-1">Widget library</button>
@@ -118,7 +118,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <div class="nexus-create-actions"><button id="addMetric" type="button">Add Metric</button><button id="addContent" type="button">Add Content</button><button id="addButton" type="button">Add Button</button></div>
 </fieldset>
 
-<fieldset id="nexus-selected-panel"><legend>Selected Widget</legend>
+<fieldset id="nexus-selected-panel"><legend>Selected Widget</legend><p class="nexus-selected-description">Configure the selected widget’s size, appearance, content, and actions.</p>
 <div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
 <div id="properties"></div>
 <div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
