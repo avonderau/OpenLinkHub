@@ -289,3 +289,15 @@ with clipping inside each widget rectangle. The default None leaves all
 previous layouts visually unchanged. The browser preview reflects the same
 setting. This is not a general CSS-effects interpreter; unsupported values
 are rejected on layout save, import and widget preset validation.
+
+### Non-interactive image widgets
+
+A new Image widget displays a user-uploaded PNG/JPEG or animated GIF directly
+on a Nexus screen without handling touches. It reuses the existing 512 KiB
+custom icon upload API, 32×32 normalization and bounded GIF frame decoder.
+The image is aspect-fitted within its widget bounds, with a transparent
+background option. Animated images update through the existing animated-icon
+refresh detection, at up to five framebuffer updates per second. The icon API
+remains limited to its normalized resolution; large image widgets may look
+soft rather than retaining the source resolution. Existing touch-button icons
+and backgrounds are unaffected.

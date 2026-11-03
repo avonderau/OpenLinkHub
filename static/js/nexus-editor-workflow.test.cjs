@@ -213,3 +213,23 @@ test('software dimming remains full by default and saves a selected level',async
  await node('save').onclick();
  assert.equal(writes.at(-1).brightness,40);
 });
+
+
+test('image widgets are separate from touch buttons and expose image upload',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ node('addImage').listeners.click();
+ const widget=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
+ assert.equal(widget.type,'image');
+ assert.equal(widget.settings.style,'flat');
+ assert.equal(widget.settings.icon,'custom');
+ assert.equal(widget.metric,'');
+ const find=(root,predicate)=>{
+  if(predicate(root))return root;
+  for(const child of root.children||[]){const value=find(child,predicate);if(value)return value}
+  return null;
+ };
+ assert.ok(find(node('properties'),element=>element.textContent==='Upload icon'),
+  'custom image upload control not available');
+ assert.equal(widget.action,undefined,'non-interactive images must not have a touch action');
+});

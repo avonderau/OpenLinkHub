@@ -5,7 +5,7 @@ globalThis.NexusLayoutFiles=(()=>{
  const safeID=/^[A-Za-z0-9_-]{1,64}$/;
  const hex=/^#[0-9A-Fa-f]{6}$/;
  const printableText=/^[ -~]{1,80}$/;
- const types=new Set(['text','metric','bar','graph','clock','button','macro']);
+ const types=new Set(['text','metric','bar','graph','clock','image','button','macro']);
  const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"]);
  const actions=new Set(['next','previous','screen','media','hotkey','mouse','url','application','text','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
@@ -69,7 +69,7 @@ globalThis.NexusLayoutFiles=(()=>{
     if(!['',undefined,'normal','small','large'].includes(settings.fontSize))throw Error('Unsupported widget font size');
     if(!['',undefined,'left','center','right'].includes(settings.textAlign))throw Error('Unsupported widget text alignment');
     for(const key of ['textColor','backgroundColor','borderColor'])if(settings[key]&&!hex.test(settings[key]))throw Error('Invalid widget color');
-    if(settings.customIcon&&(!safeID.test(settings.customIcon)||!['button','macro'].includes(widget.type)))throw Error('Invalid custom icon');
+    if(settings.customIcon&&(!safeID.test(settings.customIcon)||!['button','macro','image'].includes(widget.type)))throw Error('Invalid custom icon');
     if(widget.type==='clock'&&!['',undefined,'24h','12h','date','datetime'].includes(settings.clockFormat))throw Error('Invalid clock format');
     if(widget.type==='button'){
      if(!actions.has(widget.action))throw Error('Unsupported touch action');
