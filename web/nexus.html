@@ -60,13 +60,13 @@
                 <div class="nexus-editor-column">
                     <section id="nexus-editor" class="card system-card"><div class="card-body">
 
-<h2 class="mb-2">NEXUS Screen Editor</h2>
-<p class="text-secondary">Arrange screens and widgets for your 640 × 48 iCUE NEXUS display.</p>
+<div class="nexus-editor-heading"><h2 class="mb-0">NEXUS Screen Editor</h2><button id="save" type="button">Save Layout</button></div>
+<p class="text-secondary">Arrange screens and widgets for your 640 × 48 iCUE NEXUS display.</p><p id="message" role="status" aria-live="polite"></p>
 <label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="deleteScreen">Delete screen</button>
 <div id="preview"><div id="screen"></div></div>
 <fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
-<div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button><label>Media <select id="mediaPreset"><option value="previous-track">Previous</option><option value="play-pause" selected>Play/Pause</option><option value="next-track">Next</option><option value="stop">Stop</option><option value="volume-down">Volume -</option><option value="volume-up">Volume +</option></select></label><button id="addMediaButton">Add media button</button><button id="addMediaSet">Add media controls</button></div>
+<div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button></div>
 </fieldset>
 <fieldset class="nexus-panel" id="nexus-selected-panel"><legend>Selected Widget</legend>
 <p id="selectedWidgetStatus" class="nexus-panel-description" role="status">Select a widget in the preview to edit it.</p>
@@ -75,7 +75,7 @@
 </fieldset>
 <fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG <input type="file" id="image" accept="image/png,image/jpeg"></label><button id="upload">Upload and apply</button></fieldset>
-<button id="save">Save layout</button><p id="message" role="status"></p>
+
 
 </div></section>
                 </div>
