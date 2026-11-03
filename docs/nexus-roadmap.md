@@ -54,7 +54,7 @@ Existing saved JSON layouts remain valid across updates.
 4. **Application and URL actions [first Linux implementation]**: launch only explicitly approved desktop
    entries or executables; validate http/https links. Never use a shell for
    arbitrary user-provided command lines. Require user control and safe errors.
-5. **Visual macro builder**: step list rather than raw JSON, including
+5. **Visual macro builder [editable visual steps implemented]**: step list rather than raw JSON, including
    navigation, media, hotkeys, mouse, approved launch and bounded waits.
    Validate total duration and ensure no stuck keys on cancel.
 
@@ -219,3 +219,15 @@ sampled once per second, while background/icon animation continues at its
 normal bounded frame rate. HID touch dispatch and screen changes are not held
 behind system metric polling. Hardware testing should confirm that animated
 screens remain responsive under GPU monitoring load.
+
+### Printable text-entry touch actions
+
+Nexus buttons and macro steps can now type up to 80 printable US keyboard
+layout ASCII characters through the existing virtual keyboard. Supported
+letters, numbers, punctuation and spaces are mapped to explicit key codes;
+shifted characters press and release Shift around each character. Unsupported
+Unicode/control characters and multiline input are rejected at configuration
+validation and JSON import. Text is stored **in plain text** inside the layout
+JSON. Do not use text-entry actions for passwords, API tokens or other secrets.
+The type action is intentionally bounded and never executes the entered text
+as a shell command.
