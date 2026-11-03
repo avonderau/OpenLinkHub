@@ -156,6 +156,10 @@ func (d *Device) GetCustomScreens() ScreenConfiguration {
 }
 func cloneScreenConfiguration(c ScreenConfiguration) ScreenConfiguration {
  out:=c
+ if c.ApplicationScreens!=nil{
+  out.ApplicationScreens=make(map[string]string,len(c.ApplicationScreens))
+  for id,screen:=range c.ApplicationScreens{out.ApplicationScreens[id]=screen}
+ }
  out.Screens=make([]Screen,len(c.Screens))
  for i,s:=range c.Screens {
   out.Screens[i]=s
@@ -177,6 +181,7 @@ func (d *Device) SetCustomScreens(c ScreenConfiguration) error {
  defer d.mutex.Unlock()
  if err:=SaveScreens(d.customScreenPath(),c);err!=nil{return err}
  d.customScreens=cloneScreenConfiguration(c)
+ d.recomputeNexusApplicationScreenLocked()
  return nil
 }
 func (d *Device) SaveCustomIcon(id string,content []byte)(string,error){
@@ -197,10 +202,43 @@ func (d *Device) SaveCustomBackground(id string,content []byte)(string,error){
  return SaveBackground(filepath.Join(pwd,"database","nexus","backgrounds"),id,content)
 }
 
+// SetNexusApplicationActive is called by the existing appmonitor dispatcher
+// for configured applications only; saved layout state is not modified.
+func (d *Device) SetNexusApplicationActive(id string,active bool){
+ if !safeNexusAppID.MatchString(id){return}
+ d.mutex.Lock()
+ defer d.mutex.Unlock()
+ if _,mapped:=d.customScreens.ApplicationScreens[id];!mapped{return}
+ if active{
+  if len(d.activeNexusApps)==0{d.preApplicationScreen=d.customScreens.ActiveScreenID}
+  for i,v:=range d.activeNexusApps {if v==id{d.activeNexusApps=append(d.activeNexusApps[:i],d.activeNexusApps[i+1:]...);break}}
+  d.activeNexusApps=append(d.activeNexusApps,id)
+ }else{
+  for i,v:=range d.activeNexusApps {if v==id{d.activeNexusApps=append(d.activeNexusApps[:i],d.activeNexusApps[i+1:]...);break}}
+ }
+ d.recomputeNexusApplicationScreenLocked()
+}
+func (d *Device) recomputeNexusApplicationScreenLocked(){
+ for i:=len(d.activeNexusApps)-1;i>=0;i--{
+  target,ok:=d.customScreens.ApplicationScreens[d.activeNexusApps[i]]
+  if !ok{continue}
+  for _,screen:=range d.customScreens.Screens{
+   if screen.ID==target{d.customScreens.ActiveScreenID=target;d.lastCycle=time.Now();return}
+  }
+ }
+ if len(d.activeNexusApps)==0&&d.preApplicationScreen!=""{
+  for _,screen:=range d.customScreens.Screens{
+   if screen.ID==d.preApplicationScreen{d.customScreens.ActiveScreenID=d.preApplicationScreen;break}
+  }
+  d.preApplicationScreen=""
+  d.lastCycle=time.Now()
+ }
+}
 func (d *Device) advanceAutomaticScreen(now time.Time) {
  d.mutex.Lock()
  defer d.mutex.Unlock()
  c:=&d.customScreens
+ if len(d.activeNexusApps)>0 {d.lastCycle=now;return}
  if c.CyclingMode!="automatic" || len(c.Screens)<2 || c.CyclingSeconds<5 {d.lastCycle=now;return}
  if d.lastCycle.IsZero() {d.lastCycle=now;return}
  if now.Sub(d.lastCycle)<time.Duration(c.CyclingSeconds)*time.Second{return}
