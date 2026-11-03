@@ -74,10 +74,14 @@ func inspectGIF(data []byte)(int,int,int,error){
    if err:=skipBlocks();err!=nil{return 0,0,0,err}
   case 0x2c:
    if len(data)-offset<9{return 0,0,0,io.ErrUnexpectedEOF}
+   left:=int(data[offset])|int(data[offset+1])<<8
+   top:=int(data[offset+2])|int(data[offset+3])<<8
    frameWidth:=int(data[offset+4])|int(data[offset+5])<<8
    frameHeight:=int(data[offset+6])|int(data[offset+7])<<8
    packed:=data[offset+8];offset+=9
-   if frameWidth<1||frameHeight<1{return 0,0,0,errors.New("invalid GIF frame size")}
+   if frameWidth<1||frameHeight<1||left+frameWidth>width||top+frameHeight>height{
+    return 0,0,0,errors.New("GIF frame exceeds logical canvas")
+   }
    if packed&0x80!=0{offset+=3*(1<<((packed&7)+1))}
    if offset>=len(data){return 0,0,0,io.ErrUnexpectedEOF}
    offset++ // LZW minimum code size

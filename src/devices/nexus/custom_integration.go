@@ -14,14 +14,25 @@ func (d *Device) refreshCustomLCD() {
  // update rate for every other screen and all other LCD modes.
  d.mutex.Lock()
  activeBackground:=""
+ var activeWidgets []Widget
  for _,screen:=range d.customScreens.Screens{
-  if screen.ID==d.customScreens.ActiveScreenID{activeBackground=screen.Background;break}
+  if screen.ID==d.customScreens.ActiveScreenID{
+   activeBackground=screen.Background
+   activeWidgets=screen.Widgets
+   break
+  }
  }
  d.mutex.Unlock()
- refresh:=time.Duration(lcdRefreshInterval)*time.Millisecond
- if IsAnimatedBackground(filepath.Join(pwd,"database","nexus","backgrounds"),activeBackground){
-  refresh=200*time.Millisecond
+ animated:=IsAnimatedBackground(filepath.Join(pwd,"database","nexus","backgrounds"),activeBackground)
+ if !animated{
+  dir:=filepath.Join(pwd,"database","nexus","icons")
+  for _,widget:=range activeWidgets{
+   id:=widget.Settings["customIcon"]
+   if id!=""&&IsAnimatedCustomIcon(dir,id){animated=true;break}
+  }
  }
+ refresh:=time.Duration(lcdRefreshInterval)*time.Millisecond
+ if animated{refresh=200*time.Millisecond}
  d.lcdTimer.Reset(refresh)
  if frame:=d.renderCustomScreen();frame!=nil {d.transfer(frame)}
 }

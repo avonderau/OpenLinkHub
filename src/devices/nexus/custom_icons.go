@@ -5,7 +5,7 @@ import (
  "fmt"
  "image"
  "image/png"
- "io"
+ "time"
  "os"
  "path/filepath"
 
@@ -14,15 +14,32 @@ import (
 
 const maxCustomIconBytes = 512 * 1024
 
-// SaveCustomIcon decodes a bounded PNG/JPEG and stores it as a normalized PNG.
+// SaveCustomIcon stores bounded PNG/JPEG artwork as 32x32 PNG, or retains
+// safe GIF artwork for animated rendering on the Nexus.
 // Stored IDs, rather than user-provided filenames, are referenced by widgets.
 func SaveCustomIcon(dir,id string,contents []byte)(string,error){
  if !safeID.MatchString(id){return "",fmt.Errorf("invalid icon ID")}
  if len(contents)==0 || len(contents)>maxCustomIconBytes{return "",fmt.Errorf("icon must be at most 512 KiB")}
  config,format,err:=image.DecodeConfig(bytes.NewReader(contents))
  if err!=nil{return "",fmt.Errorf("invalid icon: %w",err)}
- if format!="png" && format!="jpeg"{return "",fmt.Errorf("only PNG and JPEG icons are supported")}
+ if format!="png" && format!="jpeg" && format!="gif"{return "",fmt.Errorf("only PNG, JPEG or GIF icons are supported")}
  if config.Width<1||config.Height<1||config.Width>512||config.Height>512{return "",fmt.Errorf("icon dimensions must be 1 to 512 pixels")}
+ if format=="gif"{
+  if _,err:=decodeAnimatedCustomIcon(contents);err!=nil{return "",fmt.Errorf("invalid animated icon: %w",err)}
+  if err=os.MkdirAll(dir,0700);err!=nil{return "",err}
+  temp,err:=os.CreateTemp(dir,".nexus-icon-*")
+  if err!=nil{return "",err}
+  defer os.Remove(temp.Name())
+  if err=temp.Chmod(0600);err!=nil{temp.Close();return "",err}
+  if _,err=temp.Write(contents);err!=nil{temp.Close();return "",err}
+  if err=temp.Sync();err!=nil{temp.Close();return "",err}
+  if err=temp.Close();err!=nil{return "",err}
+  path:=filepath.Join(dir,id+".gif")
+  if err=os.Rename(temp.Name(),path);err!=nil{return "",err}
+  _=os.Remove(filepath.Join(dir,id+".png"))
+  invalidateCustomIconCache(dir,id)
+  return path,nil
+ }
  source,_,err:=image.Decode(bytes.NewReader(contents))
  if err!=nil{return "",fmt.Errorf("invalid icon pixels: %w",err)}
  // Fit the artwork in a 32x32 RGBA image while retaining transparency and aspect ratio.
@@ -43,19 +60,11 @@ func SaveCustomIcon(dir,id string,contents []byte)(string,error){
  if err=f.Close();err!=nil{return "",err}
  path:=filepath.Join(dir,id+".png")
  if err=os.Rename(f.Name(),path);err!=nil{return "",err}
+ _=os.Remove(filepath.Join(dir,id+".gif"))
+ invalidateCustomIconCache(dir,id)
  return path,nil
 }
 
 func ReadCustomIcon(dir,id string)(image.Image,error){
- if !safeID.MatchString(id){return nil,fmt.Errorf("invalid icon ID")}
- f,err:=os.Open(filepath.Join(dir,id+".png"))
- if err!=nil{return nil,err}
- defer f.Close()
- stat,err:=f.Stat()
- if err!=nil{return nil,err}
- if stat.Size()>maxCustomIconBytes{return nil,fmt.Errorf("stored icon too large")}
- img,err:=png.Decode(io.LimitReader(f,maxCustomIconBytes))
- if err!=nil{return nil,err}
- if img.Bounds().Dx()!=32||img.Bounds().Dy()!=32{return nil,fmt.Errorf("invalid stored icon dimensions")}
- return img,nil
+ return ReadCustomIconAt(dir,id,time.Now())
 }

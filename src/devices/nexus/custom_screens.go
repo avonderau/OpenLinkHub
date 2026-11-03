@@ -168,8 +168,10 @@ func (d *Device) SaveCustomIcon(id string,content []byte)(string,error){
 }
 func (d *Device) CustomIconPath(id string)(string,error){
  if !safeID.MatchString(id){return "",fmt.Errorf("invalid icon ID")}
- path:=filepath.Join(pwd,"database","nexus","icons",id+".png")
- if _,err:=ReadCustomIcon(filepath.Dir(path),id);err!=nil{return "",err}
+ dir:=filepath.Join(pwd,"database","nexus","icons")
+ path,err:=customIconFilePath(dir,id)
+ if err!=nil{return "",err}
+ if _,err=ReadCustomIcon(dir,id);err!=nil{return "",err}
  return path,nil
 }
 func (d *Device) CustomBackgroundPath(id string)(string,error){
