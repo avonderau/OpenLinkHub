@@ -38,6 +38,8 @@ var (
 	mutex               sync.Mutex
 	dispatch            dispatcher.DeviceDispatcher
 	manual              = make(map[string]ApplicationProfile)
+ nexusObserver func(string,bool)
+ nexusObserverMu sync.RWMutex
 )
 
 // Init starts application monitoring.
@@ -85,6 +87,7 @@ func Init() {
 						dispatch(serial, "ChangeDeviceProfile", profileName)
 					}
 					delete(running, id)
+                    notifyNexusApplication(id,false)
 					logger.Log(logger.Fields{"applicationId": id}).Info("Application stopped")
 				}
 
@@ -108,6 +111,7 @@ func Init() {
 					}
 
 					running[id] = profile
+                    notifyNexusApplication(id,true)
 					logger.Log(logger.Fields{"applicationId": id}).Info("Application started")
 				}
 			}
@@ -442,4 +446,18 @@ func scan() (map[string]bool, error) {
 	}
 
 	return running, nil
+}
+
+// SetNexusApplicationObserver forwards the existing application monitor's
+// process start/stop transitions. No additional process polling is performed.
+func SetNexusApplicationObserver(observer func(string,bool)){
+ nexusObserverMu.Lock()
+ nexusObserver=observer
+ nexusObserverMu.Unlock()
+}
+func notifyNexusApplication(id string,active bool){
+ nexusObserverMu.RLock()
+ fn:=nexusObserver
+ nexusObserverMu.RUnlock()
+ if fn!=nil {fn(id,active)}
 }

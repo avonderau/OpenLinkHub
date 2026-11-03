@@ -84,6 +84,12 @@
 <div id="properties"></div>
 <div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
 </fieldset>
+<fieldset class="nexus-panel nexus-application-screens"><legend>Automatic application screens</legend>
+<p class="nexus-panel-description">Requires OpenLinkHub Application Monitor and an enabled application profile. Enter its application ID; the selected Nexus screen will activate while that app runs and restore afterward.</p>
+<div class="nexus-app-controls"><label>Application ID <input id="applicationScreenID" type="text" maxlength="128" placeholder="Existing application profile ID"></label>
+<label>Show screen <select id="applicationScreenTarget"></select></label>
+<button id="addApplicationScreen" type="button">Add mapping</button></div>
+<div id="applicationScreenMappings" aria-live="polite"></div></fieldset>
 <fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
 <p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
 <div class="nexus-widget-library-actions">

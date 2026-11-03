@@ -35,7 +35,7 @@ const snapPosition=(value,max)=>clamp(snap(value),Math.floor(max/GRID)*GRID);
 const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
 function message(t){$('message').textContent=t}
 function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
-function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render()}
+function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render();refreshApplicationScreenMappings()}
 function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();refreshActionButtons();
  const widget=s?.widgets.find(w=>w.id===selected);
  const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
@@ -359,6 +359,7 @@ $('deleteScreen').onclick=()=>{
    for(const step of w.steps||[])if(step.type==='screen'&&step.value===removed)step.value=fallback;
   }
  }
+ for(const [appID,target] of Object.entries(cfg.applicationScreens||{}))if(target===removed)cfg.applicationScreens[appID]=fallback;
  cfg.activeScreenId=fallback;selected=null;refreshScreens();
  message('Screen removed. Navigation links to it now point to '+cfg.screens[0].name+'. Save Layout to apply.');
 };
@@ -782,3 +783,32 @@ function refreshNexusClockPreviews(){
  }
 }
 if(typeof setInterval==='function')setInterval(refreshNexusClockPreviews,1000);
+
+function refreshApplicationScreenMappings(){
+ const list=$('applicationScreenMappings');
+ const select=$('applicationScreenTarget');
+ if(!list||!select||!cfg)return;
+ const prior=select.value;
+ select.replaceChildren();
+ for(const screen of cfg.screens)select.add(new Option(screen.name,screen.id));
+ select.value=cfg.screens.some(screen=>screen.id===prior)?prior:cfg.screens[0].id;
+ list.replaceChildren();
+ for(const [id,target] of Object.entries(cfg.applicationScreens||{})){
+  const row=document.createElement('div');row.className='nexus-app-binding';
+  const name=document.createElement('span');
+  name.textContent=id+' → '+(cfg.screens.find(screen=>screen.id===target)?.name||target);
+  const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';
+  remove.addEventListener('click',()=>{delete cfg.applicationScreens[id];refreshApplicationScreenMappings()});
+  row.append(name,remove);list.append(row);
+ }
+}
+$('addApplicationScreen')?.addEventListener('click',()=>{
+ if(!cfg)return;
+ const id=($('applicationScreenID')?.value||'').trim();
+ if(!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(id))return message('Use a valid application ID from OpenLinkHub Application Profiles.');
+ cfg.applicationScreens??={};
+ if(!Object.hasOwn(cfg.applicationScreens,id)&&Object.keys(cfg.applicationScreens).length>=64)return message('Maximum 64 application bindings.');
+ cfg.applicationScreens[id]=$('applicationScreenTarget').value;
+ refreshApplicationScreenMappings();
+ message('Application screen mapping added. Save Layout to apply.');
+});

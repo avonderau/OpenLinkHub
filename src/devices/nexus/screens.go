@@ -19,6 +19,7 @@ const (
  MaxTotalWidgets = 4096
  MaxScreenConfigBytes = 4*1024*1024
 )
+var safeNexusAppID=regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$`)
 var safeID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
 var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"graph":true,"clock":true,"image":true,"button":true,"macro":true}
 var supportedMetrics = map[string]bool{
@@ -60,6 +61,7 @@ type ScreenConfiguration struct {
  CyclingMode string `json:"cyclingMode,omitempty"`
  CyclingSeconds int `json:"cyclingSeconds,omitempty"`
  Brightness int `json:"brightness,omitempty"`
+ ApplicationScreens map[string]string `json:"applicationScreens,omitempty"`
 }
 func (c ScreenConfiguration) Validate() error {
  if c.Version != 1 {return errors.New("unsupported screen configuration version")}
@@ -67,6 +69,7 @@ func (c ScreenConfiguration) Validate() error {
  if c.CyclingMode=="automatic" && (c.CyclingSeconds<5 || c.CyclingSeconds>3600) {return errors.New("cycling interval must be 5 to 3600 seconds")}
  if c.Brightness!=0 && (c.Brightness<20 || c.Brightness>100){return errors.New("display brightness must be 20 to 100 percent")}
  if len(c.Screens)<1 || len(c.Screens)>MaxScreens {return errors.New("invalid screen count")}
+ if len(c.ApplicationScreens)>64{return errors.New("too many application screen bindings")}
  seen:=map[string]bool{}
  totalWidgets:=0
  for _,s:=range c.Screens {
@@ -142,6 +145,9 @@ func (c ScreenConfiguration) Validate() error {
   if w.Type=="button" && w.Action=="screen" && !seen[w.Target] {return fmt.Errorf("unknown button screen target %q",w.Target)}
   if w.Type=="macro" || (w.Type=="button" && w.Action=="macro") {for _,step:=range w.Steps {if step.Type=="screen" && !seen[step.Value] {return fmt.Errorf("unknown macro screen target %q",step.Value)}}}
  }}
+ for appID,screenID:=range c.ApplicationScreens {
+  if !safeNexusAppID.MatchString(appID)||!seen[screenID]{return fmt.Errorf("invalid application screen binding %q",appID)}
+ }
  if !seen[c.ActiveScreenID] {return errors.New("active screen does not exist")}
  return nil
 }
