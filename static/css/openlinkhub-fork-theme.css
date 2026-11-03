@@ -150,14 +150,14 @@ body {
 }
 #nexus-editor #nexus-selected-panel legend {color:var(--olh-ink);font-weight:600;letter-spacing:.015em}
 #nexus-editor #nexus-selected-panel #properties {row-gap:12px;column-gap:12px;align-items:start}
-#nexus-editor .nexus-properties-section {
+#nexus-editor .nexus-property-section {
   min-width:0;
   border-radius:10px;
   border-color:var(--olh-line-strong);
   background:rgba(0,0,0,.055);
   overflow:hidden;
 }
-#nexus-editor .nexus-properties-section summary {
+#nexus-editor .nexus-property-section > summary {
   min-height:38px;
   padding:10px 12px;
   background:rgba(255,255,255,.025);
@@ -173,4 +173,48 @@ body {
 }
 @media(prefers-reduced-motion:reduce) {
  .sidebar .nav-link {transition:none}
+}
+
+/* Selected Widget is a balanced property grid, with no wasted empty cards. */
+#nexus-editor #nexus-selected-panel #properties > .nexus-property-section {
+  border:1px solid var(--olh-line-strong);
+  background:linear-gradient(145deg,#202124,#1a1b1e);
+  border-radius:10px;
+  overflow:hidden;
+}
+#nexus-editor #nexus-selected-panel #properties > .nexus-property-section[open] {
+  box-shadow:0 6px 18px rgba(0,0,0,.11);
+}
+#nexus-editor #nexus-selected-panel #properties > .nexus-property-section > summary {
+  padding:12px 14px;
+  color:var(--olh-ink);
+  font-size:.82rem;
+  line-height:1.2;
+  letter-spacing:.02em;
+}
+#nexus-editor #nexus-selected-panel #properties > .nexus-property-section > summary:hover {
+  background:rgba(213,166,90,.065);
+}
+#nexus-editor #nexus-selected-panel .nexus-property-section .nexus-properties-row {
+  padding:12px;
+  gap:10px;
+}
+#nexus-editor #nexus-selected-panel .nexus-property-section label {
+  gap:8px;
+  color:var(--olh-muted);
+  line-height:1.45;
+}
+#nexus-editor #nexus-selected-panel #properties input[type="color"] {
+  width:45px;height:34px;
+  padding:3px;
+  border:1px solid var(--olh-line-strong);
+  border-radius:7px;
+  background:var(--olh-control);
+}
+#nexus-editor #nexus-selected-panel .nexus-widget-actions button {
+  min-height:35px;
+  padding:8px 12px;
+}
+@media(max-width:780px){
+  #nexus-editor #nexus-selected-panel #properties {grid-template-columns:1fr}
 }
