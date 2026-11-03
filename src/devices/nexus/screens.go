@@ -7,6 +7,7 @@ import (
  "os"
  "path/filepath"
  "regexp"
+ "strconv"
  "strings"
 )
 
@@ -114,6 +115,11 @@ func (c ScreenConfiguration) Validate() error {
    if w.Type=="button" || w.Type=="macro" || w.Type=="metric" || w.Type=="bar" || w.Type=="graph" || w.Type=="text" || w.Type=="clock" || w.Type=="image" {
     style:=w.Settings["style"]
     if style!="" && style!="solid" && style!="outline" && style!="flat" {return fmt.Errorf("invalid widget style %q",style)}
+    for _,key:=range []string{"cornerRadius","opacity"}{
+     val:=w.Settings[key];if val=="" {continue}
+     number,err:=strconv.Atoi(val);maximum:=24;if key=="opacity"{maximum=100}
+     if err!=nil||number<0||number>maximum{return fmt.Errorf("invalid %s for widget %q",key,w.ID)}
+    }
     for _,key:=range []string{"backgroundColor","textColor","borderColor"}{
      val:=w.Settings[key]
      if val!="" && !validHexColor(val) {return fmt.Errorf("invalid %s for widget %q",key,w.ID)}
