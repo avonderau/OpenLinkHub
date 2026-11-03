@@ -109,7 +109,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
    const label=document.createElement('label');label.textContent=name+' ';
    const input=document.createElement('input');input.type='number';input.min=key==='opacity'?'0':'0';input.max=String(max);input.step='1';input.value=w.settings?.[key]??String(defaultValue);input.setAttribute('aria-label',name);
    input.addEventListener('change',()=>{const n=Number(input.value);if(!Number.isFinite(n))return;w.settings??={};w.settings[key]=String(Math.max(0,Math.min(max,Math.round(n))));render()});
-   label.append(input,document.createTextNode(unit));styleRow.append(label);
+   label.append(input,unit);styleRow.append(label);
   }
  }
  if(['text','clock','metric','bar','graph','button','macro'].includes(w.type)){
