@@ -157,3 +157,8 @@
 #nexus-editor .nexus-widget-library-actions label{display:inline-flex;align-items:center;gap:.35rem;color:var(--text-muted,#a1a1a1)}
 #nexus-editor .nexus-widget-library-actions button:disabled{opacity:.45;cursor:not-allowed}
 #nexus-editor .nexus-widget-library .nexus-panel-description{color:var(--text-muted,#a1a1a1)}
+
+/* Font size and horizontal alignment are mirrored by the hardware renderer. */
+#nexus-editor .widget{white-space:nowrap;text-overflow:clip}
+#nexus-editor .widget[style*="text-align: center"]{text-align:center}
+#nexus-editor .widget[style*="text-align: right"]{text-align:right}

@@ -79,7 +79,7 @@ Existing saved JSON layouts remain valid across updates.
     collision handling, previews before overwrite and safe content limits.
 11. **Reusable widget library [browser-local presets implemented]**: save, rename, delete and reuse button/widget
     definitions with independent IDs and safe references.
-12. **Typography/layout**: font sizes, alignment, vertical centering, shadows
+12. **Typography/layout [font sizing and horizontal alignment implemented]**: font sizes, alignment, vertical centering, shadows
     and adaptive text clipping; keep editor and physical Nexus consistent.
 13. **Animated widgets/icons**: GIF artwork on buttons/widgets, with independent
     animation timers, disposal handling, memory and size caps.
@@ -161,3 +161,12 @@ launcher worker prevents rapid touches spawning unlimited processes; operations
 have a four-second timeout. Desktop sessions can impose additional D-Bus or
 compositor restrictions. No arbitrary executable path or shell command is
 accepted. Application auto-discovery and curated allowlists remain planned.
+
+### Nexus typography
+
+Widgets accept optional `fontSize` values normal, small, or large and
+`textAlign` values left, center, or right. The device renderer uses
+cached embedded Open Font fonts for the nondefault sizes with clipping to
+the widget rectangle. Widgets without typography settings retain the
+legacy fixed-width font and alignment. Vertical alignment, text shadows,
+and more font families remain future work.
