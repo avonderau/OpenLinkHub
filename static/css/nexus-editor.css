@@ -31,3 +31,11 @@
 #nexus-editor fieldset{border:1px solid var(--border-subtle,#496275);border-radius:8px;margin:1rem 0;padding:1rem}
 #nexus-editor legend{float:none;width:auto;padding:0 .5rem;font-size:1rem}
 #nexus-editor input[type=number]{width:85px}
+
+/* Desktop: device settings left, compact screen editor right. */
+.nexus-workspace{display:grid;grid-template-columns:minmax(200px,240px) minmax(0,max-content);align-items:start;gap:1rem;max-width:100%;min-width:0}
+.nexus-device-column,.nexus-editor-column{min-width:0;max-width:100%}
+.nexus-device-column>.card{width:100%;height:auto}
+.nexus-editor-column #nexus-editor{margin-top:0!important;max-width:100%;width:fit-content}
+.nexus-editor-column #nexus-editor>.card-body{max-width:100%}
+@media(max-width:1050px){.nexus-workspace{grid-template-columns:minmax(0,1fr)}.nexus-device-column{max-width:320px}}
