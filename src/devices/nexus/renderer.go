@@ -28,21 +28,25 @@ type MetricSnapshot map[string]float64
 // RenderScreen draws a validated screen to the Nexus's native 640x48 RGBA
 // framebuffer. It does not interact with HID and can be tested independently.
 func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
- return renderNexusScreen(screen,values,"")
+ return renderNexusScreen(screen,values,"",nil)
 }
 
-func renderNexusScreen(screen Screen,values MetricSnapshot, iconDir string)(*image.RGBA,error){
+func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,background image.Image)(*image.RGBA,error){
  cfg:=ScreenConfiguration{Version:1,ActiveScreenID:screen.ID,Screens:[]Screen{screen}}
  if err:=cfg.Validate();err!=nil{return nil,err}
  canvas:=image.NewRGBA(image.Rect(0,0,ScreenWidth,ScreenHeight))
- draw.Draw(canvas,canvas.Bounds(),image.NewUniform(color.RGBA{12,19,27,255}),image.Point{},draw.Src)
+ if background!=nil {
+  xdraw.CatmullRom.Scale(canvas,canvas.Bounds(),background,background.Bounds(),draw.Src,nil)
+ }else{
+  draw.Draw(canvas,canvas.Bounds(),image.NewUniform(color.RGBA{12,19,27,255}),image.Point{},draw.Src)
+ }
  for _,w:=range screen.Widgets {
   bounds:=image.Rect(w.X,w.Y,w.X+w.Width,w.Y+w.Height)
   bg:=nexusWidgetColor(w.Settings,"backgroundColor",color.RGBA{27,41,53,255})
   ink:=nexusWidgetColor(w.Settings,"textColor",color.RGBA{235,245,252,255})
   border:=nexusWidgetColor(w.Settings,"borderColor",color.RGBA{128,189,217,255})
   style:=w.Settings["style"]
-  if w.Type!="button" && w.Type!="macro" {style="solid"}
+  // Styles are supported for all widget types. Flat and outline leave the background visible.
   if style!="flat" && style!="outline" {draw.Draw(canvas,bounds,image.NewUniform(bg),image.Point{},draw.Src)}
   if style=="outline" || (style=="solid" && w.Settings["borderColor"]!="") {drawNexusButtonBorder(canvas,bounds,border)}
   label:=w.Settings["label"]
@@ -110,15 +114,7 @@ func RenderScreenWithBackground(screen Screen, values MetricSnapshot, background
 }
 
 func RenderScreenWithBackgroundAndIcons(screen Screen,values MetricSnapshot,background image.Image,iconDir string)(*image.RGBA,error){
- frame,err:=renderNexusScreen(screen,values,iconDir)
- if err!=nil||background==nil{return frame,err}
- base:=image.NewRGBA(frame.Bounds())
- xdraw.CatmullRom.Scale(base,base.Bounds(),background,background.Bounds(),draw.Src,nil)
- for _,w:=range screen.Widgets {
-  rect:=image.Rect(w.X,w.Y,w.X+w.Width,w.Y+w.Height)
-  draw.Draw(base,rect,frame,rect.Min,draw.Over)
- }
- return base,nil
+ return renderNexusScreen(screen,values,iconDir,background)
 }
 // ReadBackground accepts only validated background IDs and bounded PNG/JPEG
 // files from the application's private background directory.
