@@ -479,12 +479,11 @@ function renderTouchProperties(w,panel){
 
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;render()}
-$('addMetric').onclick=()=>addWidget($('metricDisplayType')?.value==='bar'?'bar':'metric');
+$('addMetric').onclick=()=>{const kind=$('metricDisplayType')?.value;addWidget(['metric','bar','graph'].includes(kind)?kind:'metric')};
 $('addContent')?.addEventListener('click',()=>{
  const type=$('contentWidgetType')?.value;
  if(['text','image','clock'].includes(type))addWidget(type);
 });
-$('addGraph')?.addEventListener('click',()=>addWidget('graph'));
 $('addButton')?.addEventListener('click',()=>addWidget('button'));
 $('copyWidget')?.addEventListener('click',()=>{
  const source=current()?.widgets.find(w=>w.id===selected);
