@@ -94,7 +94,7 @@ Existing saved JSON layouts remain valid across updates.
     requirement.
 16. **Brightness and display controls**: verify current Nexus brightness
     support, expose settings and persist a device-safe configured range.
-17. **Performance and resilience**: cache static assets and metrics, avoid
+17. **Performance and resilience [one-second telemetry cache implemented]**: cache static assets and metrics, avoid
     redundant HID transfers, cap animation FPS, add reduced-motion modes and
     graceful fallback when sensors, input permissions or devices disappear.
 18. **Accessibility and usability**: keyboard navigation in the browser,
@@ -208,3 +208,14 @@ Automatic and Off modes ignore swipe navigation. Gesture state belongs to one
 Nexus HID listener and is cleared when the device leaves custom-screen mode.
 Real hardware touch reports need user acceptance testing to confirm movement
 updates are provided consistently by the device firmware.
+
+### Telemetry sampling independent of animation FPS
+
+The Nexus LCD can refresh animated GIF backgrounds and button icons at 5 FPS.
+Previously this caused all CPU/GPU monitoring calls (including costly NVIDIA
+utilization queries), memory readings and network/disk detection to run on
+every animation frame. Now a per-device metric snapshot and graph history are
+sampled once per second, while background/icon animation continues at its
+normal bounded frame rate. HID touch dispatch and screen changes are not held
+behind system metric polling. Hardware testing should confirm that animated
+screens remain responsive under GPU monitoring load.
