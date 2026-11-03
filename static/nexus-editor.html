@@ -86,3 +86,15 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <script src="/static/js/nexus-layout-files.js"></script>
 <script src="/static/js/nexus-widget-library.js"></script>
 <script src="/static/js/nexus-editor.js"></script></body></html>
+<style>
+/* Compact standalone editor property sections. */
+#properties{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;align-items:start}
+#properties .nexus-property-section{min-width:0;border:1px solid #496275;border-radius:8px;background:#172735}
+#properties .nexus-property-section>summary{cursor:pointer;padding:.6rem .75rem;color:#a7bac7;font-weight:600}
+#properties .nexus-property-section[open]>summary{border-bottom:1px solid #496275}
+#properties .nexus-properties-row{box-sizing:border-box;padding:.5rem .65rem;gap:.35rem}
+#properties .nexus-property-section label{display:inline-flex;align-items:center;gap:.3rem;flex-wrap:wrap}
+#properties .nexus-opacity-control input[type=range]{width:110px;accent-color:#a7bac7}
+#properties .nexus-opacity-control input[type=number]{width:65px}
+@media(max-width:750px){#properties{grid-template-columns:1fr}}
+</style>
