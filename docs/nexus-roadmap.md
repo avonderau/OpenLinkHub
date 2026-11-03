@@ -168,7 +168,7 @@ Widgets accept optional `fontSize` values normal, small, or large and
 `textAlign` values left, center, or right. The device renderer uses
 cached embedded Open Font fonts for the nondefault sizes with clipping to
 the widget rectangle. Widgets without typography settings retain the
-legacy fixed-width font and alignment. Vertical alignment, text shadows,
+legacy fixed-width font and alignment. Vertical alignment implemented for text and uniconed buttons; text shadows,
 and more font families remain future work.
 
 ### Optional Linux sysfs telemetry
@@ -231,3 +231,11 @@ validation and JSON import. Text is stored **in plain text** inside the layout
 JSON. Do not use text-entry actions for passwords, API tokens or other secrets.
 The type action is intentionally bounded and never executes the entered text
 as a shell command.
+
+### Vertical text alignment
+
+Text widgets and buttons without icons can choose Top (legacy/default), Middle
+or Bottom vertical alignment. The physical Nexus text baseline uses the actual
+selected font ascent/descent; the browser preview follows the same choice.
+This setting is optional and does not change existing saved layouts. Icon
+placement and multi-line clock/metric layout remain unchanged.
