@@ -4,6 +4,7 @@ import (
  "OpenLinkHub/src/systeminfo"
  "OpenLinkHub/src/temperatures"
  "fmt"
+ "image"
  "os"
  "path/filepath"
  "strings"
@@ -78,7 +79,9 @@ func (d *Device) renderCustomScreen() []byte {
  }
  for _,screen:=range c.Screens {
   if screen.ID==c.ActiveScreenID {
-   frame,err:=RenderScreen(screen,values)
+   var background image.Image
+   if screen.Background!="" {background,_=ReadBackground(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background)}
+   frame,err:=RenderScreenWithBackground(screen,values,background)
    if err!=nil{return nil}
    return renderImageToBytes(frame)
   }

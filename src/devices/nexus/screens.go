@@ -38,6 +38,7 @@ type Screen struct {
  ID string `json:"id"`
  Name string `json:"name"`
  Widgets []Widget `json:"widgets"`
+ Background string `json:"background,omitempty"`
 }
 type ScreenConfiguration struct {
  Version int `json:"version"`
@@ -52,6 +53,7 @@ func (c ScreenConfiguration) Validate() error {
   if !safeID.MatchString(s.ID)||seen[s.ID] {return fmt.Errorf("invalid or duplicate screen ID: %q",s.ID)}
   seen[s.ID]=true
   if len(s.Name)==0||len(s.Name)>80||len(s.Widgets)>MaxWidgets {return fmt.Errorf("invalid screen %q",s.ID)}
+  if s.Background!="" && (!safeID.MatchString(s.Background) || len(s.Background)>64) {return fmt.Errorf("invalid background ID for screen %q",s.ID)}
   widgets:=map[string]bool{}
   for _,w:=range s.Widgets {
    if !safeID.MatchString(w.ID)||widgets[w.ID] {return fmt.Errorf("invalid or duplicate widget ID: %q",w.ID)}

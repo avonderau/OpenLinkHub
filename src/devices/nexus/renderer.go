@@ -5,10 +5,17 @@ import (
  "image"
  "image/color"
  "image/draw"
+ "image/jpeg"
+ "image/png"
+ "os"
+ "path/filepath"
+ "io"
+ _ "image/gif"
  "math"
  "strings"
 
  "golang.org/x/image/font"
+ xdraw "golang.org/x/image/draw"
  "golang.org/x/image/font/basicfont"
  "golang.org/x/image/math/fixed"
 )
@@ -61,4 +68,35 @@ func clipText(s string,width int)string{
  r:=[]rune(strings.ToValidUTF8(s,"?"))
  if len(r)>limit{return string(r[:limit])}
  return string(r)
+}
+
+// RenderScreenWithBackground composites a trusted, decoded image behind widgets.
+// Images are scaled to the exact Nexus framebuffer dimensions.
+func RenderScreenWithBackground(screen Screen, values MetricSnapshot, background image.Image)(*image.RGBA,error){
+ frame,err:=RenderScreen(screen,values)
+ if err!=nil||background==nil{return frame,err}
+ base:=image.NewRGBA(frame.Bounds())
+ xdraw.CatmullRom.Scale(base,base.Bounds(),background,background.Bounds(),draw.Src,nil)
+ for _,w:=range screen.Widgets {
+  rect:=image.Rect(w.X,w.Y,w.X+w.Width,w.Y+w.Height)
+  draw.Draw(base,rect,frame,rect.Min,draw.Over)
+ }
+ return base,nil
+}
+// ReadBackground accepts only validated background IDs and bounded PNG/JPEG
+// files from the application's private background directory.
+func ReadBackground(dir,id string)(image.Image,error){
+ if !safeID.MatchString(id){return nil,fmt.Errorf("invalid background ID")}
+ for _,ext:=range []string{".png",".jpg",".jpeg"} {
+  file,err:=os.Open(filepath.Join(dir,id+ext));if err!=nil{continue}
+  stat,err:=file.Stat();if err!=nil||stat.Size()>4*1024*1024 {file.Close();return nil,fmt.Errorf("background exceeds size limit")}
+  cfg,format,err:=image.DecodeConfig(io.LimitReader(file,4*1024*1024))
+  if err!=nil||cfg.Width<1||cfg.Height<1||cfg.Width>4096||cfg.Height>4096 {file.Close();return nil,fmt.Errorf("invalid background dimensions")}
+  if _,err=file.Seek(0,0);err!=nil{file.Close();return nil,err}
+  var img image.Image
+  if format=="png" {img,err=png.Decode(file)} else if format=="jpeg" {img,err=jpeg.Decode(file)} else {err=fmt.Errorf("unsupported image format")}
+  file.Close()
+  return img,err
+ }
+ return nil,os.ErrNotExist
 }
