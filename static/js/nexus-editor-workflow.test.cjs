@@ -283,7 +283,7 @@ test('new widgets use the full 48 pixel Nexus height without modifying existing 
  const cases=[
   ['addMetric','metricDisplayType','metric','metric'],
   ['addMetric','metricDisplayType','bar','bar'],
-  ['addGraph',null,null,'graph'],
+  ['addMetric','metricDisplayType','graph','graph'],
   ['addContent','contentWidgetType','text','text'],
   ['addContent','contentWidgetType','image','image'],
   ['addContent','contentWidgetType','clock','clock'],
@@ -323,8 +323,8 @@ test('gradient controls edit a widget without changing its opacity',async()=>{
 
 test('consolidated widget actions and configuration tabs exist in both editor modes',()=>{
  for(const html of [integrated,standalone]){
-  for(const id of ['addMetric','metricDisplayType','addContent','contentWidgetType','addGraph','addButton'])assert.match(html,new RegExp('id="'+id+'"'));
-  for(const removed of ['addMacro','addText','addImage','addClock','addBar'])assert.doesNotMatch(html,new RegExp('id="'+removed+'"'));
+  for(const id of ['addMetric','metricDisplayType','addContent','contentWidgetType','addButton'])assert.match(html,new RegExp('id="'+id+'"'));
+  for(const removed of ['addMacro','addText','addImage','addClock','addBar','addGraph'])assert.doesNotMatch(html,new RegExp('id="'+removed+'"'));
   for(const name of ['background','applications','layout']){
    assert.match(html,new RegExp('id="nexus-tab-'+name+'"[^>]*role="tab"'));
    assert.match(html,new RegExp('id="nexus-panel-'+name+'"[^>]*role="tabpanel"'));
