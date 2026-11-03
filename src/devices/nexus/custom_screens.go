@@ -1,6 +1,7 @@
 package nexus
 
 import (
+ "OpenLinkHub/src/config"
  "OpenLinkHub/src/inputmanager"
  "OpenLinkHub/src/systeminfo"
  "OpenLinkHub/src/temperatures"
@@ -85,6 +86,15 @@ func (d *Device) collectCustomTelemetry(now time.Time) MetricSnapshot {
  }
  for name,reading:=range ReadLinuxExtendedMetrics(defaultLinuxExtendedMetricPaths()){
   values[name]=reading
+ }
+ // NVIDIA's optional clock, power and VRAM data is not available through
+ // the generic AMD DRM sysfs provider; sample a bounded driver query only
+ // for a configured NVIDIA GPU, no faster than once per telemetry snapshot.
+ if info:=systeminfo.GetInfo();info!=nil&&info.GPU!=nil{
+  index:=config.GetConfig().DefaultNvidiaGPU
+  if gpu,ok:=info.GPU[index];ok&&strings.Contains(strings.ToLower(gpu.Model),"nvidia"){
+   for name,reading:=range ReadNvidiaMetrics(index){values[name]=reading}
+  }
  }
  return values
 }
