@@ -53,3 +53,21 @@ func TestRenderRejectsInvalidAppearance(t *testing.T){
   if _,err:=RenderScreen(screen,nil);err==nil{t.Fatalf("accepted invalid appearance: %v",settings)}
  }
 }
+
+func TestNexusWidgetGradients(t *testing.T){
+ for _,tc:=range []struct{direction string;startX,startY,endX,endY int}{
+  {"horizontal",2,5,37,5},{"vertical",5,2,5,27},
+ }{
+  w:=Widget{ID:"gradient",Type:"text",X:0,Y:0,Width:40,Height:30,Settings:map[string]string{
+   "backgroundColor":"#ff0000","gradientColor":"#0000ff","gradientDirection":tc.direction,
+  }}
+  img,err:=RenderScreen(Screen{ID:"s",Name:"Screen",Widgets:[]Widget{w}},nil)
+  if err!=nil{t.Fatal(err)}
+  a,b:=img.RGBAAt(tc.startX,tc.startY),img.RGBAAt(tc.endX,tc.endY)
+  if a.R<=b.R||a.B>=b.B{t.Fatalf("%s gradient not varying correctly: %v %v",tc.direction,a,b)}
+ }
+ screen:=Screen{ID:"s",Name:"Screen",Widgets:[]Widget{{
+  ID:"bad",Type:"text",X:0,Y:0,Width:40,Height:30,Settings:map[string]string{"gradientDirection":"diagonal"},
+ }}}
+ if _,err:=RenderScreen(screen,nil);err==nil{t.Fatal("invalid gradient direction was accepted")}
+}
