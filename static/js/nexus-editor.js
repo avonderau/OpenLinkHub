@@ -6,15 +6,27 @@ const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utiliz
 const GRID=8;
 const snap=(value)=>Math.round(value/GRID)*GRID;
 const clamp=(value,max)=>Math.max(0,Math.min(value,max));
+function uniqueID(prefix,used){
+ let candidate,seq=0;
+ do {candidate=prefix+'_'+Date.now().toString(36)+(seq?'_'+seq:'');seq++}while(used.has(candidate));
+ return candidate;
+}
+function selectedScreenID(){return $('screens').value}
+function refreshActionButtons(){
+ const screen=current(),count=cfg?.screens.length||0;
+ for(const id of ['renameScreen','duplicateScreen'])if($(id))$(id).disabled=!screen||(id==='duplicateScreen'&&count>=32);
+ if($('deleteScreen'))$('deleteScreen').disabled=count<=1;
+}
 const snapPosition=(value,max)=>clamp(snap(value),Math.floor(max/GRID)*GRID);
 const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
 function message(t){$('message').textContent=t}
 function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
 function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render()}
-function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();
+function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();refreshActionButtons();
  const widget=s?.widgets.find(w=>w.id===selected);
  const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
  if(remove)remove.disabled=!widget;
+ if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64;
  if(status){
   status.replaceChildren();
   if(widget && (widget.type==='button'||widget.type==='macro')){
@@ -67,7 +79,42 @@ async function loadDevices(){try{const response=await fetch('/api/devices/');con
 async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds);interval.disabled=mode?.value!=='automatic'}refreshScreens();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
-$('addScreen').onclick=()=>{if(!cfg)return;if(cfg.screens.length>=32)return message('Maximum 32 screens');const name=prompt('Screen name','New screen');if(!name)return;const id='screen_'+Date.now();cfg.screens.push({id,name,widgets:[]});cfg.activeScreenId=id;selected=null;refreshScreens()};
+$('addScreen').onclick=()=>{
+ if(!cfg)return;
+ if(cfg.screens.length>=32)return message('Maximum 32 screens');
+ const name=prompt('Screen name','New screen')?.trim();
+ if(!name)return;
+ if(name.length>80)return message('Screen name must be 80 characters or fewer');
+ const id=uniqueID('screen',new Set(cfg.screens.map(s=>s.id)));
+ cfg.screens.push({id,name,widgets:[]});
+ cfg.activeScreenId=id;selected=null;refreshScreens();
+};
+$('renameScreen')?.addEventListener('click',()=>{
+ const s=current();if(!s)return;
+ const name=prompt('Rename screen',s.name)?.trim();
+ if(name===undefined||name===null||!name||name===s.name)return;
+ if(name.length>80)return message('Screen name must be 80 characters or fewer');
+ s.name=name;refreshScreens();message('Screen renamed. Save Layout to apply.');
+});
+$('duplicateScreen')?.addEventListener('click',()=>{
+ const source=current();if(!source||!cfg)return;
+ if(cfg.screens.length>=32)return message('Maximum 32 screens');
+ const newID=uniqueID('screen',new Set(cfg.screens.map(s=>s.id)));
+ const name=(source.name.slice(0,73)+' copy').slice(0,80);
+ // JSON round trip gives the duplicate fully independent widget settings and macro steps.
+ const duplicate=JSON.parse(JSON.stringify(source));
+ duplicate.id=newID;duplicate.name=name;
+ for(const widget of duplicate.widgets){
+  if(widget.type==='button'&&widget.action==='screen'&&widget.target===source.id)widget.target=newID;
+  if(widget.type==='macro'||(widget.type==='button'&&widget.action==='macro')){
+   for(const step of widget.steps||[])if(step.type==='screen'&&step.value===source.id)step.value=newID;
+  }
+ }
+ const at=cfg.screens.findIndex(s=>s.id===source.id);
+ cfg.screens.splice(at+1,0,duplicate);
+ cfg.activeScreenId=newID;selected=null;refreshScreens();
+ message('Screen duplicated. Save Layout to apply.');
+});
 $('deleteScreen').onclick=()=>{if(!cfg||cfg.screens.length<=1)return message('Keep at least one screen');cfg.screens=cfg.screens.filter(s=>s.id!==$('screens').value);cfg.activeScreenId=cfg.screens[0].id;selected=null;refreshScreens()};
 function renderWidgetColors(w,panel){
  if(!['button','macro','metric','bar','text'].includes(w.type))return;
@@ -141,8 +188,22 @@ function renderTouchProperties(w,panel){
   const help=document.createElement('small');help.textContent='Step types: next, previous, screen (value: screen ID), media (value: play-pause, stop, volume-up, volume-down, next-track, previous-track), delay (delayMs: 0–5000). Max 15 seconds total delays.';panel.append(help);
  }
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id='widget_'+Date.now();const w={id,type,metric:(type==='text'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
 $('addMetric').onclick=()=>addWidget('metric');$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));
+$('duplicateWidget')?.addEventListener('click',()=>{
+ const screen=current();if(!screen)return;
+ const source=screen.widgets.find(w=>w.id===selected);
+ if(!source)return;
+ if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+ const duplicate=JSON.parse(JSON.stringify(source));
+ duplicate.id=uniqueID('widget',new Set(screen.widgets.map(w=>w.id)));
+ // Shift one grid cell when space allows; otherwise keep position, with the copy on top.
+ duplicate.x=source.x+GRID<=640-source.width?source.x+GRID:source.x;
+ duplicate.y=source.y+GRID<=48-source.height?source.y+GRID:source.y;
+ const index=screen.widgets.findIndex(w=>w.id===source.id);
+ screen.widgets.splice(index+1,0,duplicate);
+ selected=duplicate.id;render();message('Widget duplicated. Save Layout to apply.');
+});
 $('deleteWidget').onclick=()=>{const s=current();if(!s)return;s.widgets=s.widgets.filter(w=>w.id!==selected);selected=null;render()};
 $('background').onchange=()=>{const s=current();if(s)s.background=$('background').value.trim()};
 $('upload').onclick=async()=>{try{const f=$('image').files[0];if(!f||!current())return message('Choose an image and load a screen');if(f.size>4*1024*1024)throw Error('Image exceeds 4 MiB');const id='background_'+Date.now();const res=await fetch('/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+id,{method:'POST',headers:{'Content-Type':f.type},body:f});if(!res.ok)throw Error(await res.text());current().background=id;render();message('Background uploaded. Save layout to apply it.')}catch(e){message(e.message)}};

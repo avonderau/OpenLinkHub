@@ -45,7 +45,7 @@
 
 <div class="nexus-editor-heading"><button id="save" type="button">Save Layout</button></div>
 <p id="message" role="status" aria-live="polite"></p>
-<label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="deleteScreen">Delete screen</button>
+<div class="nexus-screen-actions"><label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="renameScreen">Rename</button><button id="duplicateScreen">Duplicate screen</button><button id="deleteScreen">Delete screen</button></div>
 <div id="preview"><div id="screen"></div></div>
 <fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
@@ -54,7 +54,7 @@
 <fieldset class="nexus-panel" id="nexus-selected-panel"><legend>Selected Widget</legend>
 <div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
 <div id="properties"></div>
-<button id="deleteWidget" disabled>Remove selected widget</button>
+<div class="nexus-widget-actions"><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
 </fieldset>
 <fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG <input type="file" id="image" accept="image/png,image/jpeg"></label><button id="upload">Upload and apply</button></fieldset>

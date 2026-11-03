@@ -98,3 +98,9 @@
 #nexus-editor .widget .nexus-custom-icon{width:32px;height:32px;max-width:calc(100% - 4px);max-height:calc(100% - 4px);object-fit:contain;pointer-events:none;flex-shrink:1}
 #nexus-editor .nexus-custom-icon-upload{display:inline-flex;align-items:center;gap:.35rem;flex-wrap:wrap}
 #nexus-editor .nexus-custom-icon-upload input[type=file]{width:min(230px,100%);margin:0}
+
+/* Screen and widget management actions stay grouped in the editor. */
+#nexus-editor .nexus-screen-actions,#nexus-editor .nexus-widget-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem}
+#nexus-editor .nexus-screen-actions label{margin:.15rem .5rem .15rem 0}
+#nexus-editor .nexus-screen-actions button,#nexus-editor .nexus-widget-actions button{margin:.15rem}
+#nexus-editor .nexus-screen-actions button:disabled,#nexus-editor .nexus-widget-actions button:disabled{opacity:.45;cursor:not-allowed;filter:none}
