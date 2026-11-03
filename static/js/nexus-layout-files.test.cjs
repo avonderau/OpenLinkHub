@@ -79,7 +79,7 @@ test('text-entry imports accept printable ASCII and reject controls or Unicode',
  good.screens[0].widgets[0].action='text';
  good.screens[0].widgets[0].target='Hello! #123';
  assert.equal(layouts.validate(good).version,1);
- good.screens[0].widgets[0].target='text\\nnewline';
+ good.screens[0].widgets[0].target='text'+String.fromCharCode(10)+'newline';
  assert.throws(()=>layouts.validate(good));
  good.screens[0].widgets[0].target='snowman ☃';
  assert.throws(()=>layouts.validate(good));
@@ -89,6 +89,6 @@ test('text-entry imports accept printable ASCII and reject controls or Unicode',
   steps:[{type:'text',value:'Desktop test'}]
  });
  assert.equal(layouts.validate(good).version,1);
- good.screens[0].widgets[1].steps[0].value='\\u0009';
+ good.screens[0].widgets[1].steps[0].value=String.fromCharCode(9);
  assert.throws(()=>layouts.validate(good));
 });
