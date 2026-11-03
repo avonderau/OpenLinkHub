@@ -15,12 +15,28 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  const widget=s?.widgets.find(w=>w.id===selected);
  const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
  if(remove)remove.disabled=!widget;
- if(status)status.textContent=widget?(widget.settings?.label||widget.settings?.text||widget.id)+' · '+widget.type:'Select a widget in the preview to edit it.';
+ if(status){
+  status.replaceChildren();
+  if(widget && (widget.type==='button'||widget.type==='macro')){
+   const label=document.createElement('label');label.textContent='Button Label ';
+   const input=document.createElement('input');input.type='text';input.maxLength=256;
+   input.value=widget.settings?.label||'';input.placeholder='Button label';
+   input.setAttribute('aria-label','Button Label');
+   input.addEventListener('input',()=>{
+    widget.settings??={};widget.settings.label=input.value;
+    const el=[...$('screen').children].find(el=>el.dataset.id===widget.id);
+    if(el){const icon=el.querySelector('.nexus-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
+   });
+   label.append(input);status.append(label);
+  }else{
+   status.textContent=widget?(widget.settings?.label||widget.settings?.text||widget.type):'Select a widget in the preview to edit it.';
+  }
+ }
  if(!s)return;
  $('background').value=s.background||'';
  for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(w.type==='button'||w.type==='macro'){const st=w.settings||{};el.classList.add('nexus-button-style');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){el.classList.add('nexus-icon-widget');const glyph=document.createElement('span');glyph.className='nexus-icon';glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)}el.dataset.id=w.id;$('screen').append(el)}
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;
- const fields=(w.type==='button'||w.type==='macro')?[['label','text'],['x','number'],['y','number'],['width','number'],['height','number']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
+ const fields=(w.type==='button'||w.type==='macro')?[['x','number'],['y','number'],['width','number'],['height','number']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
  for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
  const label=document.createElement('label');label.textContent=key+' ';
  let input;if(type==='select'){input=document.createElement('select');for(const m of metrics)input.add(new Option(m,m));input.value=w.metric}else{input=document.createElement('input');input.type=type;input.value=(key in w?w[key]:(w.settings||{})[key])??''}
