@@ -83,7 +83,7 @@ Existing saved JSON layouts remain valid across updates.
     and adaptive text clipping; keep editor and physical Nexus consistent.
 13. **Animated widgets/icons**: GIF artwork on buttons/widgets, with independent
     animation timers, disposal handling, memory and size caps.
-14. **Screen navigation**: true left/right swipe gestures, reorder screens,
+14. **Screen navigation [screen reordering implemented]**: true left/right swipe gestures, reorder screens,
     overview and configurable behavior around button hit targets.
 
 ## Phase 4 — Context, hardware controls and finish quality
@@ -131,3 +131,11 @@ same metrics as number/bar widgets. The per-device sampler retains at most
 fabricated values. Utilization graphs use a fixed 0–100% axis; other metrics
 use their available sample range. The editor shows an indicative graph label
 because it does not stream live telemetry over the configuration API.
+
+### Screen editing enhancements
+
+The screen selector offers Move Up and Move Down operations for user-defined
+screen order. Widget Copy/Paste transfers a deep copy between screens in the
+current loaded layout, assigning a fresh widget ID and keeping all widget
+properties and actions. These are editor actions only until Save Layout.
+A persistent cross-session reusable widget library is still planned.
