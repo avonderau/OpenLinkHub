@@ -213,3 +213,17 @@
 /* Browser preview matches the short physical-device press flash. */
 #nexus-editor .widget.nexus-button-style:active{filter:brightness(1.45);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
 #nexus-editor .widget.nexus-pressed-preview{filter:brightness(1.45);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+
+/* Compact widget creation and accessible screen configuration tabs */
+#nexus-editor .nexus-add-combo,.nexus-add-combo{display:inline-flex;align-items:center;gap:.4rem;color:var(--text-muted,#a7bac7);font-size:.85rem;white-space:nowrap}
+#nexus-editor .nexus-add-combo select,.nexus-add-combo select{min-width:100px}
+.nexus-editor-tabs{margin-top:1rem;min-width:0}
+.nexus-editor-tablist{display:flex;flex-wrap:wrap;gap:.35rem;border-bottom:1px solid var(--border-subtle,#496275);padding:0 .15rem}
+.nexus-editor-tablist [role=tab]{border:1px solid transparent;border-bottom:2px solid transparent;border-radius:.5rem .5rem 0 0;color:var(--text-muted,#a7bac7);background:transparent;padding:.6rem .85rem;margin:0;font-weight:500;cursor:pointer}
+.nexus-editor-tablist [role=tab][aria-selected=true]{color:var(--text-main,#e8eff5);background:var(--bg-card,#172735);border-color:var(--border-subtle,#496275);border-bottom-color:var(--text-muted,#a7bac7)}
+.nexus-editor-tablist [role=tab]:focus-visible{outline:2px solid var(--text-main,#e8eff5);outline-offset:2px}
+.nexus-editor-tabpanel{padding:.75rem 0;min-width:0}
+.nexus-editor-tabpanel[hidden]{display:none!important}
+.nexus-editor-tabpanel fieldset{min-width:0;max-width:100%;box-sizing:border-box}
+.nexus-editor-tabpanel label{color:var(--text-muted,#a7bac7)}
+@media(max-width:600px){.nexus-editor-tablist [role=tab]{flex:1 1 auto;padding:.5rem}.nexus-add-combo{flex-wrap:wrap}}
