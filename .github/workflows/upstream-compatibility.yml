@@ -1,0 +1,53 @@
+name: Upstream merge compatibility
+
+on:
+  schedule:
+    - cron: '17 11 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/devices/nexus/**'
+      - 'src/server/**'
+      - 'web/nexus*.html'
+      - '.github/workflows/upstream-compatibility.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  merge-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out fork with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch upstream main
+        run: |
+          git remote add upstream https://github.com/jurkovic-nikola/OpenLinkHub.git
+          git fetch --no-tags upstream main
+          echo "Fork HEAD: $(git rev-parse HEAD)"
+          echo "Upstream HEAD: $(git rev-parse upstream/main)"
+      - name: Dry-run upstream merge
+        run: |
+          git config user.name "Upstream compatibility CI"
+          git config user.email "upstream-compatibility@users.noreply.github.com"
+          if ! git merge --no-commit --no-ff upstream/main; then
+            echo "::error::Upstream merge conflicts detected; no branch was updated."
+            git diff --name-only --diff-filter=U
+            exit 1
+          fi
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+      - name: Test Nexus and server after upstream merge
+        run: CGO_CFLAGS_ALLOW='-fno-strict-overflow' go test ./src/devices/nexus ./src/server -count=1
+      - name: Build merged application
+        run: CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build -o /tmp/openlinkhub-upstream-check .
