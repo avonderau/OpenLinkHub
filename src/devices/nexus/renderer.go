@@ -50,7 +50,13 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   if radius<0 {radius=0}
   maxRadius:=int(math.Min(float64(bounds.Dx()),float64(bounds.Dy())))/2
   if radius>maxRadius {radius=maxRadius}
-  if style!="flat" && style!="outline" {drawNexusRoundedFill(canvas,bounds,bg,radius)}
+  if style!="flat" && style!="outline" {
+   direction:=w.Settings["gradientDirection"]
+   if direction=="horizontal"||direction=="vertical"{
+    end:=nexusWidgetColor(w.Settings,"gradientColor",bg)
+    drawNexusRoundedGradient(canvas,bounds,bg,end,radius,direction=="horizontal")
+   }else{drawNexusRoundedFill(canvas,bounds,bg,radius)}
+  }
   if style=="outline" || (style=="solid" && w.Settings["borderColor"]!="") {drawNexusRoundedBorder(canvas,bounds,border,radius)}
   func(){defer func(){
    opacity:=100
@@ -196,4 +202,21 @@ func drawNexusRoundedFill(dst *image.RGBA,r image.Rectangle,c color.RGBA,radius 
 func drawNexusRoundedBorder(dst *image.RGBA,r image.Rectangle,c color.RGBA,radius int){
  inner:=r.Inset(1)
  for y:=r.Min.Y;y<r.Max.Y;y++{for x:=r.Min.X;x<r.Max.X;x++{if nexusInsideRounded(r,x,y,radius)&&!nexusInsideRounded(inner,x,y,int(math.Max(0,float64(radius-1)))){dst.SetRGBA(x,y,c)}}}
+}
+
+// drawNexusRoundedGradient interpolates the selected fill colors across an
+// item's clipped bounds. A one-pixel axis safely uses the start color.
+func drawNexusRoundedGradient(dst *image.RGBA,r image.Rectangle,start,end color.RGBA,radius int,horizontal bool){
+ steps:=r.Dy()-1
+ if horizontal{steps=r.Dx()-1}
+ if steps<1{steps=1}
+ for y:=r.Min.Y;y<r.Max.Y;y++{
+  for x:=r.Min.X;x<r.Max.X;x++{
+   if !nexusInsideRounded(r,x,y,radius){continue}
+   index:=y-r.Min.Y
+   if horizontal{index=x-r.Min.X}
+   mix:=func(a,b uint8)uint8{return uint8((int(a)*(steps-index)+int(b)*index+steps/2)/steps)}
+   dst.SetRGBA(x,y,color.RGBA{R:mix(start.R,end.R),G:mix(start.G,end.G),B:mix(start.B,end.B),A:255})
+  }
+ }
 }
