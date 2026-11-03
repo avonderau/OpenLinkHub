@@ -213,7 +213,8 @@ test('software dimming remains full by default and saves a selected level',async
 test('image widgets are separate from touch buttons and expose image upload',async()=>{
  const {context,node}=makeEditor();
  await vm.runInContext('load()',context);
- node('addImage').listeners.click();
+ node('contentWidgetType').value='image';
+ node('addContent').listeners.click();
  const widget=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
  assert.equal(widget.type,'image');
  assert.equal(widget.settings.style,'flat');
@@ -275,11 +276,22 @@ test('new widgets use the full 48 pixel Nexus height without modifying existing 
  await vm.runInContext('load()',context);
  const existing=vm.runInContext('cfg.screens[0]',context);
  existing.widgets.push({id:'old',type:'text',x:0,y:0,width:80,height:24,settings:{text:'Existing'}});
- for(const id of ['addMetric','addBar','addText','addClock','addImage','addGraph','addButton','addMacro']){
+ const cases=[
+  ['addMetric','metricDisplayType','metric','metric'],
+  ['addMetric','metricDisplayType','bar','bar'],
+  ['addGraph',null,null,'graph'],
+  ['addContent','contentWidgetType','text','text'],
+  ['addContent','contentWidgetType','image','image'],
+  ['addContent','contentWidgetType','clock','clock'],
+  ['addButton',null,null,'button']
+ ];
+ for(const [id,select,value,expected] of cases){
+  if(select)node(select).value=value;
   const handler=node(id).listeners.click||node(id).onclick;
   assert.equal(typeof handler,'function',id+' handler');
   handler();
   const added=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
+  assert.equal(added.type,expected);
   assert.equal(added.height,48,id+' height');
   assert.equal(added.y,0,id+' position');
  }
@@ -303,4 +315,44 @@ test('gradient controls edit a widget without changing its opacity',async()=>{
  assert.equal(screen.widgets[0].settings.gradientDirection,'horizontal');
  assert.equal(screen.widgets[0].settings.opacity,'60');
  assert.equal(screen.widgets[0].settings.gradientColor,'#0b1824');
+});
+
+test('consolidated widget actions and configuration tabs exist in both editor modes',()=>{
+ for(const html of [integrated,standalone]){
+  for(const id of ['addMetric','metricDisplayType','addContent','contentWidgetType','addGraph','addButton'])assert.match(html,new RegExp('id="'+id+'"'));
+  for(const removed of ['addMacro','addText','addImage','addClock','addBar'])assert.doesNotMatch(html,new RegExp('id="'+removed+'"'));
+  for(const name of ['background','applications','layout']){
+   assert.match(html,new RegExp('id="nexus-tab-'+name+'"[^>]*role="tab"'));
+   assert.match(html,new RegExp('id="nexus-panel-'+name+'"[^>]*role="tabpanel"'));
+  }
+  assert.match(html,/id="nexus-flyout-library"/);
+  assert.doesNotMatch(html,/id="nexus-flyout-background"|id="nexus-flyout-layout"/);
+  assert.match(html,/id="applicationScreenMappings"/);
+  assert.match(html,/id="background"/);
+  assert.match(html,/id="layoutImportMode"/);
+ }
+});
+
+test('configuration tabs activate exclusively and support keyboard selection',async()=>{
+ const {context,node}=makeEditor();
+ const attributes=new Map();
+ for(const id of ['background','applications','layout']){
+  const n=node('nexus-tab-'+id);
+  n.setAttribute=(name,value)=>attributes.set(id+':'+name,value);
+  n.focus=()=>{n.focused=true};
+ }
+ vm.runInContext('void 0',context);
+ assert.equal(node('nexus-panel-background').hidden,false);
+ assert.equal(node('nexus-panel-applications').hidden,true);
+ assert.equal(node('nexus-panel-layout').hidden,true);
+ node('nexus-tab-layout').listeners.click();
+ assert.equal(node('nexus-panel-background').hidden,true);
+ assert.equal(node('nexus-panel-layout').hidden,false);
+ assert.equal(attributes.get('layout:aria-selected'),'true');
+ let prevented=false;
+ node('nexus-tab-layout').listeners.keydown({key:'ArrowRight',preventDefault(){prevented=true}});
+ assert.equal(prevented,true);
+ assert.equal(node('nexus-panel-background').hidden,false);
+ assert.equal(node('nexus-panel-layout').hidden,true);
+ assert.equal(node('nexus-tab-background').focused,true);
 });
