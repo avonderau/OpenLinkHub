@@ -21,6 +21,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 .nexus-new-screen-choice{display:inline-flex;align-items:center;gap:.35rem}
 .nexus-macro-editor{display:flex;flex-direction:column;gap:.4rem}.nexus-macro-step{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;padding:.3rem 0;border-bottom:1px solid #496275}.nexus-macro-step input[type=number]{width:5.5rem}.nexus-macro-editor button:disabled{opacity:.45}
 .nexus-layout-file-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}.nexus-layout-file-controls label{display:inline-flex;align-items:center;gap:.3rem}
+.nexus-widget-library-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem}.nexus-widget-library-actions label{display:inline-flex;align-items:center;gap:.35rem}
 </style></head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p><p id="message" role="status" aria-live="polite"></p>
@@ -54,6 +55,15 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <div id="properties"></div>
 <div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
 </fieldset>
+<fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
+<p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
+<div class="nexus-widget-library-actions">
+<button id="saveWidgetPreset" type="button" disabled>Save selected widget</button>
+<label>Saved widget <select id="widgetLibrarySelect" aria-label="Saved widget"></select></label>
+<button id="addWidgetPreset" type="button" disabled>Add to screen</button>
+<button id="deleteWidgetPreset" type="button" disabled>Delete saved widget</button>
+</div>
+</fieldset>
 <fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset>
 
@@ -72,4 +82,5 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <p class="nexus-panel-description">Imports are editable previews until Save Layout. Uploaded backgrounds and icons are referenced by ID; artwork is not included in the JSON file.</p>
 </fieldset>
 <script src="/static/js/nexus-layout-files.js"></script>
+<script src="/static/js/nexus-widget-library.js"></script>
 <script src="/static/js/nexus-editor.js"></script></body></html>

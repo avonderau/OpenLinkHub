@@ -151,3 +151,9 @@
 #nexus-editor .widget.nexus-graph-widget::after{content:'History graph';position:absolute;right:4px;bottom:2px;font-size:9px;color:var(--text-muted,#a1a1a1);opacity:.85}
 
 #nexus-editor #moveScreenUp:disabled,#nexus-editor #moveScreenDown:disabled,#nexus-editor #copyWidget:disabled,#nexus-editor #pasteWidget:disabled{opacity:.45;cursor:not-allowed}
+
+/* Browser-local reusable widget library uses the same muted site palette. */
+#nexus-editor .nexus-widget-library-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem}
+#nexus-editor .nexus-widget-library-actions label{display:inline-flex;align-items:center;gap:.35rem;color:var(--text-muted,#a1a1a1)}
+#nexus-editor .nexus-widget-library-actions button:disabled{opacity:.45;cursor:not-allowed}
+#nexus-editor .nexus-widget-library .nexus-panel-description{color:var(--text-muted,#a1a1a1)}

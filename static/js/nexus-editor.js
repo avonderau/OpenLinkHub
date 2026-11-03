@@ -40,6 +40,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64;
  if($('copyWidget'))$('copyWidget').disabled=!widget;
  if($('pasteWidget'))$('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64;
+ if($('saveWidgetPreset'))$('saveWidgetPreset').disabled=!widget;
  if(status){
   status.replaceChildren();
   if(widget && (widget.type==='button'||widget.type==='macro')){
@@ -105,7 +106,7 @@ $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widge
 $('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
 $('screen').addEventListener('pointerup',()=>{drag=null;render()});$('screen').addEventListener('pointercancel',()=>{drag=null;render()});
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();refreshScreens();message('')}
+async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();refreshScreens();refreshWidgetLibrary();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
@@ -451,6 +452,65 @@ $('importLayout')?.addEventListener('click',async()=>{
   message('JSON imported into the editor. Review before Save Layout.');
  }catch(e){message('Import failed: '+e.message)}
 });
+
+
+function widgetLibraryStorage(){
+ if(typeof localStorage==='undefined')throw Error('This browser does not provide persistent widget storage');
+ return localStorage;
+}
+function refreshWidgetLibrary(){
+ const select=$('widgetLibrarySelect');if(!select)return;
+ const previouslySelected=select.value;
+ select.replaceChildren();
+ try{
+  const entries=NexusWidgetLibrary.list(widgetLibraryStorage());
+  for(const entry of entries)select.add(new Option(entry.name,entry.id));
+  if(entries.some(entry=>entry.id===previouslySelected))select.value=previouslySelected;
+  if($('addWidgetPreset'))$('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64;
+  if($('deleteWidgetPreset'))$('deleteWidgetPreset').disabled=!entries.length;
+ }catch(e){
+  if($('addWidgetPreset'))$('addWidgetPreset').disabled=true;
+  if($('deleteWidgetPreset'))$('deleteWidgetPreset').disabled=true;
+  message(e.message);
+ }
+}
+$('saveWidgetPreset')?.addEventListener('click',()=>{
+ try{
+  const widget=current()?.widgets.find(w=>w.id===selected);
+  if(!widget)return message('Select a widget to save.');
+  const name=prompt('Name for the reusable widget',widget.settings?.label||widget.type)?.trim();
+  if(!name)return;
+  if(name.length>80)return message('Widget library name must be 80 characters or fewer.');
+  const storage=widgetLibraryStorage();
+  const entry={id:uniqueID('preset',new Set(NexusWidgetLibrary.list(storage).map(x=>x.id))),name,widget:JSON.parse(JSON.stringify(widget))};
+  NexusWidgetLibrary.add(storage,entry);
+  refreshWidgetLibrary();
+  $('widgetLibrarySelect').value=entry.id;message('Widget saved in this browser.');
+ }catch(e){message(e.message)}
+});
+$('addWidgetPreset')?.addEventListener('click',()=>{
+ try{
+  const screen=current();if(!screen)return;
+  if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+  const storage=widgetLibraryStorage();
+  const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===$('widgetLibrarySelect').value);
+  if(!entry)return;
+  const widget=NexusWidgetLibrary.instantiate(entry,uniqueID('widget',new Set(screen.widgets.map(w=>w.id))),screen.id,cfg.screens.map(s=>s.id));
+  screen.widgets.push(widget);selected=widget.id;render();
+  refreshWidgetLibrary();
+  message('Widget added from library. Save Layout to apply.');
+ }catch(e){message(e.message)}
+});
+$('deleteWidgetPreset')?.addEventListener('click',()=>{
+ try{
+  const storage=widgetLibraryStorage(),id=$('widgetLibrarySelect').value;
+  const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===id);if(!entry)return;
+  if(!confirm('Delete saved widget "'+entry.name+'" from this browser?'))return;
+  NexusWidgetLibrary.remove(storage,id);refreshWidgetLibrary();
+  message('Saved widget removed from the browser library.');
+ }catch(e){message(e.message)}
+});
+$('widgetLibrarySelect')?.addEventListener('change',refreshWidgetLibrary);
 
 // Integrated device pages load their Nexus automatically without a device selector.
 // The standalone editor retains its device dropdown and Load button.
