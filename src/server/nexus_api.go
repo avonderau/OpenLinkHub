@@ -42,6 +42,16 @@ func nexusScreensAPI(w http.ResponseWriter,r *http.Request){
  if err:=d.SetCustomScreens(cfg);err!=nil{http.Error(w,err.Error(),400);return}
  w.WriteHeader(http.StatusNoContent)
 }
+// nexusTelemetryAPI serves cached live graph history. This endpoint is
+// read-only and never triggers a new device telemetry collection.
+func nexusTelemetryAPI(w http.ResponseWriter,r *http.Request){
+ if r.Method!=http.MethodGet{w.Header().Set("Allow","GET");http.Error(w,"method not allowed",405);return}
+ d,ok:=nexusDevice(r);if !ok{http.Error(w,"Nexus device not found",404);return}
+ w.Header().Set("Content-Type","application/json")
+ w.Header().Set("Cache-Control","private, no-store")
+ w.Header().Set("X-Content-Type-Options","nosniff")
+ _=json.NewEncoder(w).Encode(d.GetNexusTelemetryPreview())
+}
 func nexusBackgroundAPI(w http.ResponseWriter,r *http.Request){
  if r.Method!=http.MethodPost && r.Method!=http.MethodGet {
   w.Header().Set("Allow","GET, POST");http.Error(w,"method not allowed",405);return
