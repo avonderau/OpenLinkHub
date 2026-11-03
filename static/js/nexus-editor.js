@@ -368,7 +368,8 @@ function renderTouchProperties(w,panel){
   input.value=value;input.onchange=()=>{change(input.value);render()};
   label.append(input);panel.append(label);
  };
- const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['macro','Run macro'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text']];
+ const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['device','Device RGB control'],['macro','Run macro'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text']];
+ const hardwareActions=[['rgb-on','Enable device RGB'],['rgb-off','Disable device RGB']];
  const media=[['play-pause','Play/Pause'],['stop','Stop'],['volume-up','Volume +'],['volume-down','Volume -'],['next-track','Next track'],['previous-track','Previous track']];
  const targets=cfg.screens.map(s=>[s.id,s.name]);
  const mouseActions=[['left','Left click'],['double-left','Double left click'],['right','Right click'],['middle','Middle click'],['back','Back button'],['forward','Forward button'],['scroll-up','Scroll up'],['scroll-down','Scroll down'],['scroll-left','Scroll left'],['scroll-right','Scroll right']];
@@ -426,7 +427,7 @@ function renderTouchProperties(w,panel){
   panel.append(wrapper,upload);
  }
  if(w.type==='button'){
-  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
+  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='device'?'rgb-on':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
   if(w.action==='screen')field('Target screen',w.target,targets,v=>w.target=v);
   if(w.action==='hotkey')shortcutInput('Shortcut',w.target,v=>w.target=v);
   if(w.action==='text'){
@@ -444,6 +445,7 @@ function renderTouchProperties(w,panel){
    const note=document.createElement('small');note.textContent='Requires a non-root Linux desktop session; desktop apps use gtk-launch, URLs use xdg-open. No shell commands.';
    panel.append(note);
   }
+  if(w.action==='device')field('Device RGB action',w.target,hardwareActions,v=>w.target=v);
   if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.customIcon&&(!w.settings?.icon||w.settings.icon===old)){w.settings??={};w.settings.icon=v}});
  }
 
@@ -456,10 +458,11 @@ function renderTouchProperties(w,panel){
   heading.textContent='Macro steps';
   editor.append(heading);
   const kinds=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],
-   ['media','Media control'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text'],['delay','Wait']];
+   ['media','Media control'],['device','Device RGB control'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text'],['delay','Wait']];
   const defaultStep=kind=>{
    if(kind==='screen')return {type:kind,value:cfg.screens[0].id};
    if(kind==='media')return {type:kind,value:'play-pause'};
+   if(kind==='device')return {type:kind,value:'rgb-on'};
    if(kind==='hotkey')return {type:kind,value:'Ctrl+Alt+T'};
    if(kind==='text')return {type:kind,value:'Hello'};
    if(kind==='mouse')return {type:kind,value:'left'};
@@ -484,6 +487,9 @@ function renderTouchProperties(w,panel){
     steps[index]=defaultStep(value);w.steps=steps;render();
    }));
    if(step.type==='screen')row.append(makeSelect(targets,step.value,'Step '+(index+1)+' screen',value=>{
+    step.value=value;
+   }));
+   if(step.type==='device')row.append(makeSelect(hardwareActions,step.value,'Step '+(index+1)+' device action',value=>{
     step.value=value;
    }));
    if(step.type==='media')row.append(makeSelect(media,step.value,'Step '+(index+1)+' media',value=>{
@@ -541,7 +547,7 @@ function renderTouchProperties(w,panel){
  }
 
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
 $('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addImage')?.addEventListener('click',()=>addWidget('image'));$('addBar').onclick=()=>addWidget('bar');$('addGraph')?.addEventListener('click',()=>addWidget('graph'));$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
 $('copyWidget')?.addEventListener('click',()=>{
  const source=current()?.widgets.find(w=>w.id===selected);
