@@ -1,0 +1,176 @@
+/* OpenLinkHub fork visual layer — no upstream CSS files are edited.
+ * Keep selectors limited to shared application chrome. The legacy theme still
+ * owns devices, animations, colour pickers, and hardware-specific controls.
+ * Loaded AFTER /static/css/themes/*.css from web/head.html.
+ */
+:root {
+  --olh-surface: #111214;
+  --olh-panel: #191a1d;
+  --olh-card: #202124;
+  --olh-control: #1b1d20;
+  --olh-line: rgba(220,225,232,.12);
+  --olh-line-strong: rgba(220,225,232,.20);
+  --olh-ink: #e8e9ec;
+  --olh-muted: #a3a5ae;
+  --olh-accent: #d5a65a;
+  --olh-accent-soft: rgba(213,166,90,.13);
+  --olh-focus: rgba(213,166,90,.56);
+  color-scheme: dark;
+  /* Map existing theme variables without rewriting the upstream theme. */
+  --bg-main: var(--olh-surface);
+  --bg-panel: var(--olh-panel);
+  --bg-card: var(--olh-card);
+  --border-subtle: var(--olh-line);
+  --border-mid: var(--olh-line-strong);
+  --text-main: var(--olh-ink);
+  --text-muted: var(--olh-muted);
+}
+body {
+  background: radial-gradient(ellipse at 88% 0,rgba(213,166,90,.065),transparent 36%),
+              linear-gradient(180deg,#101113,#161719);
+  color: var(--olh-ink);
+  font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.sidebar {
+  background: linear-gradient(180deg,#131416,#101113);
+  border-right: 1px solid var(--olh-line);
+  box-shadow: 4px 0 22px rgba(0,0,0,.15);
+}
+.sidebar-title {color:var(--olh-muted);letter-spacing:.08em}
+.sidebar-nav {gap:5px}
+.sidebar .nav-link {
+  display:flex;align-items:center;
+  min-height:40px;
+  padding:9px 12px;
+  border:1px solid transparent;
+  border-radius:9px;
+  color:var(--olh-muted);
+  transition:background-color .16s ease,color .16s ease,border-color .16s ease;
+}
+.sidebar .nav-link:hover,
+.sidebar .nav-link:focus-visible {
+  background:rgba(255,255,255,.045);
+  color:var(--olh-ink);
+}
+.sidebar .nav-link.active {
+  color:var(--olh-ink);
+  background:linear-gradient(90deg,var(--olh-accent-soft),rgba(213,166,90,.045));
+  border-color:rgba(213,166,90,.24);
+  border-left:2px solid var(--olh-accent);
+}
+.sidebar .nav-link.active .sidebar-icon {opacity:1}
+.main-content {min-width:0}
+.main-content .card,
+.main-content .system-card {
+  background:linear-gradient(155deg,#1d1e21,#17181a);
+  border:1px solid var(--olh-line);
+  border-radius:13px;
+  box-shadow:0 10px 28px rgba(0,0,0,.13);
+}
+.main-content .card-header,
+.main-content .system-card .card-header {
+  background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0));
+  border-bottom:1px solid var(--olh-line);
+  color:var(--olh-ink);
+  letter-spacing:.04em;
+}
+.main-content .card-footer,
+.main-content .system-card .card-footer {
+  background:rgba(0,0,0,.09);
+  border-top:1px solid var(--olh-line);
+}
+.main-content :is(.card-title,h1,h2,h3,h4,h5) {color:var(--olh-ink)}
+.main-content .system-button,
+.main-content button.system-button,
+.main-content .btn:not(.btn-danger):not(.btn-success):not(.btn-warning),
+.sidebar #sidebarToggle {
+  background:linear-gradient(180deg,#303135,#26272b);
+  border:1px solid var(--olh-line-strong);
+  border-radius:9px;
+  color:var(--olh-ink);
+  box-shadow:none;
+}
+.main-content .system-button:hover,
+.main-content button.system-button:hover,
+.main-content .btn:not(.btn-danger):not(.btn-success):not(.btn-warning):hover,
+.sidebar #sidebarToggle:hover {
+  background:linear-gradient(180deg,#393b40,#2b2d32);
+  border-color:rgba(213,166,90,.4);
+}
+.main-content :is(.btn-accent,.system-button.btn-accent,.btn-primary),
+.main-content :is(button.btn-accent,button.btn-primary) {
+  background:linear-gradient(180deg,#e3b96f,#c9964b);
+  border-color:#b88740;
+  color:#1b1712;
+  font-weight:600;
+}
+.main-content :is(.btn-accent,.system-button.btn-accent,.btn-primary):hover {
+  background:linear-gradient(180deg,#edc789,#d4a158);
+  border-color:#d4a158;
+  color:#171411;
+}
+.main-content :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),
+                 select,textarea,.system-select,.form-control,.form-select) {
+  background-color:var(--olh-control);
+  color:var(--olh-ink);
+  border:1px solid var(--olh-line-strong);
+  border-radius:9px;
+}
+.main-content :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),
+                 select,textarea,.system-select,.form-control,.form-select):focus-visible,
+.sidebar :is(a,button):focus-visible {
+  outline:2px solid var(--olh-focus);
+  outline-offset:2px;
+}
+.main-content :is(input,select,textarea)::placeholder {color:var(--olh-muted);opacity:.8}
+.main-content .settings-row + .settings-row,
+.main-content .divider {border-color:var(--olh-line)}
+.main-content :is(.text-muted,small,.settings-label) {color:var(--olh-muted)}
+.modal-content {background:#1b1c1f;border:1px solid var(--olh-line-strong);color:var(--olh-ink)}
+.modal :is(.modal-header,.modal-footer) {border-color:var(--olh-line)}
+/* Nexus's own controls are defined in its fork stylesheet. Use the same tokens. */
+#nexus-editor {
+  --bg-card:var(--olh-panel);
+  --border-subtle:var(--olh-line);
+  --border-mid:var(--olh-line-strong);
+  --text-muted:var(--olh-muted);
+  --text-main:var(--olh-ink);
+}
+#nexus-editor .nexus-editor-tablist [role=tab][aria-selected=true] {
+  border-top-color:var(--olh-accent);
+  color:var(--olh-ink);
+}
+#nexus-editor .nexus-editor-tablist [role=tab]:focus-visible {outline:2px solid var(--olh-focus);outline-offset:2px}
+#nexus-editor .nexus-editor-tabcontent {background:var(--olh-panel)}
+#nexus-editor #nexus-selected-panel {
+  border:1px solid var(--olh-line-strong);
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(255,255,255,.026),rgba(255,255,255,0));
+  padding:16px;
+}
+#nexus-editor #nexus-selected-panel legend {color:var(--olh-ink);font-weight:600;letter-spacing:.015em}
+#nexus-editor #nexus-selected-panel #properties {row-gap:12px;column-gap:12px;align-items:start}
+#nexus-editor .nexus-properties-section {
+  min-width:0;
+  border-radius:10px;
+  border-color:var(--olh-line-strong);
+  background:rgba(0,0,0,.055);
+  overflow:hidden;
+}
+#nexus-editor .nexus-properties-section summary {
+  min-height:38px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.025);
+  color:var(--olh-ink);
+}
+#nexus-editor #nexus-selected-panel :is(input,select) {max-width:100%}
+#nexus-editor .nexus-widget-actions {gap:8px;padding-top:12px;border-top:1px solid var(--olh-line)}
+#nexus-editor #deleteWidget:not(:disabled) {border-color:rgba(214,88,88,.45);color:#efb0b0;background:rgba(144,44,44,.10)}
+#nexus-editor #deleteWidget:not(:disabled):hover {background:rgba(144,44,44,.22)}
+@media(max-width:900px){
+ .main-content {padding-inline:14px!important}
+ #nexus-editor #nexus-selected-panel {padding:12px}
+}
+@media(prefers-reduced-motion:reduce) {
+ .sidebar .nav-link {transition:none}
+}
