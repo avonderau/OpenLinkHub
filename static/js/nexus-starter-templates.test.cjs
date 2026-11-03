@@ -1,61 +1,48 @@
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {runInNewContext}=require('node:vm');
-const {readFileSync}=require('node:fs');
+const {readFileSync,readdirSync}=require('node:fs');
 const path=require('node:path');
-
-const source=readFileSync(path.join(__dirname,'nexus-starter-templates.js'),'utf8');
-const context={};
-runInNewContext(source,context,{filename:'nexus-starter-templates.js'});
-const templates=JSON.parse(JSON.stringify(context.NEXUS_STARTER_TEMPLATES));
-const supportedMetrics=new Set([
- 'cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization',
- 'memory.used','memory.utilization','network.rx_rate','network.tx_rate',
- 'disk.read_rate','disk.write_rate'
-]);
+const dir=path.join(__dirname,'..','nexus','templates');
+const files=readdirSync(dir).filter(f=>f.endsWith('.json'));
+const supportedMetrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate']);
 const mediaActions=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
-const actions=new Set(['next','previous','screen','media','macro']);
-
-test('starter screen template collection is present and uniquely named',()=>{
- assert.ok(templates.length>=4);
- assert.equal(new Set(templates.map(t=>t.id)).size,templates.length);
- assert.equal(new Set(templates.map(t=>t.name)).size,templates.length);
-});
-
-for(const template of templates){
- test(template.name+' fits the Nexus configuration schema',()=>{
-  assert.match(template.id,/^[a-zA-Z0-9_-]{1,64}$/);
-  assert.ok(template.name.length>0&&template.name.length<=80);
-  assert.ok(template.widgets.length>0&&template.widgets.length<=64);
-  for(const widget of template.widgets){
-   assert.ok(['metric','text','bar','button'].includes(widget.type));
-   for(const prop of ['x','y','width','height'])assert.ok(Number.isInteger(widget[prop]),prop);
-   assert.ok(widget.x>=0&&widget.y>=0);
-   assert.ok(widget.width>0&&widget.height>0);
-   assert.ok(widget.x+widget.width<=640);
-   assert.ok(widget.y+widget.height<=48);
-   assert.ok(widget.x%8===0&&widget.y%8===0);
-   assert.ok(widget.width%8===0&&widget.height%8===0);
-   assert.ok(Object.keys(widget.settings||{}).length<=16);
-   for(const [key,value] of Object.entries(widget.settings||{})){
-    assert.ok(key.length<=64);
-    assert.ok(value.length<=256);
+const presets=new Set(['preset_aurora','preset_neon','preset_circuit','preset_sunset','preset_pulse']);
+test('five editable stock screens exist as JSON files',()=>assert.equal(files.length,5));
+for(const file of files){
+ test(file+' matches the saved Nexus screen schema',()=>{
+  const data=JSON.parse(readFileSync(path.join(dir,file),'utf8'));
+  assert.equal(data.version,1);
+  assert.equal(data.screens.length,1);
+  const screen=data.screens[0];
+  assert.equal(data.activeScreenId,screen.id);
+  assert.match(screen.id,/^[a-zA-Z0-9_-]{1,64}$/);
+  assert.ok(screen.name&&screen.name.length<=80);
+  assert.ok(presets.has(screen.background));
+  assert.ok(screen.widgets.length>0&&screen.widgets.length<=64);
+  const ids=new Set();
+  for(const w of screen.widgets){
+   assert.match(w.id,/^[a-zA-Z0-9_-]{1,64}$/);
+   assert.ok(!ids.has(w.id));ids.add(w.id);
+   assert.ok(['metric','bar','text','button'].includes(w.type));
+   for(const key of ['x','y','width','height'])assert.ok(Number.isInteger(w[key]),key);
+   assert.ok(w.x>=0&&w.y>=0&&w.width>0&&w.height>0);
+   assert.ok(w.x+w.width<=640&&w.y+w.height<=48);
+   assert.equal(w.x%8,0);assert.equal(w.y%8,0);
+   assert.equal(w.width%8,0);assert.equal(w.height%8,0);
+   assert.ok(Object.keys(w.settings||{}).length<=16);
+   for(const [key,value] of Object.entries(w.settings||{})){
+    assert.ok(key.length<=64&&value.length<=256);
     if(['backgroundColor','textColor','borderColor'].includes(key))assert.match(value,/^#[0-9a-fA-F]{6}$/);
    }
-   if(['metric','bar'].includes(widget.type))assert.ok(supportedMetrics.has(widget.metric));
-   if(widget.type==='button'){
-    assert.ok(actions.has(widget.action));
-    if(widget.action==='media')assert.ok(mediaActions.has(widget.target));
+   if(['metric','bar'].includes(w.type))assert.ok(supportedMetrics.has(w.metric));
+   if(w.type==='button'){
+    assert.ok(['next','previous','screen','media','macro'].includes(w.action));
+    if(w.action==='media')assert.ok(mediaActions.has(w.target));
    }
   }
-  for(let i=0;i<template.widgets.length;i++){
-   const a=template.widgets[i];
-   for(let j=i+1;j<template.widgets.length;j++){
-    const b=template.widgets[j];
-    const overlap=a.x<b.x+b.width && b.x<a.x+a.width && a.y<b.y+b.height && b.y<a.y+a.height;
-    assert.equal(overlap,false,'overlapping widgets '+i+' and '+j);
-   }
-  }
+  screen.widgets.forEach((a,i)=>screen.widgets.slice(i+1).forEach(b=>{
+   assert.ok(!(a.x<b.x+b.width&&b.x<a.x+a.width&&a.y<b.y+b.height&&b.y<a.y+a.height),'widgets overlap');
+  }));
  });
 }
