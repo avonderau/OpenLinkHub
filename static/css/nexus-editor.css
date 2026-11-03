@@ -145,3 +145,7 @@
 #nexus-editor .nexus-layout-file-controls label{display:inline-flex;align-items:center;gap:.35rem;color:var(--text-muted,#a1a1a1)}
 #nexus-editor .nexus-layout-file-controls input[type=file]{max-width:240px}
 #nexus-editor .nexus-layout-files .nexus-panel-description{color:var(--text-muted,#a1a1a1)}
+
+/* Graph previews indicate a history trace without fabricating live metrics. */
+#nexus-editor .widget.nexus-graph-widget{font-size:10px}
+#nexus-editor .widget.nexus-graph-widget::after{content:'History graph';position:absolute;right:4px;bottom:2px;font-size:9px;color:var(--text-muted,#a1a1a1);opacity:.85}

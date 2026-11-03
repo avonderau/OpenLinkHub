@@ -4,7 +4,7 @@
 globalThis.NexusLayoutFiles=(()=>{
  const safeID=/^[A-Za-z0-9_-]{1,64}$/;
  const hex=/^#[0-9A-Fa-f]{6}$/;
- const types=new Set(['text','metric','bar','clock','button','macro']);
+ const types=new Set(['text','metric','bar','graph','clock','button','macro']);
  const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate']);
  const actions=new Set(['next','previous','screen','media','hotkey','mouse','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
@@ -51,7 +51,7 @@ globalThis.NexusLayoutFiles=(()=>{
     if(!['x','y','width','height'].every(key=>Number.isInteger(widget[key])))throw Error('Invalid widget geometry');
     if(widget.x<0||widget.y<0||widget.width<1||widget.height<1||widget.x+widget.width>640||widget.y+widget.height>48)
      throw Error('Widget outside 640 × 48 display');
-    if(['metric','bar'].includes(widget.type)&&!metrics.has(widget.metric))throw Error('Unsupported metric');
+    if(['metric','bar','graph'].includes(widget.type)&&!metrics.has(widget.metric))throw Error('Unsupported metric');
     const settings=widget.settings||{};
     if(!object(settings)||Object.keys(settings).length>16)throw Error('Invalid widget settings');
     for(const [key,text] of Object.entries(settings)){

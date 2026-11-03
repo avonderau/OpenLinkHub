@@ -62,7 +62,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  display.style.backgroundImage=uploaded?'url("/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(s.background)+'")':'';
  display.style.backgroundSize=uploaded?'100% 100%':'';
  display.style.backgroundRepeat=uploaded?'no-repeat':'';
- for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text','clock'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='clock'?formatNexusClock(w.settings):w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
+ for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','graph','text','clock'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}if(w.type==='graph')el.classList.add('nexus-graph-widget');el.textContent=w.type==='graph'?(w.settings?.label||'History: '+w.metric):w.type==='clock'?formatNexusClock(w.settings):w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
   el.classList.add('nexus-icon-widget');
   const picture=document.createElement('img');
   picture.className='nexus-custom-icon';
@@ -202,7 +202,7 @@ $('deleteScreen').onclick=()=>{
  message('Screen removed. Navigation links to it now point to '+cfg.screens[0].name+'. Save Layout to apply.');
 };
 function renderWidgetColors(w,panel){
- if(!['button','macro','metric','bar','text','clock'].includes(w.type))return;
+ if(!['button','macro','metric','bar','graph','text','clock'].includes(w.type))return;
  for(const [key,name,defaultColor] of [['backgroundColor','Background','#1b2935'],['textColor','Text & icon','#ebf5fc'],['borderColor','Border','#80bdd9']]){
   const label=document.createElement('label');label.textContent=name+' ';
   const input=document.createElement('input');input.type='color';input.value=w.settings?.[key]||defaultColor;
@@ -353,7 +353,7 @@ function renderTouchProperties(w,panel){
 
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
-$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
+$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addGraph')?.addEventListener('click',()=>addWidget('graph'));$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
 $('duplicateWidget')?.addEventListener('click',()=>{
  const screen=current();if(!screen)return;
  const source=screen.widgets.find(w=>w.id===selected);
