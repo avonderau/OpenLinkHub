@@ -176,3 +176,18 @@
 /* Keep controls editable; item alpha and radius are set per widget by the editor. */
 #nexus-editor .nexus-style-row input[type=number]{width:72px;min-width:0}
 #nexus-editor .widget{box-sizing:border-box;overflow:hidden}
+
+/* Selected-widget settings: compact, accessible groups with low-contrast separators. */
+#nexus-editor #properties{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;align-items:start}
+#nexus-editor .nexus-property-section{min-width:0;overflow:hidden;border:1px solid var(--border-subtle,#49505a);border-radius:8px;background:var(--bg-card,#202022)}
+#nexus-editor .nexus-property-section>summary{cursor:pointer;padding:.65rem .8rem;font-weight:600;color:var(--text-muted,#aaa);list-style-position:inside;user-select:none}
+#nexus-editor .nexus-property-section[open]>summary{border-bottom:1px solid var(--border-subtle,#49505a)}
+#nexus-editor .nexus-property-section .nexus-properties-row{box-sizing:border-box;padding:.55rem .65rem;gap:.45rem;align-items:center}
+#nexus-editor .nexus-property-section .nexus-properties-row:not(:empty)+.nexus-properties-row:not(:empty){border-top:1px solid var(--border-subtle,#49505a);padding-top:.55rem}
+#nexus-editor .nexus-property-section label{display:inline-flex;align-items:center;gap:.3rem;flex-wrap:wrap;color:var(--text-muted,#aaa);min-width:0}
+#nexus-editor .nexus-property-section input,#nexus-editor .nexus-property-section select{margin:.1rem}
+#nexus-editor .nexus-property-section input[type=number]{width:4.5rem;box-sizing:border-box}
+#nexus-editor .nexus-property-section .nexus-opacity-control{flex:1 1 215px}
+#nexus-editor .nexus-opacity-control input[type=range]{width:min(125px,100%);min-width:75px;flex:1 1 75px;accent-color:var(--text-muted,#aaa)}
+#nexus-editor .nexus-touch-row,#nexus-editor .nexus-style-row{align-items:flex-start;justify-content:flex-start}
+@media(max-width:780px){#nexus-editor #properties{grid-template-columns:minmax(0,1fr)}}
