@@ -2,6 +2,8 @@ package nexus
 
 import (
  "errors"
+ "fmt"
+ "math"
  "os"
  "path/filepath"
  "strconv"
@@ -13,6 +15,7 @@ import (
 // resolve exclusively to kernel-owned sysfs and the root filesystem.
 type LinuxExtendedMetricPaths struct {
  CPUClock string
+ LoadAverage string
  DiskRoot string
  Hwmon string
  DRM string
@@ -21,6 +24,7 @@ type LinuxExtendedMetricPaths struct {
 func defaultLinuxExtendedMetricPaths()LinuxExtendedMetricPaths{
  return LinuxExtendedMetricPaths{
   CPUClock:"/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq",
+  LoadAverage:"/proc/loadavg",
   DiskRoot:"/",
   Hwmon:"/sys/class/hwmon",
   DRM:"/sys/class/drm",
@@ -32,6 +36,25 @@ func readKernelUint(path string)(uint64,error){
  if err!=nil{return 0,err}
  if len(raw)>128{return 0,errors.New("unexpectedly large kernel metric")}
  return strconv.ParseUint(strings.TrimSpace(string(raw)),10,64)
+}
+
+// Load averages are normalized Linux run-queue quantities, not percentages.
+func parseLinuxLoadAverage(data string)MetricSnapshot {
+ values:=MetricSnapshot{}
+ fields:=strings.Fields(data)
+ if len(fields)<3{return values}
+ for i,key:=range []string{"cpu.load_1m","cpu.load_5m","cpu.load_15m"}{
+  var value float64
+  if _,err:=fmt.Sscan(fields[i],&value);err!=nil||math.IsNaN(value)||math.IsInf(value,0)||value<0||value>100000{return MetricSnapshot{}}
+  values[key]=value
+ }
+ return values
+}
+func readLinuxLoadAverage(path string)MetricSnapshot{
+ if path==""{return MetricSnapshot{}}
+ data,err:=os.ReadFile(path)
+ if err!=nil||len(data)>256{return MetricSnapshot{}}
+ return parseLinuxLoadAverage(string(data))
 }
 
 func readLinuxFanMetrics(root string)MetricSnapshot{
@@ -64,6 +87,7 @@ func readLinuxAMDGpuVRAM(root string)MetricSnapshot{
   used,err:=readKernelUint(filepath.Join(filepath.Dir(totalPath),"mem_info_vram_used"))
   if err!=nil||used>total{continue}
   result["gpu.vram.used_mb"]=float64(used)/(1024*1024)
+  result["gpu.vram.total_mb"]=float64(total)/(1024*1024)
   result["gpu.vram.utilization"]=100*float64(used)/float64(total)
   break
  }
@@ -85,6 +109,7 @@ func ReadLinuxExtendedMetrics(paths LinuxExtendedMetricPaths) MetricSnapshot{
    readings["disk.free_gb"]=float64(stat.Bavail)*float64(stat.Bsize)/1e9
   }
  }
+ for key,value:=range readLinuxLoadAverage(paths.LoadAverage){readings[key]=value}
  for key,value:=range readLinuxFanMetrics(paths.Hwmon){readings[key]=value}
  for key,value:=range readLinuxAMDGpuVRAM(paths.DRM){readings[key]=value}
  return readings
