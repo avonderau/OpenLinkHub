@@ -83,3 +83,13 @@
 
 /* Metric, bar and text widgets use the same color choices as buttons. */
 #nexus-editor .widget.nexus-colored-widget{background:var(--button-bg);color:var(--button-ink);-webkit-text-fill-color:var(--button-ink);border-color:var(--button-border)}
+
+/* Selected widget: dimensions, colors, then style/actions each on dedicated rows. */
+#nexus-editor #properties{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:.5rem}
+#nexus-editor .nexus-properties-row{display:flex;align-items:center;align-content:center;flex-wrap:wrap;gap:.35rem;min-width:0;width:100%}
+#nexus-editor .nexus-properties-row:not(:empty)+.nexus-properties-row:not(:empty){padding-top:.5rem;border-top:1px solid var(--border-subtle,#496275)}
+#nexus-editor .nexus-dimensions-row label{display:inline-flex;align-items:center;gap:.25rem;white-space:nowrap;margin:.15rem}
+#nexus-editor .nexus-dimensions-row input[type=number]{width:72px;min-width:0}
+#nexus-editor .nexus-colors-row label{display:inline-flex;align-items:center;gap:.35rem;white-space:nowrap;margin:.15rem}
+#nexus-editor .nexus-style-row label{margin:.15rem}
+#nexus-editor .nexus-style-row textarea{max-width:100%}
