@@ -123,31 +123,26 @@ test('pre-made JSON screens are normal screens to edit, add, replace and save',a
 });
 
 
-test('visual macro builder adds, moves and removes steps without raw JSON editing',async()=>{
+test('Nexus uses existing saved macros and does not expose the old macro builder',async()=>{
  const {context,node}=makeEditor();
  await vm.runInContext('load()',context);
- const screen=vm.runInContext('cfg.screens[0]',context);
- screen.widgets.push({id:'macro_test',type:'macro',x:0,y:0,width:160,height:40,steps:[{type:'next'}],settings:{}});
- vm.runInContext("selected='macro_test';render()",context);
+ vm.runInContext("nexusSharedMacros={'7':{name:'Desktop macro'}}",context);
+ node('addMacro').listeners.click();
+ const widget=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
+ assert.equal(widget.type,'button');
+ assert.equal(widget.action,'macro');
+ assert.equal(widget.target,'7');
+ assert.equal(widget.steps,undefined);
  const find=(root,predicate)=>{
   if(predicate(root))return root;
-  for(const child of root.children||[]){const match=find(child,predicate);if(match)return match}
+  for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=find(child,predicate);if(hit)return hit}}
   return null;
  };
- let editor=find(node('properties'),el=>el.className==='nexus-macro-editor');
- assert.ok(editor,'visual macro editor is shown');
- assert.equal(find(editor,el=>el.textContent==='Macro steps (JSON)'),null);
- let add=find(editor,el=>el.textContent==='Add macro step');
- assert.ok(add && !add.disabled);
- add.listeners.click();
- assert.equal(screen.widgets[0].steps.length,2);
- editor=find(node('properties'),el=>el.className==='nexus-macro-editor');
- let down=find(editor,el=>el.textContent==='Down'&&!el.disabled);
- assert.ok(down,'move controls available');
- let remove=find(editor,el=>el.textContent==='Remove'&&!el.disabled);
- assert.ok(remove,'remove control available');
- remove.listeners.click();
- assert.equal(screen.widgets[0].steps.length,1);
+ assert.equal(find(node('properties'),el=>el.className==='nexus-macro-editor'),null);
+ const choice=find(node('properties'),el=>el.options?.some(option=>option.label==='Desktop macro'));
+ assert.ok(choice,'saved OpenLinkHub macro appears in Nexus widget settings');
+ const link=find(node('properties'),el=>el.href==='/macros');
+ assert.ok(link,'Nexus links to the existing macro editor');
 });
 
 
