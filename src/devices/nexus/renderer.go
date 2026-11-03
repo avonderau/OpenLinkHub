@@ -28,7 +28,7 @@ type MetricSnapshot map[string]float64
 // RenderScreen draws a validated screen to the Nexus's native 640x48 RGBA
 // framebuffer. It does not interact with HID and can be tested independently.
 func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
- return renderNexusScreen(screen,values,nil)
+ return renderNexusScreen(screen,values,"")
 }
 
 func renderNexusScreen(screen Screen,values MetricSnapshot, iconDir string)(*image.RGBA,error){
