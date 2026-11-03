@@ -201,3 +201,15 @@ test('keyboard layout editing selects, moves, resizes and deselects widgets',asy
  assert.equal(vm.runInContext('selected',context),null);
  assert.equal(key('ArrowRight'),false);
 });
+
+
+test('software dimming remains full by default and saves a selected level',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ assert.equal(node('displayBrightness').value,'100');
+ node('displayBrightness').value='40';
+ node('displayBrightness').listeners.change();
+ assert.equal(vm.runInContext('cfg.brightness',context),40);
+ await node('save').onclick();
+ assert.equal(writes.at(-1).brightness,40);
+});
