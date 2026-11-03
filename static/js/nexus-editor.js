@@ -56,7 +56,10 @@ function changeSelectedWidgetType(widget,type){
   }
   if(type==='text')widget.settings.text ||= 'New text';
   if(type==='clock')widget.settings.clockFormat ||= '24h';
-  if(type==='image')widget.settings.icon='custom';
+  if(type==='image'){
+   widget.settings.style ??= 'flat';
+   widget.settings.icon='custom';
+  }
  }
  return true;
 }
