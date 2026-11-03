@@ -13,8 +13,10 @@ import (
 const (
  ScreenWidth = 640
  ScreenHeight = 48
- MaxScreens = 32
+ MaxScreens = 256
  MaxWidgets = 64
+ MaxTotalWidgets = 4096
+ MaxScreenConfigBytes = 4*1024*1024
 )
 var safeID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
 var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"graph":true,"clock":true,"image":true,"button":true,"macro":true}
@@ -65,7 +67,10 @@ func (c ScreenConfiguration) Validate() error {
  if c.Brightness!=0 && (c.Brightness<20 || c.Brightness>100){return errors.New("display brightness must be 20 to 100 percent")}
  if len(c.Screens)<1 || len(c.Screens)>MaxScreens {return errors.New("invalid screen count")}
  seen:=map[string]bool{}
+ totalWidgets:=0
  for _,s:=range c.Screens {
+  totalWidgets+=len(s.Widgets)
+  if totalWidgets>MaxTotalWidgets{return errors.New("too many widgets across screens")}
   if !safeID.MatchString(s.ID)||seen[s.ID] {return fmt.Errorf("invalid or duplicate screen ID: %q",s.ID)}
   seen[s.ID]=true
   if len(s.Name)==0||len(s.Name)>80||len(s.Widgets)>MaxWidgets {return fmt.Errorf("invalid screen %q",s.ID)}
@@ -142,13 +147,14 @@ func (c ScreenConfiguration) PreviousScreen() string {
 func LoadScreens(path string)(ScreenConfiguration,error){
  var c ScreenConfiguration
  b,err:=os.ReadFile(path);if err!=nil{return c,err}
- if len(b)>1024*1024{return c,errors.New("configuration too large")}
+ if len(b)>MaxScreenConfigBytes{return c,errors.New("configuration too large")}
  if err=json.Unmarshal(b,&c);err!=nil{return c,err}
  return c,c.Validate()
 }
 func SaveScreens(path string,c ScreenConfiguration)error{
  if err:=c.Validate();err!=nil{return err}
  b,err:=json.MarshalIndent(c,"","  ");if err!=nil{return err}
+ if len(b)>MaxScreenConfigBytes{return errors.New("configuration too large")}
  dir:=filepath.Dir(path)
  f,err:=os.CreateTemp(dir,".nexus-screens-*.tmp");if err!=nil{return err}
  defer os.Remove(f.Name())

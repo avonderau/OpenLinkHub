@@ -5,6 +5,8 @@ let nexusPreviewTelemetry=null,nexusTelemetryRequestInFlight=false;
 const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"];
 const GRID=8;
+const NEXUS_MAX_SCREENS=256, NEXUS_MAX_TOTAL_WIDGETS=4096;
+const totalNexusWidgets=()=>cfg?.screens.reduce((sum,s)=>sum+s.widgets.length,0)||0;
 function formatNexusClock(settings={},now=new Date()){
  const value=settings.clockFormat||'24h';
  if(value==='12h')return now.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',hour12:true});
@@ -22,7 +24,7 @@ function uniqueID(prefix,used){
 function selectedScreenID(){return $('screens').value}
 function refreshActionButtons(){
  const screen=current(),count=cfg?.screens.length||0;
- for(const id of ['renameScreen','duplicateScreen'])if($(id))$(id).disabled=!screen||(id==='duplicateScreen'&&count>=32);
+ for(const id of ['renameScreen','duplicateScreen'])if($(id))$(id).disabled=!screen||(id==='duplicateScreen'&&count>=NEXUS_MAX_SCREENS);
  if($('deleteScreen'))$('deleteScreen').disabled=count<=1;
  const index=cfg?.screens.findIndex(s=>s.id===selectedScreenID())??-1;
  if($('moveScreenUp'))$('moveScreenUp').disabled=index<=0;
@@ -38,9 +40,9 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  const widget=s?.widgets.find(w=>w.id===selected);
  const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
  if(remove)remove.disabled=!widget;
- if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64;
+ if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
  if($('copyWidget'))$('copyWidget').disabled=!widget;
- if($('pasteWidget'))$('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64;
+ if($('pasteWidget'))$('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
  if($('saveWidgetPreset'))$('saveWidgetPreset').disabled=!widget;
  if(status){
   status.replaceChildren();
@@ -201,7 +203,7 @@ $('newScreenPreset')?.addEventListener('change',refreshActionButtons);
 $('addScreen').onclick=async()=>{
  try{
   if(!cfg)return message('Load a Nexus layout first.');
-  if(cfg.screens.length>=32)return message('Maximum 32 screens.');
+  if(cfg.screens.length>=NEXUS_MAX_SCREENS)return message('Maximum 256 screens.');
   const kind=$('newScreenPreset')?.value||'blank';
   const id=uniqueID('screen',new Set(cfg.screens.map(screen=>screen.id)));
   let screen;
@@ -252,7 +254,7 @@ $('renameScreen')?.addEventListener('click',()=>{
 });
 $('duplicateScreen')?.addEventListener('click',()=>{
  const source=current();if(!source||!cfg)return;
- if(cfg.screens.length>=32)return message('Maximum 32 screens');
+ if(cfg.screens.length>=NEXUS_MAX_SCREENS)return message('Maximum 256 screens');
  const newID=uniqueID('screen',new Set(cfg.screens.map(s=>s.id)));
  const name=(source.name.slice(0,73)+' copy').slice(0,80);
  // JSON round trip gives the duplicate fully independent widget settings and macro steps.
@@ -479,7 +481,7 @@ function renderTouchProperties(w,panel){
  }
 
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
 $('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addImage')?.addEventListener('click',()=>addWidget('image'));$('addBar').onclick=()=>addWidget('bar');$('addGraph')?.addEventListener('click',()=>addWidget('graph'));$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
 $('copyWidget')?.addEventListener('click',()=>{
  const source=current()?.widgets.find(w=>w.id===selected);
@@ -491,6 +493,7 @@ $('pasteWidget')?.addEventListener('click',()=>{
  const screen=current();
  if(!screen||!copiedWidget)return;
  if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+ if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');
  const copy=JSON.parse(JSON.stringify(copiedWidget));
  copy.id=uniqueID('widget',new Set(screen.widgets.map(w=>w.id)));
  copy.x=snapPosition(copy.x+16,640-copy.width);
@@ -503,6 +506,7 @@ $('duplicateWidget')?.addEventListener('click',()=>{
  const source=screen.widgets.find(w=>w.id===selected);
  if(!source)return;
  if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+ if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');
  const duplicate=JSON.parse(JSON.stringify(source));
  duplicate.id=uniqueID('widget',new Set(screen.widgets.map(w=>w.id)));
  // Shift one grid cell when space allows; otherwise keep position, with the copy on top.
@@ -545,7 +549,7 @@ $('importLayout')?.addEventListener('click',async()=>{
   if(!cfg)return message('Load a Nexus layout first.');
   const file=$('layoutFile')?.files?.[0];
   if(!file)return message('Select a JSON layout file.');
-  if(file.size<1||file.size>1024*1024)throw Error('JSON file must be 1 MiB or smaller');
+  if(file.size<1||file.size>4*1024*1024)throw Error('JSON file must be 4 MiB or smaller');
   const imported=NexusLayoutFiles.validate(JSON.parse(await file.text()));
   const mode=$('layoutImportMode').value;
   if(mode==='replace-layout'&&!confirm('Replace the entire current layout with '+imported.screens.length+' imported screens? Changes become permanent only when Save Layout is clicked.'))return;
@@ -578,7 +582,7 @@ function refreshWidgetLibrary(){
   const entries=NexusWidgetLibrary.list(widgetLibraryStorage());
   for(const entry of entries)select.add(new Option(entry.name,entry.id));
   if(entries.some(entry=>entry.id===previouslySelected))select.value=previouslySelected;
-  if($('addWidgetPreset'))$('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64;
+  if($('addWidgetPreset'))$('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
   if($('deleteWidgetPreset'))$('deleteWidgetPreset').disabled=!entries.length;
  }catch(e){
   if($('addWidgetPreset'))$('addWidgetPreset').disabled=true;
@@ -604,6 +608,7 @@ $('addWidgetPreset')?.addEventListener('click',()=>{
  try{
   const screen=current();if(!screen)return;
   if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+  if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');
   const storage=widgetLibraryStorage();
   const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===$('widgetLibrarySelect').value);
   if(!entry)return;
