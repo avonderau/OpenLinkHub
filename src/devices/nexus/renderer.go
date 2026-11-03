@@ -75,7 +75,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
    if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),ink)}
    continue
   }
-  label=clipText(label,w.Width)
+  // Text clipping uses each widget's selected font metrics.
   drawStyledNexusText(canvas,w,w.Y+11,label,ink)
   if w.Type=="graph"{
    drawNexusHistoryGraph(canvas,bounds,w.Metric,history[w.Metric],ink)
