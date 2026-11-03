@@ -975,8 +975,7 @@ func (d *Device) setupLCD() {
 				} else {
 					switch lcdMode {
 					case "custom-screens":
-						d.advanceAutomaticScreen(time.Now())
-						if frame := d.renderCustomScreen(); frame != nil { d.transfer(frame) }
+						d.refreshCustomLCD()
 					case "cpu-info":
 						{
 							cpuTemp := dashboard.GetDashboard().TemperatureToString(d.CpuTemp)
@@ -1071,13 +1070,7 @@ func (d *Device) backendListener() {
 				}
 
 				if d.DeviceProfile.LCDMode == "custom-screens" {
-					if len(data)<8 {continue}
-					active := data[5]
-					if active == 1 && !blocked {
-						blocked = true
-						position := binary.LittleEndian.Uint16(data[6:8])
-						d.handleCustomTouch(position)
-					} else if active == 0 { blocked = false }
+					d.processCustomTouchReport(data, &blocked)
 					continue
 				}
 				if d.Keyboard {

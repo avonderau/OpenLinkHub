@@ -27,59 +27,7 @@
             {{ template "temperature-bar" . }}
             {{ end }}
 
-            <!-- Nexus device controls beside the integrated screen editor -->
-            <div class="nexus-workspace">
-                <div class="nexus-device-column">
-                    <div class="card system-card text-center">
-                        <div class="card-header">
-                            {{ .Device.Product }}
-                        </div>
-                        <div class="card-body">
-                            <div class="settings-list">
-                                <!-- Firmware -->
-                                <div class="settings-row">
-                                    <span class="settings-label text-ellipsis">{{ .Lang "txtFirmware" }}</span>
-                                    <span class="meta-value">{{ .Device.Firmware }}</span>
-                                </div>
-
-                                <div class="settings-row nexus-cycle-settings">
-                                    <label for="cyclingMode">Screen cycling</label>
-                                    <select id="cyclingMode" class="form-select system-select">
-                                        <option value="manual">Manual (touch edges)</option>
-                                        <option value="automatic">Automatic</option>
-                                        <option value="off">Off (fixed screen)</option>
-                                    </select>
-                                    <label for="cyclingSeconds">Interval (seconds)</label>
-                                    <input id="cyclingSeconds" type="number" min="5" max="3600" step="1" value="15" class="form-control">
-                                    <small>Save layout to apply cycling settings.</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="nexus-editor-column">
-                    <section id="nexus-editor" class="card system-card"><div class="card-body">
-
-<div class="nexus-editor-heading"><h2 class="mb-0">NEXUS Screen Editor</h2><button id="save" type="button">Save Layout</button></div>
-<p class="text-secondary">Arrange screens and widgets for your 640 × 48 iCUE NEXUS display.</p><p id="message" role="status" aria-live="polite"></p>
-<label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="deleteScreen">Delete screen</button>
-<div id="preview"><div id="screen"></div></div>
-<fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
-<p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
-<div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addButton">Add button</button></div>
-</fieldset>
-<fieldset class="nexus-panel" id="nexus-selected-panel"><legend>Selected Widget</legend>
-<div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
-<div id="properties"></div>
-<button id="deleteWidget" disabled>Remove selected widget</button>
-</fieldset>
-<fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
-<label>Upload PNG/JPEG <input type="file" id="image" accept="image/png,image/jpeg"></label><button id="upload">Upload and apply</button></fieldset>
-
-
-</div></section>
-                </div>
-            </div>
+            {{ template "nexus-custom-workspace" . }}
 <script src="/static/js/nexus-editor.js"></script>
         </main>
     </div>
