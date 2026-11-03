@@ -6,14 +6,17 @@ amber design while intentionally keeping upstream source changes small.
 ## Implementation
 
 - `static/css/openlinkhub-fork-theme.css` owns the presentation overrides.
-- `web/head.html` has **one added stylesheet link** immediately after the
-  existing theme stylesheet. This is the only shared upstream template edited.
-- Existing HTML markup, IDs, JavaScript, API contracts, hardware controls and
+- `web/head.html` adds the fork name to the browser title and loads **one added stylesheet link** immediately after the existing theme stylesheet.
+- `web/sidebar.html` adds one small visible **OpenLinkHub Nexus** wordmark above existing navigation; the links, translations and behavior are untouched.
+- These are the only two shared upstream templates changed, keeping the upgrade conflict surface narrow.
+- Existing functional HTML markup, IDs, JavaScript, API contracts, hardware controls and
   `static/css/themes/default.css` remain unchanged.
 - Pages rendering the shared Go `head` template inherit the overlay; standalone
   utilities that use a custom document head do not automatically inherit it.
 - Accent and surface colors use `--olh-*` CSS custom properties. Keep new
   changes in this file rather than adding global rules to upstream CSS.
+
+The design brands the fork **OpenLinkHub Nexus**, but retains the GitHub repository `avonderau/OpenLinkHub` and its `main` branch to avoid breaking clone URLs and automation.
 
 The design uses the **real** application sidebar and controls, not the
 conceptual mockup's invented navigation links. This preserves existing routing.
