@@ -69,7 +69,7 @@
 #nexus-editor #deleteWidget:disabled{opacity:.45;cursor:not-allowed;filter:none}
 
 /* Stable top bar for the save action and editor status. */
-#nexus-editor .nexus-editor-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:.5rem}
+#nexus-editor .nexus-editor-heading{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.75rem;margin-bottom:.5rem}
 #nexus-editor .nexus-editor-heading h2{min-width:0;margin:0}
 #nexus-editor .nexus-editor-heading #save{flex-shrink:0;margin:0}
 #nexus-editor #message{margin:.25rem 0 .75rem}
