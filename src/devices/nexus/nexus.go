@@ -132,6 +132,8 @@ type Device struct {
  macroRunning bool
  activeNexusApps []string
  preApplicationScreen string
+ pressedWidgetID string
+ pressedWidgetUntil time.Time
 }
 
 var (
