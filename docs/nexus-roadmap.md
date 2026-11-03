@@ -77,7 +77,7 @@ Existing saved JSON layouts remain valid across updates.
 
 10. **Import/export**: versioned JSON for full layouts and individual screens,
     collision handling, previews before overwrite and safe content limits.
-11. **Reusable widget library**: save, rename, delete and reuse button/widget
+11. **Reusable widget library [browser-local presets implemented]**: save, rename, delete and reuse button/widget
     definitions with independent IDs and safe references.
 12. **Typography/layout**: font sizes, alignment, vertical centering, shadows
     and adaptive text clipping; keep editor and physical Nexus consistent.
@@ -139,3 +139,13 @@ screen order. Widget Copy/Paste transfers a deep copy between screens in the
 current loaded layout, assigning a fresh widget ID and keeping all widget
 properties and actions. These are editor actions only until Save Layout.
 A persistent cross-session reusable widget library is still planned.
+
+### Browser-local widget presets
+
+The editor can save selected widgets as named presets in this browser, then
+add them to any screen in the current Nexus layout. Presets are stored in
+localStorage with 50-item and 256 KiB bounds. New widget IDs are assigned
+when placed, and navigation references to unknown screens fall back to the
+selected screen. Presets are not synchronized across browsers or hosts, and
+clearing browser data removes them. Server-side synchronized libraries remain
+future work.
