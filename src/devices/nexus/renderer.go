@@ -129,7 +129,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
     background:=image.Rect(w.X+3,barY,w.X+w.Width-3,barY+3)
     draw.Draw(canvas,background,image.NewUniform(color.RGBA{65,79,91,255}),image.Point{},draw.Src)
     fill:=image.Rect(background.Min.X,barY,background.Min.X+int(float64(background.Dx())*pct/100),barY+3)
-    draw.Draw(canvas,fill,image.NewUniform(color.RGBA{92,213,175,255}),image.Point{},draw.Src)
+    draw.Draw(canvas,fill,image.NewUniform(ink),image.Point{},draw.Src)
    }
   }
   }()
