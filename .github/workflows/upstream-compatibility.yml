@@ -14,7 +14,9 @@ on:
       - 'web/nexus*.html'
       - 'static/js/nexus-editor.js'
       - 'static/js/nexus-layout-files.js'
-      - 'static/js/nexus-layout-files.test.cjs'
+      - 'static/js/nexus-widget-library.js'
+      - 'static/js/nexus-widget-library.test.cjs'
+      - 'static/js/nexus-layout-files.test.cjs static/js/nexus-widget-library.test.cjs'
       - 'static/nexus/templates/**'
       - 'static/js/nexus-starter-templates.test.cjs'
       - 'static/js/nexus-editor-workflow.test.cjs'
@@ -54,6 +56,7 @@ jobs:
         run: |
           node --check static/js/nexus-editor.js
           node --check static/js/nexus-layout-files.js
+          node --check static/js/nexus-widget-library.js
           node --test static/js/nexus-starter-templates.test.cjs static/js/nexus-editor-workflow.test.cjs static/js/nexus-layout-files.test.cjs
       - name: Set up Go
         uses: actions/setup-go@v5
