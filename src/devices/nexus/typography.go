@@ -76,7 +76,7 @@ func drawStyledNexusText(dst *image.RGBA,w Widget,baseY int,value string,ink col
  }
  bounds:=image.Rect(w.X,w.Y,w.X+w.Width,w.Y+w.Height).Intersect(dst.Bounds())
  if bounds.Empty(){return}
- if vertical!=""" && vertical!="top" && (w.Type=="text" || w.Type=="button" || w.Type=="macro") {
+ if vertical!="" && vertical!="top" && (w.Type=="text" || w.Type=="button" || w.Type=="macro") {
   metrics:=face.Metrics()
   ascent:=metrics.Ascent.Ceil()
   descent:=metrics.Descent.Ceil()
