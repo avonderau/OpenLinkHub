@@ -55,3 +55,29 @@ func nexusBackgroundAPI(w http.ResponseWriter,r *http.Request){
  w.Header().Set("Content-Type","application/json")
  _=json.NewEncoder(w).Encode(map[string]string{"id":id})
 }
+
+func nexusCustomIconAPI(w http.ResponseWriter,r *http.Request){
+ if r.Method!=http.MethodPost && r.Method!=http.MethodGet {
+  w.Header().Set("Allow","GET, POST");http.Error(w,"method not allowed",405);return
+ }
+ d,ok:=nexusDevice(r);if !ok {http.Error(w,"Nexus device not found",404);return}
+ id:=r.URL.Query().Get("id")
+ if r.Method==http.MethodGet {
+  path,err:=d.CustomIconPath(id)
+  if err!=nil{http.Error(w,"icon not found",404);return}
+  w.Header().Set("Content-Type","image/png")
+  w.Header().Set("Cache-Control","private, no-store")
+  w.Header().Set("X-Content-Type-Options","nosniff")
+  http.ServeFile(w,r,path)
+  return
+ }
+ if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
+ if !strings.HasPrefix(r.Header.Get("Content-Type"),"image/png") && !strings.HasPrefix(r.Header.Get("Content-Type"),"image/jpeg"){http.Error(w,"PNG or JPEG required",415);return}
+ r.Body=http.MaxBytesReader(w,r.Body,512*1024)
+ defer r.Body.Close()
+ content,err:=io.ReadAll(r.Body)
+ if err!=nil{http.Error(w,"icon too large or unreadable",400);return}
+ if _,err:=d.SaveCustomIcon(id,content);err!=nil{http.Error(w,err.Error(),400);return}
+ w.Header().Set("Content-Type","application/json")
+ _=json.NewEncoder(w).Encode(map[string]string{"id":id})
+}

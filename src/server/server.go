@@ -2885,6 +2885,7 @@ func setRoutes() http.Handler {
 	r.Handle("/static/", http.StripPrefix("/static/", fs))
  r.HandleFunc("/api/nexus/screens", nexusScreensAPI)
  r.HandleFunc("/api/nexus/background", nexusBackgroundAPI)
+ r.HandleFunc("/api/nexus/icon", nexusCustomIconAPI)
 
 	// GET
 	handleFunc(r, "/api/", http.MethodGet, homePage)
