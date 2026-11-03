@@ -7,6 +7,7 @@ import (
  "os"
  "path/filepath"
  "strings"
+ "time"
 )
 func defaultCustomScreens() ScreenConfiguration {
  return ScreenConfiguration{Version:1,ActiveScreenID:"system",Screens:[]Screen{
@@ -60,6 +61,19 @@ func (d *Device) renderCustomScreen() []byte {
   if used,pct,ok:=parseMemoryMetrics(string(mem));ok {
    values["memory.used"]=used
    values["memory.utilization"]=pct
+  }
+ }
+ if network,disk:=detectCounterDevices();network!=""&&disk!="" {
+  if counters,err:=ReadLinuxCounters(network,disk);err==nil {
+   d.mutex.Lock()
+   rates:=d.customSampler.Sample(counters,time.Now())
+   d.mutex.Unlock()
+   if rates.Valid {
+    values["network.rx_rate"]=rates.NetworkRXBytesPerSecond
+    values["network.tx_rate"]=rates.NetworkTXBytesPerSecond
+    values["disk.read_rate"]=rates.DiskReadBytesPerSecond
+    values["disk.write_rate"]=rates.DiskWriteBytesPerSecond
+   }
   }
  }
  for _,screen:=range c.Screens {
