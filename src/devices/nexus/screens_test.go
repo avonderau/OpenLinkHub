@@ -19,3 +19,16 @@ func TestMacroButtonValidation(t *testing.T){
  c.Screens[0].Widgets[0].Steps=[]MacroStep{{Type:"shell",Value:"echo unsafe"}}
  if err:=c.Validate();err==nil {t.Fatal("unsupported macro action accepted")}
 }
+
+func TestColorValidationForMetricBarAndText(t *testing.T){
+ for _,kind:=range []string{"metric","bar","text"} {
+  t.Run(kind,func(t *testing.T){
+   c:=sample()
+   widget:=Widget{ID:"styled",Type:kind,Metric:"cpu.temperature",X:0,Y:0,Width:120,Height:48,Settings:map[string]string{"backgroundColor":"#123456","textColor":"#abcdef","borderColor":"#ff8800"}}
+   c.Screens[0].Widgets=[]Widget{widget}
+   if err:=c.Validate();err!=nil{t.Fatalf("valid colors rejected: %v",err)}
+   c.Screens[0].Widgets[0].Settings["borderColor"]="red"
+   if err:=c.Validate();err==nil{t.Fatal("invalid color accepted")}
+  })
+ }
+}

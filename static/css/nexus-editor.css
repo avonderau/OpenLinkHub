@@ -80,3 +80,6 @@
 #nexus-editor .widget.nexus-style-flat{background:transparent;border-color:transparent}
 #nexus-editor .widget.nexus-button-style .nexus-icon{color:var(--button-ink)}
 #nexus-editor #properties input[type=color]{width:48px;height:35px;padding:2px;vertical-align:middle;cursor:pointer}
+
+/* Metric, bar and text widgets use the same color choices as buttons. */
+#nexus-editor .widget.nexus-colored-widget{background:var(--button-bg);color:var(--button-ink);-webkit-text-fill-color:var(--button-ink);border-color:var(--button-border)}

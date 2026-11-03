@@ -93,9 +93,9 @@ func (c ScreenConfiguration) Validate() error {
     }
     if total>15000 {return fmt.Errorf("macro delays exceed 15 seconds")}
    }
-   if w.Type=="button" || w.Type=="macro" {
+   if w.Type=="button" || w.Type=="macro" || w.Type=="metric" || w.Type=="bar" || w.Type=="text" {
     style:=w.Settings["style"]
-    if style!="" && style!="solid" && style!="outline" && style!="flat" {return fmt.Errorf("invalid button style %q",style)}
+    if style!="" && style!="solid" && style!="outline" && style!="flat" {return fmt.Errorf("invalid widget style %q",style)}
     for _,key:=range []string{"backgroundColor","textColor","borderColor"}{
      val:=w.Settings[key]
      if val!="" && !validHexColor(val) {return fmt.Errorf("invalid %s for widget %q",key,w.ID)}

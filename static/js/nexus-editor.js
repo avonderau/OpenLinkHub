@@ -34,13 +34,14 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  }
  if(!s)return;
  $('background').value=s.background||'';
- for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(w.type==='button'||w.type==='macro'){const st=w.settings||{};el.classList.add('nexus-button-style');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){el.classList.add('nexus-icon-widget');const glyph=document.createElement('span');glyph.className='nexus-icon';glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)}el.dataset.id=w.id;$('screen').append(el)}
+ for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text'].includes(w.type)){const st=w.settings||{};el.classList.add('nexus-colored-widget');if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){el.classList.add('nexus-icon-widget');const glyph=document.createElement('span');glyph.className='nexus-icon';glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)}el.dataset.id=w.id;$('screen').append(el)}
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;
  const fields=(w.type==='button'||w.type==='macro')?[['x','number'],['y','number'],['width','number'],['height','number']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
  for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
  const label=document.createElement('label');label.textContent=key+' ';
  let input;if(type==='select'){input=document.createElement('select');for(const m of metrics)input.add(new Option(m,m));input.value=w.metric}else{input=document.createElement('input');input.type=type;input.value=(key in w?w[key]:(w.settings||{})[key])??''}
  input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=snapSize(v,640);if(key==='height')w.height=snapSize(v,48);if(key==='x')w.x=snapPosition(v,640-w.width);if(key==='y')w.y=snapPosition(v,48-w.height);w.x=snapPosition(w.x,640-w.width);w.y=snapPosition(w.y,48-w.height)}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);$('properties').append(label)}
+ renderWidgetColors(w);
  if(w.type==='button'||w.type==='macro')renderTouchProperties(w);
 }
 $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
@@ -52,6 +53,21 @@ if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
 $('addScreen').onclick=()=>{if(!cfg)return;if(cfg.screens.length>=32)return message('Maximum 32 screens');const name=prompt('Screen name','New screen');if(!name)return;const id='screen_'+Date.now();cfg.screens.push({id,name,widgets:[]});cfg.activeScreenId=id;selected=null;refreshScreens()};
 $('deleteScreen').onclick=()=>{if(!cfg||cfg.screens.length<=1)return message('Keep at least one screen');cfg.screens=cfg.screens.filter(s=>s.id!==$('screens').value);cfg.activeScreenId=cfg.screens[0].id;selected=null;refreshScreens()};
+function renderWidgetColors(w){
+ if(!['button','macro','metric','bar','text'].includes(w.type))return;
+ const panel=$('properties');
+ for(const [key,name,defaultColor] of [['backgroundColor','Background','#1b2935'],['textColor','Text & icon','#ebf5fc'],['borderColor','Border','#80bdd9']]){
+  const label=document.createElement('label');label.textContent=name+' ';
+  const input=document.createElement('input');input.type='color';input.value=w.settings?.[key]||defaultColor;
+  input.oninput=()=>{
+   w.settings??={};w.settings[key]=input.value;
+   const widget=[...$('screen').children].find(el=>el.dataset.id===w.id);
+   if(widget)widget.style.setProperty(key==='backgroundColor'?'--button-bg':key==='textColor'?'--button-ink':'--button-border',input.value);
+  };
+  input.onchange=()=>{w.settings[key]=input.value;render()};
+  label.append(input);panel.append(label);
+ }
+}
 function renderTouchProperties(w){
  const panel=$('properties');
  const field=(name,value,choices,change)=>{
@@ -66,12 +82,6 @@ function renderTouchProperties(w){
  const targets=cfg.screens.map(s=>[s.id,s.name]);
  if(w.type==='button'||w.type==='macro'){
   field('Style',w.settings?.style||'solid',[['solid','Solid'],['outline','Outline'],['flat','Transparent']],v=>{w.settings??={};w.settings.style=v});
-  for(const [key,name,defaultColor] of [['backgroundColor','Background','#1b2935'],['textColor','Text & icon','#ebf5fc'],['borderColor','Border','#80bdd9']]){
-   const label=document.createElement('label');label.textContent=name+' ';
-   const input=document.createElement('input');input.type='color';input.value=w.settings?.[key]||defaultColor;
-   input.oninput=()=>{w.settings??={};w.settings[key]=input.value;const widget=[...$('screen').children].find(el=>el.dataset.id===w.id);if(widget){widget.style.setProperty(key==='backgroundColor'?'--button-bg':key==='textColor'?'--button-ink':'--button-border',input.value)}};
-   input.onchange=()=>{w.settings[key]=input.value;render()};label.append(input);panel.append(label);
-  }
  }
  field('Icon',w.settings?.icon||'none',[['none','No icon'],...Object.keys(mediaGlyphs).map(id=>[id,id])],v=>{w.settings??={};if(v==='none')delete w.settings.icon;else w.settings.icon=v});
  if(w.type==='button'){

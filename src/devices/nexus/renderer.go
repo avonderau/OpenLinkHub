@@ -57,7 +57,7 @@ func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
   shown:="--"
   if ok&&!math.IsNaN(value)&&!math.IsInf(value,0) {shown=fmt.Sprintf("%.1f",value)}
   if unit:=w.Settings["unit"];unit!=""&&shown!="--" {shown+=unit}
-  writeWidgetText(canvas,w.X+3,w.Y+24,clipText(shown,w.Width),color.RGBA{255,255,255,255})
+  writeWidgetText(canvas,w.X+3,w.Y+24,clipText(shown,w.Width),ink)
   if w.Type=="bar"&&ok&&!math.IsNaN(value)&&!math.IsInf(value,0) {
    pct:=math.Max(0,math.Min(100,value))
    barY:=w.Y+w.Height-7
