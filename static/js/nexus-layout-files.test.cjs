@@ -92,3 +92,20 @@ test('text-entry imports accept printable ASCII and reject controls or Unicode',
  good.screens[0].widgets[1].steps[0].value=String.fromCharCode(9);
  assert.throws(()=>layouts.validate(good));
 });
+
+
+test('screen importer accepts 256 screens but limits total widgets and screen count',()=>{
+ const base={version:1,activeScreenId:'s0',screens:Array.from({length:256},(_,i)=>({id:'s'+i,name:'Screen '+i,widgets:[]}))};
+ assert.equal(layouts.validate(base).screens.length,256);
+ const tooMany=clone(base);
+ tooMany.screens.push({id:'s256',name:'Overflow',widgets:[]});
+ assert.throws(()=>layouts.validate(tooMany));
+ const overflow={version:1,activeScreenId:'s0',screens:Array.from({length:65},(_,i)=>({
+  id:'s'+i,name:'Screen',widgets:Array.from({length:64},(_,j)=>({
+   id:'w'+j,type:'text',x:0,y:0,width:8,height:8,settings:{text:'x'}
+  }))
+ }))};
+ assert.throws(()=>layouts.validate(overflow));
+ overflow.screens.pop();
+ assert.equal(layouts.validate(overflow).screens.length,64);
+});
