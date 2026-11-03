@@ -73,6 +73,18 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  if($('saveWidgetPreset'))$('saveWidgetPreset').disabled=!widget;
  if(status){
   status.replaceChildren();
+  if(widget){
+   const chip=document.createElement('span');
+   chip.className='nexus-widget-type-chip';
+   const symbol=document.createElement('i');
+   const icons={button:'cursor',metric:'speedometer2',bar:'bar-chart',graph:'graph-up',text:'type',image:'image',clock:'clock'};
+   symbol.className='bi bi-'+(icons[widget.type]||'grid-3x3-gap');
+   symbol.setAttribute('aria-hidden','true');
+   const type=document.createElement('span');
+   type.textContent=widget.type==='metric'?'Metric':widget.type==='bar'?'Bar':widget.type==='graph'?'Graph':widget.type==='button'?'Button':widget.type==='clock'?'Clock':widget.type==='image'?'Image':'Text';
+   chip.append(symbol,type);
+   status.append(chip);
+  }
   if(widget && (widget.type==='button'||widget.type==='macro')){
    const label=document.createElement('label');label.textContent='Button Label ';
    const input=document.createElement('input');input.type='text';input.maxLength=256;
@@ -84,8 +96,13 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
     if(el){const icon=el.querySelector('.nexus-icon, .nexus-custom-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
    });
    label.append(input);status.append(label);
+  }else if(widget){
+   const description=document.createElement('span');
+   description.className='nexus-widget-identity-label';
+   description.textContent=widget.settings?.label||widget.settings?.text||widget.metric||'Selected widget';
+   status.append(description);
   }else{
-   status.textContent=widget?(widget.settings?.label||widget.settings?.text||widget.type):'Select a widget in the preview to edit it.';
+   status.textContent='Select a widget in the preview to edit it.';
   }
  }
  if(!s)return;
@@ -149,13 +166,18 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   details.open=opened;
   const summary=document.createElement('summary');
   summary.textContent=title;
+  const icons={'Position & size':'bounding-box','Appearance':'palette','Text & data':'type','Actions & icons':'lightning-charge'};
+  const symbol=document.createElement('i');
+  symbol.className='bi bi-'+(icons[title]||'sliders');
+  symbol.setAttribute('aria-hidden','true');
+  summary.prepend(symbol);
   details.append(summary);
   properties.append(details);
   return details;
  };
- const geometrySection=section('Position & size',true);
+ const geometrySection=section('Position & size',false);
  const appearanceSection=section('Appearance',true);
- const contentSection=section('Text & data',false);
+ const contentSection=section('Text & data',true);
  const touchSection=section('Actions & icons',false);
  geometrySection.append(dimensionsRow);
  appearanceSection.append(colorsRow);
@@ -817,3 +839,13 @@ function selectNexusEditorTab(name,focus=false){
  });
  selectNexusEditorTab('widget');
 })();
+
+/* Preview expands with the browser Fullscreen API; never change widget geometry. */
+$('nexusPreviewFullscreen')?.addEventListener('click',async()=>{
+ const container=document.querySelector?.('.nexus-preview-strip');
+ if(!container||typeof container.requestFullscreen!=='function')return;
+ try{
+  if(document.fullscreenElement)await document.exitFullscreen?.();
+  else await container.requestFullscreen();
+ }catch(_err){/* Permission denials leave preview unchanged. */}
+});
