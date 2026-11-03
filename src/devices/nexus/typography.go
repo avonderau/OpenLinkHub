@@ -17,6 +17,10 @@ func validNexusFontSize(value string)bool {
  switch value {case "","normal","small","large":return true}
  return false
 }
+func validNexusVerticalAlign(value string)bool {
+ switch value {case "","top","middle","bottom":return true}
+ return false
+}
 func validNexusTextAlign(value string)bool {
  switch value {case "","left","center","right":return true}
  return false
@@ -56,7 +60,8 @@ func drawStyledNexusText(dst *image.RGBA,w Widget,baseY int,value string,ink col
  if value==""{return}
  size:=w.Settings["fontSize"]
  alignment:=w.Settings["textAlign"]
- if (size==""||size=="normal") && (alignment==""||alignment=="left"){
+ vertical:=w.Settings["verticalAlign"]
+ if (size==""||size=="normal") && (alignment==""||alignment=="left") && (vertical==""||vertical=="top"){
   writeWidgetText(dst,w.X+3,baseY,clipText(value,w.Width),ink)
   return
  }
@@ -71,7 +76,13 @@ func drawStyledNexusText(dst *image.RGBA,w Widget,baseY int,value string,ink col
  }
  bounds:=image.Rect(w.X,w.Y,w.X+w.Width,w.Y+w.Height).Intersect(dst.Bounds())
  if bounds.Empty(){return}
- if size=="large" && (w.Type=="text"||w.Type=="button"||w.Type=="macro"){
+ if vertical!=""" && vertical!="top" && (w.Type=="text" || w.Type=="button" || w.Type=="macro") {
+  metrics:=face.Metrics()
+  ascent:=metrics.Ascent.Ceil()
+  descent:=metrics.Descent.Ceil()
+  if vertical=="middle"{baseY=w.Y+(w.Height-ascent-descent)/2+ascent}
+  if vertical=="bottom"{baseY=w.Y+w.Height-3-descent}
+ } else if size=="large" && (w.Type=="text"||w.Type=="button"||w.Type=="macro"){
   baseY+=6
  }
  d:=font.Drawer{Dst:dst.SubImage(bounds).(draw.Image),Src:image.NewUniform(ink),Face:face,Dot:fixed.P(x,baseY)}
