@@ -139,3 +139,9 @@
 #nexus-editor .nexus-macro-step select,#nexus-editor .nexus-macro-step input{max-width:min(100%,230px)}
 #nexus-editor .nexus-macro-step input[type=number]{width:6.5rem}
 #nexus-editor .nexus-macro-step button:disabled,#nexus-editor .nexus-macro-editor button:disabled{opacity:.45;cursor:not-allowed}
+
+/* Nexus layout JSON controls use the normal muted site typography. */
+#nexus-editor .nexus-layout-file-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}
+#nexus-editor .nexus-layout-file-controls label{display:inline-flex;align-items:center;gap:.35rem;color:var(--text-muted,#a1a1a1)}
+#nexus-editor .nexus-layout-file-controls input[type=file]{max-width:240px}
+#nexus-editor .nexus-layout-files .nexus-panel-description{color:var(--text-muted,#a1a1a1)}

@@ -378,6 +378,47 @@ function syncCycleInterval(){
 $('cyclingMode')?.addEventListener('change',syncCycleInterval);
 syncCycleInterval();
 $('save').onclick=async()=>{try{if(!cfg)return;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=$('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
+function exportNexusJSON(single){
+ try{
+  if(!cfg)return message('Load a Nexus layout first.');
+  const selectedScreen=current();
+  if(single&&!selectedScreen)return message('Select a screen to export.');
+  const data=single?NexusLayoutFiles.exportSingle(cfg,selectedScreen.id):NexusLayoutFiles.validate(cfg);
+  const name=single?'nexus-screen-'+selectedScreen.id+'.json':'nexus-layout.json';
+  const file=new Blob([JSON.stringify(data,null,2)+'\\n'],{type:'application/json'});
+  const url=URL.createObjectURL(file);
+  const link=document.createElement('a');link.href=url;link.download=name;
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),0);
+  message((single?'Screen':'Layout')+' exported.');
+ }catch(e){message(e.message)}
+}
+$('exportLayout')?.addEventListener('click',()=>exportNexusJSON(false));
+$('exportScreen')?.addEventListener('click',()=>exportNexusJSON(true));
+$('importLayout')?.addEventListener('click',async()=>{
+ try{
+  if(!cfg)return message('Load a Nexus layout first.');
+  const file=$('layoutFile')?.files?.[0];
+  if(!file)return message('Select a JSON layout file.');
+  if(file.size<1||file.size>1024*1024)throw Error('JSON file must be 1 MiB or smaller');
+  const imported=NexusLayoutFiles.validate(JSON.parse(await file.text()));
+  const mode=$('layoutImportMode').value;
+  if(mode==='replace-layout'&&!confirm('Replace the entire current layout with '+imported.screens.length+' imported screens? Changes become permanent only when Save Layout is clicked.'))return;
+  if(mode==='replace-screen'&&!confirm('Replace selected screen "'+(current()?.name||'')+'"? Changes become permanent only when Save Layout is clicked.'))return;
+  const id=mode==='add-screen'?uniqueID('screen',new Set(cfg.screens.map(s=>s.id))):'';
+  const next=NexusLayoutFiles.applyImport(cfg,imported,mode,$('screens').value,id);
+  cfg=next;selected=null;
+  if($('cyclingMode'))$('cyclingMode').value=cfg.cyclingMode||'manual';
+  if($('cyclingSeconds')){
+   const seconds=cfg.cyclingSeconds||15;
+   if(![...$('cyclingSeconds').options].some(option=>Number(option.value)===seconds))$('cyclingSeconds').add(new Option(seconds+' seconds (imported)',String(seconds)));
+   $('cyclingSeconds').value=String(seconds);
+  }
+  syncCycleInterval();refreshScreens();
+  message('JSON imported into the editor. Review before Save Layout.');
+ }catch(e){message('Import failed: '+e.message)}
+});
+
 // Integrated device pages load their Nexus automatically without a device selector.
 // The standalone editor retains its device dropdown and Load button.
 if ($('deviceId')) {
