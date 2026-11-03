@@ -240,7 +240,7 @@ function renderTouchProperties(w,panel){
   input.value=value;input.onchange=()=>{change(input.value);render()};
   label.append(input);panel.append(label);
  };
- const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['macro','Run macro'],['hotkey','Keyboard shortcut'],['mouse','Mouse action']];
+ const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['macro','Run macro'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app']];
  const media=[['play-pause','Play/Pause'],['stop','Stop'],['volume-up','Volume +'],['volume-down','Volume -'],['next-track','Next track'],['previous-track','Previous track']];
  const targets=cfg.screens.map(s=>[s.id,s.name]);
  const mouseActions=[['left','Left click'],['double-left','Double left click'],['right','Right click'],['middle','Middle click'],['back','Back button'],['forward','Forward button'],['scroll-up','Scroll up'],['scroll-down','Scroll down'],['scroll-left','Scroll left'],['scroll-right','Scroll right']];
@@ -284,10 +284,20 @@ function renderTouchProperties(w,panel){
   panel.append(wrapper,upload);
  }
  if(w.type==='button'){
-  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
+  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro'&&(!w.steps||!w.steps.length))w.steps=[{type:'next'}]});
   if(w.action==='screen')field('Target screen',w.target,targets,v=>w.target=v);
   if(w.action==='hotkey')shortcutInput('Shortcut',w.target,v=>w.target=v);
   if(w.action==='mouse')field('Mouse command',w.target,mouseActions,v=>w.target=v);
+  if(w.action==='url'||w.action==='application'){
+   const label=document.createElement('label');label.textContent=w.action==='url'?'Web URL ':'Desktop entry ID ';
+   const input=document.createElement('input');input.type='text';input.maxLength=w.action==='url'?256:128;
+   input.value=w.target||'';input.placeholder=w.action==='url'?'https://example.com':'org.gnome.Terminal.desktop';
+   input.setAttribute('aria-label',w.action==='url'?'Open URL':'Desktop entry ID');
+   input.addEventListener('change',()=>{w.target=input.value.trim();message('Launcher updated. Save Layout to apply.')});
+   label.append(input);panel.append(label);
+   const note=document.createElement('small');note.textContent='Requires a non-root Linux desktop session; desktop apps use gtk-launch, URLs use xdg-open. No shell commands.';
+   panel.append(note);
+  }
   if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.customIcon&&(!w.settings?.icon||w.settings.icon===old)){w.settings??={};w.settings.icon=v}});
  }
 
@@ -300,12 +310,14 @@ function renderTouchProperties(w,panel){
   heading.textContent='Macro steps';
   editor.append(heading);
   const kinds=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],
-   ['media','Media control'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['delay','Wait']];
+   ['media','Media control'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['delay','Wait']];
   const defaultStep=kind=>{
    if(kind==='screen')return {type:kind,value:cfg.screens[0].id};
    if(kind==='media')return {type:kind,value:'play-pause'};
    if(kind==='hotkey')return {type:kind,value:'Ctrl+Alt+T'};
    if(kind==='mouse')return {type:kind,value:'left'};
+   if(kind==='url')return {type:kind,value:'https://example.com'};
+   if(kind==='application')return {type:kind,value:'org.gnome.Terminal.desktop'};
    if(kind==='delay')return {type:kind,delayMs:500};
    return {type:kind};
   };
@@ -333,6 +345,12 @@ function renderTouchProperties(w,panel){
    if(step.type==='mouse')row.append(makeSelect(mouseActions,step.value,'Step '+(index+1)+' mouse',value=>{
     step.value=value;
    }));
+   if(step.type==='url'||step.type==='application'){
+    const input=document.createElement('input');input.type='text';input.maxLength=step.type==='url'?256:128;
+    input.value=step.value||'';input.placeholder=step.type==='url'?'https://example.com':'org.gnome.Terminal.desktop';
+    input.setAttribute('aria-label','Step '+(index+1)+' '+(step.type==='url'?'URL':'desktop entry ID'));
+    input.addEventListener('change',()=>{step.value=input.value.trim()});row.append(input);
+   }
    if(step.type==='hotkey'){
     const input=document.createElement('input');input.type='text';input.maxLength=80;
     input.value=step.value||'';input.placeholder='Ctrl+Alt+T';
