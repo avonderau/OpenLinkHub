@@ -49,8 +49,8 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   if label=="" {label=w.Metric}
   if w.Type=="text" {label=w.Settings["text"]}
   if w.Type=="clock" {
-   if label!="" {writeWidgetText(canvas,w.X+3,w.Y+12,clipText(label,w.Width),ink)}
-   writeWidgetText(canvas,w.X+3,w.Y+27,clipText(formatNexusClock(w.Settings,time.Now()),w.Width),ink)
+   if label!="" {drawStyledNexusText(canvas,w,w.Y+12,label,ink)}
+   drawStyledNexusText(canvas,w,w.Y+27,formatNexusClock(w.Settings,time.Now()),ink)
    continue
   }
   if w.Type=="button" || w.Type=="macro" {if label=="" && w.Settings["icon"]=="" && w.Settings["customIcon"]=="" {label="Touch"} }
@@ -66,7 +66,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
      destination:=image.Rect(cx-size/2,cy-size/2,cx+(size+1)/2,cy+(size+1)/2).Intersect(bounds)
      xdraw.CatmullRom.Scale(canvas,destination,icon,icon.Bounds(),draw.Over,nil)
     }
-    if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),ink)}
+    if label!="" {drawStyledNexusText(canvas,w,w.Y+w.Height-3,label,ink)}
     continue
    }
   }
@@ -76,7 +76,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
    continue
   }
   label=clipText(label,w.Width)
-  writeWidgetText(canvas,w.X+3,w.Y+11,label,ink)
+  drawStyledNexusText(canvas,w,w.Y+11,label,ink)
   if w.Type=="graph"{
    drawNexusHistoryGraph(canvas,bounds,w.Metric,history[w.Metric],ink)
    continue
@@ -86,7 +86,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   shown:="--"
   if ok&&!math.IsNaN(value)&&!math.IsInf(value,0) {shown=fmt.Sprintf("%.1f",value)}
   if unit:=w.Settings["unit"];unit!=""&&shown!="--" {shown+=unit}
-  writeWidgetText(canvas,w.X+3,w.Y+24,clipText(shown,w.Width),ink)
+  drawStyledNexusText(canvas,w,w.Y+24,shown,ink)
   if w.Type=="bar"&&ok&&!math.IsNaN(value)&&!math.IsInf(value,0) {
    pct:=math.Max(0,math.Min(100,value))
    barY:=w.Y+w.Height-7

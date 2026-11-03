@@ -60,6 +60,8 @@ globalThis.NexusLayoutFiles=(()=>{
      if(typeof text!=='string'||key.length>64||text.length>256)throw Error('Invalid widget setting');
     }
     if(!['',undefined,'solid','outline','flat'].includes(settings.style))throw Error('Unsupported widget style');
+    if(!['',undefined,'normal','small','large'].includes(settings.fontSize))throw Error('Unsupported widget font size');
+    if(!['',undefined,'left','center','right'].includes(settings.textAlign))throw Error('Unsupported widget text alignment');
     for(const key of ['textColor','backgroundColor','borderColor'])if(settings[key]&&!hex.test(settings[key]))throw Error('Invalid widget color');
     if(settings.customIcon&&(!safeID.test(settings.customIcon)||!['button','macro'].includes(widget.type)))throw Error('Invalid custom icon');
     if(widget.type==='clock'&&!['',undefined,'24h','12h','date','datetime'].includes(settings.clockFormat))throw Error('Invalid clock format');
