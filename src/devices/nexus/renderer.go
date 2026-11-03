@@ -46,6 +46,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   ink:=nexusWidgetColor(w.Settings,"textColor",color.RGBA{235,245,252,255})
   border:=nexusWidgetColor(w.Settings,"borderColor",color.RGBA{128,189,217,255})
   style:=w.Settings["style"]
+  if style=="" {style="solid"}
   // Styles are supported for all widget types. Flat and outline leave the background visible.
   if style!="flat" && style!="outline" {draw.Draw(canvas,bounds,image.NewUniform(bg),image.Point{},draw.Src)}
   if style=="outline" || (style=="solid" && w.Settings["borderColor"]!="") {drawNexusButtonBorder(canvas,bounds,border)}
