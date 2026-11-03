@@ -78,7 +78,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
      }
     }
    }
-   continue
+   return
   }
   label:=w.Settings["label"]
   if label=="" {label=w.Metric}
@@ -86,7 +86,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   if w.Type=="clock" {
    if label!="" {drawStyledNexusText(canvas,w,w.Y+12,label,ink)}
    drawStyledNexusText(canvas,w,w.Y+27,formatNexusClock(w.Settings,time.Now()),ink)
-   continue
+   return
   }
   if w.Type=="button" || w.Type=="macro" {if label=="" && w.Settings["icon"]=="" && w.Settings["customIcon"]=="" {label="Touch"} }
   if (w.Type=="button" || w.Type=="macro") && w.Settings["customIcon"]!="" && iconDir!="" {
@@ -102,21 +102,21 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
      xdraw.CatmullRom.Scale(canvas,destination,icon,icon.Bounds(),draw.Over,nil)
     }
     if label!="" {drawStyledNexusText(canvas,w,w.Y+w.Height-3,label,ink)}
-    continue
+    return
    }
   }
   if (w.Type=="button" || w.Type=="macro") && w.Settings["icon"]!="" && w.Settings["icon"]!="none" && w.Settings["icon"]!="custom" {
    drawMediaIcon(canvas,bounds,w.Settings["icon"],ink)
    if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),ink)}
-   continue
+   return
   }
   // Text clipping uses each widget's selected font metrics.
   drawStyledNexusText(canvas,w,w.Y+11,label,ink)
   if w.Type=="graph"{
    drawNexusHistoryGraph(canvas,bounds,w.Metric,history[w.Metric],ink)
-   continue
+   return
   }
-  if w.Type=="text" || w.Type=="button" || w.Type=="macro" {continue}
+  if w.Type=="text" || w.Type=="button" || w.Type=="macro" {return}
   value,ok:=values[w.Metric]
   shown:="--"
   if ok&&!math.IsNaN(value)&&!math.IsInf(value,0) {shown=fmt.Sprintf("%.1f",value)}
