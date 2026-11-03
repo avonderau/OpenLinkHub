@@ -66,7 +66,11 @@ Manage RGB lighting, fan speeds, system metrics, as well as keyboards, mice, and
 - Most of the devices are actually tested on live hardware.
 - Take care and have fun!
 - This project is not an official Corsair product.
-## Upstream installation (not this fork)\n\nThe following installer and package-manager commands are retained for reference to the **original upstream project**. They will not install this fork’s custom Nexus functionality.\n\n### Upstream installation (recommended)
+## Upstream installation (not this fork)
+
+The following installer and package-manager commands are retained for reference to the **original upstream project**. They will not install this fork’s custom Nexus functionality.
+
+### Upstream installation (recommended)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jurkovic-nikola/OpenLinkHub/main/remote-install.sh | bash
 ```
