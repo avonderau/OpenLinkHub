@@ -281,7 +281,9 @@ test('new widgets use the full 48 pixel Nexus height without modifying existing 
  const existing=vm.runInContext('cfg.screens[0]',context);
  existing.widgets.push({id:'old',type:'text',x:0,y:0,width:80,height:24,settings:{text:'Existing'}});
  for(const id of ['addMetric','addBar','addText','addClock','addImage','addGraph','addButton','addMacro']){
-  node(id).listeners.click();
+  const handler=node(id).listeners.click||node(id).onclick;
+  assert.equal(typeof handler,'function',id+' handler');
+  handler();
   const added=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
   assert.equal(added.height,48,id+' height');
   assert.equal(added.y,0,id+' position');
