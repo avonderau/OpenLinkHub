@@ -45,13 +45,13 @@ func TestNexusTextEntryButtonAndMacroValidation(t *testing.T){
  cfg:=ScreenConfiguration{Version:1,ActiveScreenID:"main",Screens:[]Screen{{
   ID:"main",Name:"Main",Widgets:[]Widget{
    {ID:"text",Type:"button",X:0,Y:0,Width:96,Height:48,Action:"text",Target:"Hello, World!"},
-   {ID:"macro",Type:"macro",X:112,Y:0,Width:128,Height:48,Steps:[]MacroStep{{Type:"text",Value:"Order #123"}}},
+   {ID:"macro",Type:"button",Action:"macro",Target:"1",X:112,Y:0,Width:128,Height:48},
   },
  }}}
  if err:=cfg.Validate();err!=nil{t.Fatalf("text actions should be valid: %v",err)}
  cfg.Screens[0].Widgets[0].Target="bad\nnewline"
  if err:=cfg.Validate();err==nil{t.Fatal("button allowed newline")}
  cfg.Screens[0].Widgets[0].Target="OK"
- cfg.Screens[0].Widgets[1].Steps[0].Value="☃"
- if err:=cfg.Validate();err==nil{t.Fatal("macro allowed unsupported Unicode")}
+ cfg.Screens[0].Widgets[1].Target="☃"
+ if err:=cfg.Validate();err==nil{t.Fatal("macro accepted invalid shared ID")}
 }

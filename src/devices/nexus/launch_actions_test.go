@@ -43,13 +43,13 @@ func TestNexusLaunchActionsValidateOnSave(t *testing.T){
   ID:"launcher",Name:"Launchers",Widgets:[]Widget{
    {ID:"url",Type:"button",X:0,Y:0,Width:160,Height:48,Action:"url",Target:"https://example.com"},
    {ID:"application",Type:"button",X:160,Y:0,Width:160,Height:48,Action:"application",Target:"firefox.desktop"},
-   {ID:"macro",Type:"macro",X:320,Y:0,Width:160,Height:48,Steps:[]MacroStep{{Type:"url",Value:"https://example.com"},{Type:"application",Value:"firefox.desktop"}}},
+   {ID:"macro",Type:"button",Action:"macro",Target:"1",X:320,Y:0,Width:160,Height:48},
   },
  }}}
  if err:=config.Validate();err!=nil{t.Fatal(err)}
  config.Screens[0].Widgets[0].Target="file:///etc/passwd"
  if err:=config.Validate();err==nil{t.Fatal("unsafe URL button accepted")}
  config.Screens[0].Widgets[0].Target="https://example.com"
- config.Screens[0].Widgets[2].Steps[1].Value="../../evil.desktop"
- if err:=config.Validate();err==nil{t.Fatal("unsafe desktop macro accepted")}
+ config.Screens[0].Widgets[2].Target="../../evil.desktop"
+ if err:=config.Validate();err==nil{t.Fatal("invalid saved macro ID accepted")}
 }

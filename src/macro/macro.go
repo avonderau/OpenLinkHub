@@ -89,6 +89,19 @@ func Init() {
 	}
 }
 
+// SnapshotProfile makes an independent copy of shared macro actions for a
+// device runner, protecting it against concurrent edits in the macro UI.
+func SnapshotProfile(id int) (Macro,bool) {
+ mutex.Lock()
+ defer mutex.Unlock()
+ profile,ok:=macros[id]
+ if !ok{return Macro{},false}
+ copy:=profile
+ copy.Actions=make(map[int]Actions,len(profile.Actions))
+ for index,action:=range profile.Actions{copy.Actions[index]=action}
+ return copy,true
+}
+
 // GetProfile will return macro profile based on macro ID
 func GetProfile(macroId int) *Macro {
 	if val, ok := macros[macroId]; ok {

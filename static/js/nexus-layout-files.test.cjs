@@ -85,11 +85,13 @@ test('text-entry imports accept printable ASCII and reject controls or Unicode',
  assert.throws(()=>layouts.validate(good));
  good.screens[0].widgets[0].target='OK';
  good.screens[0].widgets.push({
-  id:'macro_text',type:'macro',x:112,y:0,width:128,height:48,
-  steps:[{type:'text',value:'Desktop test'}]
+  id:'saved_macro',type:'button',action:'macro',target:'7',x:112,y:0,width:128,height:48
  });
  assert.equal(layouts.validate(good).version,1);
- good.screens[0].widgets[1].steps[0].value=String.fromCharCode(9);
+ good.screens[0].widgets[1].target='../../unsafe';
+ assert.throws(()=>layouts.validate(good));
+ good.screens[0].widgets[1].target='7';
+ good.screens[0].widgets[1].steps=[{type:'text',value:'Legacy'}];
  assert.throws(()=>layouts.validate(good));
 });
 

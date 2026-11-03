@@ -8,7 +8,7 @@ func TestInvalidMetric(t *testing.T){c:=sample();c.Screens[0].Widgets[0].Metric=
 
 func TestMacroButtonValidation(t *testing.T){
  c:=sample()
- c.Screens[0].Widgets=[]Widget{{ID:"macro-button",Type:"button",Action:"macro",X:0,Y:0,Width:96,Height:48,Settings:map[string]string{"style":"outline","backgroundColor":"#123456","textColor":"#ffffff","borderColor":"#ff8800"},Steps:[]MacroStep{{Type:"media",Value:"play-pause"},{Type:"delay",DelayMs:250}}}}
+ c.Screens[0].Widgets=[]Widget{{ID:"macro-button",Type:"button",Action:"macro",X:0,Y:0,Width:96,Height:48,Settings:map[string]string{"style":"outline","backgroundColor":"#123456","textColor":"#ffffff","borderColor":"#ff8800"},Target:"1"}}
  if err:=c.Validate();err!=nil {t.Fatalf("valid styled macro button rejected: %v",err)}
  c.Screens[0].Widgets[0].Settings["textColor"]="red"
  if err:=c.Validate();err==nil {t.Fatal("invalid hex color accepted")}
@@ -16,8 +16,11 @@ func TestMacroButtonValidation(t *testing.T){
  c.Screens[0].Widgets[0].Settings["style"]="gradient"
  if err:=c.Validate();err==nil {t.Fatal("unsupported style accepted")}
  c.Screens[0].Widgets[0].Settings["style"]="flat"
+ c.Screens[0].Widgets[0].Target="bad;echo"
+ if err:=c.Validate();err==nil {t.Fatal("unsupported shared macro ID accepted")}
+ c.Screens[0].Widgets[0].Target="1"
  c.Screens[0].Widgets[0].Steps=[]MacroStep{{Type:"shell",Value:"echo unsafe"}}
- if err:=c.Validate();err==nil {t.Fatal("unsupported macro action accepted")}
+ if err:=c.Validate();err==nil {t.Fatal("legacy inline macros must be rejected")}
 }
 
 func TestColorValidationForMetricBarAndText(t *testing.T){

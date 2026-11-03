@@ -42,13 +42,13 @@ func TestNexusMouseConfigValidation(t *testing.T){
    ID:"click",Type:"button",Action:"mouse",Target:"double-left",X:0,Y:0,Width:100,Height:48,
   },{
    ID:"macro",Type:"button",Action:"macro",X:120,Y:0,Width:100,Height:48,
-   Steps:[]MacroStep{{Type:"mouse",Value:"scroll-up"}},
+   Target:"1",
   }},
  }}}
  if err:=config.Validate();err!=nil{t.Fatal(err)}
  config.Screens[0].Widgets[0].Target="scroll-up:1000"
  if err:=config.Validate();err==nil{t.Fatal("accepted unbounded mouse scroll")}
  config.Screens[0].Widgets[0].Target="left"
- config.Screens[0].Widgets[1].Steps[0].Value="unknown"
- if err:=config.Validate();err==nil{t.Fatal("accepted invalid mouse macro")}
+ config.Screens[0].Widgets[1].Target="unknown"
+ if err:=config.Validate();err==nil{t.Fatal("accepted invalid saved macro ID")}
 }
