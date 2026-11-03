@@ -4,7 +4,7 @@ let cfg=null,selected=null,serial='',drag=null;
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate'];
 function message(t){$('message').textContent=t}
 function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
-function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}$('screens').value=cfg.screens.some(s=>s.id===old)?old:cfg.activeScreenId;render()}
+function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render()}
 function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();if(!s)return;
  $('background').value=s.background||'';
  for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||'Touch'):(w.settings?.label||w.metric));el.dataset.id=w.id;$('screen').append(el)}
@@ -23,7 +23,7 @@ async function loadDevices(){try{const response=await fetch('/api/devices/');con
 async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){interval.value=cfg.cyclingSeconds||15;interval.disabled=mode?.value!=='automatic'}refreshScreens();message('Layout loaded')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
-$('addScreen').onclick=()=>{if(!cfg)return;if(cfg.screens.length>=32)return message('Maximum 32 screens');const name=prompt('Screen name','New screen');if(!name)return;const id='screen_'+Date.now();cfg.screens.push({id,name,widgets:[]});cfg.activeScreenId=id;refreshScreens()};
+$('addScreen').onclick=()=>{if(!cfg)return;if(cfg.screens.length>=32)return message('Maximum 32 screens');const name=prompt('Screen name','New screen');if(!name)return;const id='screen_'+Date.now();cfg.screens.push({id,name,widgets:[]});cfg.activeScreenId=id;selected=null;refreshScreens()};
 $('deleteScreen').onclick=()=>{if(!cfg||cfg.screens.length<=1)return message('Keep at least one screen');cfg.screens=cfg.screens.filter(s=>s.id!==$('screens').value);cfg.activeScreenId=cfg.screens[0].id;selected=null;refreshScreens()};
 function renderTouchProperties(w){
  const panel=$('properties');
