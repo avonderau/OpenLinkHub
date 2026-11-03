@@ -1,5 +1,5 @@
 .main-content:has(#nexus-editor){min-width:0;max-width:100%;overflow-x:hidden}
-#nexus-editor{width:fit-content;max-width:100%;min-width:0;height:fit-content;align-self:flex-start;box-sizing:border-box;overflow:hidden}
+#nexus-editor{width:100%;max-width:100%;min-width:0;height:fit-content;box-sizing:border-box;overflow:hidden}
 #nexus-editor>.card-body{min-width:0;max-width:100%;box-sizing:border-box}
 #nexus-editor fieldset{min-width:0;max-width:100%;box-sizing:border-box}
 #nexus-editor #properties{min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:.35rem}
@@ -26,17 +26,18 @@
 #nexus-editor #screen{position:relative;width:640px;height:48px;background:#182b38;overflow:hidden;border:2px solid #82abc0;touch-action:none}
 #nexus-editor .widget{position:absolute;box-sizing:border-box;background:#2b4558db;border:1px solid #80bdd9;cursor:move;overflow:hidden;font-size:11px;padding:3px;user-select:none}
 #nexus-editor .widget.selected{outline:2px solid #ffc36a}
-#nexus-editor #preview{overflow:auto;padding:1rem;background:#080f16;border-radius:8px}
+#nexus-editor #preview{overflow-x:auto;overflow-y:hidden;padding:1rem;background:#080f16;border-radius:8px}
+#nexus-editor #preview #screen{margin-inline:auto;box-sizing:border-box}
 #nexus-editor #message{min-height:1.5em}
 #nexus-editor fieldset{border:1px solid var(--border-subtle,#496275);border-radius:8px;margin:1rem 0;padding:1rem}
 #nexus-editor legend{float:none;width:auto;padding:0 .5rem;font-size:1rem}
 #nexus-editor input[type=number]{width:85px}
 
 /* Desktop: device settings left, compact screen editor right. */
-.nexus-workspace{display:grid;grid-template-columns:minmax(200px,240px) minmax(0,max-content);align-items:start;gap:1rem;max-width:100%;min-width:0}
+.nexus-workspace{display:grid;grid-template-columns:minmax(200px,240px) minmax(0,760px);align-items:start;gap:1rem;max-width:100%;min-width:0}
 .nexus-device-column,.nexus-editor-column{min-width:0;max-width:100%}
 .nexus-device-column>.card{width:100%;height:auto}
-.nexus-editor-column #nexus-editor{margin-top:0!important;max-width:100%;width:fit-content}
+.nexus-editor-column #nexus-editor{margin-top:0!important;width:100%;max-width:100%}
 .nexus-editor-column #nexus-editor>.card-body{max-width:100%}
 @media(max-width:1050px){.nexus-workspace{grid-template-columns:minmax(0,1fr)}.nexus-device-column{max-width:320px}}
 
