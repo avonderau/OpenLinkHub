@@ -76,20 +76,23 @@ test('Save Layout belongs to the integrated device settings card',()=>{
  assert.match(style,/nexus-cycle-settings.*?--text-muted/s);
 });
 
-test('cycling interval stays selectable and is persisted even when cycling is manual',async()=>{
+test('cycling interval is disabled except in Automatic mode and preserves saved value',async()=>{
  const {context,node,writes}=makeEditor();
  await vm.runInContext('load()',context);
  assert.equal(node('cyclingMode').value,'manual');
+ assert.equal(node('cyclingSeconds').disabled,true);
+ node('cyclingMode').value='automatic';
+ node('cyclingMode').listeners.change();
  assert.equal(node('cyclingSeconds').disabled,false);
  node('cyclingSeconds').value='120';
  await node('save').onclick();
- assert.equal(writes.at(-1).cyclingMode,'manual');
- assert.equal(writes.at(-1).cyclingSeconds,120);
- node('cyclingMode').value='automatic';
- if(node('cyclingMode').listeners.change)node('cyclingMode').listeners.change();
- assert.equal(node('cyclingSeconds').disabled,false);
- await node('save').onclick();
  assert.equal(writes.at(-1).cyclingMode,'automatic');
+ assert.equal(writes.at(-1).cyclingSeconds,120);
+ node('cyclingMode').value='off';
+ node('cyclingMode').listeners.change();
+ assert.equal(node('cyclingSeconds').disabled,true);
+ await node('save').onclick();
+ assert.equal(writes.at(-1).cyclingMode,'off');
  assert.equal(writes.at(-1).cyclingSeconds,120);
 });
 

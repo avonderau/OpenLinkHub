@@ -123,3 +123,28 @@ The integrated Nexus page places **Save Layout** with the firmware/cycling
 controls in the device settings card. The Interval dropdown remains selectable
 in all cycling modes and is retained when Manual or Off is selected; it takes
 effect only in Automatic mode. Colors use the site's `--text-muted` palette.
+
+## Animated GIF backgrounds
+
+The Background section supports PNG, JPEG and animated GIF files (up to
+4 MiB). A GIF must have a logical canvas at most 1280 × 192 pixels, at most
+80 frames and at most eight million decoded canvas pixels across its frames.
+Frames are decoded and composited with GIF disposal semantics, downscaled
+once to the Nexus's 640 × 48 framebuffer, then retained in a two-entry
+bounded background cache. Source frame delays are respected with a minimum
+50 ms and a maximum 10 seconds per frame. Playback loops.
+
+The Nexus LCD refreshes up to five times per second while displaying an
+uploaded GIF and uses its normal one-second refresh for static backgrounds.
+GIF animation timing is therefore quantized by the physical display update
+rate. Editor previews request the original background through the
+`/api/nexus/background` GET endpoint, letting the browser animate GIFs
+normally. The app does not copy or bundle third-party animated artwork.
+
+Selecting Automatic cycling enables the interval dropdown. Manual and Off
+disable it, while preserving the previously selected interval in the saved
+screen configuration.
+
+PNG/JPEG backgrounds continue to work without conversion. Replacing an
+existing background ID removes obsolete image extensions to avoid an old
+GIF shadowing the replacement image.

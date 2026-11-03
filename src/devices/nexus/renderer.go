@@ -5,15 +5,10 @@ import (
  "image"
  "image/color"
  "image/draw"
- "image/jpeg"
- "image/png"
- "os"
- "path/filepath"
- "io"
- _ "image/gif"
  "math"
  "strings"
  "strconv"
+ "time"
 
  "golang.org/x/image/font"
  xdraw "golang.org/x/image/draw"
@@ -117,22 +112,10 @@ func RenderScreenWithBackground(screen Screen, values MetricSnapshot, background
 func RenderScreenWithBackgroundAndIcons(screen Screen,values MetricSnapshot,background image.Image,iconDir string)(*image.RGBA,error){
  return renderNexusScreen(screen,values,iconDir,background)
 }
-// ReadBackground accepts only validated background IDs and bounded PNG/JPEG
-// files from the application's private background directory.
+// ReadBackground returns the current frame for either a static or animated
+// background, using the shared bounded image cache.
 func ReadBackground(dir,id string)(image.Image,error){
- if !safeID.MatchString(id){return nil,fmt.Errorf("invalid background ID")}
- for _,ext:=range []string{".png",".jpg",".jpeg"} {
-  file,err:=os.Open(filepath.Join(dir,id+ext));if err!=nil{continue}
-  stat,err:=file.Stat();if err!=nil||stat.Size()>4*1024*1024 {file.Close();return nil,fmt.Errorf("background exceeds size limit")}
-  cfg,format,err:=image.DecodeConfig(io.LimitReader(file,4*1024*1024))
-  if err!=nil||cfg.Width<1||cfg.Height<1||cfg.Width>4096||cfg.Height>4096 {file.Close();return nil,fmt.Errorf("invalid background dimensions")}
-  if _,err=file.Seek(0,0);err!=nil{file.Close();return nil,err}
-  var img image.Image
-  if format=="png" {img,err=png.Decode(file)} else if format=="jpeg" {img,err=jpeg.Decode(file)} else {err=fmt.Errorf("unsupported image format")}
-  file.Close()
-  return img,err
- }
- return nil,os.ErrNotExist
+ return ReadBackgroundAt(dir,id,time.Now())
 }
 
 func nexusWidgetColor(settings map[string]string,key string,fallback color.RGBA)color.RGBA{

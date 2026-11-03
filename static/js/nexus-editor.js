@@ -49,6 +49,12 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  $('background').value=s.background||'';
  const display=$('screen');display.classList.remove('nexus-bg-preset_aurora','nexus-bg-preset_neon','nexus-bg-preset_circuit','nexus-bg-preset_sunset','nexus-bg-preset_pulse');
  if(s.background?.startsWith('preset_'))display.classList.add('nexus-bg-'+s.background);
+ // The same GET endpoint serves static PNG/JPEG and animated GIF; browsers
+ // animate GIF previews automatically while the physical Nexus uses frames.
+ const uploaded=Boolean(s.background&&!s.background.startsWith('preset_'));
+ display.style.backgroundImage=uploaded?'url("/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(s.background)+'")':'';
+ display.style.backgroundSize=uploaded?'100% 100%':'';
+ display.style.backgroundRepeat=uploaded?'no-repeat':'';
  for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
   el.classList.add('nexus-icon-widget');
   const picture=document.createElement('img');
@@ -79,7 +85,7 @@ $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widge
 $('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
 $('screen').addEventListener('pointerup',()=>{drag=null;render()});$('screen').addEventListener('pointercancel',()=>{drag=null;render()});
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}refreshScreens();message('')}
+async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();refreshScreens();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
@@ -269,9 +275,14 @@ $('duplicateWidget')?.addEventListener('click',()=>{
  selected=duplicate.id;render();message('Widget duplicated. Save Layout to apply.');
 });
 $('deleteWidget').onclick=()=>{const s=current();if(!s)return;s.widgets=s.widgets.filter(w=>w.id!==selected);selected=null;render()};
-$('background').onchange=()=>{const s=current();if(s)s.background=$('background').value.trim()};
-$('upload').onclick=async()=>{try{const f=$('image').files[0];if(!f||!current())return message('Choose an image and load a screen');if(f.size>4*1024*1024)throw Error('Image exceeds 4 MiB');const id='background_'+Date.now();const res=await fetch('/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+id,{method:'POST',headers:{'Content-Type':f.type},body:f});if(!res.ok)throw Error(await res.text());current().background=id;render();message('Background uploaded. Save layout to apply it.')}catch(e){message(e.message)}};
-// Keep the interval selectable even in Manual or Off mode; it is saved for Automatic mode.
+$('background').onchange=()=>{const s=current();if(s){s.background=$('background').value.trim();render()}};
+$('upload').onclick=async()=>{try{const f=$('image').files[0];if(!f||!current())return message('Choose an image and load a screen');if(f.size>4*1024*1024)throw Error('Image exceeds 4 MiB');if(!['image/png','image/jpeg','image/gif'].includes(f.type))throw Error('Choose a PNG, JPEG or GIF background');const id='background_'+Date.now();const res=await fetch('/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+id,{method:'POST',headers:{'Content-Type':f.type},body:f});if(!res.ok)throw Error(await res.text());current().background=id;render();message('Background uploaded. Save layout to apply it.')}catch(e){message(e.message)}};
+function syncCycleInterval(){
+ const interval=$('cyclingSeconds'),mode=$('cyclingMode');
+ if(interval&&mode)interval.disabled=mode.value!=='automatic';
+}
+$('cyclingMode')?.addEventListener('change',syncCycleInterval);
+syncCycleInterval();
 $('save').onclick=async()=>{try{if(!cfg)return;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=$('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
 // Integrated device pages load their Nexus automatically without a device selector.
 // The standalone editor retains its device dropdown and Load button.
