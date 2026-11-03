@@ -1,6 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 let cfg=null,selected=null,serial='',drag=null,copiedWidget=null;
+let nexusPreviewTelemetry=null,nexusTelemetryRequestInFlight=false;
 const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization"];
 const GRID=8;
@@ -81,7 +82,13 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   el.classList.add('nexus-icon-widget');
   const glyph=document.createElement('span');glyph.className='nexus-icon';
   glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)
- }el.dataset.id=w.id;$('screen').append(el)}
+ }if(w.type==='graph'){
+  const plot=document.createElement('canvas');plot.className='nexus-graph-plot';
+  plot.width=Math.max(8,w.width-8);plot.height=Math.max(8,w.height-27);
+  plot.setAttribute('aria-hidden','true');el.append(plot);
+ }el.dataset.id=w.id;$('screen').append(el);
+ if(w.type==='graph')paintNexusGraph(el,w)
+ }
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;
  const properties=$('properties');
  const dimensionsRow=document.createElement('div');dimensionsRow.className='nexus-properties-row nexus-dimensions-row';dimensionsRow.setAttribute('aria-label','Widget dimensions');
@@ -574,6 +581,60 @@ if ($('deviceId')) {
 }
 
 // Clock preview updates without re-rendering the editor or interrupting drag.
+// Live browser plots reuse the physical Nexus's cached 60-second samples.
+// The endpoint never polls new sensors; it only returns the last LCD sample.
+function paintNexusGraph(element,widget){
+ const plot=element.querySelector?.('canvas.nexus-graph-plot');
+ const context=plot?.getContext?.('2d');if(!context)return;
+ const points=nexusPreviewTelemetry?.history?.[widget.metric];
+ const width=plot.width,height=plot.height;
+ context.clearRect(0,0,width,height);
+ if(!Array.isArray(points)||points.length<2)return;
+ const valid=points.filter(v=>typeof v==='number'&&Number.isFinite(v));
+ if(!valid.length)return;
+ const utilization=['cpu.utilization','gpu.utilization','memory.utilization','disk.utilization','gpu.vram.utilization'].includes(widget.metric);
+ let minimum=utilization?0:Math.min(...valid),maximum=utilization?100:Math.max(...valid);
+ if(maximum-minimum<1){minimum-=0.5;maximum+=0.5}
+ const trace=widget.settings?.textColor||'#5cd5af';
+ context.strokeStyle=trace;context.lineWidth=1.5;
+ context.beginPath();let drawing=false;
+ for(let i=0;i<points.length;i++){
+  const value=points[i];
+  if(typeof value!=='number'||!Number.isFinite(value)){drawing=false;continue}
+  const x=i*(width-1)/(points.length-1);
+  const normalized=Math.max(0,Math.min(1,(value-minimum)/(maximum-minimum)));
+  const y=height-1-normalized*(height-1);
+  if(!drawing){context.moveTo(x,y);drawing=true}
+  else context.lineTo(x,y)
+ }
+ context.stroke();
+}
+function updateNexusGraphPlots(){
+ const screen=current();if(!screen)return;
+ for(const element of $('screen').children){
+  const widget=screen.widgets.find(w=>w.id===element.dataset.id);
+  if(widget?.type==='graph')paintNexusGraph(element,widget)
+ }
+}
+async function pollNexusPreviewTelemetry(){
+ if(!serial||!cfg||nexusTelemetryRequestInFlight||document.hidden)return;
+ if(!cfg.screens.some(screen=>screen.widgets.some(widget=>widget.type==='graph')))return;
+ nexusTelemetryRequestInFlight=true;
+ try{
+  const response=await fetch('/api/nexus/telemetry?serial='+encodeURIComponent(serial),{cache:'no-store'});
+  if(!response.ok)throw Error('telemetry unavailable');
+  const data=await response.json();
+  if(data&&typeof data==='object'&&data.history&&typeof data.history==='object'){
+   nexusPreviewTelemetry=data;
+   updateNexusGraphPlots();
+  }
+ }catch(_err){
+  // No synthetic readings: physical device/display may be offline.
+  nexusPreviewTelemetry=null;updateNexusGraphPlots();
+ }finally{nexusTelemetryRequestInFlight=false}
+}
+if(typeof setInterval==='function')setInterval(pollNexusPreviewTelemetry,1500);
+
 function refreshNexusClockPreviews(){
  const active=current();if(!active)return;
  for(const el of $('screen').children){
