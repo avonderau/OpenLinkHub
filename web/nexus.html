@@ -74,7 +74,17 @@
 
 <style>
 #nexus-editor{max-width:1100px}
-#nexus-editor button,#nexus-editor input,#nexus-editor select{font:inherit;padding:.45rem .65rem;margin:.25rem;background:var(--bs-dark,#233748);color:var(--bs-body-color,#e8eff5);border:1px solid var(--bs-border-color,#617c90);border-radius:6px}
+#nexus-editor button,#nexus-editor input,#nexus-editor select{font-family:inherit;font-size:0.85rem;font-weight:500;line-height:1.4;padding:.45rem .65rem;margin:.25rem;background:var(--bg-card,#202022);color:var(--text-main,#e8eff5);-webkit-text-fill-color:var(--text-main,#e8eff5);border:1px solid var(--border-subtle,#617c90);border-radius:8px;opacity:1}
+#nexus-editor button{min-width:max-content}
+#nexus-editor select{min-width:120px}
+#nexus-editor #device{min-width:190px}
+#nexus-editor #screens{min-width:150px}
+#nexus-editor button:focus-visible,#nexus-editor input:focus-visible,#nexus-editor select:focus-visible{outline:2px solid var(--text-main,#e8eff5);outline-offset:2px}
+#nexus-editor .card-body{color:var(--text-main,#e8eff5)}
+#nexus-editor #message{color:var(--text-main,#e8eff5)}
+#nexus-editor input::placeholder{color:var(--text-muted,#999)}
+#nexus-editor input[type=file]{max-width:100%;width:260px}
+@media(max-width:800px){#nexus-editor{max-width:100%}#nexus-editor label{max-width:100%}#nexus-editor #preview{max-width:100%}}
 #nexus-editor button{cursor:pointer}#nexus-editor button:hover{filter:brightness(1.2)}
 #nexus-editor label{display:inline-block;margin:.4rem}
 #nexus-editor #screen{position:relative;width:640px;height:48px;background:#182b38;overflow:hidden;border:2px solid #82abc0;touch-action:none}
