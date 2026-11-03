@@ -69,10 +69,18 @@ func runNexusLaunchAction(action,target string)error{
  return nil
 }
 
+// Prevent repeated touches from creating unlimited launcher processes. The
+// HID reader must not block while a desktop application is starting.
+var launchSlot=make(chan struct{},1)
 func executeNexusLaunchAction(action,target string){
- // This is a physical touch path. Do not expose the launcher as an HTTP
- // command endpoint. Log only the category, never a potentially private URL.
- if err:=runNexusLaunchAction(action,target);err!=nil{
-  logger.Log(logger.Fields{"action":action,"error":err.Error()}).Warn("Nexus desktop launch failed")
- }
+ if err:=validateNexusLaunchAction(action,target);err!=nil{return}
+ select{case launchSlot<-struct{}{}:default:return}
+ go func(){
+  defer func(){<-launchSlot}()
+  // This is a physical touch path. Do not expose the launcher as an HTTP
+  // command endpoint. Log only the action category, never the private URL.
+  if err:=runNexusLaunchAction(action,target);err!=nil{
+   logger.Log(logger.Fields{"action":action,"error":err.Error()}).Warn("Nexus desktop launch failed")
+  }
+ }()
 }
