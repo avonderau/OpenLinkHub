@@ -10,6 +10,9 @@ on:
       - 'src/devices/nexus/**'
       - 'src/server/**'
       - 'web/nexus*.html'
+      - 'static/js/nexus-editor.js'
+      - 'static/css/nexus-editor.css'
+      - 'static/nexus-editor.html'
       - '.github/workflows/upstream-compatibility.yml'
 
 permissions:
@@ -40,6 +43,8 @@ jobs:
             git diff --name-only --diff-filter=U
             exit 1
           fi
+      - name: Check Nexus editor JavaScript syntax
+        run: node --check static/js/nexus-editor.js
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
