@@ -1,13 +1,14 @@
 'use strict';
 const $=id=>document.getElementById(id);
 let cfg=null,selected=null,serial='',drag=null;
+const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate'];
 function message(t){$('message').textContent=t}
 function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
 function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render()}
 function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();if(!s)return;
  $('background').value=s.background||'';
- for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||'Touch'):(w.settings?.label||w.metric));el.dataset.id=w.id;$('screen').append(el)}
+ for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){el.classList.add('nexus-icon-widget');const glyph=document.createElement('span');glyph.className='nexus-icon';glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)}el.dataset.id=w.id;$('screen').append(el)}
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;
  const fields=[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
  for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
@@ -37,10 +38,11 @@ function renderTouchProperties(w){
  const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control']];
  const media=[['play-pause','Play/Pause'],['stop','Stop'],['volume-up','Volume +'],['volume-down','Volume -'],['next-track','Next track'],['previous-track','Previous track']];
  const targets=cfg.screens.map(s=>[s.id,s.name]);
+ field('Icon',w.settings?.icon||'none',[['none','No icon'],...Object.keys(mediaGlyphs).map(id=>[id,id])],v=>{w.settings??={};if(v==='none')delete w.settings.icon;else w.settings.icon=v});
  if(w.type==='button'){
   field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':''});
   if(w.action==='screen')field('Target screen',w.target,targets,v=>w.target=v);
-  if(w.action==='media')field('Media action',w.target,media,v=>w.target=v);
+  if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.icon||w.settings.icon===old){w.settings??={};w.settings.icon=v}});
  }else{
   const label=document.createElement('label');label.textContent='Macro steps (JSON) ';
   const area=document.createElement('textarea');area.rows=5;area.cols=55;area.value=JSON.stringify(w.steps||[],null,2);
