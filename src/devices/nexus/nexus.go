@@ -130,6 +130,8 @@ type Device struct {
 	customSampler CounterSampler
  lastCycle time.Time
  macroRunning bool
+ activeNexusApps []string
+ preApplicationScreen string
 }
 
 var (
