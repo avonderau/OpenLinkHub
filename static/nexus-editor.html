@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nexus screen editor</title><link rel="stylesheet" href="/static/css/bootstrap-icons.min.css"><link rel="stylesheet" href="/static/css/openlinkhub-fork-theme.css">
+<title>Nexus screen editor</title><link rel="stylesheet" href="/static/css/bootstrap-icons.min.css">
 <style>
 body{font:15px system-ui,sans-serif;background:#101821;color:#e8eff5;margin:2rem auto;max-width:1050px;padding:0 1rem}
 button,input,select{font:inherit;padding:.45rem;margin:.2rem;background:#233748;color:white;border:1px solid #617c90;border-radius:5px}
@@ -83,7 +83,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 #nexus-editor .nexus-selected-widget-type,.nexus-selected-widget-type{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.5rem;width:fit-content;max-width:100%;color:var(--text-muted,#a7bac7);margin:.4rem 0}
 #nexus-editor .nexus-selected-widget-type select,.nexus-selected-widget-type select{min-width:120px}
 @media(max-width:640px){#nexus-editor .nexus-editor-tablist [role=tab],.nexus-editor-tablist [role=tab]{flex:1 1 auto;padding:.5rem}.nexus-editor-tabcontent{padding:.6rem}}
-</style></head><body>
+</style><link rel="stylesheet" href="/static/css/openlinkhub-fork-theme.css"></head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p><p id="message" role="status" aria-live="polite"></p>
 <label>Device <select id="device"></select></label><button id="load">Load</button><label>Display dimming (software) <select id="displayBrightness"><option value="20">20%</option><option value="40">40%</option><option value="60">60%</option><option value="80">80%</option><option value="100" selected>100% (full)</option></select></label>
