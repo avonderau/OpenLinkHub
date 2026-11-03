@@ -27,7 +27,7 @@ var supportedMetrics = map[string]bool{
  "memory.used":true,"memory.utilization":true,
  "network.rx_rate":true,"network.tx_rate":true,
  "disk.read_rate":true,"disk.write_rate":true,
- "cpu.clock_mhz":true,"disk.utilization":true,"disk.free_gb":true,"fan.rpm":true,"pump.rpm":true,"gpu.vram.used_mb":true,"gpu.vram.utilization":true,"gpu.vram.total_mb":true,"gpu.clock_mhz":true,"gpu.power_w":true,
+ "cpu.clock_mhz":true,"cpu.load_1m":true,"cpu.load_5m":true,"cpu.load_15m":true,"disk.utilization":true,"disk.free_gb":true,"fan.rpm":true,"pump.rpm":true,"gpu.vram.used_mb":true,"gpu.vram.utilization":true,"gpu.vram.total_mb":true,"gpu.clock_mhz":true,"gpu.power_w":true,
 }
 type MacroStep struct {
  Type string `json:"type"`
