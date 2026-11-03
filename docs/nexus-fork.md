@@ -30,3 +30,56 @@ Hardware testing is necessary before treating touchscreen navigation and image o
 ## Credits
 
 Original project: Nikola Jurkovic and contributors. Fork modifications: contributors to `avonderau/OpenLinkHub`. See repository history and the existing GPL license.
+
+## Staying compatible with upstream
+
+Upstream is `jurkovic-nikola/OpenLinkHub` (`main`). The custom Nexus screen engine,
+telemetry, rendering, touchscreen actions and configuration/API implementation
+live in separate fork-owned Go files. The editor workspace lives in
+`web/nexus-custom-workspace.html`; the upstream-owned `web/nexus.html` only
+includes the workspace template and assets. Custom HID/refresh logic is in
+`src/devices/nexus/custom_integration.go`, with minimal hooks in
+`src/devices/nexus/nexus.go`.
+
+**Small upstream-owned integration points remain:**
+
+- `src/devices/nexus/nexus.go` initializes the custom screens, holds state,
+  delegates custom HID touch reports and refreshes the custom screen.
+- `src/server/server.go` registers the screen/background API endpoints.
+- `web/nexus.html` includes the custom workspace and its assets.
+- `README.md` contains fork-specific introduction and attribution.
+
+Upstream may modify these files, so merge conflicts are **not guaranteed to
+be avoidable**. Resolve conflicts without discarding upstream fixes or fork
+integration hooks; compile and test every merged version.
+
+The
+[Upstream merge compatibility workflow](../.github/workflows/upstream-compatibility.yml)
+runs weekly, on relevant pushes and on demand. It fetches upstream, attempts
+a noncommitting merge, tests the Nexus and server packages and builds the app.
+**It never pushes, merges or force-updates your fork.** A successful run
+confirms that revision passed automated checks; it does not replace hardware
+testing.
+
+### Safely merging a new upstream version
+
+Run these commands from a clean local checkout:
+
+```bash
+git remote add upstream https://github.com/jurkovic-nikola/OpenLinkHub.git
+# If the upstream remote already exists, skip the line above.
+git fetch upstream
+git switch main
+git pull --ff-only origin main
+git switch -c upstream-sync-$(date +%Y%m%d)
+git merge --no-ff upstream/main
+# Resolve any conflicts, then:
+CGO_CFLAGS_ALLOW='-fno-strict-overflow' go test ./src/devices/nexus ./src/server -count=1
+CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build -o /tmp/OpenLinkHub-upstream-check .
+git push -u origin HEAD
+```
+
+Open a pull request from the integration branch into `main` after checks
+and physical Nexus testing. Do not directly merge untested upstream changes
+into `main`. Never force-push either repository. Do not open the pull
+request until any merge conflicts are resolved.
