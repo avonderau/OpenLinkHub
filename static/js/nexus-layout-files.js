@@ -6,7 +6,7 @@ globalThis.NexusLayoutFiles=(()=>{
  const hex=/^#[0-9A-Fa-f]{6}$/;
  const printableText=/^[ -~]{1,80}$/;
  const types=new Set(['text','metric','bar','graph','clock','button','macro']);
- const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization"]);
+ const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"]);
  const actions=new Set(['next','previous','screen','media','hotkey','mouse','url','application','text','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
  const mouse=new Set(['left','double-left','right','middle','back','forward','scroll-up','scroll-down','scroll-left','scroll-right']);
