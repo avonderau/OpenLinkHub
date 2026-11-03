@@ -12,7 +12,7 @@ func TestMediaIconsDrawWithinButton(t *testing.T) {
   t.Run(name,func(t *testing.T){
    frame:=image.NewRGBA(image.Rect(0,0,ScreenWidth,ScreenHeight))
    bounds:=image.Rect(100,0,200,48)
-   drawMediaIcon(frame,bounds,name)
+   drawMediaIcon(frame,bounds,name,color.RGBA{225,245,255,255})
    lit:=0
    for y:=0;y<ScreenHeight;y++{
     for x:=0;x<ScreenWidth;x++{
@@ -39,4 +39,16 @@ func TestMediaButtonIconAppearsOnRenderedScreen(t *testing.T) {
  found:=false
  for y:=4;y<40;y++ {for x:=15;x<80;x++ {if image.RGBAAt(x,y)!=background {found=true}}}
  if !found {t.Fatal("media control icon was not drawn")}
+}
+
+func TestStyledMacroButtonRender(t *testing.T){
+ screen:=Screen{ID:"styled",Name:"Styled",Widgets:[]Widget{{
+  ID:"action",Type:"button",X:0,Y:0,Width:96,Height:48,Action:"macro",
+  Steps:[]MacroStep{{Type:"media",Value:"play-pause"}},
+  Settings:map[string]string{"icon":"play-pause","backgroundColor":"#123456","textColor":"#aabbcc","borderColor":"#ff9900","style":"solid"},
+ }}}
+ result,err:=RenderScreen(screen,nil)
+ if err!=nil {t.Fatal(err)}
+ if got:=result.RGBAAt(20,2);got!=(color.RGBA{0x12,0x34,0x56,255}){t.Fatalf("background color %v",got)}
+ if got:=result.RGBAAt(0,0);got!=(color.RGBA{0xff,0x99,0,255}){t.Fatalf("border color %v",got)}
 }
