@@ -10,14 +10,22 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 .widget.selected{outline:2px solid #ffc36a}
 #preview{overflow:auto;padding:1rem;background:#080f16}
 #message{min-height:1.5em}fieldset{border:1px solid #496275;margin:1rem 0}input[type=number]{width:65px}
+.nexus-create-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem}.nexus-panel-description{color:#a7bac7;margin:.3rem 0 .7rem}#deleteWidget:disabled{opacity:.45;cursor:not-allowed}#properties{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.75rem}
 </style></head><body>
 <h1>iCUE NEXUS screen editor</h1>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p>
 <label>Device <select id="device"></select></label><button id="load">Load</button>
 <label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="deleteScreen">Delete screen</button>
 <div id="preview"><div id="screen"></div></div>
-<fieldset><legend>Widgets</legend><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button><label>Media <select id="mediaPreset"><option value="previous-track">Previous</option><option value="play-pause" selected>Play/Pause</option><option value="next-track">Next</option><option value="stop">Stop</option><option value="volume-down">Volume -</option><option value="volume-up">Volume +</option></select></label><button id="addMediaButton">Add media button</button><button id="addMediaSet">Add media controls</button><button id="deleteWidget">Remove selected</button>
-<div id="properties"></div></fieldset>
+<fieldset id="nexus-add-panel"><legend>Add Widgets</legend>
+<p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
+<div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button><label>Media <select id="mediaPreset"><option value="previous-track">Previous</option><option value="play-pause" selected>Play/Pause</option><option value="next-track">Next</option><option value="stop">Stop</option><option value="volume-down">Volume -</option><option value="volume-up">Volume +</option></select></label><button id="addMediaButton">Add media button</button><button id="addMediaSet">Add media controls</button></div>
+</fieldset>
+<fieldset id="nexus-selected-panel"><legend>Selected Widget</legend>
+<p id="selectedWidgetStatus" class="nexus-panel-description" role="status">Select a widget in the preview to edit it.</p>
+<div id="properties"></div>
+<button id="deleteWidget" disabled>Remove selected widget</button>
+</fieldset>
 <fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG <input type="file" id="image" accept="image/png,image/jpeg"></label><button id="upload">Upload and apply</button></fieldset>
 <button id="save">Save layout</button><p id="message" role="status"></p>

@@ -11,7 +11,12 @@ const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
 function message(t){$('message').textContent=t}
 function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
 function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render()}
-function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();if(!s)return;
+function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();
+ const widget=s?.widgets.find(w=>w.id===selected);
+ const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
+ if(remove)remove.disabled=!widget;
+ if(status)status.textContent=widget?(widget.settings?.label||widget.settings?.text||widget.id)+' · '+widget.type:'Select a widget in the preview to edit it.';
+ if(!s)return;
  $('background').value=s.background||'';
  for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){el.classList.add('nexus-icon-widget');const glyph=document.createElement('span');glyph.className='nexus-icon';glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)}el.dataset.id=w.id;$('screen').append(el)}
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;

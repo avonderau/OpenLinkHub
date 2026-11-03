@@ -60,3 +60,10 @@
  background-image:linear-gradient(to right,rgba(155,195,215,.15) 1px,transparent 1px),linear-gradient(to bottom,rgba(155,195,215,.15) 1px,transparent 1px);
  background-size:8px 8px;
 }
+
+/* Separate creation tools from editing the selected widget. */
+#nexus-editor .nexus-panel-description{color:var(--text-muted,#9daeba);font-size:.85rem;margin:.25rem 0 .75rem}
+#nexus-editor .nexus-create-actions{display:flex;align-items:center;align-content:flex-start;flex-wrap:wrap;gap:.25rem}
+#nexus-editor .nexus-create-actions button,#nexus-editor .nexus-create-actions label{margin:.15rem}
+#nexus-editor #nexus-selected-panel #properties{margin-bottom:.75rem}
+#nexus-editor #deleteWidget:disabled{opacity:.45;cursor:not-allowed;filter:none}
