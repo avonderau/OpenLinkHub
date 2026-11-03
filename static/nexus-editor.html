@@ -37,7 +37,25 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 @media(max-width:750px){#properties{grid-template-columns:1fr}}
 </style>
 
-</head><body>
+<style>
+/* Adaptive right-side utilities: use spare viewport space before overlaying. */
+.nexus-flyout-toolbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 .7rem}
+.nexus-flyout-toolbar button{color:var(--text-muted,#a7bac7)}
+.nexus-flyout[hidden],.nexus-flyout-backdrop[hidden]{display:none!important}
+.nexus-flyout-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:2080}
+.nexus-flyout{position:fixed;right:0;top:0;bottom:0;box-sizing:border-box;width:min(420px,100vw);max-width:100vw;overflow:auto;overscroll-behavior:contain;z-index:2081;padding:1rem;background:var(--bg-card,#172735);color:var(--text-main,#e8eff5);border-left:1px solid var(--border-subtle,#496275);box-shadow:-12px 0 35px rgba(0,0,0,.25)}
+.nexus-flyout.nexus-flyout-docked{box-shadow:0 5px 20px rgba(0,0,0,.12);border:1px solid var(--border-subtle,#496275);border-radius:9px;bottom:auto;max-height:calc(100vh - 24px)}
+.nexus-flyout-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;border-bottom:1px solid var(--border-subtle,#496275);padding-bottom:.8rem;margin-bottom:.8rem}
+.nexus-flyout-header strong{color:var(--text-main,#e8eff5)}
+.nexus-flyout fieldset{min-width:0;max-width:100%;box-sizing:border-box;border:0;padding:0;margin:0}
+.nexus-flyout legend{color:var(--text-muted,#a7bac7);font-size:.88rem;margin-bottom:.4rem}
+.nexus-flyout label{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;min-width:0;margin:.5rem 0;color:var(--text-muted,#a7bac7)}
+.nexus-flyout input,.nexus-flyout select{max-width:100%;box-sizing:border-box}
+.nexus-flyout input[type=file]{width:100%}
+.nexus-flyout .nexus-widget-library-actions,.nexus-flyout .nexus-layout-file-controls{display:flex;align-items:stretch;flex-direction:column;gap:.5rem}
+.nexus-flyout :focus-visible,.nexus-flyout-toolbar button:focus-visible{outline:2px solid var(--text-main,#e8eff5);outline-offset:2px}
+@media(max-width:480px){.nexus-flyout{width:100vw;padding:.8rem}.nexus-flyout-toolbar{justify-content:flex-start}}
+</style></head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p><p id="message" role="status" aria-live="polite"></p>
 <label>Device <select id="device"></select></label><button id="load">Load</button><label>Display dimming (software) <select id="displayBrightness"><option value="20">20%</option><option value="40">40%</option><option value="60">60%</option><option value="80">80%</option><option value="100" selected>100% (full)</option></select></label>
@@ -60,7 +78,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <button id="duplicateScreen" type="button">Duplicate screen</button>
 <button id="deleteScreen" type="button">Delete screen</button>
 </div>
-<div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
+<nav class="nexus-flyout-toolbar" aria-label="Nexus editor utilities"><button type="button" data-nexus-flyout="library" aria-controls="nexus-flyout-library" aria-expanded="false">Widget library</button><button type="button" data-nexus-flyout="background" aria-controls="nexus-flyout-background" aria-expanded="false">Background</button><button type="button" data-nexus-flyout="layout" aria-controls="nexus-flyout-layout" aria-expanded="false">Layout files</button></nav><div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
 <p id="nexus-keyboard-hint" class="nexus-panel-description">Keyboard editing: [ / ] select widget, arrows move, Shift + arrows resize, Delete removes, Ctrl + C/V copies and pastes.</p>
 <fieldset id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
@@ -77,7 +95,11 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <div id="properties"></div>
 <div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
 </fieldset>
-<fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
+
+
+
+
+<div id="nexus-flyout-backdrop" class="nexus-flyout-backdrop" hidden></div><aside id="nexus-flyout-library" class="nexus-flyout" role="dialog" aria-modal="true" aria-label="Widget library" tabindex="-1" hidden><header class="nexus-flyout-header"><strong>Widget library</strong><button type="button" class="nexus-flyout-close" aria-label="Close Widget library">Close</button></header><fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
 <p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
 <div class="nexus-widget-library-actions">
 <button id="saveWidgetPreset" type="button" disabled>Save selected widget</button>
@@ -85,11 +107,8 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <button id="addWidgetPreset" type="button" disabled>Add to screen</button>
 <button id="deleteWidgetPreset" type="button" disabled>Delete saved widget</button>
 </div>
-</fieldset>
-<fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
-<label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset>
-
-<fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
+</fieldset></aside><aside id="nexus-flyout-background" class="nexus-flyout" role="dialog" aria-modal="true" aria-label="Background" tabindex="-1" hidden><header class="nexus-flyout-header"><strong>Background</strong><button type="button" class="nexus-flyout-close" aria-label="Close Background">Close</button></header><fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
+<label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset></aside><aside id="nexus-flyout-layout" class="nexus-flyout" role="dialog" aria-modal="true" aria-label="Layout files" tabindex="-1" hidden><header class="nexus-flyout-header"><strong>Layout files</strong><button type="button" class="nexus-flyout-close" aria-label="Close Layout files">Close</button></header><fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
 <div class="nexus-layout-file-controls">
 <button id="exportLayout" type="button">Export layout</button>
 <button id="exportScreen" type="button">Export selected screen</button>
@@ -102,7 +121,6 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <button id="importLayout" type="button">Import JSON</button>
 </div>
 <p class="nexus-panel-description">Imports are editable previews until Save Layout. Uploaded backgrounds and icons are referenced by ID; artwork is not included in the JSON file.</p>
-</fieldset>
-<script src="/static/js/nexus-layout-files.js"></script>
+</fieldset></aside><script src="/static/js/nexus-layout-files.js"></script>
 <script src="/static/js/nexus-widget-library.js"></script>
 <script src="/static/js/nexus-editor.js"></script></body></html>
