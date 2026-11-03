@@ -3,7 +3,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>{{ .Title }}</title>
+    <title>{{ .Title }} | OpenLinkHub Nexus</title>
 
     <meta name="description" content="">
     <meta name="robots" content="all,follow">
@@ -28,6 +28,8 @@
     <link href="/static/css/toastr.min.css" rel="stylesheet">
     <link href="/static/css/jquery-ui.min.css" rel="stylesheet">
     <link href="/static/css/themes/{{ .Dashboard.Theme }}.css" rel="stylesheet">
+    <!-- Fork-only visual layer: loaded after upstream theme for merge-friendly styling. -->
+    <link href="/static/css/openlinkhub-fork-theme.css" rel="stylesheet">
 
     <!-- PWA -->
     <link rel="manifest" href="/static/manifest.json">

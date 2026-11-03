@@ -393,3 +393,28 @@ test('content type changes Text Image Clock from Selected Widget',async()=>{
   if(expected==='clock')assert.equal(item.settings.clockFormat,'24h');
  }
 });
+
+test('site-wide fork theme loads after upstream CSS without replacing the upstream theme',()=>{
+ const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
+ const overlayPath=path.join(__dirname,'..','css','openlinkhub-fork-theme.css');
+ const overlay=fs.readFileSync(overlayPath,'utf8');
+ const upstream=head.indexOf('/static/css/themes/{{ .Dashboard.Theme }}.css" rel="stylesheet"');
+ const fork=head.indexOf('/static/css/openlinkhub-fork-theme.css" rel="stylesheet"');
+ assert.ok(upstream>=0&&fork>upstream,'fork CSS should load after upstream theme');
+ assert.equal(head.split('/static/css/openlinkhub-fork-theme.css').length-1,1);
+ assert.match(overlay,/--olh-accent:\s*#d5a65a/);
+ assert.match(overlay,/\.sidebar \.nav-link\.active/);
+ assert.match(overlay,/#nexus-editor #nexus-selected-panel/);
+ assert.doesNotMatch(overlay,/!important\s*;?\s*\}\s*\*\s*\{/);
+});
+
+test('OpenLinkHub Nexus fork branding is present without renaming upstream routes',()=>{
+ const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
+ const sidebar=fs.readFileSync(path.join(__dirname,'..','..','web','sidebar.html'),'utf8');
+ const css=fs.readFileSync(path.join(__dirname,'..','css','openlinkhub-fork-theme.css'),'utf8');
+ assert.match(head,/<title>\{\{ \.Title \}\} \| OpenLinkHub Nexus<\/title>/);
+ assert.match(sidebar,/class="olh-fork-brand" aria-label="OpenLinkHub Nexus"/);
+ assert.match(sidebar,/id="sidebarToggle"/);
+ assert.match(sidebar,/\( \.Dict "page" "macros" "url" "\/macros"/);
+ assert.match(css,/\.sidebar\.collapsed \.olh-fork-brand \{display:none\}/);
+});

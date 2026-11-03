@@ -5,6 +5,8 @@
 <aside class="sidebar p-3 d-flex flex-column {{ if .Dashboard.SidebarCollapsed }}collapsed{{ end }}">
     <!-- Top -->
     <button class="system-button secondary mb-3" id="sidebarToggle">☰</button>
+    <!-- Fork identity; keep all existing upstream navigation and translations. -->
+    <div class="olh-fork-brand" aria-label="OpenLinkHub Nexus"><span>OpenLinkHub</span> <strong>Nexus</strong></div>
     <div>
         {{ $menu := .Slice
         ( .Dict "page" "apps" "url" "/apps" "icon" "icon-applications.svg" "alt" "Applications" "lang" "txtApplications" )
