@@ -38,5 +38,6 @@ func TestVerticalTextChangesPositionAndPreservesWidgetBounds(t *testing.T) {
   }
  }
  if differences==0{t.Fatal("vertical alignment did not change text pixels")}
- if top.RGBAAt(15,10)!=color.RGBA{12,19,27,255}{t.Fatal("rendered outside widget")}
+ expected:=color.RGBA{12,19,27,255}
+ if top.RGBAAt(15,10)!=expected{t.Fatal("rendered outside widget")}
 }
