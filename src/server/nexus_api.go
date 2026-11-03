@@ -43,10 +43,20 @@ func nexusScreensAPI(w http.ResponseWriter,r *http.Request){
  w.WriteHeader(http.StatusNoContent)
 }
 func nexusBackgroundAPI(w http.ResponseWriter,r *http.Request){
- if r.Method!=http.MethodPost {w.Header().Set("Allow","POST");http.Error(w,"method not allowed",405);return}
- if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
+ if r.Method!=http.MethodPost && r.Method!=http.MethodGet {
+  w.Header().Set("Allow","GET, POST");http.Error(w,"method not allowed",405);return
+ }
  d,ok:=nexusDevice(r);if !ok {http.Error(w,"Nexus device not found",404);return}
  id:=r.URL.Query().Get("id")
+ if r.Method==http.MethodGet {
+  path,err:=d.CustomBackgroundPath(id)
+  if err!=nil{http.Error(w,"background not found",404);return}
+  w.Header().Set("Cache-Control","private, no-store")
+  w.Header().Set("X-Content-Type-Options","nosniff")
+  http.ServeFile(w,r,path)
+  return
+ }
+ if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
  r.Body=http.MaxBytesReader(w,r.Body,4*1024*1024)
  defer r.Body.Close()
  content,err:=io.ReadAll(r.Body)

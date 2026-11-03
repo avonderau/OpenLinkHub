@@ -92,7 +92,7 @@ func (d *Device) renderCustomScreen() []byte {
    var background image.Image
    if screen.Background!="" {
     background=PresetNexusBackground(screen.Background,time.Now())
-    if background==nil {background,_=ReadBackground(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background)}
+    if background==nil {background,_=ReadBackgroundAt(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background,time.Now())}
    }
    frame,err:=RenderScreenWithBackgroundAndIcons(screen,values,background,filepath.Join(pwd,"database","nexus","icons"))
    if err!=nil{return nil}
@@ -151,6 +151,9 @@ func (d *Device) CustomIconPath(id string)(string,error){
  path:=filepath.Join(pwd,"database","nexus","icons",id+".png")
  if _,err:=ReadCustomIcon(filepath.Dir(path),id);err!=nil{return "",err}
  return path,nil
+}
+func (d *Device) CustomBackgroundPath(id string)(string,error){
+ return backgroundFilePath(filepath.Join(pwd,"database","nexus","backgrounds"),id)
 }
 func (d *Device) SaveCustomBackground(id string,content []byte)(string,error){
  return SaveBackground(filepath.Join(pwd,"database","nexus","backgrounds"),id,content)
