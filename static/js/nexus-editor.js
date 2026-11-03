@@ -343,6 +343,7 @@ $('deleteScreen').onclick=()=>{
    for(const step of w.steps||[])if(step.type==='screen'&&step.value===removed)step.value=fallback;
   }
  }
+ for(const [appID,target] of Object.entries(cfg.applicationScreens||{}))if(target===removed)cfg.applicationScreens[appID]=fallback;
  cfg.activeScreenId=fallback;selected=null;refreshScreens();
  message('Screen removed. Navigation links to it now point to '+cfg.screens[0].name+'. Save Layout to apply.');
 };
