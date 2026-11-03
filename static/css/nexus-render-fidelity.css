@@ -259,7 +259,8 @@
   align-items:center;min-height:70px;
   padding:14px 18px!important;margin:0 0 17px!important;
   border:1px solid var(--nxf-stroke)!important;border-radius:11px!important;
-  background:linear-gradient(135deg,#29292b,#232324)!important;
+  background:linear-gradient(110deg,rgba(211,157,77,.12) 0%,rgba(211,157,77,.025) 37%,transparent 69%),
+             linear-gradient(180deg,#333335 0%,#222224 100%)!important;
 }
 #nexus-editor #nexus-add-panel legend{
   grid-column:1;grid-row:1;
@@ -298,8 +299,10 @@
 }
 #nexus-editor .nexus-selected-hero{
   position:relative;display:flex;align-items:center;gap:16px;
-  min-height:73px;padding:0 3px 15px;margin-bottom:14px;
-  border-bottom:1px solid var(--nxf-border);overflow:hidden
+  min-height:73px;padding:10px 13px 16px;margin:-4px -6px 14px;
+  border-bottom:1px solid rgba(222,177,112,.22);border-radius:9px 9px 0 0;overflow:hidden;
+  background:linear-gradient(105deg,rgba(223,165,86,.12) 0%,rgba(223,165,86,.035) 33%,rgba(32,32,34,0) 66%),
+             linear-gradient(180deg,#303033 0%,#232325 100%)
 }
 #nexus-editor .nexus-selected-hero:after{
   content:"";position:absolute;z-index:0;right:-55px;top:-65px;
@@ -364,9 +367,15 @@
   min-height:43px;padding:11px 14px!important;cursor:pointer;
   font-size:14px!important;font-weight:650!important;line-height:1.25;
   color:#f1f1f3!important;list-style:none;
-  background:linear-gradient(180deg,rgba(255,255,255,.035),transparent)
+  background:linear-gradient(108deg,rgba(211,159,79,.14) 0%,rgba(211,159,79,.035) 34%,transparent 65%),
+             linear-gradient(180deg,#363639 0%,#252528 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045)
 }
 #nexus-editor #properties > .nexus-property-section > summary::-webkit-details-marker{display:none}
+#nexus-editor #properties > .nexus-property-section > summary:hover{
+  background:linear-gradient(108deg,rgba(211,159,79,.19) 0%,rgba(211,159,79,.06) 38%,transparent 66%),
+             linear-gradient(180deg,#3a3a3d 0%,#29292b 100%)!important
+}
 #nexus-editor #properties > .nexus-property-section > summary::after{
   content:"⌄";margin-left:auto;font-size:17px;font-weight:400;line-height:1;
   color:#c0c0c5;transform:rotate(-90deg);
