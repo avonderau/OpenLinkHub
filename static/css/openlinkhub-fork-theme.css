@@ -485,3 +485,84 @@ body {
 #nexus-editor .nexus-widget-type-chip .bi{font-size:.95rem;color:var(--olh-accent)}
 #nexus-editor .nexus-widget-identity-label{color:var(--olh-muted);font-size:.84rem;min-width:0;overflow-wrap:anywhere}
 #nexus-editor #selectedWidgetStatus label{flex:1 1 250px;color:var(--olh-muted);font-size:.83rem}
+
+
+/* ===========================================================================
+ * Render-matched site shell: full-viewport topbar and understated app sidebar.
+ * This override intentionally changes presentation, not upstream navigation.
+ * =========================================================================== */
+body > .olh-app-topbar {
+  position:sticky;top:0;left:0;right:0;z-index:1050;
+  width:100%;height:52px;min-height:52px;box-sizing:border-box;
+  margin:0;padding:0 27px 0 28px;
+  border:0;border-bottom:1px solid rgba(255,255,255,.13);border-radius:0;
+  box-shadow:none;background:linear-gradient(110deg,#1b1b1c,#131314);
+}
+body > .olh-app-topbar .olh-app-topbar-title {gap:12px}
+body > .olh-app-topbar .olh-app-topbar-icon {
+  width:27px;height:30px;border:0;border-radius:0;
+  background:none;color:#e0ad62;font-size:26px
+}
+body > .olh-app-topbar .olh-app-topbar-name {font-size:16px;font-weight:700}
+body > .olh-app-topbar .olh-app-topbar-suffix {color:#e1ad5d}
+body > .olh-app-topbar .olh-app-topbar-page {font-size:15px;color:#c5c5c8}
+body > .olh-app-topbar .olh-app-topbar-actions {gap:11px}
+body > .olh-app-topbar .olh-app-topbar-actions a{
+  display:grid;place-items:center;min-width:35px;height:35px;padding:0 10px;
+  background:transparent;border-color:transparent;border-radius:8px;
+  font-size:0;color:#b9b9bd
+}
+body > .olh-app-topbar .olh-app-topbar-actions a .bi {font-size:17px}
+body > .olh-app-topbar .olh-app-topbar-actions a:hover {background:rgba(255,255,255,.065)}
+body > .container-fluid {padding-inline:0}
+body > .container-fluid > .row {margin-inline:0}
+body > .container-fluid > .row > .sidebar {
+  flex:0 0 225px;width:225px;min-height:calc(100vh - 52px);
+  border-right:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,#151515,#121213);
+  padding:15px 12px!important;box-shadow:none
+}
+body > .container-fluid > .row > .sidebar.collapsed {flex-basis:72px;width:72px}
+body > .container-fluid > .row > .sidebar .olh-fork-brand {display:none}
+body > .container-fluid > .row > .sidebar .sidebar-title {
+  padding:0 13px;margin:12px 0 10px!important;
+  text-align:left;font-size:10px;font-weight:650;letter-spacing:.11em;
+  color:#828287
+}
+body > .container-fluid > .row > .sidebar #sidebarToggle {
+  width:34px;height:31px;min-height:31px;padding:0;
+  margin:0 0 11px 3px!important;border-color:rgba(255,255,255,.12);
+  background:transparent;box-shadow:none;font-size:15px
+}
+body > .container-fluid > .row > .sidebar .sidebar-nav {gap:3px}
+body > .container-fluid > .row > .sidebar .nav-link {
+  min-height:42px;margin:0 0 3px;padding:10px 12px;
+  border-radius:8px;border:1px solid transparent;
+  font-size:13px;line-height:1.35;color:#b1b1b6;
+  font-weight:450
+}
+body > .container-fluid > .row > .sidebar .nav-link:hover {
+  background:rgba(255,255,255,.045);color:#f4f4f5
+}
+body > .container-fluid > .row > .sidebar .nav-link.active {
+  background:linear-gradient(90deg,rgba(224,169,83,.16),rgba(224,169,83,.07));
+  border-color:rgba(224,169,83,.20);border-left:2px solid #d7a358;
+  color:#f1f1f2
+}
+body > .container-fluid > .row > .sidebar .sidebar-icon {
+  width:19px;height:19px;flex:none;opacity:.87;filter:brightness(1.18);
+}
+body > .container-fluid > .row > .sidebar .nav-link.active .sidebar-icon{
+  opacity:1;filter:brightness(1.22) sepia(.3)
+}
+body > .container-fluid > .row > .main-content {
+  flex:1;min-width:0;max-width:none;padding:19px 24px 40px!important;
+}
+body {background:#141415;color:#e7e7e9}
+body > .container-fluid > .row > .main-content > .olh-app-topbar{display:none}
+@media(max-width:800px){
+ body > .olh-app-topbar{padding:0 12px}
+ body > .olh-app-topbar .olh-app-topbar-page{display:none}
+ body > .container-fluid > .row > .main-content{padding:14px!important}
+ body > .container-fluid > .row > .sidebar:not(.collapsed){flex-basis:190px;width:190px}
+}
