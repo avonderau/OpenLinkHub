@@ -268,3 +268,15 @@ to 100%. This does **not** modify the Nexus backlight or send unverified HID
 brightness commands. The saved JSON layout stores the level in an optional
 `brightness` field, and layout imports can preserve it. Actual hardware
 brightness control remains a separate device-protocol verification item.
+
+### Optional NVIDIA metrics
+
+When OpenLinkHub has a configured NVIDIA GPU, the Nexus collector can run a
+fixed, shell-free `nvidia-smi` query with an 800-millisecond timeout, at most
+once per cached telemetry sampling interval (normally one second). The
+optional values are GPU VRAM used/total, VRAM utilization, graphics clock
+(MHz), and GPU power draw (watts). A missing driver, unavailable field or
+invalid GPU index produces no reading rather than an invented zero. NVIDIA
+queries are not attempted for AMD or unconfigured GPU entries. The existing
+NVIDIA utilization query is unchanged; a future optimization could consolidate
+the queries to reduce per-sample process overhead.
