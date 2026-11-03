@@ -21,8 +21,19 @@
                                         <option value="automatic">Automatic</option>
                                         <option value="off">Off (fixed screen)</option>
                                     </select>
-                                    <label for="cyclingSeconds">Interval (seconds)</label>
-                                    <input id="cyclingSeconds" type="number" min="5" max="3600" step="1" value="15" class="form-control">
+                                    <label for="cyclingSeconds">Interval</label>
+                                    <select id="cyclingSeconds" class="form-select system-select">
+                                        <option value="5">5 seconds</option>
+                                        <option value="10">10 seconds</option>
+                                        <option value="15" selected>15 seconds</option>
+                                        <option value="30">30 seconds</option>
+                                        <option value="60">1 minute</option>
+                                        <option value="120">2 minutes</option>
+                                        <option value="300">5 minutes</option>
+                                        <option value="600">10 minutes</option>
+                                        <option value="1800">30 minutes</option>
+                                        <option value="3600">1 hour</option>
+                                    </select>
                                     <small>Save layout to apply cycling settings.</small>
                                 </div>
                             </div>
@@ -32,8 +43,8 @@
                 <div class="nexus-editor-column">
                     <section id="nexus-editor" class="card system-card"><div class="card-body">
 
-<div class="nexus-editor-heading"><h2 class="mb-0">NEXUS Screen Editor</h2><button id="save" type="button">Save Layout</button></div>
-<p class="text-secondary">Arrange screens and widgets for your 640 × 48 iCUE NEXUS display.</p><p id="message" role="status" aria-live="polite"></p>
+<div class="nexus-editor-heading"><button id="save" type="button">Save Layout</button></div>
+<p id="message" role="status" aria-live="polite"></p>
 <label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="deleteScreen">Delete screen</button>
 <div id="preview"><div id="screen"></div></div>
 <fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
