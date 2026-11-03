@@ -168,7 +168,6 @@ func cloneScreenConfiguration(c ScreenConfiguration) ScreenConfiguration {
   out.Screens[i].Widgets=make([]Widget,len(s.Widgets))
   for j,w:=range s.Widgets {
    out.Screens[i].Widgets[j]=w
-   out.Screens[i].Widgets[j].Steps=append([]MacroStep(nil),w.Steps...)
    if w.Settings!=nil {
     out.Screens[i].Widgets[j].Settings=make(map[string]string,len(w.Settings))
     for k,v:=range w.Settings {out.Screens[i].Widgets[j].Settings[k]=v}
@@ -265,17 +264,10 @@ func (d *Device) handleCustomTouch(position uint16) {
     d.pressedWidgetUntil=time.Now().Add(260*time.Millisecond)
     if d.lcdTimer!=nil{d.lcdTimer.Reset(1*time.Millisecond)}
     d.mutex.Unlock()
-    if w.Action=="macro" {d.runTouchMacro(w.Steps)} else {d.executeTouchAction(w.Action,w.Target)}
+    d.executeTouchAction(w.Action,w.Target)
     return
    }
-   if w.Type=="macro" {
-    d.mutex.Lock()
-    d.pressedWidgetID=w.ID
-    d.pressedWidgetUntil=time.Now().Add(260*time.Millisecond)
-    if d.lcdTimer!=nil{d.lcdTimer.Reset(1*time.Millisecond)}
-    d.mutex.Unlock()
-    d.runTouchMacro(w.Steps);return
-   }
+
   }
   break
  }
@@ -298,6 +290,7 @@ func (d *Device) executeTouchAction(action,target string) {
  case "text":executeNexusTextEntry(target)
  case "url","application":executeNexusLaunchAction(action,target)
  case "device": executeNexusHardwareAction(target)
+ case "macro": d.runSharedMacro(target)
  case "media":
   codes:=map[string]uint16{"volume-up":1,"volume-down":2,"stop":4,"previous-track":5,"play-pause":6,"next-track":7}
   if code:=codes[target];code!=0 {inputmanager.InputControlKeyboard(code,false)}
@@ -309,14 +302,4 @@ func (d *Device) navigateScreenAction(next bool) {
  if len(d.customScreens.Screens)==0{return}
  if next {d.customScreens.ActiveScreenID=d.customScreens.NextScreen()}else{d.customScreens.ActiveScreenID=d.customScreens.PreviousScreen()}
  d.lastCycle=time.Now()
-}
-func (d *Device) runTouchMacro(steps []MacroStep) {
- d.mutex.Lock()
- if d.macroRunning {d.mutex.Unlock();return}
- d.macroRunning=true
- d.mutex.Unlock()
- go func(){
-  defer func(){d.mutex.Lock();d.macroRunning=false;d.mutex.Unlock()}()
-  runNexusMacroSteps(steps,d.lcdRefreshChan,d.executeTouchAction)
- }()
 }
