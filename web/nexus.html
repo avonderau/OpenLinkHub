@@ -42,7 +42,6 @@
                                     <span class="meta-value">{{ .Device.Firmware }}</span>
                                 </div>
 
-                                <div class="settings-row"><span class="settings-label">Display</span><span class="meta-value">Custom Screens</span></div>
                                 <div class="settings-row nexus-cycle-settings">
                                     <label for="cyclingMode">Screen cycling</label>
                                     <select id="cyclingMode" class="form-select system-select">
@@ -63,7 +62,6 @@
 
 <h2 class="mb-2">NEXUS Screen Editor</h2>
 <p class="text-secondary">Arrange screens and widgets for your 640 × 48 iCUE NEXUS display.</p>
-<label>Device <select id="device"></select></label><button id="load">Load</button>
 <label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="deleteScreen">Delete screen</button>
 <div id="preview"><div id="screen"></div></div>
 <fieldset class="nexus-panel"><legend>Widgets</legend><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button><button id="deleteWidget">Remove selected</button>

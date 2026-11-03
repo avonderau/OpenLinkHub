@@ -20,8 +20,8 @@ $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widge
 $('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=Math.max(0,Math.min(640-w.width,Math.round(drag.startX+e.clientX-drag.x)));w.y=Math.max(0,Math.min(48-w.height,Math.round(drag.startY+e.clientY-drag.y)));const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
 $('screen').addEventListener('pointerup',()=>{drag=null;render()});$('screen').addEventListener('pointercancel',()=>{drag=null;render()});
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=$('device').value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){interval.value=cfg.cyclingSeconds||15;interval.disabled=mode?.value!=='automatic'}refreshScreens();message('Layout loaded')}
-$('load').onclick=()=>load().catch(e=>message(e.message));
+async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){interval.value=cfg.cyclingSeconds||15;interval.disabled=mode?.value!=='automatic'}refreshScreens();message('Layout loaded')}
+if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
 $('addScreen').onclick=()=>{if(!cfg)return;if(cfg.screens.length>=32)return message('Maximum 32 screens');const name=prompt('Screen name','New screen');if(!name)return;const id='screen_'+Date.now();cfg.screens.push({id,name,widgets:[]});cfg.activeScreenId=id;refreshScreens()};
 $('deleteScreen').onclick=()=>{if(!cfg||cfg.screens.length<=1)return message('Keep at least one screen');cfg.screens=cfg.screens.filter(s=>s.id!==$('screens').value);cfg.activeScreenId=cfg.screens[0].id;selected=null;refreshScreens()};
@@ -59,12 +59,10 @@ $('background').onchange=()=>{const s=current();if(s)s.background=$('background'
 $('upload').onclick=async()=>{try{const f=$('image').files[0];if(!f||!current())return message('Choose an image and load a screen');if(f.size>4*1024*1024)throw Error('Image exceeds 4 MiB');const id='background_'+Date.now();const res=await fetch('/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+id,{method:'POST',headers:{'Content-Type':f.type},body:f});if(!res.ok)throw Error(await res.text());current().background=id;render();message('Background uploaded. Save layout to apply it.')}catch(e){message(e.message)}};
 $('cyclingMode')?.addEventListener('change',()=>{const interval=$('cyclingSeconds');if(interval)interval.disabled=$('cyclingMode').value!=='automatic'});
 $('save').onclick=async()=>{try{if(!cfg)return;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=$('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
-// The integrated device page already knows which Nexus is selected.
-loadDevices().then(() => {
-  const serial = document.getElementById('deviceId')?.value;
-  const select = document.getElementById('device');
-  if (serial && select && [...select.options].some(option => option.value === serial)) {
-    select.value = serial;
-    document.getElementById('load').click();
-  }
-});
+// Integrated device pages load their Nexus automatically without a device selector.
+// The standalone editor retains its device dropdown and Load button.
+if ($('deviceId')) {
+  load().catch(e => message(e.message));
+} else if ($('device')) {
+  loadDevices();
+}
