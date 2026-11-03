@@ -40,7 +40,7 @@ func (h *metricHistory) snapshot()MetricHistory{
 
 func isUtilizationMetric(name string)bool{
  switch name{
- case "cpu.utilization","gpu.utilization","memory.utilization":return true
+ case "cpu.utilization","gpu.utilization","memory.utilization","disk.utilization","gpu.vram.utilization":return true
  }
  return false
 }

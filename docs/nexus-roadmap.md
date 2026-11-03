@@ -60,7 +60,7 @@ Existing saved JSON layouts remain valid across updates.
 
 ## Phase 2 — Better system and hardware information
 
-6. **Expanded telemetry provider**: discover available sensors and expose
+6. **Expanded telemetry provider [Linux sysfs metrics in progress]**: discover available sensors and expose
    supported CPU/GPU clocks, VRAM, power, fan/pump RPM, coolant and drive
    utilization without repeated external process spawning. Missing sensors
    display N/A and do not break screens. Prefer OpenLinkHub's existing
@@ -170,3 +170,17 @@ cached embedded Open Font fonts for the nondefault sizes with clipping to
 the widget rectangle. Widgets without typography settings retain the
 legacy fixed-width font and alignment. Vertical alignment, text shadows,
 and more font families remain future work.
+
+### Optional Linux sysfs telemetry
+
+The Nexus collector can read the following additional metrics without launching
+other processes: `cpu.clock_mhz` (CPU0 current cpufreq),
+`disk.utilization` (root filesystem usage percentage),
+`disk.free_gb` (root filesystem available GB), `fan.rpm` (first valid
+unlabelled/normal hwmon fan), `pump.rpm` (first hwmon fan labelled as a pump),
+`gpu.vram.used_mb` and `gpu.vram.utilization` (AMDGPU DRM sysfs, when
+present). Data are sampled at most once per second even during animated
+background playback. Missing or implausible sensors remain unavailable instead
+of showing invented readings. NVIDIA VRAM, GPU clocks and per-device Corsair
+coolant/fan sensors still need dedicated providers; the generic fan reading
+must not be labelled as a specific Corsair device.
