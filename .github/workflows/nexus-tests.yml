@@ -1,0 +1,23 @@
+name: Nexus Go tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/devices/nexus/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/nexus-tests.yml'
+  workflow_dispatch:
+jobs:
+  nexus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install HID development dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
+      - name: Compile and test Nexus package
+        run: go test ./src/devices/nexus -count=1 -v
