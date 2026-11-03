@@ -72,8 +72,8 @@ func runSavedMacro(ctx context.Context,m macro.Macro) bool{
      }else{inputmanager.InputControlMouse(action.ActionCommand)}
     case 6:inputmanager.InputControlKeyboardText(action.ActionText)
     case 20:
-     if action.MousePositionAbsolute{inputmanager.InputControlMoveAbsolute(int32(action.MousePositionX),int32(action.MousePositionY))}
-     else{inputmanager.InputControlMove(int32(action.MousePositionX),int32(action.MousePositionY))}
+     if action.MousePositionAbsolute{inputmanager.InputControlMoveAbsolute(int32(action.MousePositionX),int32(action.MousePositionY))
+     }else{inputmanager.InputControlMove(int32(action.MousePositionX),int32(action.MousePositionY))}
     }
     if j+1<repeats&&!waitNexusMacro(ctx,time.Duration(action.ActionRepeatDelay)*time.Millisecond){return false}
    }
