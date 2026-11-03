@@ -16,6 +16,21 @@ feature parity or hardware certification.
 - Manual/automatic/fixed cycling, media actions and basic macros
 - Upstream merge compatibility workflow and editor/Go test coverage
 
+## User acceptance verification — November 3, 2026
+
+The user has confirmed that the latest Nexus feature set passed hands-on user
+testing. This acceptance covers the recently delivered animated GIF background
+support, keyboard shortcut actions, mouse click/scroll actions, and clock/date
+widgets, alongside the current Nexus editor workflow.
+
+**Status: user-tested / passed (user-reported).** This is a user acceptance
+result, not an independently reproduced automated test or certification for
+every Linux desktop, HID device, or compositor.
+
+The corresponding features can be treated as completed for the current
+release. Additional functionality listed below remains planned and should
+still use feature branches, automated checks, and manual acceptance testing.
+
 ## Implementation principles
 
 Every feature is developed in a separate branch/PR, with Go, Nexus, browser
@@ -27,14 +42,14 @@ Existing saved JSON layouts remain valid across updates.
 
 ## Phase 1 — Button actions and reusable execution
 
-1. **Keyboard shortcuts [implemented]**: structured key combinations for buttons
+1. **Keyboard shortcuts [implemented; user-tested]**: structured key combinations for buttons
    and macro steps, implemented through the existing Linux uinput keyboard.
    Validate key/modifier names, hold/release ordering and error handling.
    Document permissions and Wayland/compositor limitations.
 2. **Shared action engine**: consolidate dispatch, debouncing and macros.
    Create explicit boundaries for input, media and device actions, bounds on
    execution time, cancellation and safe concurrent input handling.
-3. **Mouse actions [implemented: clicks and scrolling]**: left/right/middle click, double-click and scroll via
+3. **Mouse actions [implemented; user-tested: clicks and scrolling]**: left/right/middle click, double-click and scroll via
    the existing input manager; clamp repetition and release on error.
 4. **Application and URL actions**: launch only explicitly approved desktop
    entries or executables; validate http/https links. Never use a shell for
@@ -50,7 +65,7 @@ Existing saved JSON layouts remain valid across updates.
    utilization without repeated external process spawning. Missing sensors
    display N/A and do not break screens. Prefer OpenLinkHub's existing
    device/system data.
-7. **Clock/date widgets [implemented: basic formats]**: local date/time formatting, update cadence,
+7. **Clock/date widgets [implemented; user-tested: basic formats]**: local date/time formatting, update cadence,
    timezone support and font fitting in 640 × 48.
 8. **History graphs**: bounded rolling sensor data, sparkline/area/line
    widgets with explicit sampling intervals, memory caps and clipping.
@@ -105,5 +120,5 @@ Keyboard shortcuts and basic mouse actions have been implemented with
 allowlisted names and shared Linux input-manager functions. Clock/date
 widgets display the host's local time with 24-hour, 12-hour, date, or
 date-and-time formatting. Additional rich typography, locale controls and
-hardware tests remain on the roadmap. The existing keyboard/mouse actions
+additional cross-device compatibility tests remain on the roadmap. The existing keyboard/mouse actions
 do not imply that application launch or all iCUE macros are complete.
