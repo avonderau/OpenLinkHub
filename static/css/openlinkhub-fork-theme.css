@@ -233,3 +233,243 @@ body {
   font-weight:700;
 }
 .sidebar.collapsed .olh-fork-brand {display:none}
+
+/* ==========================================================================
+   Visual mockup fidelity: actual layout and iconography, not a recolor.
+   The shared site shell is inserted progressively by the fork-only JS.
+   ========================================================================== */
+:root{
+  --olh-accent-strong:#e3b870;
+  --olh-muted-strong:#b6b7bd;
+  --olh-canvas:#121316;
+}
+.olh-app-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  min-height:66px;margin:0 0 24px;padding:12px 22px;
+  border:1px solid var(--olh-line);border-radius:13px;
+  background:linear-gradient(108deg,#222327 0%,#1a1b1e 68%,#241e17 100%);
+  box-shadow:0 10px 28px rgba(0,0,0,.16);
+}
+.olh-app-topbar-title{min-width:0;display:flex;align-items:center;gap:12px}
+.olh-app-topbar-icon{
+  display:grid;place-items:center;width:38px;height:38px;flex:none;
+  font-size:18px;color:var(--olh-accent-strong);
+  background:var(--olh-accent-soft);border:1px solid rgba(213,166,90,.25);border-radius:10px;
+}
+.olh-app-topbar-name{color:var(--olh-ink);font-size:1.03rem;font-weight:650;white-space:nowrap}
+.olh-app-topbar-suffix{color:var(--olh-accent-strong);font-weight:700}
+.olh-app-topbar-divider{height:25px;width:1px;background:var(--olh-line-strong);margin:0 4px;flex:none}
+.olh-app-topbar-page{font-size:.92rem;color:var(--olh-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.olh-app-topbar-actions{display:flex;align-items:center;gap:8px}
+.olh-app-topbar-actions a{
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  color:var(--olh-muted);text-decoration:none;font-size:.82rem;
+  border:1px solid var(--olh-line);border-radius:9px;
+  padding:8px 12px;background:rgba(255,255,255,.025);
+}
+.olh-app-topbar-actions a:hover,.olh-app-topbar-actions a:focus-visible{
+  color:var(--olh-accent-strong);border-color:rgba(213,166,90,.46)
+}
+/* Make the actual integrated editor full width: the mockup was NOT a
+   narrow device editor squeezed alongside an always-open settings card. */
+.nexus-workspace{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:14px!important;
+  max-width:100%!important;
+}
+.nexus-page-heading{grid-row:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;padding:7px 2px 14px}
+.nexus-page-heading-copy{min-width:0}
+.nexus-heading-kicker{display:block;margin-bottom:7px;color:var(--olh-accent);font-size:.69rem;font-weight:700;letter-spacing:.15em}
+.nexus-page-heading h1{display:flex;align-items:center;gap:12px;font-size:1.55rem;font-weight:700;margin:0 0 5px;letter-spacing:-.025em}
+.nexus-page-heading h1 .bi{font-size:1.28rem;color:var(--olh-accent-strong)}
+.nexus-page-heading p{margin:0;color:var(--olh-muted);font-size:.88rem;line-height:1.6}
+.nexus-page-heading .nexus-primary-save{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  padding:10px 19px!important;border:1px solid #bb8e48!important;border-radius:9px!important;
+  background:linear-gradient(180deg,#e8be7e,#cf9c52)!important;
+  color:#1c1710!important;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.17)
+}
+.nexus-page-heading .nexus-primary-save:hover{background:linear-gradient(180deg,#f4d09b,#d9a960)!important}
+.nexus-device-column{grid-row:2;max-width:none!important}
+.nexus-editor-column{grid-row:3;max-width:none!important}
+.nexus-device-settings{
+  border:1px solid var(--olh-line);border-radius:11px;
+  background:linear-gradient(135deg,#1e1f22,#17181a);
+  overflow:hidden;
+}
+.nexus-device-settings>summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;
+  min-height:43px;padding:12px 16px;color:var(--olh-ink);
+}
+.nexus-device-settings>summary::-webkit-details-marker{display:none}
+.nexus-device-settings>summary .bi-gear{color:var(--olh-accent);font-size:1rem}
+.nexus-device-settings>summary span{color:var(--olh-muted);font-size:.79rem;margin-left:auto}
+.nexus-device-settings>summary .bi-chevron-down{font-size:.78rem;color:var(--olh-muted);transition:transform .2s ease}
+.nexus-device-settings[open]>summary .bi-chevron-down{transform:rotate(180deg)}
+.nexus-device-settings>.card{margin:0;border:0!important;border-top:1px solid var(--olh-line)!important;border-radius:0!important;box-shadow:none!important}
+.nexus-device-settings .settings-list{display:grid;grid-template-columns:minmax(190px,.65fr) minmax(300px,1.35fr)}
+.nexus-device-settings .nexus-cycle-settings{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:7px 14px;padding:14px}
+.nexus-device-settings .nexus-cycle-settings label{margin:0}
+.nexus-device-settings .nexus-cycle-settings select{min-width:0}
+.nexus-device-settings .nexus-cycle-settings small{grid-column:1/-1}
+.nexus-workspace #nexus-editor{
+  border:1px solid var(--olh-line-strong)!important;
+  border-radius:14px!important;
+  background:linear-gradient(160deg,#1c1d20,#17181a)!important;
+  box-shadow:0 18px 38px rgba(0,0,0,.19)!important;
+}
+.nexus-workspace #nexus-editor>.card-body{padding:23px}
+#nexus-editor .nexus-screen-actions{
+  padding:10px 12px 15px;gap:7px 9px;
+  border-bottom:1px solid var(--olh-line);margin-bottom:18px
+}
+#nexus-editor .nexus-screen-toolbar-title{
+  display:inline-flex;align-items:center;gap:6px;color:var(--olh-ink);
+  font-size:.86rem;font-weight:650;margin-right:8px
+}
+#nexus-editor .nexus-screen-toolbar-title::before{content:"\\F3C5";font-family:"bootstrap-icons";font-weight:normal;color:var(--olh-accent)}
+#nexus-editor .nexus-screen-actions label{font-size:.8rem;color:var(--olh-muted)}
+#nexus-editor .nexus-screen-actions button{
+  font-size:.78rem;min-height:34px;padding:7px 11px;
+  background:rgba(255,255,255,.038);
+}
+#nexus-editor .nexus-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 3px 11px}
+#nexus-editor .nexus-preview-heading strong{display:flex;align-items:center;gap:9px;color:var(--olh-ink);font-size:.93rem}
+#nexus-editor .nexus-preview-heading strong .bi{color:var(--olh-accent)}
+#nexus-editor .nexus-preview-heading small{display:block;margin-top:4px;color:var(--olh-muted);font-size:.78rem}
+#nexus-editor .nexus-preview-resolution{color:var(--olh-muted);font-size:.76rem;border:1px solid var(--olh-line);padding:5px 9px;border-radius:6px;white-space:nowrap}
+#nexus-editor #preview{
+  display:flex;align-items:center;justify-content:center;min-height:104px;
+  padding:20px 12px;background:linear-gradient(135deg,#13171d,#101419);
+  border:1px solid var(--olh-line);border-radius:12px;
+}
+#nexus-editor #screen{border-color:rgba(213,166,90,.40);box-shadow:0 5px 24px rgba(0,0,0,.42)}
+#nexus-editor #nexus-keyboard-hint{margin:10px 2px 20px;color:var(--olh-muted);font-size:.75rem}
+#nexus-editor .nexus-editor-tabs{margin-top:8px}
+#nexus-editor .nexus-editor-tablist{gap:3px;border-bottom:1px solid var(--olh-line-strong)}
+#nexus-editor .nexus-editor-tablist [role=tab]{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  padding:12px 16px!important;min-height:45px;
+  border:1px solid var(--olh-line)!important;
+  border-radius:10px 10px 0 0!important;
+  background:#1b1c1f!important;color:var(--olh-muted)!important;
+  line-height:1.2;font-size:.84rem;font-weight:500;
+}
+#nexus-editor .nexus-editor-tablist [role=tab] .bi{font-size:.93rem;color:#878990}
+#nexus-editor .nexus-editor-tablist [role=tab][aria-selected=true]{
+  border-color:rgba(213,166,90,.48)!important;border-bottom-color:#222326!important;
+  border-top:2px solid var(--olh-accent)!important;
+  background:#222326!important;color:var(--olh-ink)!important;
+  font-weight:650;
+}
+#nexus-editor .nexus-editor-tablist [role=tab][aria-selected=true] .bi{color:var(--olh-accent)}
+#nexus-editor .nexus-editor-tabcontent{
+  background:#222326!important;padding:22px!important;
+  border:1px solid var(--olh-line-strong);border-top:0;border-radius:0 0 11px 11px;
+}
+#nexus-editor .nexus-editor-tabpanel > fieldset{
+  margin:0 0 21px;padding:0;border:0!important;border-radius:0!important
+}
+#nexus-editor .nexus-editor-tabpanel legend{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:0;margin:0 0 6px;color:var(--olh-ink);
+  font-size:.98rem;font-weight:650;letter-spacing:0;text-transform:none
+}
+#nexus-editor .nexus-editor-tabpanel legend .bi{color:var(--olh-accent);font-size:1rem}
+#nexus-editor .nexus-panel-description{color:var(--olh-muted);font-size:.8rem;line-height:1.5}
+#nexus-editor #nexus-add-panel{padding-bottom:17px!important;border-bottom:1px solid var(--olh-line)!important}
+#nexus-editor .nexus-create-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+#nexus-editor .nexus-create-actions button{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:40px;padding:9px 17px!important;margin:0!important;
+  background:linear-gradient(180deg,#323338,#28292d)!important;
+  border:1px solid var(--olh-line-strong)!important;
+  color:var(--olh-ink)!important;border-radius:8px!important;
+  font-weight:600;white-space:nowrap
+}
+#nexus-editor .nexus-create-actions button .bi{color:var(--olh-accent);font-size:1rem}
+#nexus-editor .nexus-create-actions button:hover{border-color:rgba(213,166,90,.6)!important;background:#36373b!important}
+#nexus-editor #nexus-selected-panel{
+  padding:18px!important;margin-top:17px!important;
+  border:1px solid var(--olh-line-strong)!important;
+  border-radius:12px!important;
+  background:linear-gradient(160deg,#242529,#1d1e21)!important;
+}
+#nexus-editor #nexus-selected-panel legend{font-size:1.07rem}
+#nexus-editor .nexus-selected-description{font-size:.79rem;color:var(--olh-muted);margin:0 0 18px}
+#nexus-editor #selectedWidgetStatus{
+  padding:12px 13px;border:1px solid var(--olh-line);
+  border-radius:9px;margin-bottom:15px;
+  background:rgba(255,255,255,.018);min-height:42px
+}
+#nexus-editor #selectedWidgetStatus label{margin:0;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+#nexus-editor #selectedWidgetStatus input{min-width:210px;flex:1}
+#nexus-editor #properties{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:13px!important;align-items:start
+}
+#nexus-editor #properties > .nexus-property-section{
+  min-width:0;
+  border:1px solid var(--olh-line-strong)!important;
+  border-radius:10px!important;
+  background:linear-gradient(155deg,#24262a,#1e1f22)!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.07);
+}
+#nexus-editor #properties > .nexus-property-section > summary{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 15px!important;
+  font-size:.87rem!important;font-weight:650;color:var(--olh-ink)!important
+}
+#nexus-editor #properties > .nexus-property-section > summary .bi{
+  font-size:1rem;color:var(--olh-accent);flex:none
+}
+#nexus-editor #properties > .nexus-property-section > summary::marker{color:var(--olh-muted)}
+#nexus-editor #properties > .nexus-property-section[open] > summary{border-bottom:1px solid var(--olh-line)!important}
+#nexus-editor #properties > .nexus-property-section .nexus-properties-row{padding:13px!important;gap:11px!important}
+#nexus-editor #properties > .nexus-property-section label{color:var(--olh-muted);font-size:.8rem;gap:8px}
+#nexus-editor #properties > .nexus-property-section input,
+#nexus-editor #properties > .nexus-property-section select{
+  background:#191a1d;color:var(--olh-ink);border:1px solid var(--olh-line-strong);
+  border-radius:7px;padding:7px
+}
+#nexus-editor .nexus-widget-actions{
+  display:flex;align-items:center;justify-content:flex-start;
+  flex-wrap:wrap;gap:9px!important;
+  padding-top:18px!important;margin-top:15px;
+  border-top:1px solid var(--olh-line)
+}
+#nexus-editor .nexus-widget-actions button{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  margin:0!important;min-height:38px;padding:9px 14px!important;
+  background:linear-gradient(180deg,#333439,#27282d)!important;
+  border:1px solid var(--olh-line-strong)!important;
+  border-radius:8px;color:var(--olh-ink)!important;
+}
+#nexus-editor .nexus-widget-actions button .bi{color:var(--olh-accent)}
+#nexus-editor #deleteWidget{margin-left:auto!important}
+#nexus-editor #deleteWidget:not(:disabled){
+  color:#f0b8b8!important;border-color:rgba(224,105,105,.37)!important;
+  background:rgba(144,44,44,.15)!important
+}
+#nexus-editor #deleteWidget:not(:disabled) .bi{color:#eaa4a4}
+#nexus-editor .nexus-widget-actions button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:1050px){
+ .nexus-device-settings .settings-list{grid-template-columns:1fr}
+ #nexus-editor #properties{grid-template-columns:1fr 1fr}
+}
+@media(max-width:780px){
+ .olh-app-topbar{padding:11px;gap:10px}
+ .olh-app-topbar-actions a{font-size:0;padding:8px}
+ .olh-app-topbar-actions a .bi{font-size:17px}
+ .nexus-workspace #nexus-editor>.card-body{padding:13px}
+ #nexus-editor .nexus-editor-tabcontent{padding:13px!important}
+ #nexus-editor #properties{grid-template-columns:1fr}
+ #nexus-editor #deleteWidget{margin-left:0!important}
+ .nexus-page-heading{flex-direction:column;align-items:flex-start}
+ .nexus-device-settings .nexus-cycle-settings{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+ .nexus-device-settings>summary .bi-chevron-down{transition:none}
+}
