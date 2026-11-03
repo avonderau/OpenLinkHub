@@ -130,3 +130,12 @@
 #nexus-editor label,#nexus-editor legend{color:var(--text-muted,#a1a1a1)}
 #nexus-editor .nexus-new-screen-choice{display:inline-flex;gap:.35rem;align-items:center}
 #nexus-editor #replaceScreenWithPreset:disabled{opacity:.45;cursor:not-allowed}
+
+/* Nexus visual macro builder follows the site's muted panel/text palette. */
+#nexus-editor .nexus-macro-editor{display:flex;flex-direction:column;gap:.45rem;width:100%;min-width:0;padding:.5rem;border:1px solid var(--border-mid,rgba(255,255,255,.12));border-radius:8px}
+#nexus-editor .nexus-macro-editor strong,#nexus-editor .nexus-macro-editor small{color:var(--text-muted,#a1a1a1)}
+#nexus-editor .nexus-macro-step{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;padding:.35rem 0;border-bottom:1px solid var(--border-mid,rgba(255,255,255,.1))}
+#nexus-editor .nexus-macro-step span{color:var(--text-muted,#a1a1a1)}
+#nexus-editor .nexus-macro-step select,#nexus-editor .nexus-macro-step input{max-width:min(100%,230px)}
+#nexus-editor .nexus-macro-step input[type=number]{width:6.5rem}
+#nexus-editor .nexus-macro-step button:disabled,#nexus-editor .nexus-macro-editor button:disabled{opacity:.45;cursor:not-allowed}
