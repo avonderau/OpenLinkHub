@@ -7,6 +7,7 @@ import (
  "os"
  "path/filepath"
  "regexp"
+ "strings"
 )
 
 const (
@@ -74,11 +75,11 @@ func (c ScreenConfiguration) Validate() error {
    if (w.Type=="metric"||w.Type=="bar")&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
    if w.X<0||w.Y<0||w.Width<=0||w.Height<=0||w.X>ScreenWidth-w.Width||w.Y>ScreenHeight-w.Height {return fmt.Errorf("widget %q outside display",w.ID)}
    if w.Type=="button" {
-    if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" {return fmt.Errorf("invalid button action for %q",w.ID)}
+    if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" && w.Action!="macro" {return fmt.Errorf("invalid button action for %q",w.ID)}
     if w.Action=="screen" && !safeID.MatchString(w.Target) {return fmt.Errorf("invalid button target for %q",w.ID)}
     if w.Action=="media" && !supportedMediaAction(w.Target) {return fmt.Errorf("invalid media action for %q",w.ID)}
    }
-   if w.Type=="macro" {
+   if w.Type=="macro" || (w.Type=="button" && w.Action=="macro") {
     if len(w.Steps)==0 || len(w.Steps)>12 {return fmt.Errorf("macro %q must have 1-12 steps",w.ID)}
     total:=0
     for _,step:=range w.Steps {
@@ -92,13 +93,21 @@ func (c ScreenConfiguration) Validate() error {
     }
     if total>15000 {return fmt.Errorf("macro delays exceed 15 seconds")}
    }
+   if w.Type=="button" || w.Type=="macro" {
+    style:=w.Settings["style"]
+    if style!="" && style!="solid" && style!="outline" && style!="flat" {return fmt.Errorf("invalid button style %q",style)}
+    for _,key:=range []string{"backgroundColor","textColor","borderColor"}{
+     val:=w.Settings[key]
+     if val!="" && !validHexColor(val) {return fmt.Errorf("invalid %s for widget %q",key,w.ID)}
+    }
+   }
    if len(w.Settings)>16 {return errors.New("too many widget settings")}
    for k,v:=range w.Settings {if len(k)>64||len(v)>256 {return errors.New("widget setting too long")}}
   }
  }
  for _,screen:=range c.Screens {for _,w:=range screen.Widgets {
   if w.Type=="button" && w.Action=="screen" && !seen[w.Target] {return fmt.Errorf("unknown button screen target %q",w.Target)}
-  if w.Type=="macro" {for _,step:=range w.Steps {if step.Type=="screen" && !seen[step.Value] {return fmt.Errorf("unknown macro screen target %q",step.Value)}}}
+  if w.Type=="macro" || (w.Type=="button" && w.Action=="macro") {for _,step:=range w.Steps {if step.Type=="screen" && !seen[step.Value] {return fmt.Errorf("unknown macro screen target %q",step.Value)}}}
  }}
  if !seen[c.ActiveScreenID] {return errors.New("active screen does not exist")}
  return nil
@@ -134,4 +143,9 @@ func SaveScreens(path string,c ScreenConfiguration)error{
 func supportedMediaAction(action string) bool {
  switch action {case "volume-up","volume-down","play-pause","stop","previous-track","next-track":return true}
  return false
+}
+
+func validHexColor(v string)bool{
+ if len(v)!=7 || v[0]!='#' {return false}
+ return strings.IndexFunc(v[1:],func(r rune)bool{return !(r>='0'&&r<='9'||r>='a'&&r<='f'||r>='A'&&r<='F')})==-1
 }

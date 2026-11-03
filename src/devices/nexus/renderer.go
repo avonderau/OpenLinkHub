@@ -13,6 +13,7 @@ import (
  _ "image/gif"
  "math"
  "strings"
+ "strconv"
 
  "golang.org/x/image/font"
  xdraw "golang.org/x/image/draw"
@@ -33,18 +34,24 @@ func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
  draw.Draw(canvas,canvas.Bounds(),image.NewUniform(color.RGBA{12,19,27,255}),image.Point{},draw.Src)
  for _,w:=range screen.Widgets {
   bounds:=image.Rect(w.X,w.Y,w.X+w.Width,w.Y+w.Height)
-  draw.Draw(canvas,bounds,image.NewUniform(color.RGBA{27,41,53,255}),image.Point{},draw.Src)
+  bg:=nexusWidgetColor(w.Settings,"backgroundColor",color.RGBA{27,41,53,255})
+  ink:=nexusWidgetColor(w.Settings,"textColor",color.RGBA{235,245,252,255})
+  border:=nexusWidgetColor(w.Settings,"borderColor",color.RGBA{128,189,217,255})
+  style:=w.Settings["style"]
+  if w.Type!="button" && w.Type!="macro" {style="solid"}
+  if style!="flat" && style!="outline" {draw.Draw(canvas,bounds,image.NewUniform(bg),image.Point{},draw.Src)}
+  if style=="outline" || (style=="solid" && w.Settings["borderColor"]!="") {drawNexusButtonBorder(canvas,bounds,border)}
   label:=w.Settings["label"]
   if label=="" {label=w.Metric}
   if w.Type=="text" {label=w.Settings["text"]}
   if w.Type=="button" || w.Type=="macro" {if label=="" && w.Settings["icon"]=="" {label="Touch"} }
   if (w.Type=="button" || w.Type=="macro") && w.Settings["icon"]!="" && w.Settings["icon"]!="none" {
-   drawMediaIcon(canvas,bounds,w.Settings["icon"])
-   if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),color.RGBA{235,245,252,255})}
+   drawMediaIcon(canvas,bounds,w.Settings["icon"],ink)
+   if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),ink)}
    continue
   }
   label=clipText(label,w.Width)
-  writeWidgetText(canvas,w.X+3,w.Y+11,label,color.RGBA{172,196,213,255})
+  writeWidgetText(canvas,w.X+3,w.Y+11,label,ink)
   if w.Type=="text" || w.Type=="button" || w.Type=="macro" {continue}
   value,ok:=values[w.Metric]
   shown:="--"
@@ -105,4 +112,17 @@ func ReadBackground(dir,id string)(image.Image,error){
   return img,err
  }
  return nil,os.ErrNotExist
+}
+
+func nexusWidgetColor(settings map[string]string,key string,fallback color.RGBA)color.RGBA{
+ value:=settings[key]
+ if !validHexColor(value) {return fallback}
+ n,err:=strconv.ParseUint(value[1:],16,24)
+ if err!=nil {return fallback}
+ return color.RGBA{uint8(n>>16),uint8(n>>8),uint8(n),255}
+}
+func drawNexusButtonBorder(img *image.RGBA,r image.Rectangle,c color.RGBA){
+ if r.Empty(){return}
+ for x:=r.Min.X;x<r.Max.X;x++ {img.Set(x,r.Min.Y,c);img.Set(x,r.Max.Y-1,c)}
+ for y:=r.Min.Y;y<r.Max.Y;y++ {img.Set(r.Min.X,y,c);img.Set(r.Max.X-1,y,c)}
 }

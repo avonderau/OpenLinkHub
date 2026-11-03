@@ -7,8 +7,8 @@ import (
 )
 
 // drawMediaIcon renders small vector glyphs without external assets or fonts.
-func drawMediaIcon(dst *image.RGBA, bounds image.Rectangle, icon string) {
- ink:=image.NewUniform(color.RGBA{225,245,255,255})
+func drawMediaIcon(dst *image.RGBA, bounds image.Rectangle, icon string, inkColor color.RGBA) {
+ ink:=image.NewUniform(inkColor)
  cx,cy:=(bounds.Min.X+bounds.Max.X)/2,(bounds.Min.Y+bounds.Max.Y)/2
  if bounds.Dy()>25 {cy-=3}
  rect:=func(x0,y0,x1,y1 int){

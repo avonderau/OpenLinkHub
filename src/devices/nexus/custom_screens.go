@@ -164,7 +164,7 @@ func (d *Device) handleCustomTouch(position uint16) {
   for i:=len(screen.Widgets)-1;i>=0;i-- {
    w:=screen.Widgets[i]
    if int(position)<w.X || int(position)>=w.X+w.Width {continue}
-   if w.Type=="button" {d.executeTouchAction(w.Action,w.Target);return}
+   if w.Type=="button" {if w.Action=="macro" {d.runTouchMacro(w.Steps)} else {d.executeTouchAction(w.Action,w.Target)};return}
    if w.Type=="macro" {d.runTouchMacro(w.Steps);return}
   }
   break

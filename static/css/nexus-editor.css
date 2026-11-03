@@ -73,3 +73,10 @@
 #nexus-editor .nexus-editor-heading h2{min-width:0;margin:0}
 #nexus-editor .nexus-editor-heading #save{flex-shrink:0;margin:0}
 #nexus-editor #message{margin:.25rem 0 .75rem}
+
+/* Buttons share the same editable style and colors in the Nexus preview. */
+#nexus-editor .widget.nexus-button-style{color:var(--button-ink);-webkit-text-fill-color:var(--button-ink);border-color:var(--button-border);background:var(--button-bg)}
+#nexus-editor .widget.nexus-style-outline{background:transparent;border:1px solid var(--button-border)}
+#nexus-editor .widget.nexus-style-flat{background:transparent;border-color:transparent}
+#nexus-editor .widget.nexus-button-style .nexus-icon{color:var(--button-ink)}
+#nexus-editor #properties input[type=color]{width:48px;height:35px;padding:2px;vertical-align:middle;cursor:pointer}
