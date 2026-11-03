@@ -115,7 +115,21 @@ $('duplicateScreen')?.addEventListener('click',()=>{
  cfg.activeScreenId=newID;selected=null;refreshScreens();
  message('Screen duplicated. Save Layout to apply.');
 });
-$('deleteScreen').onclick=()=>{if(!cfg||cfg.screens.length<=1)return message('Keep at least one screen');cfg.screens=cfg.screens.filter(s=>s.id!==$('screens').value);cfg.activeScreenId=cfg.screens[0].id;selected=null;refreshScreens()};
+$('deleteScreen').onclick=()=>{
+ if(!cfg||cfg.screens.length<=1)return message('Keep at least one screen');
+ const removed=selectedScreenID();
+ cfg.screens=cfg.screens.filter(s=>s.id!==removed);
+ const fallback=cfg.screens[0].id;
+ // Keep existing screen-navigation actions valid when their destination disappears.
+ for(const screen of cfg.screens)for(const w of screen.widgets){
+  if(w.type==='button'&&w.action==='screen'&&w.target===removed)w.target=fallback;
+  if(w.type==='macro'||(w.type==='button'&&w.action==='macro')){
+   for(const step of w.steps||[])if(step.type==='screen'&&step.value===removed)step.value=fallback;
+  }
+ }
+ cfg.activeScreenId=fallback;selected=null;refreshScreens();
+ message('Screen removed. Navigation links to it now point to '+cfg.screens[0].name+'. Save Layout to apply.');
+};
 function renderWidgetColors(w,panel){
  if(!['button','macro','metric','bar','text'].includes(w.type))return;
  for(const [key,name,defaultColor] of [['backgroundColor','Background','#1b2935'],['textColor','Text & icon','#ebf5fc'],['borderColor','Border','#80bdd9']]){
