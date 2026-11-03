@@ -40,9 +40,9 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  const widget=s?.widgets.find(w=>w.id===selected);
  const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
  if(remove)remove.disabled=!widget;
- if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64;
+ if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
  if($('copyWidget'))$('copyWidget').disabled=!widget;
- if($('pasteWidget'))$('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64;
+ if($('pasteWidget'))$('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
  if($('saveWidgetPreset'))$('saveWidgetPreset').disabled=!widget;
  if(status){
   status.replaceChildren();
@@ -506,6 +506,7 @@ $('duplicateWidget')?.addEventListener('click',()=>{
  const source=screen.widgets.find(w=>w.id===selected);
  if(!source)return;
  if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+ if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');
  const duplicate=JSON.parse(JSON.stringify(source));
  duplicate.id=uniqueID('widget',new Set(screen.widgets.map(w=>w.id)));
  // Shift one grid cell when space allows; otherwise keep position, with the copy on top.
@@ -581,7 +582,7 @@ function refreshWidgetLibrary(){
   const entries=NexusWidgetLibrary.list(widgetLibraryStorage());
   for(const entry of entries)select.add(new Option(entry.name,entry.id));
   if(entries.some(entry=>entry.id===previouslySelected))select.value=previouslySelected;
-  if($('addWidgetPreset'))$('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64;
+  if($('addWidgetPreset'))$('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
   if($('deleteWidgetPreset'))$('deleteWidgetPreset').disabled=!entries.length;
  }catch(e){
   if($('addWidgetPreset'))$('addWidgetPreset').disabled=true;
@@ -607,6 +608,7 @@ $('addWidgetPreset')?.addEventListener('click',()=>{
  try{
   const screen=current();if(!screen)return;
   if(screen.widgets.length>=64)return message('Maximum 64 widgets');
+  if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');
   const storage=widgetLibraryStorage();
   const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===$('widgetLibrarySelect').value);
   if(!entry)return;
