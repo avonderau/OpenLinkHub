@@ -72,3 +72,23 @@ test('malformed, oversize, unsupported and unsafe data is rejected before import
  const accepted=layouts.applyImport(collision,template,'add-screen','mine','new');
  assert.equal(accepted.screens.length,2);
 });
+
+
+test('text-entry imports accept printable ASCII and reject controls or Unicode',()=>{
+ const good=existingLayout();
+ good.screens[0].widgets[0].action='text';
+ good.screens[0].widgets[0].target='Hello! #123';
+ assert.equal(layouts.validate(good).version,1);
+ good.screens[0].widgets[0].target='text\\nnewline';
+ assert.throws(()=>layouts.validate(good));
+ good.screens[0].widgets[0].target='snowman ☃';
+ assert.throws(()=>layouts.validate(good));
+ good.screens[0].widgets[0].target='OK';
+ good.screens[0].widgets.push({
+  id:'macro_text',type:'macro',x:112,y:0,width:128,height:48,
+  steps:[{type:'text',value:'Desktop test'}]
+ });
+ assert.equal(layouts.validate(good).version,1);
+ good.screens[0].widgets[1].steps[0].value='\\u0009';
+ assert.throws(()=>layouts.validate(good));
+});
