@@ -97,7 +97,29 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  const dimensionsRow=document.createElement('div');dimensionsRow.className='nexus-properties-row nexus-dimensions-row';dimensionsRow.setAttribute('aria-label','Widget dimensions');
  const colorsRow=document.createElement('div');colorsRow.className='nexus-properties-row nexus-colors-row';colorsRow.setAttribute('aria-label','Widget colors');
  const styleRow=document.createElement('div');styleRow.className='nexus-properties-row nexus-style-row';styleRow.setAttribute('aria-label','Widget style and settings');
- properties.append(dimensionsRow,colorsRow,styleRow);
+ // Organize the selected widget's controls into concise, accessible groups.
+ const section=(title,opened)=>{
+  const details=document.createElement('details');
+  details.className='nexus-property-section';
+  details.open=opened;
+  const summary=document.createElement('summary');
+  summary.textContent=title;
+  details.append(summary);
+  properties.append(details);
+  return details;
+ };
+ const geometrySection=section('Position & size',true);
+ const appearanceSection=section('Appearance',true);
+ const contentSection=section('Text & data',false);
+ const touchSection=section('Actions & icons',false);
+ geometrySection.append(dimensionsRow);
+ appearanceSection.append(colorsRow);
+ const appearanceRow=document.createElement('div');
+ appearanceRow.className='nexus-properties-row nexus-appearance-row';
+ appearanceSection.append(appearanceRow);
+ contentSection.append(styleRow);
+ const touchRow=document.createElement('div');touchRow.className='nexus-properties-row nexus-touch-row';
+ touchSection.append(touchRow);
  const fields=(w.type==='button'||w.type==='macro')?[['x','number'],['y','number'],['width','number'],['height','number']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
  for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='image'||w.type==='clock'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
  const label=document.createElement('label');label.textContent=key+' ';
@@ -105,12 +127,42 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=Math.max(1,Math.min(640,Math.round(v)));if(key==='height')w.height=Math.max(1,Math.min(48,Math.round(v)));if(key==='x')w.x=clamp(Math.round(v),640-w.width);if(key==='y')w.y=clamp(Math.round(v),48-w.height);w.x=clamp(w.x,640-w.width);w.y=clamp(w.y,48-w.height)}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);(['x','y','width','height'].includes(key)?dimensionsRow:styleRow).append(label)}
  renderWidgetColors(w,colorsRow);
  if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){
-  for(const [key,name,max,defaultValue,unit] of [['cornerRadius','Corner radius',24,0,'px'],['opacity','Item opacity',100,100,'%']]){
-   const label=document.createElement('label');label.textContent=name+' ';
-   const input=document.createElement('input');input.type='number';input.min=key==='opacity'?'0':'0';input.max=String(max);input.step='1';input.value=w.settings?.[key]??String(defaultValue);input.setAttribute('aria-label',name);
-   input.addEventListener('change',()=>{const n=Number(input.value);if(!Number.isFinite(n))return;w.settings??={};w.settings[key]=String(Math.max(0,Math.min(max,Math.round(n))));render()});
-   label.append(input,unit);styleRow.append(label);
-  }
+  // Opacity is an independent percentage, not a preset background style.
+  const radiusLabel=document.createElement('label');
+  radiusLabel.textContent='Corner radius ';
+  const radius=document.createElement('input');
+  radius.type='number';radius.min='0';radius.max='24';radius.step='1';
+  radius.value=w.settings?.cornerRadius??'0';
+  radius.setAttribute('aria-label','Corner radius');
+  radius.addEventListener('change',()=>{
+   const v=Number(radius.value);if(!Number.isFinite(v))return;
+   w.settings??={};w.settings.cornerRadius=String(Math.max(0,Math.min(24,Math.round(v))));
+   render();
+  });
+  radiusLabel.append(radius,' px');appearanceRow.append(radiusLabel);
+  const opacityLabel=document.createElement('label');opacityLabel.className='nexus-opacity-control';
+  opacityLabel.textContent='Opacity ';
+  const opacitySlider=document.createElement('input');
+  opacitySlider.type='range';opacitySlider.min='0';opacitySlider.max='100';opacitySlider.step='1';
+  const opacityInput=document.createElement('input');
+  opacityInput.type='number';opacityInput.min='0';opacityInput.max='100';opacityInput.step='1';
+  const initialOpacity=w.settings?.opacity??'100';
+  opacitySlider.value=initialOpacity;opacityInput.value=initialOpacity;
+  opacitySlider.setAttribute('aria-label','Opacity slider');
+  opacityInput.setAttribute('aria-label','Opacity percentage');
+  const updateOpacity=value=>{
+   if(value.trim()==='')return;
+   const n=Number(value);if(!Number.isFinite(n))return;
+   const percentage=Math.max(0,Math.min(100,Math.round(n)));
+   w.settings??={};w.settings.opacity=String(percentage);
+   opacitySlider.value=String(percentage);opacityInput.value=String(percentage);
+   const preview=[...$('screen').children].find(el=>el.dataset.id===w.id);
+   if(preview)preview.style.opacity=String(percentage/100);
+  };
+  opacitySlider.addEventListener('input',()=>updateOpacity(opacitySlider.value));
+  opacityInput.addEventListener('change',()=>updateOpacity(opacityInput.value));
+  opacityLabel.append(opacitySlider,opacityInput,'%');
+  appearanceRow.append(opacityLabel);
  }
  if(['text','clock','metric','bar','graph','button','macro'].includes(w.type)){
   const control=(name,key,options)=>{
@@ -134,7 +186,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   input.addEventListener('change',()=>{w.settings??={};w.settings.clockFormat=input.value;render()});
   label.append(input);styleRow.append(label);
  }
- if(w.type==='button'||w.type==='macro'||w.type==='image')renderTouchProperties(w,styleRow);
+ if(w.type==='button'||w.type==='macro'||w.type==='image')renderTouchProperties(w,touchRow);
 }
 $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
 $('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
@@ -337,7 +389,7 @@ function renderTouchProperties(w,panel){
   label.append(input);panel.append(label);
  };
  if(w.type==='button'||w.type==='macro'||w.type==='image'){
-  field('Style',w.settings?.style||'solid',[['solid','Solid'],['outline','Outline'],['flat','Transparent']],v=>{w.settings??={};w.settings.style=v});
+  field('Style',w.settings?.style||'solid',[['solid','Solid fill'],['outline','Outline only'],['flat','No fill']],v=>{w.settings??={};w.settings.style=v});
  }
  if(w.type==='image'){
   field('Image',w.settings?.customIcon?'custom':'none',[['none','No image'],['custom','Upload image']],v=>{
