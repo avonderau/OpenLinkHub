@@ -23,10 +23,10 @@ type MetricSnapshot map[string]float64
 // RenderScreen draws a validated screen to the Nexus's native 640x48 RGBA
 // framebuffer. It does not interact with HID and can be tested independently.
 func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
- return renderNexusScreen(screen,values,"",nil)
+ return renderNexusScreen(screen,values,"",nil,nil)
 }
 
-func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,background image.Image)(*image.RGBA,error){
+func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,background image.Image,history MetricHistory)(*image.RGBA,error){
  cfg:=ScreenConfiguration{Version:1,ActiveScreenID:screen.ID,Screens:[]Screen{screen}}
  if err:=cfg.Validate();err!=nil{return nil,err}
  canvas:=image.NewRGBA(image.Rect(0,0,ScreenWidth,ScreenHeight))
@@ -77,6 +77,10 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   }
   label=clipText(label,w.Width)
   writeWidgetText(canvas,w.X+3,w.Y+11,label,ink)
+  if w.Type=="graph"{
+   drawNexusHistoryGraph(canvas,bounds,w.Metric,history[w.Metric],ink)
+   continue
+  }
   if w.Type=="text" || w.Type=="button" || w.Type=="macro" {continue}
   value,ok:=values[w.Metric]
   shown:="--"
@@ -115,10 +119,14 @@ func RenderScreenWithBackground(screen Screen, values MetricSnapshot, background
 }
 
 func RenderScreenWithBackgroundAndIcons(screen Screen,values MetricSnapshot,background image.Image,iconDir string)(*image.RGBA,error){
- return renderNexusScreen(screen,values,iconDir,background)
+ return renderNexusScreen(screen,values,iconDir,background,nil)
 }
 // ReadBackground returns the current frame for either a static or animated
 // background, using the shared bounded image cache.
+func RenderScreenWithBackgroundAndIconsHistory(screen Screen,values MetricSnapshot,background image.Image,iconDir string,history MetricHistory)(*image.RGBA,error){
+ return renderNexusScreen(screen,values,iconDir,background,history)
+}
+
 func ReadBackground(dir,id string)(image.Image,error){
  return ReadBackgroundAt(dir,id,time.Now())
 }

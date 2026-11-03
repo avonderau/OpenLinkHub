@@ -17,7 +17,7 @@ const (
  MaxWidgets = 64
 )
 var safeID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
-var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"clock":true,"button":true,"macro":true}
+var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"graph":true,"clock":true,"button":true,"macro":true}
 var supportedMetrics = map[string]bool{
  "cpu.temperature":true,"cpu.utilization":true,
  "gpu.temperature":true,"gpu.utilization":true,
@@ -72,7 +72,7 @@ func (c ScreenConfiguration) Validate() error {
    if !safeID.MatchString(w.ID)||widgets[w.ID] {return fmt.Errorf("invalid or duplicate widget ID: %q",w.ID)}
    widgets[w.ID]=true
    if !supportedWidgets[w.Type] {return fmt.Errorf("unsupported widget type: %q",w.Type)}
-   if (w.Type=="metric"||w.Type=="bar")&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
+   if (w.Type=="metric"||w.Type=="bar"||w.Type=="graph")&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
    if w.X<0||w.Y<0||w.Width<=0||w.Height<=0||w.X>ScreenWidth-w.Width||w.Y>ScreenHeight-w.Height {return fmt.Errorf("widget %q outside display",w.ID)}
    if w.Type=="button" {
     if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" && w.Action!="macro" && w.Action!="hotkey" && w.Action!="mouse" {return fmt.Errorf("invalid button action for %q",w.ID)}
@@ -97,7 +97,7 @@ func (c ScreenConfiguration) Validate() error {
     }
     if total>15000 {return fmt.Errorf("macro delays exceed 15 seconds")}
    }
-   if w.Type=="button" || w.Type=="macro" || w.Type=="metric" || w.Type=="bar" || w.Type=="text" || w.Type=="clock" {
+   if w.Type=="button" || w.Type=="macro" || w.Type=="metric" || w.Type=="bar" || w.Type=="graph" || w.Type=="text" || w.Type=="clock" {
     style:=w.Settings["style"]
     if style!="" && style!="solid" && style!="outline" && style!="flat" {return fmt.Errorf("invalid widget style %q",style)}
     for _,key:=range []string{"backgroundColor","textColor","borderColor"}{

@@ -87,6 +87,11 @@ func (d *Device) renderCustomScreen() []byte {
    }
   }
  }
+ // Record 60 one-second samples per supported metric for sparkline widgets.
+ d.mutex.Lock()
+ d.customSampler.history.add(values,time.Now())
+ history:=d.customSampler.history.snapshot()
+ d.mutex.Unlock()
  for _,screen:=range c.Screens {
   if screen.ID==c.ActiveScreenID {
    var background image.Image
@@ -94,7 +99,7 @@ func (d *Device) renderCustomScreen() []byte {
     background=PresetNexusBackground(screen.Background,time.Now())
     if background==nil {background,_=ReadBackgroundAt(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background,time.Now())}
    }
-   frame,err:=RenderScreenWithBackgroundAndIcons(screen,values,background,filepath.Join(pwd,"database","nexus","icons"))
+   frame,err:=RenderScreenWithBackgroundAndIconsHistory(screen,values,background,filepath.Join(pwd,"database","nexus","icons"),history)
    if err!=nil{return nil}
    return renderImageToBytes(frame)
   }

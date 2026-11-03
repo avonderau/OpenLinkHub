@@ -25,6 +25,7 @@ type LinuxRates struct {
  Valid bool
 }
 type CounterSampler struct {
+ history metricHistory
  previous LinuxCounters
  at time.Time
  initialized bool
