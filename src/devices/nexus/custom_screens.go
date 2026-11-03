@@ -122,6 +122,7 @@ func (d *Device) renderCustomScreen() []byte {
   frame,err:=RenderScreenWithBackgroundAndIconsHistory(screen,values,background,
    filepath.Join(pwd,"database","nexus","icons"),history)
   if err!=nil{return nil}
+  applyNexusSoftwareBrightness(frame,c.Brightness)
   return renderImageToBytes(frame)
  }
  return nil

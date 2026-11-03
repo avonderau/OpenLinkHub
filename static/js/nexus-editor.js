@@ -69,6 +69,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  display.style.backgroundImage=uploaded?'url("/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(s.background)+'")':'';
  display.style.backgroundSize=uploaded?'100% 100%':'';
  display.style.backgroundRepeat=uploaded?'no-repeat':'';
+ display.style.filter='brightness('+(cfg.brightness||100)+'%)';
  for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','graph','text','clock'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid');el.style.fontSize=st.fontSize==='small'?'10px':st.fontSize==='large'?'17px':'11px';el.style.textAlign=st.textAlign||'left';if((w.type==='text'||((w.type==='button'||w.type==='macro')&&!st.icon&&!st.customIcon))&&st.verticalAlign&&st.verticalAlign!=='top'){
  el.style.display='flex';el.style.alignItems=st.verticalAlign==='middle'?'center':'flex-end';el.style.justifyContent=st.textAlign==='right'?'flex-end':st.textAlign==='center'?'center':'flex-start'
  }}if(w.type==='graph')el.classList.add('nexus-graph-widget');el.textContent=w.type==='graph'?(w.settings?.label||'History: '+w.metric):w.type==='clock'?formatNexusClock(w.settings):w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
@@ -170,7 +171,7 @@ $('screen').addEventListener('keydown',event=>{
 });
 
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();refreshScreens();refreshWidgetLibrary();message('')}
+async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if($('displayBrightness'))$('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
@@ -513,7 +514,8 @@ function syncCycleInterval(){
 }
 $('cyclingMode')?.addEventListener('change',syncCycleInterval);
 syncCycleInterval();
-$('save').onclick=async()=>{try{if(!cfg)return;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=$('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
+$('displayBrightness')?.addEventListener('change',()=>{if(!cfg)return;cfg.brightness=Number($('displayBrightness').value);render()});
+$('save').onclick=async()=>{try{if(!cfg)return;if($('displayBrightness'))cfg.brightness=Number($('displayBrightness').value);const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=$('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
 function exportNexusJSON(single){
  try{
   if(!cfg)return message('Load a Nexus layout first.');
@@ -545,6 +547,7 @@ $('importLayout')?.addEventListener('click',async()=>{
   const next=NexusLayoutFiles.applyImport(cfg,imported,mode,$('screens').value,id);
   cfg=next;selected=null;
   if($('cyclingMode'))$('cyclingMode').value=cfg.cyclingMode||'manual';
+  if($('displayBrightness'))$('displayBrightness').value=String(cfg.brightness||100);
   if($('cyclingSeconds')){
    const seconds=cfg.cyclingSeconds||15;
    if(![...$('cyclingSeconds').options].some(option=>Number(option.value)===seconds))$('cyclingSeconds').add(new Option(seconds+' seconds (imported)',String(seconds)));

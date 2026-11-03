@@ -56,11 +56,13 @@ type ScreenConfiguration struct {
  Screens []Screen `json:"screens"`
  CyclingMode string `json:"cyclingMode,omitempty"`
  CyclingSeconds int `json:"cyclingSeconds,omitempty"`
+ Brightness int `json:"brightness,omitempty"`
 }
 func (c ScreenConfiguration) Validate() error {
  if c.Version != 1 {return errors.New("unsupported screen configuration version")}
  if c.CyclingMode!="" && c.CyclingMode!="manual" && c.CyclingMode!="automatic" && c.CyclingMode!="off" {return errors.New("invalid cycling mode")}
  if c.CyclingMode=="automatic" && (c.CyclingSeconds<5 || c.CyclingSeconds>3600) {return errors.New("cycling interval must be 5 to 3600 seconds")}
+ if c.Brightness!=0 && (c.Brightness<20 || c.Brightness>100){return errors.New("display brightness must be 20 to 100 percent")}
  if len(c.Screens)<1 || len(c.Screens)>MaxScreens {return errors.New("invalid screen count")}
  seen:=map[string]bool{}
  for _,s:=range c.Screens {
