@@ -15,6 +15,7 @@ import (
 	"OpenLinkHub/src/dashboard"
 	"OpenLinkHub/src/devices"
 	"OpenLinkHub/src/devices/lcd"
+ "OpenLinkHub/src/devices/nexus"
 	"OpenLinkHub/src/display"
 	"OpenLinkHub/src/inputmanager"
 	"OpenLinkHub/src/language"
@@ -2883,6 +2884,8 @@ func setRoutes() http.Handler {
 	r := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))
 	r.Handle("/static/", http.StripPrefix("/static/", fs))
+ r.HandleFunc("/api/nexus/screens", nexusScreensAPI)
+ r.HandleFunc("/api/nexus/background", nexusBackgroundAPI)
 
 	// GET
 	handleFunc(r, "/api/", http.MethodGet, homePage)

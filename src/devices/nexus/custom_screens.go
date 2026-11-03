@@ -99,3 +99,36 @@ func parseMemoryMetrics(content string)(float64,float64,bool){
  if total==0||available>total{return 0,0,false}
  return float64(total-available)*1024,100*float64(total-available)/float64(total),true
 }
+
+func (d *Device) GetCustomScreens() ScreenConfiguration {
+ d.mutex.Lock()
+ defer d.mutex.Unlock()
+ return cloneScreenConfiguration(d.customScreens)
+}
+func cloneScreenConfiguration(c ScreenConfiguration) ScreenConfiguration {
+ out:=c
+ out.Screens=make([]Screen,len(c.Screens))
+ for i,s:=range c.Screens {
+  out.Screens[i]=s
+  out.Screens[i].Widgets=make([]Widget,len(s.Widgets))
+  for j,w:=range s.Widgets {
+   out.Screens[i].Widgets[j]=w
+   if w.Settings!=nil {
+    out.Screens[i].Widgets[j].Settings=make(map[string]string,len(w.Settings))
+    for k,v:=range w.Settings {out.Screens[i].Widgets[j].Settings[k]=v}
+   }
+  }
+ }
+ return out
+}
+func (d *Device) SetCustomScreens(c ScreenConfiguration) error {
+ if err:=c.Validate();err!=nil{return err}
+ d.mutex.Lock()
+ defer d.mutex.Unlock()
+ if err:=SaveScreens(d.customScreenPath(),c);err!=nil{return err}
+ d.customScreens=cloneScreenConfiguration(c)
+ return nil
+}
+func (d *Device) SaveCustomBackground(id string,content []byte)(string,error){
+ return SaveBackground(filepath.Join(pwd,"database","nexus","backgrounds"),id,content)
+}
