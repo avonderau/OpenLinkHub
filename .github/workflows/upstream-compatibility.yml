@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '17 11 * * 1'
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
     paths:
@@ -13,6 +15,7 @@ on:
       - 'static/js/nexus-editor.js'
       - 'static/nexus/templates/**'
       - 'static/js/nexus-starter-templates.test.cjs'
+      - 'static/js/nexus-editor-workflow.test.cjs'
       - 'static/css/nexus-editor.css'
       - 'static/nexus-editor.html'
       - '.github/workflows/upstream-compatibility.yml'
@@ -48,7 +51,7 @@ jobs:
       - name: Check Nexus editor JavaScript syntax
         run: |
           node --check static/js/nexus-editor.js
-          node --test static/js/nexus-starter-templates.test.cjs
+          node --test static/js/nexus-starter-templates.test.cjs static/js/nexus-editor-workflow.test.cjs
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
