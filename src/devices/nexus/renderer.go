@@ -42,9 +42,24 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   border:=nexusWidgetColor(w.Settings,"borderColor",color.RGBA{128,189,217,255})
   style:=w.Settings["style"]
   if style=="" {style="solid"}
-  // Styles are supported for all widget types. Flat and outline leave the background visible.
-  if style!="flat" && style!="outline" {draw.Draw(canvas,bounds,image.NewUniform(bg),image.Point{},draw.Src)}
-  if style=="outline" || (style=="solid" && w.Settings["borderColor"]!="") {drawNexusButtonBorder(canvas,bounds,border)}
+  // Item styling is rendered to a separate layer so opacity affects the entire item,
+  // including text and icons, and the screen background remains visible beneath it.
+  target:=canvas
+  canvas=image.NewRGBA(target.Bounds())
+  radius,_:=strconv.Atoi(w.Settings["cornerRadius"])
+  if radius<0 {radius=0}
+  maxRadius:=int(math.Min(float64(bounds.Dx()),float64(bounds.Dy())))/2
+  if radius>maxRadius {radius=maxRadius}
+  if style!="flat" && style!="outline" {drawNexusRoundedFill(canvas,bounds,bg,radius)}
+  if style=="outline" || (style=="solid" && w.Settings["borderColor"]!="") {drawNexusRoundedBorder(canvas,bounds,border,radius)}
+  func(){defer func(){
+   opacity:=100
+   if value,err:=strconv.Atoi(w.Settings["opacity"]);err==nil {opacity=value}
+   if opacity<0 {opacity=0};if opacity>100 {opacity=100}
+   mask:=image.NewUniform(color.Alpha{uint8((opacity*255+50)/100)})
+   draw.DrawMask(target,bounds,canvas,bounds.Min,mask,image.Point{},draw.Over)
+   canvas=target
+  }()
   if w.Type=="image"{
    id:=w.Settings["customIcon"]
    if id!="" && iconDir!=""{
@@ -117,6 +132,7 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
     draw.Draw(canvas,fill,image.NewUniform(color.RGBA{92,213,175,255}),image.Point{},draw.Src)
    }
   }
+  }()
  }
  return canvas,nil
 }
@@ -162,4 +178,22 @@ func drawNexusButtonBorder(img *image.RGBA,r image.Rectangle,c color.RGBA){
  if r.Empty(){return}
  for x:=r.Min.X;x<r.Max.X;x++ {img.Set(x,r.Min.Y,c);img.Set(x,r.Max.Y-1,c)}
  for y:=r.Min.Y;y<r.Max.Y;y++ {img.Set(r.Min.X,y,c);img.Set(r.Max.X-1,y,c)}
+}
+
+// Rounded edges are applied to the background and border, not clipped text.
+func nexusInsideRounded(r image.Rectangle,x,y,radius int)bool{
+ if !image.Pt(x,y).In(r){return false}
+ if radius<=0{return true}
+ cx,cy:=x,y
+ if x<r.Min.X+radius{cx=r.Min.X+radius-1}else if x>=r.Max.X-radius{cx=r.Max.X-radius}
+ if y<r.Min.Y+radius{cy=r.Min.Y+radius-1}else if y>=r.Max.Y-radius{cy=r.Max.Y-radius}
+ dx,dy:=x-cx,y-cy
+ return dx*dx+dy*dy<=radius*radius
+}
+func drawNexusRoundedFill(dst *image.RGBA,r image.Rectangle,c color.RGBA,radius int){
+ for y:=r.Min.Y;y<r.Max.Y;y++{for x:=r.Min.X;x<r.Max.X;x++{if nexusInsideRounded(r,x,y,radius){dst.SetRGBA(x,y,c)}}}
+}
+func drawNexusRoundedBorder(dst *image.RGBA,r image.Rectangle,c color.RGBA,radius int){
+ inner:=r.Inset(1)
+ for y:=r.Min.Y;y<r.Max.Y;y++{for x:=r.Min.X;x<r.Max.X;x++{if nexusInsideRounded(r,x,y,radius)&&!nexusInsideRounded(inner,x,y,int(math.Max(0,float64(radius-1)))){dst.SetRGBA(x,y,c)}}}
 }
