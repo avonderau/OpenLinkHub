@@ -162,3 +162,7 @@
 #nexus-editor .widget{white-space:nowrap;text-overflow:clip}
 #nexus-editor .widget[style*="text-align: center"]{text-align:center}
 #nexus-editor .widget[style*="text-align: right"]{text-align:right}
+
+/* The editor paints actual cached telemetry rather than a decorative graph label. */
+#nexus-editor .nexus-graph-widget::after{content:none}
+#nexus-editor .nexus-graph-plot{position:absolute;left:4px;top:22px;pointer-events:none;max-width:calc(100% - 8px);max-height:calc(100% - 24px)}
