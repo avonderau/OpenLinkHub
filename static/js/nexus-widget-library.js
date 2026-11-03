@@ -5,7 +5,7 @@ globalThis.NexusWidgetLibrary=(()=>{
  const storageKey='openlinkhub:nexus:widgets:v1';
  const limit=50;
  const idPattern=/^[A-Za-z0-9_-]{1,64}$/;
- const types=new Set(['metric','bar','graph','clock','text','button','macro']);
+ const types=new Set(['metric','bar','graph','clock','text','image','button','macro']);
  const clone=obj=>JSON.parse(JSON.stringify(obj));
  function validateEntry(entry){
   if(!entry||typeof entry!=='object'||Array.isArray(entry)||!idPattern.test(entry.id))

@@ -17,7 +17,7 @@ const (
  MaxWidgets = 64
 )
 var safeID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
-var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"graph":true,"clock":true,"button":true,"macro":true}
+var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"graph":true,"clock":true,"image":true,"button":true,"macro":true}
 var supportedMetrics = map[string]bool{
  "cpu.temperature":true,"cpu.utilization":true,
  "gpu.temperature":true,"gpu.utilization":true,
@@ -106,7 +106,7 @@ func (c ScreenConfiguration) Validate() error {
     }
     if total>15000 {return fmt.Errorf("macro delays exceed 15 seconds")}
    }
-   if w.Type=="button" || w.Type=="macro" || w.Type=="metric" || w.Type=="bar" || w.Type=="graph" || w.Type=="text" || w.Type=="clock" {
+   if w.Type=="button" || w.Type=="macro" || w.Type=="metric" || w.Type=="bar" || w.Type=="graph" || w.Type=="text" || w.Type=="clock" || w.Type=="image" {
     style:=w.Settings["style"]
     if style!="" && style!="solid" && style!="outline" && style!="flat" {return fmt.Errorf("invalid widget style %q",style)}
     for _,key:=range []string{"backgroundColor","textColor","borderColor"}{
@@ -115,7 +115,7 @@ func (c ScreenConfiguration) Validate() error {
     }
    }
    if v:=w.Settings["customIcon"];v!="" {
-    if w.Type!="button" && w.Type!="macro"{return fmt.Errorf("custom icons are only supported on buttons")}
+    if w.Type!="button" && w.Type!="macro" && w.Type!="image"{return fmt.Errorf("custom icons are only supported on buttons and images")}
     if !safeID.MatchString(v){return fmt.Errorf("invalid custom icon ID for widget %q",w.ID)}
    }
    if w.Type=="clock" && !validNexusClockFormat(w.Settings["clockFormat"]) {return fmt.Errorf("invalid clock format for %q",w.ID)}

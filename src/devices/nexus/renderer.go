@@ -45,6 +45,26 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   // Styles are supported for all widget types. Flat and outline leave the background visible.
   if style!="flat" && style!="outline" {draw.Draw(canvas,bounds,image.NewUniform(bg),image.Point{},draw.Src)}
   if style=="outline" || (style=="solid" && w.Settings["borderColor"]!="") {drawNexusButtonBorder(canvas,bounds,border)}
+  if w.Type=="image"{
+   id:=w.Settings["customIcon"]
+   if id!="" && iconDir!=""{
+    if picture,err:=ReadCustomIcon(iconDir,id);err==nil{
+     targetW,targetH:=bounds.Dx()-4,bounds.Dy()-4
+     if targetW>0&&targetH>0{
+      scale:=math.Min(float64(targetW)/float64(picture.Bounds().Dx()),float64(targetH)/float64(picture.Bounds().Dy()))
+      width:=int(math.Round(scale*float64(picture.Bounds().Dx())))
+      height:=int(math.Round(scale*float64(picture.Bounds().Dy())))
+      if width>0&&height>0{
+       centerX:=(bounds.Min.X+bounds.Max.X)/2
+       centerY:=(bounds.Min.Y+bounds.Max.Y)/2
+       dest:=image.Rect(centerX-width/2,centerY-height/2,centerX+(width+1)/2,centerY+(height+1)/2).Intersect(bounds)
+       xdraw.CatmullRom.Scale(canvas,dest,picture,picture.Bounds(),draw.Over,nil)
+      }
+     }
+    }
+   }
+   continue
+  }
   label:=w.Settings["label"]
   if label=="" {label=w.Metric}
   if w.Type=="text" {label=w.Settings["text"]}
