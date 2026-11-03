@@ -178,3 +178,26 @@ test('screen order and cross-screen widget clipboard survive Save Layout',async(
  assert.equal(writes.at(-1).screens[0].id,added);
  assert.equal(writes.at(-1).screens[1].widgets.length,1);
 });
+
+
+test('keyboard layout editing selects, moves, resizes and deselects widgets',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'keyboard_widget',type:'text',x:0,y:0,width:120,height:32,settings:{text:'Keyboard'}});
+ vm.runInContext('render()',context);
+ const key=(name,shiftKey=false)=>{
+  let prevented=false;
+  node('screen').listeners.keydown({target:node('screen'),key:name,shiftKey,ctrlKey:false,altKey:false,metaKey:false,preventDefault(){prevented=true}});
+  return prevented;
+ };
+ assert.equal(key(']'),true);
+ assert.equal(vm.runInContext('selected',context),'keyboard_widget');
+ assert.equal(key('ArrowRight'),true);
+ assert.equal(screen.widgets[0].x,8);
+ assert.equal(key('ArrowDown',true),true);
+ assert.equal(screen.widgets[0].height,40);
+ assert.equal(key('Escape'),true);
+ assert.equal(vm.runInContext('selected',context),null);
+ assert.equal(key('ArrowRight'),false);
+});

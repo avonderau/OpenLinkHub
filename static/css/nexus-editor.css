@@ -166,3 +166,7 @@
 /* The editor paints actual cached telemetry rather than a decorative graph label. */
 #nexus-editor .nexus-graph-widget::after{content:none}
 #nexus-editor .nexus-graph-plot{position:absolute;left:4px;top:22px;pointer-events:none;max-width:calc(100% - 8px);max-height:calc(100% - 24px)}
+
+/* Accessible Nexus layout focus ring and keyboard editing guidance. */
+#nexus-editor #screen:focus-visible{outline:2px solid var(--text-muted,#a1a1a1);outline-offset:3px}
+#nexus-editor #nexus-keyboard-hint{color:var(--text-muted,#a1a1a1);font-size:.75rem;margin:.35rem 0 .65rem}

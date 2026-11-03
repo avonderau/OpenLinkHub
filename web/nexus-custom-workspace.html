@@ -64,7 +64,8 @@
 <button id="duplicateScreen" type="button">Duplicate screen</button>
 <button id="deleteScreen" type="button">Delete screen</button>
 </div>
-<div id="preview"><div id="screen"></div></div>
+<div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
+<p id="nexus-keyboard-hint" class="nexus-panel-description">Keyboard editing: [ / ] select widget, arrows move, Shift + arrows resize, Delete removes, Ctrl + C/V copies and pastes.</p>
 <fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
 <div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addGraph">Add graph</button><button id="addClock">Add clock</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button></div>
