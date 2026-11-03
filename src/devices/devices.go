@@ -959,3 +959,17 @@ func initializeDevice(productId uint16, key, productPath string) {
 		}
 	}
 }
+
+// Reuse the existing appmonitor's opt-in process matching. Only Nexus device
+// instances receive screen-selection notifications; other devices are untouched.
+func init(){
+ appmonitor.SetNexusApplicationObserver(func(id string,active bool){
+  mutex.Lock()
+  serials:=make([]string,0)
+  for serial,device:=range devices{
+   if _,ok:=device.Instance.(*nexus.Device);ok{serials=append(serials,serial)}
+  }
+  mutex.Unlock()
+  for _,serial:=range serials{CallDeviceMethod(serial,"SetNexusApplicationActive",id,active)}
+ })
+}
