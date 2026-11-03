@@ -23,6 +23,9 @@ func (d *Device) refreshCustomLCD() {
   }
  }
  d.mutex.Unlock()
+ d.mutex.Lock()
+ feedbackActive:=d.pressedWidgetID!=""&&time.Now().Before(d.pressedWidgetUntil)
+ d.mutex.Unlock()
  animated:=IsAnimatedBackground(filepath.Join(pwd,"database","nexus","backgrounds"),activeBackground)
  if !animated{
   dir:=filepath.Join(pwd,"database","nexus","icons")
@@ -33,6 +36,7 @@ func (d *Device) refreshCustomLCD() {
  }
  refresh:=time.Duration(lcdRefreshInterval)*time.Millisecond
  if animated{refresh=200*time.Millisecond}
+ if feedbackActive{refresh=100*time.Millisecond}
  d.lcdTimer.Reset(refresh)
  if frame:=d.renderCustomScreen();frame!=nil {d.transfer(frame)}
 }
