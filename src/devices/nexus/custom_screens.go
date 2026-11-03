@@ -11,7 +11,7 @@ import (
  "time"
 )
 func defaultCustomScreens() ScreenConfiguration {
- return ScreenConfiguration{Version:1,ActiveScreenID:"system",Screens:[]Screen{
+ return ScreenConfiguration{Version:1,ActiveScreenID:"system",CyclingMode:"manual",CyclingSeconds:15,Screens:[]Screen{
  {ID:"system",Name:"System",Widgets:[]Widget{
  {ID:"cpu",Type:"metric",Metric:"cpu.temperature",X:75,Y:0,Width:150,Height:48,Settings:map[string]string{"label":"CPU","unit":" C"}},
  {ID:"gpu",Type:"metric",Metric:"gpu.temperature",X:230,Y:0,Width:150,Height:48,Settings:map[string]string{"label":"GPU","unit":" C"}},
@@ -34,6 +34,12 @@ func (d *Device) loadCustomScreens() {
  c,err:=LoadScreens(d.customScreenPath())
  if err!=nil {c=defaultCustomScreens()}
  d.customScreens=c
+ if d.DeviceProfile!=nil && d.DeviceProfile.LCDMode!="custom-screens" {
+  d.DeviceProfile.LCDMode="custom-screens"
+  d.DeviceProfile.DynamicMode=false
+  d.Keyboard=false
+  d.saveDeviceProfile()
+ }
  d.LCDModes["custom-screens"]="Custom Screens"
  if d.LCDProfiles!=nil {
   if d.LCDProfiles.Profiles==nil {d.LCDProfiles.Profiles=map[string]Profile{}}
@@ -44,6 +50,7 @@ func (d *Device) navigateCustomScreen(next bool) {
  d.mutex.Lock()
  defer d.mutex.Unlock()
  if len(d.customScreens.Screens)==0{return}
+ if d.customScreens.CyclingMode=="off" || d.customScreens.CyclingMode=="automatic" {return}
  if next {d.customScreens.ActiveScreenID=d.customScreens.NextScreen()} else {d.customScreens.ActiveScreenID=d.customScreens.PreviousScreen()}
  _=SaveScreens(d.customScreenPath(),d.customScreens)
 }
@@ -131,4 +138,15 @@ func (d *Device) SetCustomScreens(c ScreenConfiguration) error {
 }
 func (d *Device) SaveCustomBackground(id string,content []byte)(string,error){
  return SaveBackground(filepath.Join(pwd,"database","nexus","backgrounds"),id,content)
+}
+
+func (d *Device) advanceAutomaticScreen(now time.Time) {
+ d.mutex.Lock()
+ defer d.mutex.Unlock()
+ c:=&d.customScreens
+ if c.CyclingMode!="automatic" || len(c.Screens)<2 || c.CyclingSeconds<5 {d.lastCycle=now;return}
+ if d.lastCycle.IsZero() {d.lastCycle=now;return}
+ if now.Sub(d.lastCycle)<time.Duration(c.CyclingSeconds)*time.Second{return}
+ c.ActiveScreenID=c.NextScreen()
+ d.lastCycle=now
 }

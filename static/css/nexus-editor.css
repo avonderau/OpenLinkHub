@@ -39,3 +39,8 @@
 .nexus-editor-column #nexus-editor{margin-top:0!important;max-width:100%;width:fit-content}
 .nexus-editor-column #nexus-editor>.card-body{max-width:100%}
 @media(max-width:1050px){.nexus-workspace{grid-template-columns:minmax(0,1fr)}.nexus-device-column{max-width:320px}}
+
+.nexus-cycle-settings{display:flex;flex-direction:column;align-items:stretch;gap:.35rem;text-align:left}
+.nexus-cycle-settings label{font-size:.85rem}
+.nexus-cycle-settings select,.nexus-cycle-settings input{width:100%;min-width:0}
+.nexus-cycle-settings small{color:var(--text-muted,#999)}

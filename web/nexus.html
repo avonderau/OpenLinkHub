@@ -42,30 +42,17 @@
                                     <span class="meta-value">{{ .Device.Firmware }}</span>
                                 </div>
 
-                                <!-- RGB Profile -->
-                                <div class="settings-row">
-                                    <span class="settings-label text-ellipsis">{{ .Lang "txtRgb" }}</span>
-                                    <label for="lcdProfile">
-                                        <select id="lcdProfile" class="form-select system-select compact auto-width lcdProfile" name="{{ $device.Serial }}">
-                                            {{ range $key, $value := $lcdProfiles }}
-                                            {{ if eq $key "default" }}
-                                            {{ continue }}
-                                            {{ end }}
-
-                                            {{ if eq $key $lcdMode }}
-                                            <option value="{{ $key }}" selected>{{ $value.Name }}</option>
-                                            {{ else }}
-                                            <option value="{{ $key }}">{{ $value.Name }}</option>
-                                            {{ end }}
-                                            {{ end }}
-
-                                            {{ range $key, $value := $stats }}
-                                            {{ range $channel, $data := $value.Devices }}
-                                            <option value="{{ $key }};{{ $channel }}">{{ $data.Device }}</option>
-                                            {{ end }}
-                                            {{ end }}
-                                        </select>
-                                    </label>
+                                <div class="settings-row"><span class="settings-label">Display</span><span class="meta-value">Custom Screens</span></div>
+                                <div class="settings-row nexus-cycle-settings">
+                                    <label for="cyclingMode">Screen cycling</label>
+                                    <select id="cyclingMode" class="form-select system-select">
+                                        <option value="manual">Manual (touch edges)</option>
+                                        <option value="automatic">Automatic</option>
+                                        <option value="off">Off (fixed screen)</option>
+                                    </select>
+                                    <label for="cyclingSeconds">Interval (seconds)</label>
+                                    <input id="cyclingSeconds" type="number" min="5" max="3600" step="1" value="15" class="form-control">
+                                    <small>Save layout to apply cycling settings.</small>
                                 </div>
                             </div>
                         </div>

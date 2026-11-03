@@ -128,6 +128,7 @@ type Device struct {
 	instance          *common.Device
 	customScreens ScreenConfiguration
 	customSampler CounterSampler
+ lastCycle time.Time
 }
 
 var (
@@ -973,6 +974,7 @@ func (d *Device) setupLCD() {
 				} else {
 					switch lcdMode {
 					case "custom-screens":
+						d.advanceAutomaticScreen(time.Now())
 						if frame := d.renderCustomScreen(); frame != nil { d.transfer(frame) }
 					case "cpu-info":
 						{
@@ -1068,6 +1070,7 @@ func (d *Device) backendListener() {
 				}
 
 				if d.DeviceProfile.LCDMode == "custom-screens" {
+					if len(data)<8 {continue}
 					active := data[5]
 					if active == 1 && !blocked {
 						blocked = true
