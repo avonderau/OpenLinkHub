@@ -16,6 +16,7 @@ function refreshActionButtons(){
  const screen=current(),count=cfg?.screens.length||0;
  for(const id of ['renameScreen','duplicateScreen'])if($(id))$(id).disabled=!screen||(id==='duplicateScreen'&&count>=32);
  if($('deleteScreen'))$('deleteScreen').disabled=count<=1;
+ if($('addStarterTemplate'))$('addStarterTemplate').disabled=!cfg||count>=32;
 }
 const snapPosition=(value,max)=>clamp(snap(value),Math.floor(max/GRID)*GRID);
 const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
@@ -79,6 +80,39 @@ async function loadDevices(){try{const response=await fetch('/api/devices/');con
 async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds);interval.disabled=mode?.value!=='automatic'}refreshScreens();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
+function starterTemplateByID(id){
+ return (globalThis.NEXUS_STARTER_TEMPLATES||[]).find(t=>t.id===id);
+}
+function updateStarterTemplateDescription(){
+ const template=starterTemplateByID($('starterTemplate')?.value);
+ const description=$('starterTemplateDescription');
+ if(description)description.textContent=template?template.description+' Adds a new screen without replacing your existing layout.':'Select a starter screen template.';
+}
+$('starterTemplate')?.addEventListener('change',updateStarterTemplateDescription);
+$('addStarterTemplate')?.addEventListener('click',()=>{
+ if(!cfg)return message('Load a Nexus layout first.');
+ if(cfg.screens.length>=32)return message('Maximum 32 screens.');
+ const template=starterTemplateByID($('starterTemplate')?.value);
+ if(!template)return message('Starter template not found.');
+ if(template.widgets.length>64)return message('Template exceeds the widget limit.');
+ const screenIDs=new Set(cfg.screens.map(s=>s.id));
+ const screenID=uniqueID('screen',screenIDs);
+ const duplicateCount=cfg.screens.filter(s=>s.name===template.name||s.name.startsWith(template.name+' (')).length;
+ const suffix=duplicateCount?' ('+(duplicateCount+1)+')':'';
+ const name=template.name.slice(0,80-suffix.length)+suffix;
+ const widgetIDs=new Set();
+ const widgets=template.widgets.map(definition=>{
+  const widget=JSON.parse(JSON.stringify(definition));
+  widget.id=uniqueID('widget',widgetIDs);widgetIDs.add(widget.id);
+  return widget;
+ });
+ cfg.screens.push({id:screenID,name,widgets});
+ cfg.activeScreenId=screenID;selected=null;
+ refreshScreens();
+ message('Starter template added. Customize it and click Save Layout to apply.');
+});
+updateStarterTemplateDescription();
+
 $('addScreen').onclick=()=>{
  if(!cfg)return;
  if(cfg.screens.length>=32)return message('Maximum 32 screens');

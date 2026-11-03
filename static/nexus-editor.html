@@ -17,11 +17,25 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 .nexus-properties-row{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;width:100%;padding:.35rem 0}.nexus-properties-row:not(:empty)+.nexus-properties-row:not(:empty){border-top:1px solid #496275}.nexus-dimensions-row label,.nexus-colors-row label{display:inline-flex;align-items:center;gap:.25rem;margin:.15rem}.nexus-dimensions-row input[type=number]{width:65px}#properties{display:flex;flex-direction:column;align-items:stretch;gap:.35rem}
 .widget .nexus-custom-icon{width:32px;height:32px;max-width:calc(100% - 4px);max-height:calc(100% - 4px);object-fit:contain;pointer-events:none}.nexus-custom-icon-upload input[type=file]{max-width:230px}
 .nexus-screen-actions,.nexus-widget-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem}.nexus-screen-actions button:disabled,.nexus-widget-actions button:disabled{opacity:.45;cursor:not-allowed}
+.nexus-template-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}.nexus-template-actions label{display:inline-flex;gap:.4rem;align-items:center}.nexus-starter-panel{margin:.75rem 0}.nexus-starter-panel p{color:#a7bac7}
 </style></head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p><p id="message" role="status" aria-live="polite"></p>
 <label>Device <select id="device"></select></label><button id="load">Load</button>
 <div class="nexus-screen-actions"><label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="renameScreen">Rename</button><button id="duplicateScreen">Duplicate screen</button><button id="deleteScreen">Delete screen</button></div>
+<fieldset class="nexus-panel nexus-starter-panel"><legend>Starter Templates</legend>
+<div class="nexus-template-actions">
+<label for="starterTemplate">Template <select id="starterTemplate">
+<option value="system-overview">System Overview</option>
+<option value="performance-bars">Performance Bars</option>
+<option value="network-and-storage">Network &amp; Storage</option>
+<option value="media-deck">Media Controls</option>
+<option value="navigation">Screen Navigation</option>
+</select></label>
+<button id="addStarterTemplate" type="button">Add template screen</button>
+</div>
+<p class="nexus-panel-description" id="starterTemplateDescription">CPU and GPU temperature with memory use in one glance. Adds a new screen without replacing your existing layout.</p>
+</fieldset>
 <div id="preview"><div id="screen"></div></div>
 <fieldset id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
@@ -35,4 +49,5 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG <input type="file" id="image" accept="image/png,image/jpeg"></label><button id="upload">Upload and apply</button></fieldset>
 
+<script src="/static/js/nexus-starter-templates.js"></script>
 <script src="/static/js/nexus-editor.js"></script></body></html>

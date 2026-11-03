@@ -46,6 +46,19 @@
 <div class="nexus-editor-heading"><button id="save" type="button">Save Layout</button></div>
 <p id="message" role="status" aria-live="polite"></p>
 <div class="nexus-screen-actions"><label>Screen <select id="screens"></select></label><button id="addScreen">Add screen</button><button id="renameScreen">Rename</button><button id="duplicateScreen">Duplicate screen</button><button id="deleteScreen">Delete screen</button></div>
+<fieldset class="nexus-panel nexus-starter-panel"><legend>Starter Templates</legend>
+<div class="nexus-template-actions">
+<label for="starterTemplate">Template <select id="starterTemplate">
+<option value="system-overview">System Overview</option>
+<option value="performance-bars">Performance Bars</option>
+<option value="network-and-storage">Network &amp; Storage</option>
+<option value="media-deck">Media Controls</option>
+<option value="navigation">Screen Navigation</option>
+</select></label>
+<button id="addStarterTemplate" type="button">Add template screen</button>
+</div>
+<p class="nexus-panel-description" id="starterTemplateDescription">CPU and GPU temperature with memory use in one glance. Adds a new screen without replacing your existing layout.</p>
+</fieldset>
 <div id="preview"><div id="screen"></div></div>
 <fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>

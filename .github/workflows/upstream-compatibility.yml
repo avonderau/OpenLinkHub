@@ -11,6 +11,8 @@ on:
       - 'src/server/**'
       - 'web/nexus*.html'
       - 'static/js/nexus-editor.js'
+      - 'static/js/nexus-starter-templates.js'
+      - 'static/js/nexus-starter-templates.test.cjs'
       - 'static/css/nexus-editor.css'
       - 'static/nexus-editor.html'
       - '.github/workflows/upstream-compatibility.yml'
@@ -44,7 +46,10 @@ jobs:
             exit 1
           fi
       - name: Check Nexus editor JavaScript syntax
-        run: node --check static/js/nexus-editor.js
+        run: |
+          node --check static/js/nexus-editor.js
+          node --check static/js/nexus-starter-templates.js
+          node --test static/js/nexus-starter-templates.test.cjs
       - name: Set up Go
         uses: actions/setup-go@v5
         with:

@@ -104,3 +104,12 @@
 #nexus-editor .nexus-screen-actions label{margin:.15rem .5rem .15rem 0}
 #nexus-editor .nexus-screen-actions button,#nexus-editor .nexus-widget-actions button{margin:.15rem}
 #nexus-editor .nexus-screen-actions button:disabled,#nexus-editor .nexus-widget-actions button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+
+/* Ready-made screen templates add a screen; they never replace existing work. */
+#nexus-editor .nexus-starter-panel{margin:.75rem 0}
+#nexus-editor .nexus-template-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}
+#nexus-editor .nexus-template-actions label{display:inline-flex;align-items:center;gap:.4rem;margin:.15rem}
+#nexus-editor .nexus-template-actions select{min-width:190px}
+#nexus-editor .nexus-template-actions button{margin:.15rem}
+#nexus-editor #addStarterTemplate:disabled{opacity:.45;cursor:not-allowed;filter:none}
+#nexus-editor #starterTemplateDescription{margin:.35rem 0 0}
