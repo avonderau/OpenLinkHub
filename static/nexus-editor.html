@@ -23,7 +23,21 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 .nexus-layout-file-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}.nexus-layout-file-controls label{display:inline-flex;align-items:center;gap:.3rem}
 .nexus-widget-library-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem}.nexus-widget-library-actions label{display:inline-flex;align-items:center;gap:.35rem}
 #screen:focus-visible{outline:2px solid #a1a1a1;outline-offset:3px}
-</style></head><body>
+</style>
+<style>
+/* Compact standalone editor property sections. */
+#properties{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;align-items:start}
+#properties .nexus-property-section{min-width:0;border:1px solid #496275;border-radius:8px;background:#172735}
+#properties .nexus-property-section>summary{cursor:pointer;padding:.6rem .75rem;color:#a7bac7;font-weight:600}
+#properties .nexus-property-section[open]>summary{border-bottom:1px solid #496275}
+#properties .nexus-properties-row{box-sizing:border-box;padding:.5rem .65rem;gap:.35rem}
+#properties .nexus-property-section label{display:inline-flex;align-items:center;gap:.3rem;flex-wrap:wrap}
+#properties .nexus-opacity-control input[type=range]{width:110px;accent-color:#a7bac7}
+#properties .nexus-opacity-control input[type=number]{width:65px}
+@media(max-width:750px){#properties{grid-template-columns:1fr}}
+</style>
+
+</head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p><p id="message" role="status" aria-live="polite"></p>
 <label>Device <select id="device"></select></label><button id="load">Load</button><label>Display dimming (software) <select id="displayBrightness"><option value="20">20%</option><option value="40">40%</option><option value="60">60%</option><option value="80">80%</option><option value="100" selected>100% (full)</option></select></label>
@@ -86,15 +100,3 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <script src="/static/js/nexus-layout-files.js"></script>
 <script src="/static/js/nexus-widget-library.js"></script>
 <script src="/static/js/nexus-editor.js"></script></body></html>
-<style>
-/* Compact standalone editor property sections. */
-#properties{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;align-items:start}
-#properties .nexus-property-section{min-width:0;border:1px solid #496275;border-radius:8px;background:#172735}
-#properties .nexus-property-section>summary{cursor:pointer;padding:.6rem .75rem;color:#a7bac7;font-weight:600}
-#properties .nexus-property-section[open]>summary{border-bottom:1px solid #496275}
-#properties .nexus-properties-row{box-sizing:border-box;padding:.5rem .65rem;gap:.35rem}
-#properties .nexus-property-section label{display:inline-flex;align-items:center;gap:.3rem;flex-wrap:wrap}
-#properties .nexus-opacity-control input[type=range]{width:110px;accent-color:#a7bac7}
-#properties .nexus-opacity-control input[type=number]{width:65px}
-@media(max-width:750px){#properties{grid-template-columns:1fr}}
-</style>
