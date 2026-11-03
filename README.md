@@ -1,8 +1,42 @@
-# OpenLinkHub interface for Linux
+# OpenLinkHub — Enhanced Linux Hardware Control
+
+> **Independently maintained fork** of [OpenLinkHub by Nikola Jurkovic](https://github.com/jurkovic-nikola/OpenLinkHub). This repository adds experimental Corsair iCUE NEXUS customization while preserving the original project's broader Linux hardware-control capabilities.
+
+[![Nexus Go tests](https://github.com/avonderau/OpenLinkHub/actions/workflows/nexus-tests.yml/badge.svg)](https://github.com/avonderau/OpenLinkHub/actions/workflows/nexus-tests.yml)
+
+## What is different in this fork?
+
+- **Corsair iCUE NEXUS:** a custom 640 × 48 screen engine, configurable metric/text/bar widgets, multiple layouts, and touch-edge navigation.
+- **Live telemetry:** CPU/GPU readings, RAM utilization, and Linux network/disk throughput.
+- **LCD backgrounds:** per-screen PNG/JPEG background loading and bounded image storage.
+- **Automated tests:** a dedicated Nexus Go CI workflow.
+
+**Development status:** These additions are experimental. The visual editor, configuration/upload HTTP endpoints, and continuous swipe gestures are not yet implemented. Hardware behavior and the latest commits still require validation. Do not assume all upstream installation packages include these features.
+
+See [Nexus development notes](docs/nexus-fork.md) for details and limitations.
+
+## Installation of this fork
+
+To build **this fork** from source, follow the manual dependency instructions below, then use:
+
+```bash
+git clone https://github.com/avonderau/OpenLinkHub.git
+cd OpenLinkHub
+CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
+```
+
+Do not use the upstream installer, PPA, Copr, or upstream releases if you intend to install this fork's experimental features. The legacy installation sections below document **upstream distribution channels**, not builds of this fork.
+
+## Original project and attribution
+
+The original OpenLinkHub project was created and is maintained upstream by [Nikola Jurkovic](https://github.com/jurkovic-nikola/OpenLinkHub). This fork is not an official upstream release or an official Corsair product. Original copyright notices and the repository's GPL license remain in place.
+
+---
+
 An open-source Linux interface for iCUE LINK hubs and other Corsair AIOs and hubs.
 Manage RGB lighting, fan speeds, system metrics, as well as keyboards, mice, and headsets via a web dashboard.
 
-![Build](https://github.com/jurkovic-nikola/OpenLinkHub/actions/workflows/go.yml/badge.svg)
+[![Upstream build](https://github.com/jurkovic-nikola/OpenLinkHub/actions/workflows/go.yml/badge.svg)](https://github.com/jurkovic-nikola/OpenLinkHub/actions/workflows/go.yml)
 [![](https://dcbadge.limes.pink/api/server/https://discord.gg/mPHcasZRPy?style=flat)](https://discord.gg/mPHcasZRPy)
 
 **Available in other languages:** [Portuguese (Brazil)](README-pt_BR.md)
@@ -32,7 +66,7 @@ Manage RGB lighting, fan speeds, system metrics, as well as keyboards, mice, and
 - Most of the devices are actually tested on live hardware.
 - Take care and have fun!
 - This project is not an official Corsair product.
-## Installation (recommended)
+## Upstream installation (not this fork)\n\nThe following installer and package-manager commands are retained for reference to the **original upstream project**. They will not install this fork’s custom Nexus functionality.\n\n### Upstream installation (recommended)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jurkovic-nikola/OpenLinkHub/main/remote-install.sh | bash
 ```
@@ -46,7 +80,7 @@ This script will:
 - You can use this script for installation or upgrade purposes.
 - Before running this script, uninstall any previously installed versions of OpenLinkHub
 
-## Installation (automatic)
+### Upstream installation (automatic)
 1. Download either .deb or .rpm package from the latest Release, depending on your Linux distribution
 2. Open a terminal
 3. Navigate to the folder where the package is downloaded
@@ -58,20 +92,20 @@ $ sudo apt install ./OpenLinkHub_?.?.?_amd64.deb
 $ sudo dnf install ./OpenLinkHub-?.?.?-1.x86_64.rpm
 ```
 
-## Installation (PPA)
+### Upstream installation (PPA)
 ```bash
 $ sudo add-apt-repository ppa:jurkovic-nikola/openlinkhub
 $ sudo apt update
 $ sudo apt-get install openlinkhub
 ```
 
-## Installation (Copr)
+### Upstream installation (Copr)
 ```bash
 $ sudo dnf copr enable jurkovic-nikola/OpenLinkHub
 $ sudo dnf install OpenLinkHub
 ```
 
-## Installation (manual)
+## Manual installation and build requirements
 ### 1. Requirements
 - libudev-dev
 - usbutils
@@ -94,14 +128,14 @@ $ sudo dnf install pkg-config
 Or use the provided devcontainer in VScode. This is useful for immutable distributions.
 ### 2. Build & install
 ```bash
-$ git clone https://github.com/jurkovic-nikola/OpenLinkHub.git
+$ git clone https://github.com/avonderau/OpenLinkHub.git
 $ cd OpenLinkHub/
 $ CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
 $ chmod +x install.sh
 $ sudo ./install.sh
 ```
 
-### 3. Installation from compiled build
+### 3. Upstream release archives (not this fork)
 ```bash
 # Download latest build from https://github.com/jurkovic-nikola/OpenLinkHub/releases/latest
 $ wget "https://github.com/jurkovic-nikola/OpenLinkHub/releases/latest/download/OpenLinkHub_$(curl -s https://api.github.com/repos/jurkovic-nikola/OpenLinkHub/releases/latest | jq -r '.tag_name')_amd64.tar.gz"
@@ -110,7 +144,7 @@ $ cd /home/$USER/OpenLinkHub/
 $ chmod +x install.sh
 $ sudo ./install.sh
 ```
-### 4. Immutable distributions (Bazzite OS, SteamOS, etc...)
+### 4. Immutable distributions (upstream release instructions) (Bazzite OS, SteamOS, etc...)
 ```bash
 # Do not install RPM or DEB packages on immutable distributions, they will not work.
 # This same procedure may be followed to update an existing installation.
