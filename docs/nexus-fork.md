@@ -83,3 +83,22 @@ Open a pull request from the integration branch into `main` after checks
 and physical Nexus testing. Do not directly merge untested upstream changes
 into `main`. Never force-push either repository. Do not open the pull
 request until any merge conflicts are resolved.
+
+## Custom Nexus button icons
+
+In the Nexus editor, select a Button widget (or an older Macro widget), choose
+**Custom image** under Icon, select a PNG or JPEG and click **Upload icon**.
+A successful upload stores the icon and applies it to the selected widget.
+Click **Save Layout** to persist that widget's icon selection.
+
+Uploads must be 512 KiB or smaller with dimensions no greater than 512 × 512.
+The server decodes, aspect-fits and normalizes every image to a transparent
+32 × 32 PNG under `database/nexus/icons/`. Uploaded artwork is referenced by
+a validated ID (`settings.customIcon`) rather than its source filename.
+The same icon is shown through `GET /api/nexus/icon?serial=...&id=...`
+in the editor and rendered on the physical display. Existing built-in vector
+icons remain available, and choosing a built-in icon clears the custom
+selection without deleting the uploaded image.
+
+The storage, renderer support, upload API and UI are fork-owned files except
+for the minimal API route registration in `src/server/server.go`.
