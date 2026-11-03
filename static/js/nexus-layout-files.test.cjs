@@ -69,5 +69,6 @@ test('malformed, oversize, unsupported and unsafe data is rejected before import
  assert.throws(()=>layouts.validate(asset));
  const collision=existingLayout();assert.throws(()=>layouts.applyImport(collision,template,'add-screen','mine','mine'));
  assert.throws(()=>layouts.applyImport(collision,template,'add-screen','mine','../escape'));
- assert.throws(()=>layouts.applyImport(collision,template,'add-screen','mine','new'));
+ const accepted=layouts.applyImport(collision,template,'add-screen','mine','new');
+ assert.equal(accepted.screens.length,2);
 });
