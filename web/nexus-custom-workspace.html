@@ -73,38 +73,43 @@
 <button id="duplicateScreen" type="button">Duplicate screen</button>
 <button id="deleteScreen" type="button">Delete screen</button>
 </div>
-<nav class="nexus-flyout-toolbar" aria-label="Nexus editor utilities"><button type="button" data-nexus-flyout="library" aria-controls="nexus-flyout-library" aria-expanded="false">Widget library</button><button type="button" data-nexus-flyout="background" aria-controls="nexus-flyout-background" aria-expanded="false">Background</button><button type="button" data-nexus-flyout="layout" aria-controls="nexus-flyout-layout" aria-expanded="false">Layout files</button></nav><div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
+<nav class="nexus-flyout-toolbar" aria-label="Nexus editor utilities"><button type="button" data-nexus-flyout="library" aria-controls="nexus-flyout-library" aria-expanded="false">Widget library</button></nav><div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
 <p id="nexus-keyboard-hint" class="nexus-panel-description">Keyboard editing: [ / ] select widget, arrows move, Shift + arrows resize, Delete removes, Ctrl + C/V copies and pastes.</p>
 <fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
-<div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addImage">Add image</button><button id="addBar">Add bar</button><button id="addGraph">Add graph</button><button id="addClock">Add clock</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button></div>
+<div class="nexus-create-actions">
+<label class="nexus-add-combo">Metric display <select id="metricDisplayType" aria-label="Metric display type"><option value="metric">Value</option><option value="bar">Bar</option><option value="graph">Graph</option></select></label><button id="addMetric" type="button">Add metric</button>
+
+<label class="nexus-add-combo">Content type <select id="contentWidgetType" aria-label="Content widget type"><option value="text">Text</option><option value="image">Image</option><option value="clock">Clock</option></select></label><button id="addContent" type="button">Add content</button>
+<button id="addButton" type="button">Add button</button>
+</div>
 </fieldset>
 <fieldset class="nexus-panel" id="nexus-selected-panel"><legend>Selected Widget</legend>
 <div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
 <div id="properties"></div>
 <div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
 </fieldset>
-<fieldset class="nexus-panel nexus-application-screens"><legend>Automatic application screens</legend>
+
+
+
+
+
+
+<section class="nexus-editor-tabs" aria-label="Nexus screen configuration">
+<div class="nexus-editor-tablist" role="tablist" aria-label="Screen configuration">
+<button id="nexus-tab-background" type="button" role="tab" aria-controls="nexus-panel-background" aria-selected="true" tabindex="0">Background</button>
+<button id="nexus-tab-applications" type="button" role="tab" aria-controls="nexus-panel-applications" aria-selected="false" tabindex="-1">Automatic application screens</button>
+<button id="nexus-tab-layout" type="button" role="tab" aria-controls="nexus-panel-layout" aria-selected="false" tabindex="-1">Layout files</button>
+</div>
+<div id="nexus-panel-background" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-background"><fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
+<label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset></div>
+<div id="nexus-panel-applications" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-applications" hidden><fieldset class="nexus-panel nexus-application-screens"><legend>Automatic application screens</legend>
 <p class="nexus-panel-description">Requires OpenLinkHub Application Monitor and an enabled application profile. Enter its application ID; the selected Nexus screen will activate while that app runs and restore afterward.</p>
 <div class="nexus-app-controls"><label>Application ID <input id="applicationScreenID" type="text" maxlength="128" placeholder="Existing application profile ID"></label>
 <label>Show screen <select id="applicationScreenTarget"></select></label>
 <button id="addApplicationScreen" type="button">Add mapping</button></div>
-<div id="applicationScreenMappings" aria-live="polite"></div></fieldset>
-
-
-
-
-
-</div></section><div id="nexus-flyout-backdrop" class="nexus-flyout-backdrop" hidden></div><aside id="nexus-flyout-library" class="nexus-flyout" role="dialog" aria-modal="true" aria-label="Widget library" tabindex="-1" hidden><header class="nexus-flyout-header"><strong>Widget library</strong><button type="button" class="nexus-flyout-close" aria-label="Close Widget library">Close</button></header><fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
-<p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
-<div class="nexus-widget-library-actions">
-<button id="saveWidgetPreset" type="button" disabled>Save selected widget</button>
-<label>Saved widget <select id="widgetLibrarySelect" aria-label="Saved widget"></select></label>
-<button id="addWidgetPreset" type="button" disabled>Add to screen</button>
-<button id="deleteWidgetPreset" type="button" disabled>Delete saved widget</button>
-</div>
-</fieldset></aside><aside id="nexus-flyout-background" class="nexus-flyout" role="dialog" aria-modal="true" aria-label="Background" tabindex="-1" hidden><header class="nexus-flyout-header"><strong>Background</strong><button type="button" class="nexus-flyout-close" aria-label="Close Background">Close</button></header><fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
-<label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset></aside><aside id="nexus-flyout-layout" class="nexus-flyout" role="dialog" aria-modal="true" aria-label="Layout files" tabindex="-1" hidden><header class="nexus-flyout-header"><strong>Layout files</strong><button type="button" class="nexus-flyout-close" aria-label="Close Layout files">Close</button></header><fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
+<div id="applicationScreenMappings" aria-live="polite"></div></fieldset></div>
+<div id="nexus-panel-layout" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-layout" hidden><fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
 <div class="nexus-layout-file-controls">
 <button id="exportLayout" type="button">Export layout</button>
 <button id="exportScreen" type="button">Export selected screen</button>
@@ -117,6 +122,15 @@
 <button id="importLayout" type="button">Import JSON</button>
 </div>
 <p class="nexus-panel-description">Imports are editable previews until Save Layout. Uploaded backgrounds and icons are referenced by ID; artwork is not included in the JSON file.</p>
+</fieldset></div>
+</section></div></section><div id="nexus-flyout-backdrop" class="nexus-flyout-backdrop" hidden></div><aside id="nexus-flyout-library" class="nexus-flyout" role="dialog" aria-modal="true" aria-label="Widget library" tabindex="-1" hidden><header class="nexus-flyout-header"><strong>Widget library</strong><button type="button" class="nexus-flyout-close" aria-label="Close Widget library">Close</button></header><fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
+<p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
+<div class="nexus-widget-library-actions">
+<button id="saveWidgetPreset" type="button" disabled>Save selected widget</button>
+<label>Saved widget <select id="widgetLibrarySelect" aria-label="Saved widget"></select></label>
+<button id="addWidgetPreset" type="button" disabled>Add to screen</button>
+<button id="deleteWidgetPreset" type="button" disabled>Delete saved widget</button>
+</div>
 </fieldset></aside>
                 </div>
             </div>
