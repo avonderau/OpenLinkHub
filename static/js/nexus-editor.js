@@ -175,9 +175,9 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   properties.append(details);
   return details;
  };
- const geometrySection=section('Position & size',true);
+ const geometrySection=section('Position & size',false);
  const appearanceSection=section('Appearance',true);
- const contentSection=section('Text & data',false);
+ const contentSection=section('Text & data',true);
  const touchSection=section('Actions & icons',false);
  geometrySection.append(dimensionsRow);
  appearanceSection.append(colorsRow);
@@ -839,3 +839,13 @@ function selectNexusEditorTab(name,focus=false){
  });
  selectNexusEditorTab('widget');
 })();
+
+/* Preview expands with the browser Fullscreen API; never change widget geometry. */
+$('nexusPreviewFullscreen')?.addEventListener('click',async()=>{
+ const container=document.querySelector?.('.nexus-preview-strip');
+ if(!container||typeof container.requestFullscreen!=='function')return;
+ try{
+  if(document.fullscreenElement)await document.exitFullscreen?.();
+  else await container.requestFullscreen();
+ }catch(_err){/* Permission denials leave preview unchanged. */}
+});
