@@ -3,6 +3,11 @@ const $=id=>document.getElementById(id);
 let cfg=null,selected=null,serial='',drag=null;
 const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate'];
+const GRID=8;
+const snap=(value)=>Math.round(value/GRID)*GRID;
+const clamp=(value,max)=>Math.max(0,Math.min(value,max));
+const snapPosition=(value,max)=>clamp(snap(value),Math.floor(max/GRID)*GRID);
+const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
 function message(t){$('message').textContent=t}
 function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
 function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render()}
@@ -14,11 +19,11 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
  const label=document.createElement('label');label.textContent=key+' ';
  let input;if(type==='select'){input=document.createElement('select');for(const m of metrics)input.add(new Option(m,m));input.value=w.metric}else{input=document.createElement('input');input.type=type;input.value=(key in w?w[key]:(w.settings||{})[key])??''}
- input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){w[key]=v;w.width=Math.max(1,Math.min(640,w.width));w.height=Math.max(1,Math.min(48,w.height));w.x=Math.max(0,Math.min(640-w.width,w.x));w.y=Math.max(0,Math.min(48-w.height,w.y))}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);$('properties').append(label)}
+ input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=snapSize(v,640);if(key==='height')w.height=snapSize(v,48);if(key==='x')w.x=snapPosition(v,640-w.width);if(key==='y')w.y=snapPosition(v,48-w.height);w.x=snapPosition(w.x,640-w.width);w.y=snapPosition(w.y,48-w.height)}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);$('properties').append(label)}
  if(w.type==='button'||w.type==='macro')renderTouchProperties(w);
 }
 $('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
-$('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=Math.max(0,Math.min(640-w.width,Math.round(drag.startX+e.clientX-drag.x)));w.y=Math.max(0,Math.min(48-w.height,Math.round(drag.startY+e.clientY-drag.y)));const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
+$('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
 $('screen').addEventListener('pointerup',()=>{drag=null;render()});$('screen').addEventListener('pointercancel',()=>{drag=null;render()});
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
 async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){interval.value=cfg.cyclingSeconds||15;interval.disabled=mode?.value!=='automatic'}refreshScreens();message('Layout loaded')}
@@ -54,18 +59,18 @@ function renderTouchProperties(w){
   const help=document.createElement('small');help.textContent='Step types: next, previous, screen (value: screen ID), media (value: play-pause, stop, volume-up, volume-down, next-track, previous-track), delay (delayMs: 0–5000). Max 15 seconds total delays.';panel.append(help);
  }
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id='widget_'+Date.now();const w={id,type,metric:(type==='text'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:150,height:40,settings:type==='text'?{text:'New text'}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id='widget_'+Date.now();const w={id,type,metric:(type==='text'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
 $('addMetric').onclick=()=>addWidget('metric');$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
 const mediaPresets=[['previous-track','Previous'],['play-pause','Play/Pause'],['next-track','Next'],['stop','Stop'],['volume-down','Volume -'],['volume-up','Volume +']];
 let mediaID=0;
-function makeMediaWidget(action,x,width=98){
+function makeMediaWidget(action,x,width=96){
  return {id:'media_'+Date.now()+'_'+(++mediaID),type:'button',x,y:0,width,height:48,action:'media',target:action,settings:{label:'',icon:action}};
 }
 $('addMediaButton')?.addEventListener('click',()=>{
  const screen=current();if(!screen)return;
  if(screen.widgets.length>=64)return message('Maximum 64 widgets');
- const width=98;let x=-1;
- for(let pos=0;pos<=640-width;pos+=2){
+ const width=96;let x=-1;
+ for(let pos=0;pos<=640-width;pos+=GRID){
   if(screen.widgets.every(w=>!['button','macro'].includes(w.type)||pos+width<=w.x||pos>=w.x+w.width)){x=pos;break}
  }
  if(x<0)return message('No free touch-button space');
@@ -75,7 +80,7 @@ $('addMediaSet')?.addEventListener('click',()=>{
  const screen=current();if(!screen)return;
  if(screen.widgets.length+6>64)return message('Maximum 64 widgets');
  if(screen.widgets.some(w=>['button','macro'].includes(w.type)))return message('Create the media set on a screen without existing touch buttons');
- const widgets=mediaPresets.map(([action],i)=>makeMediaWidget(action,i*106,100));
+ const widgets=mediaPresets.map(([action],i)=>makeMediaWidget(action,i*104,96));
  screen.widgets.push(...widgets);selected=widgets[0].id;render();message('Six media buttons added. Save layout to apply.');
 });
 $('deleteWidget').onclick=()=>{const s=current();if(!s)return;s.widgets=s.widgets.filter(w=>w.id!==selected);selected=null;render()};
