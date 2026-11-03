@@ -5,35 +5,16 @@ globalThis.NexusLayoutFiles=(()=>{
  const safeID=/^[A-Za-z0-9_-]{1,64}$/;
  const hex=/^#[0-9A-Fa-f]{6}$/;
  const printableText=/^[ -~]{1,80}$/;
- const types=new Set(['text','metric','bar','graph','clock','image','button','macro']);
+ const types=new Set(['text','metric','bar','graph','clock','image','button']);
  const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","cpu.load_1m","cpu.load_5m","cpu.load_15m","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"]);
  const actions=new Set(['next','previous','screen','media','device','hotkey','mouse','url','application','text','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
  const hardware=new Set(['rgb-on','rgb-off']);
  const mouse=new Set(['left','double-left','right','middle','back','forward','scroll-up','scroll-down','scroll-left','scroll-right']);
- const stepTypes=new Set(['next','previous','screen','media','hotkey','mouse','url','application','text','delay']);
+
  const clone=value=>JSON.parse(JSON.stringify(value));
  const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
- function checkStep(step,screenIDs){
-  if(!object(step)||!stepTypes.has(step.type))throw Error('Unsupported macro step');
-  if(step.type==='delay'){
-   if(!Number.isInteger(step.delayMs)||step.delayMs<0||step.delayMs>5000)throw Error('Invalid macro delay');
-  }else if(step.type==='screen'){
-   if(!screenIDs.has(step.value))throw Error('Macro links to a missing screen');
-  }else if(step.type==='media'){
-   if(!media.has(step.value))throw Error('Invalid macro media action');
-  }else if(step.type==='device'){
-   if(!hardware.has(step.value))throw Error('Invalid macro hardware action');
-  }else if(step.type==='mouse'){
-   if(!mouse.has(step.value))throw Error('Invalid macro mouse action');
-  }else if(step.type==='url'||step.type==='application'){
-   if(typeof step.value!=='string'||step.value.length<1||step.value.length>(step.type==='url'?256:128))throw Error('Invalid macro launch value');
-  }else if(step.type==='text'){
-   if(typeof step.value!=='string'||!printableText.test(step.value))throw Error('Invalid macro text entry');
-  }else if(step.type==='hotkey'){
-   if(typeof step.value!=='string'||step.value.length<1||step.value.length>80)throw Error('Invalid macro shortcut');
-  }
- }
+
  function validate(value){
   if(!object(value)||value.version!==1||!Array.isArray(value.screens)||value.screens.length<1||value.screens.length>256)
    throw Error('Unsupported Nexus layout file');
@@ -93,12 +74,8 @@ globalThis.NexusLayoutFiles=(()=>{
      if(widget.action==='hotkey'&&!(typeof widget.target==='string'&&widget.target.length>0&&widget.target.length<=80))throw Error('Invalid shortcut');
      if(widget.action==='text'&&!(typeof widget.target==='string'&&printableText.test(widget.target)))throw Error('Invalid text entry');
     }
-    if(widget.type==='macro'||(widget.type==='button'&&widget.action==='macro')){
-     if(!Array.isArray(widget.steps)||widget.steps.length<1||widget.steps.length>12)throw Error('Macro must have 1–12 steps');
-     let delay=0;
-     for(const step of widget.steps){checkStep(step,screenIDs);if(step.type==='delay')delay+=step.delayMs}
-     if(delay>15000)throw Error('Macro waits exceed 15 seconds');
-    }
+    if(widget.steps?.length)throw Error('Inline Nexus macros are unsupported');
+    if(widget.type==='button'&&widget.action==='macro'&&!/^[1-9][0-9]{0,8}$/.test(widget.target||''))throw Error('Invalid shared macro ID');
    }
   }
   return value;
@@ -107,9 +84,7 @@ globalThis.NexusLayoutFiles=(()=>{
   screen.id=newID;
   for(const w of screen.widgets){
    if(w.type==='button'&&w.action==='screen'&&w.target===oldID)w.target=newID;
-   if(w.type==='macro'||(w.type==='button'&&w.action==='macro')){
-    for(const step of w.steps||[])if(step.type==='screen'&&step.value===oldID)step.value=newID;
-   }
+
   }
   return screen;
  }
@@ -121,9 +96,7 @@ globalThis.NexusLayoutFiles=(()=>{
   // Standalone exports must not contain dangling references to other screens.
   for(const w of copy.widgets){
    if(w.type==='button'&&w.action==='screen'&&w.target!==screenID)w.target=screenID;
-   if(w.type==='macro'||(w.type==='button'&&w.action==='macro')){
-    for(const step of w.steps||[])if(step.type==='screen'&&step.value!==screenID)step.value=screenID;
-   }
+
   }
   const data={version:1,activeScreenId:copy.id,cyclingMode:'manual',cyclingSeconds:15,screens:[copy]};
   return validate(data);
