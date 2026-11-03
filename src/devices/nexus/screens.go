@@ -76,11 +76,12 @@ func (c ScreenConfiguration) Validate() error {
    if (w.Type=="metric"||w.Type=="bar"||w.Type=="graph")&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
    if w.X<0||w.Y<0||w.Width<=0||w.Height<=0||w.X>ScreenWidth-w.Width||w.Y>ScreenHeight-w.Height {return fmt.Errorf("widget %q outside display",w.ID)}
    if w.Type=="button" {
-    if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" && w.Action!="macro" && w.Action!="hotkey" && w.Action!="mouse" && w.Action!="url" && w.Action!="application" {return fmt.Errorf("invalid button action for %q",w.ID)}
+    if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" && w.Action!="macro" && w.Action!="hotkey" && w.Action!="mouse" && w.Action!="url" && w.Action!="application" && w.Action!="text" {return fmt.Errorf("invalid button action for %q",w.ID)}
     if w.Action=="screen" && !safeID.MatchString(w.Target) {return fmt.Errorf("invalid button target for %q",w.ID)}
     if w.Action=="media" && !supportedMediaAction(w.Target) {return fmt.Errorf("invalid media action for %q",w.ID)}
     if w.Action=="hotkey" {if _,err:=parseKeyChord(w.Target);err!=nil{return fmt.Errorf("invalid shortcut for %q: %w",w.ID,err)}}
     if w.Action=="mouse" {if _,err:=parseNexusMouseAction(w.Target);err!=nil{return fmt.Errorf("invalid mouse action for %q: %w",w.ID,err)}}
+    if w.Action=="text" {if _,err:=parseNexusTextEntry(w.Target);err!=nil{return fmt.Errorf("invalid text entry for %q: %w",w.ID,err)}}
     if w.Action=="url" || w.Action=="application" {
      if err:=validateNexusLaunchAction(w.Action,w.Target);err!=nil{return fmt.Errorf("invalid launcher for %q: %w",w.ID,err)}
     }
@@ -95,6 +96,7 @@ func (c ScreenConfiguration) Validate() error {
      case "media": if !supportedMediaAction(step.Value) {return fmt.Errorf("invalid macro media action")}
      case "hotkey":if _,err:=parseKeyChord(step.Value);err!=nil{return fmt.Errorf("invalid macro shortcut: %w",err)}
      case "mouse":if _,err:=parseNexusMouseAction(step.Value);err!=nil{return fmt.Errorf("invalid macro mouse action: %w",err)}
+     case "text":if _,err:=parseNexusTextEntry(step.Value);err!=nil{return fmt.Errorf("invalid macro text entry: %w",err)}
      case "url","application":if err:=validateNexusLaunchAction(step.Type,step.Value);err!=nil{return fmt.Errorf("invalid macro launcher: %w",err)}
      case "delay": if step.DelayMs<0 || step.DelayMs>5000 {return fmt.Errorf("macro delay out of range")};total+=step.DelayMs
      default:return fmt.Errorf("unsupported macro step")
