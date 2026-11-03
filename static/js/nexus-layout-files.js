@@ -35,6 +35,7 @@ globalThis.NexusLayoutFiles=(()=>{
   if(!object(value)||value.version!==1||!Array.isArray(value.screens)||value.screens.length<1||value.screens.length>32)
    throw Error('Unsupported Nexus layout file');
   if(!['',undefined,'manual','automatic','off'].includes(value.cyclingMode))throw Error('Invalid screen cycling mode');
+  if(value.brightness!==undefined&&value.brightness!==0&&(!Number.isInteger(value.brightness)||value.brightness<20||value.brightness>100))throw Error('Display dimming must be 20-100%');
   if(value.cyclingMode==='automatic'&&(!Number.isInteger(value.cyclingSeconds)||value.cyclingSeconds<5||value.cyclingSeconds>3600))
    throw Error('Invalid automatic cycling interval');
   const screenIDs=new Set();
