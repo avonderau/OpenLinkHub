@@ -6,7 +6,7 @@ globalThis.NexusLayoutFiles=(()=>{
  const hex=/^#[0-9A-Fa-f]{6}$/;
  const printableText=/^[ -~]{1,80}$/;
  const types=new Set(['text','metric','bar','graph','clock','image','button','macro']);
- const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"]);
+ const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","cpu.load_1m","cpu.load_5m","cpu.load_15m","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"]);
  const actions=new Set(['next','previous','screen','media','device','hotkey','mouse','url','application','text','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
  const hardware=new Set(['rgb-on','rgb-off']);
