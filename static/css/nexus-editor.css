@@ -191,3 +191,21 @@
 #nexus-editor .nexus-opacity-control input[type=range]{width:min(125px,100%);min-width:75px;flex:1 1 75px;accent-color:var(--text-muted,#aaa)}
 #nexus-editor .nexus-touch-row,#nexus-editor .nexus-style-row{align-items:flex-start;justify-content:flex-start}
 @media(max-width:780px){#nexus-editor #properties{grid-template-columns:minmax(0,1fr)}}
+
+/* Adaptive right-side utilities: use spare viewport space before overlaying. */
+.nexus-flyout-toolbar{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 .7rem}
+.nexus-flyout-toolbar button{color:var(--text-muted,#a7bac7)}
+.nexus-flyout[hidden],.nexus-flyout-backdrop[hidden]{display:none!important}
+.nexus-flyout-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:2080}
+.nexus-flyout{position:fixed;right:0;top:0;bottom:0;box-sizing:border-box;width:min(420px,100vw);max-width:100vw;overflow:auto;overscroll-behavior:contain;z-index:2081;padding:1rem;background:var(--bg-card,#172735);color:var(--text-main,#e8eff5);border-left:1px solid var(--border-subtle,#496275);box-shadow:-12px 0 35px rgba(0,0,0,.25)}
+.nexus-flyout.nexus-flyout-docked{box-shadow:0 5px 20px rgba(0,0,0,.12);border:1px solid var(--border-subtle,#496275);border-radius:9px;bottom:auto;max-height:calc(100vh - 24px)}
+.nexus-flyout-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;border-bottom:1px solid var(--border-subtle,#496275);padding-bottom:.8rem;margin-bottom:.8rem}
+.nexus-flyout-header strong{color:var(--text-main,#e8eff5)}
+.nexus-flyout fieldset{min-width:0;max-width:100%;box-sizing:border-box;border:0;padding:0;margin:0}
+.nexus-flyout legend{color:var(--text-muted,#a7bac7);font-size:.88rem;margin-bottom:.4rem}
+.nexus-flyout label{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;min-width:0;margin:.5rem 0;color:var(--text-muted,#a7bac7)}
+.nexus-flyout input,.nexus-flyout select{max-width:100%;box-sizing:border-box}
+.nexus-flyout input[type=file]{width:100%}
+.nexus-flyout .nexus-widget-library-actions,.nexus-flyout .nexus-layout-file-controls{display:flex;align-items:stretch;flex-direction:column;gap:.5rem}
+.nexus-flyout :focus-visible,.nexus-flyout-toolbar button:focus-visible{outline:2px solid var(--text-main,#e8eff5);outline-offset:2px}
+@media(max-width:480px){.nexus-flyout{width:100vw;padding:.8rem}.nexus-flyout-toolbar{justify-content:flex-start}}
