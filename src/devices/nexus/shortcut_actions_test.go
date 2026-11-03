@@ -54,13 +54,13 @@ func TestShortcutValidationInScreens(t *testing.T){
    ID:"hotkey",Type:"button",X:0,Y:0,Width:100,Height:48,Action:"hotkey",Target:"Ctrl+Alt+T",
   },{
    ID:"macro",Type:"button",X:110,Y:0,Width:100,Height:48,Action:"macro",
-   Steps:[]MacroStep{{Type:"hotkey",Value:"Ctrl+Shift+C"},{Type:"delay",DelayMs:200}},
+   Target:"1",
   }},
  }}}
  if err:=config.Validate();err!=nil{t.Fatal(err)}
  config.Screens[0].Widgets[0].Target="Ctrl+Invalid"
  if err:=config.Validate();err==nil{t.Fatal("accepted invalid single shortcut")}
  config.Screens[0].Widgets[0].Target="Ctrl+Alt+T"
- config.Screens[0].Widgets[1].Steps[0].Value="Ctrl+Alt+"
- if err:=config.Validate();err==nil{t.Fatal("accepted invalid macro shortcut")}
+ config.Screens[0].Widgets[1].Target="Ctrl+Alt+"
+ if err:=config.Validate();err==nil{t.Fatal("accepted invalid saved macro ID")}
 }
