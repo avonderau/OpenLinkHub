@@ -57,29 +57,25 @@ func (d *Device) navigateCustomScreen(next bool) {
  if next {d.customScreens.ActiveScreenID=d.customScreens.NextScreen()} else {d.customScreens.ActiveScreenID=d.customScreens.PreviousScreen()}
  _=SaveScreens(d.customScreenPath(),d.customScreens)
 }
-func (d *Device) renderCustomScreen() []byte {
- d.mutex.Lock()
- c:=d.customScreens
- d.mutex.Unlock()
- if len(c.Screens)==0{return nil}
+func (d *Device) collectCustomTelemetry(now time.Time) MetricSnapshot {
  values:=MetricSnapshot{
- "cpu.temperature":float64(temperatures.GetCpuTemperature()),
- "gpu.temperature":float64(temperatures.GetGpuTemperature()),
- "cpu.utilization":systeminfo.GetCpuUtilization(),
- "gpu.utilization":float64(systeminfo.GetGPUUtilization()),
+  "cpu.temperature":float64(temperatures.GetCpuTemperature()),
+  "gpu.temperature":float64(temperatures.GetGpuTemperature()),
+  "cpu.utilization":systeminfo.GetCpuUtilization(),
+  "gpu.utilization":float64(systeminfo.GetGPUUtilization()),
  }
- if mem,err:=os.ReadFile("/proc/meminfo");err==nil {
-  if used,pct,ok:=parseMemoryMetrics(string(mem));ok {
+ if mem,err:=os.ReadFile("/proc/meminfo");err==nil{
+  if used,pct,ok:=parseMemoryMetrics(string(mem));ok{
    values["memory.used"]=used
    values["memory.utilization"]=pct
   }
  }
- if network,disk:=detectCounterDevices();network!=""&&disk!="" {
-  if counters,err:=ReadLinuxCounters(network,disk);err==nil {
+ if network,disk:=detectCounterDevices();network!=""&&disk!=""{
+  if counters,err:=ReadLinuxCounters(network,disk);err==nil{
    d.mutex.Lock()
-   rates:=d.customSampler.Sample(counters,time.Now())
+   rates:=d.customSampler.Sample(counters,now)
    d.mutex.Unlock()
-   if rates.Valid {
+   if rates.Valid{
     values["network.rx_rate"]=rates.NetworkRXBytesPerSecond
     values["network.tx_rate"]=rates.NetworkTXBytesPerSecond
     values["disk.read_rate"]=rates.DiskReadBytesPerSecond
@@ -87,37 +83,46 @@ func (d *Device) renderCustomScreen() []byte {
    }
   }
  }
- // Optional kernel telemetry is sampled at most once per second even if
- // an animated background refreshes the framebuffer more frequently.
- now:=time.Now()
- d.mutex.Lock()
- optional:=d.customSampler.extended
- refreshOptional:=d.customSampler.extendedAt.IsZero()||now.Sub(d.customSampler.extendedAt)>=time.Second
- d.mutex.Unlock()
- if refreshOptional{
-  optional=ReadLinuxExtendedMetrics(defaultLinuxExtendedMetricPaths())
-  d.mutex.Lock()
-  d.customSampler.extended=optional
-  d.customSampler.extendedAt=now
-  d.mutex.Unlock()
+ for name,reading:=range ReadLinuxExtendedMetrics(defaultLinuxExtendedMetricPaths()){
+  values[name]=reading
  }
- for name,reading:=range optional{values[name]=reading}
- // Record 60 one-second samples per supported metric for sparkline widgets.
+ return values
+}
+
+func (d *Device) currentCustomTelemetry(now time.Time)(MetricSnapshot,MetricHistory){
  d.mutex.Lock()
- d.customSampler.history.add(values,time.Now())
- history:=d.customSampler.history.snapshot()
+ values,history,cached:=d.customSampler.Cached(now)
  d.mutex.Unlock()
- for _,screen:=range c.Screens {
-  if screen.ID==c.ActiveScreenID {
-   var background image.Image
-   if screen.Background!="" {
-    background=PresetNexusBackground(screen.Background,time.Now())
-    if background==nil {background,_=ReadBackgroundAt(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background,time.Now())}
+ if cached{return values,history}
+ // Read potentially expensive GPU and CPU metrics without holding d.mutex,
+ // so HID touch processing and screen changes are never blocked by sampling.
+ values=d.collectCustomTelemetry(now)
+ d.mutex.Lock()
+ history=d.customSampler.Store(now,values)
+ d.mutex.Unlock()
+ return values,history
+}
+
+func (d *Device) renderCustomScreen() []byte {
+ d.mutex.Lock()
+ c:=d.customScreens
+ d.mutex.Unlock()
+ if len(c.Screens)==0{return nil}
+ now:=time.Now()
+ values,history:=d.currentCustomTelemetry(now)
+ for _,screen:=range c.Screens{
+  if screen.ID!=c.ActiveScreenID{continue}
+  var background image.Image
+  if screen.Background!=""{
+   background=PresetNexusBackground(screen.Background,now)
+   if background==nil {
+    background,_=ReadBackgroundAt(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background,now)
    }
-   frame,err:=RenderScreenWithBackgroundAndIconsHistory(screen,values,background,filepath.Join(pwd,"database","nexus","icons"),history)
-   if err!=nil{return nil}
-   return renderImageToBytes(frame)
   }
+  frame,err:=RenderScreenWithBackgroundAndIconsHistory(screen,values,background,
+   filepath.Join(pwd,"database","nexus","icons"),history)
+  if err!=nil{return nil}
+  return renderImageToBytes(frame)
  }
  return nil
 }

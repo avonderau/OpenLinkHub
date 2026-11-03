@@ -26,12 +26,31 @@ type LinuxRates struct {
 }
 type CounterSampler struct {
  history metricHistory
- extended MetricSnapshot
- extendedAt time.Time
+ snapshot MetricSnapshot
+ snapshotAt time.Time
  previous LinuxCounters
  at time.Time
  initialized bool
 }
+// Cached returns a read-only, immutable metrics map when it is less than
+// one second old. Animated GIFs may render five times per second without
+// causing additional GPU command or sysfs reads.
+func (s *CounterSampler) Cached(now time.Time)(MetricSnapshot,MetricHistory,bool){
+ if s.snapshot==nil||s.snapshotAt.IsZero()||now.Before(s.snapshotAt)||now.Sub(s.snapshotAt)>=time.Second{
+  return nil,nil,false
+ }
+ return s.snapshot,s.history.snapshot(),true
+}
+
+// Store updates the bounded 60-second graph history exactly once per sampled
+// metrics snapshot. Callers synchronize CounterSampler with the device mutex.
+func (s *CounterSampler) Store(now time.Time,values MetricSnapshot)MetricHistory{
+ s.snapshot=values
+ s.snapshotAt=now
+ s.history.add(values,now)
+ return s.history.snapshot()
+}
+
 func (s *CounterSampler) Sample(c LinuxCounters, now time.Time) LinuxRates {
  if !s.initialized {s.previous=c;s.at=now;s.initialized=true;return LinuxRates{}}
  seconds:=now.Sub(s.at).Seconds()
