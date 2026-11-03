@@ -258,3 +258,13 @@ one 8-pixel grid step, Shift+arrow resizes within the display, and Delete
 removes the selection. Ctrl+C/Ctrl+V reuse the existing widget clipboard.
 Escape clears selection. Keyboard editing applies only when the preview is
 focused, so text inputs retain normal typing and arrow-key behavior.
+
+### Nexus software display dimming
+
+The editor offers display dimming levels of 20%, 40%, 60%, 80% and 100%.
+The selected level scales the rendered framebuffer's RGB values after all
+widgets and animations have been composited; missing/legacy values default
+to 100%. This does **not** modify the Nexus backlight or send unverified HID
+brightness commands. The saved JSON layout stores the level in an optional
+`brightness` field, and layout imports can preserve it. Actual hardware
+brightness control remains a separate device-protocol verification item.
