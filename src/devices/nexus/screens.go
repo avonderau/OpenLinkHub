@@ -21,7 +21,7 @@ const (
 )
 var safeNexusAppID=regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$`)
 var safeID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
-var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"graph":true,"clock":true,"image":true,"button":true,"macro":true}
+var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"graph":true,"clock":true,"image":true,"button":true}
 var supportedMetrics = map[string]bool{
  "cpu.temperature":true,"cpu.utilization":true,
  "gpu.temperature":true,"gpu.utilization":true,
@@ -98,26 +98,11 @@ func (c ScreenConfiguration) Validate() error {
      if err:=validateNexusLaunchAction(w.Action,w.Target);err!=nil{return fmt.Errorf("invalid launcher for %q: %w",w.ID,err)}
     }
    }
-   if w.Type=="macro" || (w.Type=="button" && w.Action=="macro") {
-    if len(w.Steps)==0 || len(w.Steps)>12 {return fmt.Errorf("macro %q must have 1-12 steps",w.ID)}
-    total:=0
-    for _,step:=range w.Steps {
-     switch step.Type {
-     case "next","previous":
-     case "screen": if !safeID.MatchString(step.Value) {return fmt.Errorf("invalid macro screen target")}
-     case "media": if !supportedMediaAction(step.Value) {return fmt.Errorf("invalid macro media action")}
-     case "device":if !supportedNexusHardwareAction(step.Value){return fmt.Errorf("invalid macro device action")}
-     case "hotkey":if _,err:=parseKeyChord(step.Value);err!=nil{return fmt.Errorf("invalid macro shortcut: %w",err)}
-     case "mouse":if _,err:=parseNexusMouseAction(step.Value);err!=nil{return fmt.Errorf("invalid macro mouse action: %w",err)}
-     case "text":if _,err:=parseNexusTextEntry(step.Value);err!=nil{return fmt.Errorf("invalid macro text entry: %w",err)}
-     case "url","application":if err:=validateNexusLaunchAction(step.Type,step.Value);err!=nil{return fmt.Errorf("invalid macro launcher: %w",err)}
-     case "delay": if step.DelayMs<0 || step.DelayMs>5000 {return fmt.Errorf("macro delay out of range")};total+=step.DelayMs
-     default:return fmt.Errorf("unsupported macro step")
-     }
-    }
-    if total>15000 {return fmt.Errorf("macro delays exceed 15 seconds")}
+   if len(w.Steps)!=0 {return fmt.Errorf("inline Nexus macros are no longer supported for widget %q",w.ID)}
+   if w.Type=="button" && w.Action=="macro" {
+    if !validSharedMacroID(w.Target){return fmt.Errorf("invalid shared macro ID for %q",w.ID)}
    }
-   if w.Type=="button" || w.Type=="macro" || w.Type=="metric" || w.Type=="bar" || w.Type=="graph" || w.Type=="text" || w.Type=="clock" || w.Type=="image" {
+   if w.Type=="button" || w.Type=="metric" || w.Type=="bar" || w.Type=="graph" || w.Type=="text" || w.Type=="clock" || w.Type=="image" {
     style:=w.Settings["style"]
     if style!="" && style!="solid" && style!="outline" && style!="flat" {return fmt.Errorf("invalid widget style %q",style)}
     for _,key:=range []string{"cornerRadius","opacity"}{
@@ -132,7 +117,7 @@ func (c ScreenConfiguration) Validate() error {
     }
    }
    if v:=w.Settings["customIcon"];v!="" {
-    if w.Type!="button" && w.Type!="macro" && w.Type!="image"{return fmt.Errorf("custom icons are only supported on buttons and images")}
+    if w.Type!="button" && w.Type!="image"{return fmt.Errorf("custom icons are only supported on buttons and images")}
     if !safeID.MatchString(v){return fmt.Errorf("invalid custom icon ID for widget %q",w.ID)}
    }
    if w.Type=="clock" && !validNexusClockFormat(w.Settings["clockFormat"]) {return fmt.Errorf("invalid clock format for %q",w.ID)}
@@ -143,7 +128,6 @@ func (c ScreenConfiguration) Validate() error {
  }
  for _,screen:=range c.Screens {for _,w:=range screen.Widgets {
   if w.Type=="button" && w.Action=="screen" && !seen[w.Target] {return fmt.Errorf("unknown button screen target %q",w.Target)}
-  if w.Type=="macro" || (w.Type=="button" && w.Action=="macro") {for _,step:=range w.Steps {if step.Type=="screen" && !seen[step.Value] {return fmt.Errorf("unknown macro screen target %q",step.Value)}}}
  }}
  for appID,screenID:=range c.ApplicationScreens {
   if !safeNexusAppID.MatchString(appID)||!seen[screenID]{return fmt.Errorf("invalid application screen binding %q",appID)}
