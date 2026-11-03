@@ -63,6 +63,7 @@ globalThis.NexusLayoutFiles=(()=>{
     for(const [key,text] of Object.entries(settings)){
      if(typeof text!=='string'||key.length>64||text.length>256)throw Error('Invalid widget setting');
     }
+    if(!['',undefined,'none','soft','strong'].includes(settings.textShadow))throw Error('Invalid text shadow');
     if(!['',undefined,'top','middle','bottom'].includes(settings.verticalAlign))throw Error('Invalid vertical alignment');
     if(!['',undefined,'solid','outline','flat'].includes(settings.style))throw Error('Unsupported widget style');
     if(!['',undefined,'normal','small','large'].includes(settings.fontSize))throw Error('Unsupported widget font size');

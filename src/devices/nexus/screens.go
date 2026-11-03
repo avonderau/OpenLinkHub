@@ -119,7 +119,7 @@ func (c ScreenConfiguration) Validate() error {
     if !safeID.MatchString(v){return fmt.Errorf("invalid custom icon ID for widget %q",w.ID)}
    }
    if w.Type=="clock" && !validNexusClockFormat(w.Settings["clockFormat"]) {return fmt.Errorf("invalid clock format for %q",w.ID)}
-   if !validNexusFontSize(w.Settings["fontSize"]) || !validNexusTextAlign(w.Settings["textAlign"]) || !validNexusVerticalAlign(w.Settings["verticalAlign"]) {return fmt.Errorf("invalid typography for widget %q",w.ID)}
+   if !validNexusFontSize(w.Settings["fontSize"]) || !validNexusTextAlign(w.Settings["textAlign"]) || !validNexusVerticalAlign(w.Settings["verticalAlign"]) || !validNexusTextShadow(w.Settings["textShadow"]) {return fmt.Errorf("invalid typography for widget %q",w.ID)}
    if len(w.Settings)>16 {return errors.New("too many widget settings")}
    for k,v:=range w.Settings {if len(k)>64||len(v)>256 {return errors.New("widget setting too long")}}
   }

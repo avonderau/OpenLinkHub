@@ -280,3 +280,12 @@ invalid GPU index produces no reading rather than an invented zero. NVIDIA
 queries are not attempted for AMD or unconfigured GPU entries. The existing
 NVIDIA utilization query is unchanged; a future optimization could consolidate
 the queries to reduce per-sample process overhead.
+
+### Nexus text shadows
+
+Widgets can optionally render a Soft (1-pixel) or Strong (2-pixel) dark
+shadow behind their text. The option uses the selected font and alignment
+with clipping inside each widget rectangle. The default None leaves all
+previous layouts visually unchanged. The browser preview reflects the same
+setting. This is not a general CSS-effects interpreter; unsupported values
+are rejected on layout save, import and widget preset validation.
