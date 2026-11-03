@@ -221,10 +221,6 @@ func (d *Device) runTouchMacro(steps []MacroStep) {
  d.mutex.Unlock()
  go func(){
   defer func(){d.mutex.Lock();d.macroRunning=false;d.mutex.Unlock()}()
-  for _,step:=range steps {
-   if d.Exit {return}
-   if step.Type=="delay" {time.Sleep(time.Duration(step.DelayMs)*time.Millisecond);continue}
-   if step.Type=="next" || step.Type=="previous" {d.executeTouchAction(step.Type,"")} else {d.executeTouchAction(step.Type,step.Value)}
-  }
+  runNexusMacroSteps(steps,d.lcdRefreshChan,d.executeTouchAction)
  }()
 }

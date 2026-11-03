@@ -273,19 +273,87 @@ function renderTouchProperties(w,panel){
   if(w.action==='mouse')field('Mouse command',w.target,mouseActions,v=>w.target=v);
   if(w.action==='media')field('Media action',w.target,media,v=>{const old=w.target;w.target=v;if(!w.settings?.customIcon&&(!w.settings?.icon||w.settings.icon===old)){w.settings??={};w.settings.icon=v}});
  }
+
  if(w.type==='macro'||w.action==='macro'){
-  const label=document.createElement('label');label.textContent='Macro steps (JSON) ';
-  const area=document.createElement('textarea');area.rows=5;area.cols=55;area.value=JSON.stringify(w.steps||[],null,2);
-  area.setAttribute('aria-label','Macro steps JSON');
-  const apply=document.createElement('button');apply.textContent='Apply steps';apply.onclick=()=>{
-   try{const steps=JSON.parse(area.value);if(!Array.isArray(steps)||steps.length<1||steps.length>12)throw Error('Use 1–12 steps');w.steps=steps;message('Macro steps updated. Save layout to apply.')}catch(e){message(e.message)}
+  const steps=Array.isArray(w.steps)?w.steps:[];
+  const editor=document.createElement('div');
+  editor.className='nexus-macro-editor';
+  editor.setAttribute('aria-label','Visual macro editor');
+  const heading=document.createElement('strong');
+  heading.textContent='Macro steps';
+  editor.append(heading);
+  const kinds=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],
+   ['media','Media control'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['delay','Wait']];
+  const defaultStep=kind=>{
+   if(kind==='screen')return {type:kind,value:cfg.screens[0].id};
+   if(kind==='media')return {type:kind,value:'play-pause'};
+   if(kind==='hotkey')return {type:kind,value:'Ctrl+Alt+T'};
+   if(kind==='mouse')return {type:kind,value:'left'};
+   if(kind==='delay')return {type:kind,delayMs:500};
+   return {type:kind};
   };
-  label.append(area);panel.append(label);panel.append(apply);
-  const help=document.createElement('small');help.textContent='Step types: next, previous, screen (value: screen ID), media (value: play-pause, stop, volume-up, volume-down, next-track, previous-track), hotkey (value: Ctrl+Alt+T), mouse (value: left, double-left, right, middle, back, forward, scroll-up, scroll-down, scroll-left, scroll-right), delay (delayMs: 0–5000). Max 15 seconds total delays.';panel.append(help);
+  const makeSelect=(options,value,label,changed)=>{
+   const select=document.createElement('select');
+   select.setAttribute('aria-label',label);
+   for(const [id,title] of options)select.add(new Option(title,id));
+   select.value=value;
+   select.addEventListener('change',()=>changed(select.value));
+   return select;
+  };
+  steps.forEach((step,index)=>{
+   const row=document.createElement('div');row.className='nexus-macro-step';
+   const position=document.createElement('span');position.textContent=String(index+1)+'.';
+   row.append(position);
+   row.append(makeSelect(kinds,step.type,'Step '+(index+1)+' action',value=>{
+    steps[index]=defaultStep(value);w.steps=steps;render();
+   }));
+   if(step.type==='screen')row.append(makeSelect(targets,step.value,'Step '+(index+1)+' screen',value=>{
+    step.value=value;
+   }));
+   if(step.type==='media')row.append(makeSelect(media,step.value,'Step '+(index+1)+' media',value=>{
+    step.value=value;
+   }));
+   if(step.type==='mouse')row.append(makeSelect(mouseActions,step.value,'Step '+(index+1)+' mouse',value=>{
+    step.value=value;
+   }));
+   if(step.type==='hotkey'){
+    const input=document.createElement('input');input.type='text';input.maxLength=80;
+    input.value=step.value||'';input.placeholder='Ctrl+Alt+T';
+    input.setAttribute('aria-label','Step '+(index+1)+' shortcut');
+    input.addEventListener('change',()=>{step.value=input.value.trim()});
+    row.append(input);
+   }
+   if(step.type==='delay'){
+    const delay=document.createElement('input');delay.type='number';delay.min=0;delay.max=5000;delay.step=50;
+    delay.value=String(step.delayMs||0);
+    delay.setAttribute('aria-label','Step '+(index+1)+' delay milliseconds');
+    delay.addEventListener('change',()=>{step.delayMs=clamp(Math.round(Number(delay.value)||0),5000);delay.value=String(step.delayMs)});
+    row.append(delay);
+    const unit=document.createElement('span');unit.textContent='ms';row.append(unit);
+   }
+   const control=(title,disabled,callback)=>{
+    const button=document.createElement('button');button.type='button';button.textContent=title;
+    button.disabled=disabled;button.setAttribute('aria-label',title+' step '+(index+1));
+    button.addEventListener('click',callback);row.append(button);
+   };
+   control('Up',index===0,()=>{[steps[index-1],steps[index]]=[steps[index],steps[index-1]];render()});
+   control('Down',index===steps.length-1,()=>{[steps[index],steps[index+1]]=[steps[index+1],steps[index]];render()});
+   control('Remove',steps.length<=1,()=>{steps.splice(index,1);w.steps=steps;render()});
+   editor.append(row);
+  });
+  const add=document.createElement('button');add.type='button';add.textContent='Add macro step';
+  add.disabled=steps.length>=12;
+  add.addEventListener('click',()=>{if(steps.length>=12)return;steps.push(defaultStep('next'));w.steps=steps;render()});
+  editor.append(add);
+  const note=document.createElement('small');
+  note.textContent='1–12 actions, at most 5 seconds per wait and 15 seconds total. Save Layout to apply.';
+  editor.append(note);
+  panel.append(editor);
  }
+
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:40,settings:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),...(type==='macro'?{steps:[{type:'next'}]}:{})};s.widgets.push(w);selected=id;render()}
-$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));
+$('addMetric').onclick=()=>addWidget('metric');$('addClock')?.addEventListener('click',()=>addWidget('clock'));$('addText').onclick=()=>addWidget('text');$('addBar').onclick=()=>addWidget('bar');$('addButton')?.addEventListener('click',()=>addWidget('button'));$('addMacro')?.addEventListener('click',()=>addWidget('macro'));
 $('duplicateWidget')?.addEventListener('click',()=>{
  const screen=current();if(!screen)return;
  const source=screen.widgets.find(w=>w.id===selected);
@@ -310,7 +378,6 @@ function syncCycleInterval(){
 $('cyclingMode')?.addEventListener('change',syncCycleInterval);
 syncCycleInterval();
 $('save').onclick=async()=>{try{if(!cfg)return;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=$('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
-
 function exportNexusJSON(single){
  try{
   if(!cfg)return message('Load a Nexus layout first.');

@@ -19,6 +19,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 .nexus-screen-actions,.nexus-widget-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem}.nexus-screen-actions button:disabled,.nexus-widget-actions button:disabled{opacity:.45;cursor:not-allowed}
 #screen.nexus-bg-preset_aurora{background:linear-gradient(90deg,#09203d,#18745e,#123d57)}#screen.nexus-bg-preset_neon{background:repeating-linear-gradient(90deg,#1b1836 0 39px,#553f95 40px)}#screen.nexus-bg-preset_circuit{background:linear-gradient(90deg,#092734,#196a61,#092734)}#screen.nexus-bg-preset_sunset{background:linear-gradient(90deg,#432041,#bd6359,#3e214d)}#screen.nexus-bg-preset_pulse{background:linear-gradient(90deg,#11162a,#258caf,#11162a);background-size:200% 100%;animation:nexus-pulse-bg 5s linear infinite}@keyframes nexus-pulse-bg{from{background-position:100%}to{background-position:-100%}}@media(prefers-reduced-motion:reduce){#screen.nexus-bg-preset_pulse{animation:none}}
 .nexus-new-screen-choice{display:inline-flex;align-items:center;gap:.35rem}
+.nexus-macro-editor{display:flex;flex-direction:column;gap:.4rem}.nexus-macro-step{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;padding:.3rem 0;border-bottom:1px solid #496275}.nexus-macro-step input[type=number]{width:5.5rem}.nexus-macro-editor button:disabled{opacity:.45}
 .nexus-layout-file-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}.nexus-layout-file-controls label{display:inline-flex;align-items:center;gap:.3rem}
 </style></head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
@@ -44,7 +45,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <div id="preview"><div id="screen"></div></div>
 <fieldset id="nexus-add-panel"><legend>Add Widgets</legend>
 <p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
-<div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addClock">Add clock</button><button id="addButton">Add button</button></div>
+<div class="nexus-create-actions"><button id="addMetric">Add metric</button><button id="addText">Add text</button><button id="addBar">Add bar</button><button id="addClock">Add clock</button><button id="addButton">Add button</button><button id="addMacro">Add macro</button></div>
 </fieldset>
 <fieldset id="nexus-selected-panel"><legend>Selected Widget</legend>
 <div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
@@ -53,6 +54,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 </fieldset>
 <fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset>
+
 <fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
 <div class="nexus-layout-file-controls">
 <button id="exportLayout" type="button">Export layout</button>
