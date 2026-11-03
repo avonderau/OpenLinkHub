@@ -10,12 +10,12 @@
   if(!main)return;
   const sidebar=document.querySelector('aside.sidebar');
   const active=sidebar?.querySelector('.nav-link.active');
-  const page=(active?.textContent||document.title.split('|')[0]||'Dashboard').trim();
+  const page=main.querySelector('#nexus-editor')?'Editor':(active?.textContent||document.title.split('|')[0]||'Dashboard').trim();
   const header=document.createElement('header');
   header.className='olh-app-topbar';
   const identity=document.createElement('div');identity.className='olh-app-topbar-title';
   const mark=document.createElement('span');mark.className='olh-app-topbar-icon';mark.setAttribute('aria-hidden','true');
-  const logo=document.createElement('i');logo.className='bi bi-layers-half';mark.append(logo);
+  const logo=document.createElement('i');logo.className='bi bi-link-45deg';mark.append(logo);
   const brand=document.createElement('span');brand.className='olh-app-topbar-name';brand.textContent='OpenLinkHub ';
   const suffix=document.createElement('strong');suffix.className='olh-app-topbar-suffix';suffix.textContent='Nexus';brand.append(suffix);
   const divider=document.createElement('span');divider.className='olh-app-topbar-divider';divider.setAttribute('aria-hidden','true');
@@ -36,7 +36,7 @@
    actions.append(link);
   }
   header.append(identity,actions);
-  main.prepend(header);
+  document.body.prepend(header);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});
  else setup();
