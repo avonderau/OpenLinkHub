@@ -75,7 +75,20 @@
 <fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset>
 
-
+<fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
+<div class="nexus-layout-file-controls">
+<button id="exportLayout" type="button">Export layout</button>
+<button id="exportScreen" type="button">Export selected screen</button>
+<label>JSON file <input id="layoutFile" type="file" accept=".json,application/json"></label>
+<label>Import mode <select id="layoutImportMode">
+<option value="add-screen">Add as new screen</option>
+<option value="replace-screen">Replace selected screen</option>
+<option value="replace-layout">Replace entire layout</option>
+</select></label>
+<button id="importLayout" type="button">Import JSON</button>
+</div>
+<p class="nexus-panel-description">Imports are editable previews until Save Layout. Uploaded backgrounds and icons are referenced by ID; artwork is not included in the JSON file.</p>
+</fieldset>
 </div></section>
                 </div>
             </div>

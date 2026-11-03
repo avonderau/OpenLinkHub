@@ -130,3 +130,9 @@
 #nexus-editor label,#nexus-editor legend{color:var(--text-muted,#a1a1a1)}
 #nexus-editor .nexus-new-screen-choice{display:inline-flex;gap:.35rem;align-items:center}
 #nexus-editor #replaceScreenWithPreset:disabled{opacity:.45;cursor:not-allowed}
+
+/* Nexus layout JSON controls use the normal muted site typography. */
+#nexus-editor .nexus-layout-file-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}
+#nexus-editor .nexus-layout-file-controls label{display:inline-flex;align-items:center;gap:.35rem;color:var(--text-muted,#a1a1a1)}
+#nexus-editor .nexus-layout-file-controls input[type=file]{max-width:240px}
+#nexus-editor .nexus-layout-files .nexus-panel-description{color:var(--text-muted,#a1a1a1)}

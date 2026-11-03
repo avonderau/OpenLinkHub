@@ -19,6 +19,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 .nexus-screen-actions,.nexus-widget-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem}.nexus-screen-actions button:disabled,.nexus-widget-actions button:disabled{opacity:.45;cursor:not-allowed}
 #screen.nexus-bg-preset_aurora{background:linear-gradient(90deg,#09203d,#18745e,#123d57)}#screen.nexus-bg-preset_neon{background:repeating-linear-gradient(90deg,#1b1836 0 39px,#553f95 40px)}#screen.nexus-bg-preset_circuit{background:linear-gradient(90deg,#092734,#196a61,#092734)}#screen.nexus-bg-preset_sunset{background:linear-gradient(90deg,#432041,#bd6359,#3e214d)}#screen.nexus-bg-preset_pulse{background:linear-gradient(90deg,#11162a,#258caf,#11162a);background-size:200% 100%;animation:nexus-pulse-bg 5s linear infinite}@keyframes nexus-pulse-bg{from{background-position:100%}to{background-position:-100%}}@media(prefers-reduced-motion:reduce){#screen.nexus-bg-preset_pulse{animation:none}}
 .nexus-new-screen-choice{display:inline-flex;align-items:center;gap:.35rem}
+.nexus-layout-file-controls{display:flex;align-items:center;flex-wrap:wrap;gap:.4rem}.nexus-layout-file-controls label{display:inline-flex;align-items:center;gap:.3rem}
 </style></head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p><p id="message" role="status" aria-live="polite"></p>
@@ -52,5 +53,19 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 </fieldset>
 <fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset>
-
+<fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
+<div class="nexus-layout-file-controls">
+<button id="exportLayout" type="button">Export layout</button>
+<button id="exportScreen" type="button">Export selected screen</button>
+<label>JSON file <input id="layoutFile" type="file" accept=".json,application/json"></label>
+<label>Import mode <select id="layoutImportMode">
+<option value="add-screen">Add as new screen</option>
+<option value="replace-screen">Replace selected screen</option>
+<option value="replace-layout">Replace entire layout</option>
+</select></label>
+<button id="importLayout" type="button">Import JSON</button>
+</div>
+<p class="nexus-panel-description">Imports are editable previews until Save Layout. Uploaded backgrounds and icons are referenced by ID; artwork is not included in the JSON file.</p>
+</fieldset>
+<script src="/static/js/nexus-layout-files.js"></script>
 <script src="/static/js/nexus-editor.js"></script></body></html>
