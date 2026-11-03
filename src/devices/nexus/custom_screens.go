@@ -88,7 +88,10 @@ func (d *Device) renderCustomScreen() []byte {
  for _,screen:=range c.Screens {
   if screen.ID==c.ActiveScreenID {
    var background image.Image
-   if screen.Background!="" {background,_=ReadBackground(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background)}
+   if screen.Background!="" {
+    background=PresetNexusBackground(screen.Background,time.Now())
+    if background==nil {background,_=ReadBackground(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background)}
+   }
    frame,err:=RenderScreenWithBackgroundAndIcons(screen,values,background,filepath.Join(pwd,"database","nexus","icons"))
    if err!=nil{return nil}
    return renderImageToBytes(frame)

@@ -17,6 +17,7 @@ function refreshActionButtons(){
  for(const id of ['renameScreen','duplicateScreen'])if($(id))$(id).disabled=!screen||(id==='duplicateScreen'&&count>=32);
  if($('deleteScreen'))$('deleteScreen').disabled=count<=1;
  if($('addStarterTemplate'))$('addStarterTemplate').disabled=!cfg||count>=32;
+ if($('replaceWithStarterTemplate'))$('replaceWithStarterTemplate').disabled=!screen;
 }
 const snapPosition=(value,max)=>clamp(snap(value),Math.floor(max/GRID)*GRID);
 const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
@@ -47,6 +48,8 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  }
  if(!s)return;
  $('background').value=s.background||'';
+ const display=$('screen');display.classList.remove('nexus-bg-preset_aurora','nexus-bg-preset_neon','nexus-bg-preset_circuit','nexus-bg-preset_sunset','nexus-bg-preset_pulse');
+ if(s.background?.startsWith('preset_'))display.classList.add('nexus-bg-'+s.background);
  for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','text'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid')}el.textContent=w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro')&&w.settings?.customIcon){
   el.classList.add('nexus-icon-widget');
   const picture=document.createElement('img');
@@ -80,36 +83,66 @@ async function loadDevices(){try{const response=await fetch('/api/devices/');con
 async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds);interval.disabled=mode?.value!=='automatic'}refreshScreens();message('')}
 if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
 $('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
-function starterTemplateByID(id){
- return (globalThis.NEXUS_STARTER_TEMPLATES||[]).find(t=>t.id===id);
-}
+// Stock-inspired examples are regular saved-screen JSON, never special widget types.
+const starterDescriptions={
+ 'system-overview':'Aurora system monitoring.',
+ 'performance-bars':'Neon performance meters.',
+ 'network-and-storage':'Circuit-themed network and disk activity.',
+ 'media-deck':'Sunset-inspired media buttons.',
+ 'navigation':'Animated luminous pulse with navigation.'
+};
 function updateStarterTemplateDescription(){
- const template=starterTemplateByID($('starterTemplate')?.value);
- const description=$('starterTemplateDescription');
- if(description)description.textContent=template?template.description+' Adds a new screen without replacing your existing layout.':'Select a starter screen template.';
+ const id=$('starterTemplate')?.value;
+ const el=$('starterTemplateDescription');
+ if(el)el.textContent=(starterDescriptions[id]||'Editable example.')+' Add as new or replace the selected screen; edit it normally afterward.';
+}
+async function loadStarterScreen(){
+ const id=$('starterTemplate')?.value;
+ if(!Object.hasOwn(starterDescriptions,id))throw Error('Unknown starter template');
+ const response=await fetch('/static/nexus/templates/'+id+'.json',{cache:'no-cache'});
+ if(!response.ok)throw Error('Unable to load starter template: '+response.status);
+ const data=await response.json();
+ if(data.version!==1||!Array.isArray(data.screens)||data.screens.length!==1)throw Error('Unsupported template format');
+ const screen=data.screens[0];
+ if(!screen||!Array.isArray(screen.widgets)||screen.widgets.length>64||typeof screen.name!=='string'||screen.name.length>80)throw Error('Invalid template screen');
+ return JSON.parse(JSON.stringify(screen));
+}
+function adaptTemplateScreen(screen,id){
+ const oldID=screen.id;screen.id=id;
+ for(const w of screen.widgets){
+  if(w.type==='button'&&w.action==='screen'&&w.target===oldID)w.target=id;
+  if(w.type==='macro'||(w.type==='button'&&w.action==='macro')){
+   for(const step of w.steps||[])if(step.type==='screen'&&step.value===oldID)step.value=id;
+  }
+ }
+ return screen;
 }
 $('starterTemplate')?.addEventListener('change',updateStarterTemplateDescription);
-$('addStarterTemplate')?.addEventListener('click',()=>{
- if(!cfg)return message('Load a Nexus layout first.');
- if(cfg.screens.length>=32)return message('Maximum 32 screens.');
- const template=starterTemplateByID($('starterTemplate')?.value);
- if(!template)return message('Starter template not found.');
- if(template.widgets.length>64)return message('Template exceeds the widget limit.');
- const screenIDs=new Set(cfg.screens.map(s=>s.id));
- const screenID=uniqueID('screen',screenIDs);
- const duplicateCount=cfg.screens.filter(s=>s.name===template.name||s.name.startsWith(template.name+' (')).length;
- const suffix=duplicateCount?' ('+(duplicateCount+1)+')':'';
- const name=template.name.slice(0,80-suffix.length)+suffix;
- const widgetIDs=new Set();
- const widgets=template.widgets.map(definition=>{
-  const widget=JSON.parse(JSON.stringify(definition));
-  widget.id=uniqueID('widget',widgetIDs);widgetIDs.add(widget.id);
-  return widget;
- });
- cfg.screens.push({id:screenID,name,widgets});
- cfg.activeScreenId=screenID;selected=null;
- refreshScreens();
- message('Starter template added. Customize it and click Save Layout to apply.');
+$('addStarterTemplate')?.addEventListener('click',async()=>{
+ try{
+  if(!cfg)return message('Load a Nexus layout first.');
+  if(cfg.screens.length>=32)return message('Maximum 32 screens.');
+  const screen=await loadStarterScreen();
+  const id=uniqueID('screen',new Set(cfg.screens.map(s=>s.id)));
+  adaptTemplateScreen(screen,id);
+  const count=cfg.screens.filter(s=>s.name===screen.name||s.name.startsWith(screen.name+' (')).length;
+  if(count){const suffix=' ('+(count+1)+')';screen.name=screen.name.slice(0,80-suffix.length)+suffix}
+  cfg.screens.push(screen);cfg.activeScreenId=id;selected=null;refreshScreens();
+  message('Starter screen added. Edit it and click Save Layout.');
+ }catch(e){message(e.message)}
+});
+$('replaceWithStarterTemplate')?.addEventListener('click',async()=>{
+ try{
+  if(!cfg)return message('Load a Nexus layout first.');
+  const existing=current();
+  if(!existing)return message('Select a screen to replace.');
+  const replacement=await loadStarterScreen();
+  if(!confirm('Replace "'+existing.name+'" with "'+replacement.name+'"? Existing widgets and background will be lost when saved.'))return;
+  adaptTemplateScreen(replacement,existing.id);
+  const index=cfg.screens.findIndex(s=>s.id===existing.id);
+  cfg.screens[index]=replacement;cfg.activeScreenId=existing.id;selected=null;refreshScreens();
+  message('Screen replaced in editor. Click Save Layout to apply.');
+ }catch(e){message(e.message)}
 });
 updateStarterTemplateDescription();
 

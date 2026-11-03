@@ -11,7 +11,7 @@ on:
       - 'src/server/**'
       - 'web/nexus*.html'
       - 'static/js/nexus-editor.js'
-      - 'static/js/nexus-starter-templates.js'
+      - 'static/nexus/templates/**'
       - 'static/js/nexus-starter-templates.test.cjs'
       - 'static/css/nexus-editor.css'
       - 'static/nexus-editor.html'
@@ -48,7 +48,6 @@ jobs:
       - name: Check Nexus editor JavaScript syntax
         run: |
           node --check static/js/nexus-editor.js
-          node --check static/js/nexus-starter-templates.js
           node --test static/js/nexus-starter-templates.test.cjs
       - name: Set up Go
         uses: actions/setup-go@v5
