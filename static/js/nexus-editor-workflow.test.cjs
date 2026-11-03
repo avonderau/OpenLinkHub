@@ -473,3 +473,16 @@ test('render fidelity styles load last and expose real compact controls',()=>{
  }
  assert.match(editorSource,/nexusPreviewFullscreen/);
 });
+
+test('Nexus property headings retain the approved gradient treatment',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','nexus-render-fidelity.css'),'utf8');
+ const selected=css.slice(css.indexOf('#nexus-editor .nexus-selected-hero{'),css.indexOf('#nexus-editor .nexus-selected-hero:after'));
+ const headings=css.slice(css.indexOf('#nexus-editor #properties > .nexus-property-section > summary{'),css.indexOf('#nexus-editor #properties > .nexus-property-section > summary::-webkit-details-marker'));
+ const widgets=css.slice(css.indexOf('#nexus-editor #nexus-add-panel{'),css.indexOf('#nexus-editor #nexus-add-panel legend{'));
+ for(const [name,block] of [['selected widget',selected],['collapsible headings',headings],['Add Widgets',widgets]]){
+  assert.match(block,/background:linear-gradient\(/,name+' must have a real gradient');
+  assert.match(block,/linear-gradient\(180deg,#3[036]/,name+' needs a visible charcoal gradient');
+  assert.match(block,/rgba\(2(?:11|23),1(?:57|59|65),7[79]|rgba\(223,165,86/,name+' needs a warm amber highlight');
+ }
+ assert.match(headings,/!important/,'gradient must win against upstream form-control styling');
+});
