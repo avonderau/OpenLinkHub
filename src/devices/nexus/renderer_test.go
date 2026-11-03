@@ -71,3 +71,16 @@ func TestNexusWidgetGradients(t *testing.T){
  }}}
  if _,err:=RenderScreen(screen,nil);err==nil{t.Fatal("invalid gradient direction was accepted")}
 }
+
+func TestPressedButtonShowsTransientHighlight(t *testing.T){
+ w:=Widget{ID:"touch",Type:"button",Action:"next",X:0,Y:0,Width:80,Height:48,Settings:map[string]string{"backgroundColor":"#123456"}}
+ screen:=Screen{ID:"screen",Name:"Screen",Widgets:[]Widget{w}}
+ idle,err:=RenderScreenWithBackgroundAndIconsHistoryPressed(screen,nil,nil,"",nil,"")
+ if err!=nil{t.Fatal(err)}
+ pressed,err:=RenderScreenWithBackgroundAndIconsHistoryPressed(screen,nil,nil,"",nil,"touch")
+ if err!=nil{t.Fatal(err)}
+ if idle.RGBAAt(12,3)==pressed.RGBAAt(12,3){t.Fatal("button press must visibly change framebuffer")}
+ other,err:=RenderScreenWithBackgroundAndIconsHistoryPressed(screen,nil,nil,"",nil,"other")
+ if err!=nil{t.Fatal(err)}
+ if other.RGBAAt(12,3)!=idle.RGBAAt(12,3){t.Fatal("unrelated widget press changed button")}
+}

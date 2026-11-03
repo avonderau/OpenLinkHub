@@ -23,10 +23,10 @@ type MetricSnapshot map[string]float64
 // RenderScreen draws a validated screen to the Nexus's native 640x48 RGBA
 // framebuffer. It does not interact with HID and can be tested independently.
 func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
- return renderNexusScreen(screen,values,"",nil,nil)
+ return renderNexusScreen(screen,values,"",nil,nil,"")
 }
 
-func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,background image.Image,history MetricHistory)(*image.RGBA,error){
+func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,background image.Image,history MetricHistory,pressedID string)(*image.RGBA,error){
  cfg:=ScreenConfiguration{Version:1,ActiveScreenID:screen.ID,Screens:[]Screen{screen}}
  if err:=cfg.Validate();err!=nil{return nil,err}
  canvas:=image.NewRGBA(image.Rect(0,0,ScreenWidth,ScreenHeight))
@@ -139,6 +139,9 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
    }
   }
   }()
+  if pressedID!=""&&w.ID==pressedID&&(w.Type=="button"||w.Type=="macro"){
+   drawNexusButtonPressFeedback(canvas,bounds)
+  }
  }
  return canvas,nil
 }
@@ -161,12 +164,25 @@ func RenderScreenWithBackground(screen Screen, values MetricSnapshot, background
 }
 
 func RenderScreenWithBackgroundAndIcons(screen Screen,values MetricSnapshot,background image.Image,iconDir string)(*image.RGBA,error){
- return renderNexusScreen(screen,values,iconDir,background,nil)
+ return renderNexusScreen(screen,values,iconDir,background,nil,"")
 }
+// RenderScreenWithBackgroundAndIconsHistoryPressed highlights only the
+// momentarily touched button; this state is never saved into layouts.
+func RenderScreenWithBackgroundAndIconsHistoryPressed(screen Screen,values MetricSnapshot,background image.Image,iconDir string,history MetricHistory,pressedID string)(*image.RGBA,error){
+ return renderNexusScreen(screen,values,iconDir,background,history,pressedID)
+}
+
+// Draw a translucent white press highlight over the whole widget, including
+// custom icons and text. It intentionally does not alter normal widget colors.
+func drawNexusButtonPressFeedback(canvas *image.RGBA,bounds image.Rectangle){
+ mask:=image.NewUniform(color.Alpha{65})
+ draw.DrawMask(canvas,bounds,image.NewUniform(color.White),image.Point{},mask,image.Point{},draw.Over)
+}
+
 // ReadBackground returns the current frame for either a static or animated
 // background, using the shared bounded image cache.
 func RenderScreenWithBackgroundAndIconsHistory(screen Screen,values MetricSnapshot,background image.Image,iconDir string,history MetricHistory)(*image.RGBA,error){
- return renderNexusScreen(screen,values,iconDir,background,history)
+ return renderNexusScreen(screen,values,iconDir,background,history,"")
 }
 
 func ReadBackground(dir,id string)(image.Image,error){

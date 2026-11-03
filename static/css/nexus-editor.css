@@ -209,3 +209,7 @@
 .nexus-flyout .nexus-widget-library-actions,.nexus-flyout .nexus-layout-file-controls{display:flex;align-items:stretch;flex-direction:column;gap:.5rem}
 .nexus-flyout :focus-visible,.nexus-flyout-toolbar button:focus-visible{outline:2px solid var(--text-main,#e8eff5);outline-offset:2px}
 @media(max-width:480px){.nexus-flyout{width:100vw;padding:.8rem}.nexus-flyout-toolbar{justify-content:flex-start}}
+
+/* Browser preview matches the short physical-device press flash. */
+#nexus-editor .widget.nexus-button-style:active{filter:brightness(1.45);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+#nexus-editor .widget.nexus-pressed-preview{filter:brightness(1.45);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}

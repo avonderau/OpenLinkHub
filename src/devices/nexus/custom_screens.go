@@ -116,6 +116,8 @@ func (d *Device) currentCustomTelemetry(now time.Time)(MetricSnapshot,MetricHist
 func (d *Device) renderCustomScreen() []byte {
  d.mutex.Lock()
  c:=d.customScreens
+ pressed:=""
+ if time.Now().Before(d.pressedWidgetUntil){pressed=d.pressedWidgetID}else{d.pressedWidgetID=""}
  d.mutex.Unlock()
  if len(c.Screens)==0{return nil}
  now:=time.Now()
@@ -129,8 +131,8 @@ func (d *Device) renderCustomScreen() []byte {
     background,_=ReadBackgroundAt(filepath.Join(pwd,"database","nexus","backgrounds"),screen.Background,now)
    }
   }
-  frame,err:=RenderScreenWithBackgroundAndIconsHistory(screen,values,background,
-   filepath.Join(pwd,"database","nexus","icons"),history)
+  frame,err:=RenderScreenWithBackgroundAndIconsHistoryPressed(screen,values,background,
+   filepath.Join(pwd,"database","nexus","icons"),history,pressed)
   if err!=nil{return nil}
   applyNexusSoftwareBrightness(frame,c.Brightness)
   return renderImageToBytes(frame)
@@ -257,8 +259,23 @@ func (d *Device) handleCustomTouch(position uint16) {
   for i:=len(screen.Widgets)-1;i>=0;i-- {
    w:=screen.Widgets[i]
    if int(position)<w.X || int(position)>=w.X+w.Width {continue}
-   if w.Type=="button" {if w.Action=="macro" {d.runTouchMacro(w.Steps)} else {d.executeTouchAction(w.Action,w.Target)};return}
-   if w.Type=="macro" {d.runTouchMacro(w.Steps);return}
+   if w.Type=="button" {
+    d.mutex.Lock()
+    d.pressedWidgetID=w.ID
+    d.pressedWidgetUntil=time.Now().Add(260*time.Millisecond)
+    if d.lcdTimer!=nil{d.lcdTimer.Reset(1*time.Millisecond)}
+    d.mutex.Unlock()
+    if w.Action=="macro" {d.runTouchMacro(w.Steps)} else {d.executeTouchAction(w.Action,w.Target)}
+    return
+   }
+   if w.Type=="macro" {
+    d.mutex.Lock()
+    d.pressedWidgetID=w.ID
+    d.pressedWidgetUntil=time.Now().Add(260*time.Millisecond)
+    if d.lcdTimer!=nil{d.lcdTimer.Reset(1*time.Millisecond)}
+    d.mutex.Unlock()
+    d.runTouchMacro(w.Steps);return
+   }
   }
   break
  }
