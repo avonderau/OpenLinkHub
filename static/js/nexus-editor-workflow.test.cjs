@@ -415,6 +415,6 @@ test('OpenLinkHub Nexus fork branding is present without renaming upstream route
  assert.match(head,/<title>\{\{ \.Title \}\} \| OpenLinkHub Nexus<\/title>/);
  assert.match(sidebar,/class="olh-fork-brand" aria-label="OpenLinkHub Nexus"/);
  assert.match(sidebar,/id="sidebarToggle"/);
- assert.match(sidebar,/href="\/macros"/);
+ assert.match(sidebar,/\( \.Dict "page" "macros" "url" "\/macros"/);
  assert.match(css,/\.sidebar\.collapsed \.olh-fork-brand \{display:none\}/);
 });
