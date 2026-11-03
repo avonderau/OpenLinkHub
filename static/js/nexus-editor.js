@@ -274,16 +274,16 @@ function renderTouchProperties(w,panel){
  });
  if(w.settings?.customIcon || w.settings?.icon==='custom'){
   const wrapper=document.createElement('label');wrapper.className='nexus-custom-icon-upload';
-  wrapper.textContent='Custom icon (PNG/JPEG) ';
-  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg';
+  wrapper.textContent='Custom icon (PNG/JPEG/GIF) ';
+  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/gif';
   file.setAttribute('aria-label','Upload custom icon');
   wrapper.append(file);
   const upload=document.createElement('button');upload.type='button';upload.textContent='Upload icon';
   upload.onclick=async()=>{
    const source=file.files?.[0];
-   if(!source)return message('Choose a PNG or JPEG icon first');
+   if(!source)return message('Choose a PNG, JPEG or GIF icon first');
    if(source.size>512*1024)return message('Icon exceeds 512 KiB');
-   if(!['image/png','image/jpeg'].includes(source.type))return message('Select a PNG or JPEG image');
+   if(!['image/png','image/jpeg','image/gif'].includes(source.type))return message('Select a PNG, JPEG or GIF image');
    upload.disabled=true;
    try{
     const id='icon_'+Date.now()+'_'+Math.floor(Math.random()*1000000);

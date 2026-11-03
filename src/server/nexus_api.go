@@ -75,14 +75,13 @@ func nexusCustomIconAPI(w http.ResponseWriter,r *http.Request){
  if r.Method==http.MethodGet {
   path,err:=d.CustomIconPath(id)
   if err!=nil{http.Error(w,"icon not found",404);return}
-  w.Header().Set("Content-Type","image/png")
   w.Header().Set("Cache-Control","private, no-store")
   w.Header().Set("X-Content-Type-Options","nosniff")
   http.ServeFile(w,r,path)
   return
  }
  if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
- if !strings.HasPrefix(r.Header.Get("Content-Type"),"image/png") && !strings.HasPrefix(r.Header.Get("Content-Type"),"image/jpeg"){http.Error(w,"PNG or JPEG required",415);return}
+ if !strings.HasPrefix(r.Header.Get("Content-Type"),"image/png") && !strings.HasPrefix(r.Header.Get("Content-Type"),"image/jpeg") && !strings.HasPrefix(r.Header.Get("Content-Type"),"image/gif"){http.Error(w,"PNG, JPEG or GIF required",415);return}
  r.Body=http.MaxBytesReader(w,r.Body,512*1024)
  defer r.Body.Close()
  content,err:=io.ReadAll(r.Body)
