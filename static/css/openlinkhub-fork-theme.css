@@ -566,3 +566,58 @@ body > .container-fluid > .row > .main-content > .olh-app-topbar{display:none}
  body > .container-fluid > .row > .main-content{padding:14px!important}
  body > .container-fluid > .row > .sidebar:not(.collapsed){flex-basis:190px;width:190px}
 }
+
+
+/* Visible section-header gradients restored for the approved Nexus render.
+ * Keep this override in the fork-only visual layer, not upstream styles. */
+:root {
+  --olh-header-gradient: linear-gradient(105deg,#39332c 0%,#303034 30%,#28292d 70%,#222326 100%);
+  --olh-header-gradient-hover: linear-gradient(105deg,#43382b 0%,#363438 36%,#2e2e33 100%);
+}
+.main-content .card-header,
+.main-content .system-card .card-header {
+  background:var(--olh-header-gradient);
+  border-bottom:1px solid rgba(213,166,90,.22);
+  color:var(--olh-ink);
+}
+#nexus-editor .nexus-preview-heading {
+  background:var(--olh-header-gradient);
+  border:1px solid rgba(213,166,90,.18);
+  border-radius:10px;
+  padding:12px 15px;
+  margin-bottom:12px;
+}
+#nexus-editor .nexus-screen-actions {
+  background:linear-gradient(100deg,#35312c 0%,#292a2e 48%,#222326 100%);
+  border:1px solid rgba(213,166,90,.16);
+  border-radius:10px;
+  padding:12px 14px 15px;
+}
+#nexus-editor .nexus-editor-tabpanel legend {
+  width:100%;
+  min-height:40px;
+  padding:10px 13px;
+  margin:0 0 12px;
+  border:1px solid rgba(213,166,90,.18);
+  border-radius:8px;
+  background:var(--olh-header-gradient);
+}
+#nexus-editor #properties > .nexus-property-section > summary {
+  background:var(--olh-header-gradient)!important;
+  border-bottom-color:rgba(213,166,90,.16)!important;
+}
+#nexus-editor #properties > .nexus-property-section > summary:hover,
+#nexus-editor #properties > .nexus-property-section > summary:focus-visible {
+  background:var(--olh-header-gradient-hover)!important;
+}
+#nexus-editor #nexus-selected-panel > legend {
+  padding:8px 12px;
+  border-radius:8px;
+  background:var(--olh-header-gradient);
+  border:1px solid rgba(213,166,90,.18);
+}
+@media(prefers-contrast:more) {
+  #nexus-editor .nexus-preview-heading,
+  #nexus-editor #properties > .nexus-property-section > summary,
+  .main-content .card-header {border-color:rgba(213,166,90,.48)}
+}
