@@ -24,6 +24,7 @@ globalThis.NexusWidgetLibrary=(()=>{
    for(const [key,val] of Object.entries(w.settings))if(key.length>64||typeof val!=='string'||val.length>256)
     throw Error('Invalid widget setting value');
   }
+  if(w.settings?.textShadow&&!['none','soft','strong'].includes(w.settings.textShadow))throw Error('Invalid text shadow');
   if(w.settings?.verticalAlign&&!['top','middle','bottom'].includes(w.settings.verticalAlign))throw Error('Invalid vertical text alignment');
   if(w.steps!==undefined&&(!Array.isArray(w.steps)||w.steps.length>12))throw Error('Invalid macro steps');
   return entry;

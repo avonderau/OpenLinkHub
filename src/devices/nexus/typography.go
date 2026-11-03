@@ -17,6 +17,10 @@ func validNexusFontSize(value string)bool {
  switch value {case "","normal","small","large":return true}
  return false
 }
+func validNexusTextShadow(value string)bool {
+ switch value {case "","none","soft","strong":return true}
+ return false
+}
 func validNexusVerticalAlign(value string)bool {
  switch value {case "","top","middle","bottom":return true}
  return false
@@ -61,7 +65,8 @@ func drawStyledNexusText(dst *image.RGBA,w Widget,baseY int,value string,ink col
  size:=w.Settings["fontSize"]
  alignment:=w.Settings["textAlign"]
  vertical:=w.Settings["verticalAlign"]
- if (size==""||size=="normal") && (alignment==""||alignment=="left") && (vertical==""||vertical=="top"){
+ shadow:=w.Settings["textShadow"]
+ if (size==""||size=="normal") && (alignment==""||alignment=="left") && (vertical==""||vertical=="top") && (shadow==""||shadow=="none"){
   writeWidgetText(dst,w.X+3,baseY,clipText(value,w.Width),ink)
   return
  }
@@ -84,6 +89,13 @@ func drawStyledNexusText(dst *image.RGBA,w Widget,baseY int,value string,ink col
   if vertical=="bottom"{baseY=w.Y+w.Height-3-descent}
  } else if size=="large" && (w.Type=="text"||w.Type=="button"||w.Type=="macro"){
   baseY+=6
+ }
+ if shadow=="soft"||shadow=="strong"{
+  offset:=1
+  if shadow=="strong"{offset=2}
+  shadowColor:=color.RGBA{0,0,0,180}
+  shadowDrawer:=font.Drawer{Dst:dst.SubImage(bounds).(draw.Image),Src:image.NewUniform(shadowColor),Face:face,Dot:fixed.P(x+offset,baseY+offset)}
+  shadowDrawer.DrawString(text)
  }
  d:=font.Drawer{Dst:dst.SubImage(bounds).(draw.Image),Src:image.NewUniform(ink),Face:face,Dot:fixed.P(x,baseY)}
  d.DrawString(text)
