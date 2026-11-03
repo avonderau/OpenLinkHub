@@ -129,6 +129,7 @@ type Device struct {
 	customScreens ScreenConfiguration
 	customSampler CounterSampler
  lastCycle time.Time
+ macroRunning bool
 }
 
 var (
@@ -1075,8 +1076,7 @@ func (d *Device) backendListener() {
 					if active == 1 && !blocked {
 						blocked = true
 						position := binary.LittleEndian.Uint16(data[6:8])
-						if position < 70 { d.navigateCustomScreen(false) }
-						if position > 570 { d.navigateCustomScreen(true) }
+						d.handleCustomTouch(position)
 					} else if active == 0 { blocked = false }
 					continue
 				}

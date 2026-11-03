@@ -44,3 +44,6 @@
 .nexus-cycle-settings label{font-size:.85rem}
 .nexus-cycle-settings select,.nexus-cycle-settings input{width:100%;min-width:0}
 .nexus-cycle-settings small{color:var(--text-muted,#999)}
+
+#nexus-editor #properties textarea{display:block;max-width:100%;font:12px monospace;background:var(--bg-card,#202022);color:var(--text-main,#fff);border:1px solid var(--border-subtle,#617c90);border-radius:6px}
+#nexus-editor #properties small{display:block;max-width:650px;color:var(--text-muted,#aaa)}

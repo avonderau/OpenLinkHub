@@ -16,13 +16,18 @@ const (
  MaxWidgets = 64
 )
 var safeID = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
-var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true}
+var supportedWidgets = map[string]bool{"metric":true,"text":true,"bar":true,"button":true,"macro":true}
 var supportedMetrics = map[string]bool{
  "cpu.temperature":true,"cpu.utilization":true,
  "gpu.temperature":true,"gpu.utilization":true,
  "memory.used":true,"memory.utilization":true,
  "network.rx_rate":true,"network.tx_rate":true,
  "disk.read_rate":true,"disk.write_rate":true,
+}
+type MacroStep struct {
+ Type string `json:"type"`
+ Value string `json:"value,omitempty"`
+ DelayMs int `json:"delayMs,omitempty"`
 }
 type Widget struct {
  ID string `json:"id"`
@@ -33,6 +38,9 @@ type Widget struct {
  Width int `json:"width"`
  Height int `json:"height"`
  Settings map[string]string `json:"settings,omitempty"`
+ Action string `json:"action,omitempty"`
+ Target string `json:"target,omitempty"`
+ Steps []MacroStep `json:"steps,omitempty"`
 }
 type Screen struct {
  ID string `json:"id"`
@@ -63,12 +71,35 @@ func (c ScreenConfiguration) Validate() error {
    if !safeID.MatchString(w.ID)||widgets[w.ID] {return fmt.Errorf("invalid or duplicate widget ID: %q",w.ID)}
    widgets[w.ID]=true
    if !supportedWidgets[w.Type] {return fmt.Errorf("unsupported widget type: %q",w.Type)}
-   if w.Type!="text"&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
+   if (w.Type=="metric"||w.Type=="bar")&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
    if w.X<0||w.Y<0||w.Width<=0||w.Height<=0||w.X>ScreenWidth-w.Width||w.Y>ScreenHeight-w.Height {return fmt.Errorf("widget %q outside display",w.ID)}
+   if w.Type=="button" {
+    if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" {return fmt.Errorf("invalid button action for %q",w.ID)}
+    if w.Action=="screen" && !safeID.MatchString(w.Target) {return fmt.Errorf("invalid button target for %q",w.ID)}
+    if w.Action=="media" && !supportedMediaAction(w.Target) {return fmt.Errorf("invalid media action for %q",w.ID)}
+   }
+   if w.Type=="macro" {
+    if len(w.Steps)==0 || len(w.Steps)>12 {return fmt.Errorf("macro %q must have 1-12 steps",w.ID)}
+    total:=0
+    for _,step:=range w.Steps {
+     switch step.Type {
+     case "next","previous":
+     case "screen": if !safeID.MatchString(step.Value) {return fmt.Errorf("invalid macro screen target")}
+     case "media": if !supportedMediaAction(step.Value) {return fmt.Errorf("invalid macro media action")}
+     case "delay": if step.DelayMs<0 || step.DelayMs>5000 {return fmt.Errorf("macro delay out of range")};total+=step.DelayMs
+     default:return fmt.Errorf("unsupported macro step")
+     }
+    }
+    if total>15000 {return fmt.Errorf("macro delays exceed 15 seconds")}
+   }
    if len(w.Settings)>16 {return errors.New("too many widget settings")}
    for k,v:=range w.Settings {if len(k)>64||len(v)>256 {return errors.New("widget setting too long")}}
   }
  }
+ for _,screen:=range c.Screens {for _,w:=range screen.Widgets {
+  if w.Type=="button" && w.Action=="screen" && !seen[w.Target] {return fmt.Errorf("unknown button screen target %q",w.Target)}
+  if w.Type=="macro" {for _,step:=range w.Steps {if step.Type=="screen" && !seen[step.Value] {return fmt.Errorf("unknown macro screen target %q",step.Value)}}}
+ }}
  if !seen[c.ActiveScreenID] {return errors.New("active screen does not exist")}
  return nil
 }
@@ -98,4 +129,9 @@ func SaveScreens(path string,c ScreenConfiguration)error{
  if err=f.Sync();err!=nil{f.Close();return err}
  if err=f.Close();err!=nil{return err}
  return os.Rename(f.Name(),path)
+}
+
+func supportedMediaAction(action string) bool {
+ switch action {case "volume-up","volume-down","play-pause","stop","previous-track","next-track":return true}
+ return false
 }

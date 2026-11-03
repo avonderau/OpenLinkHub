@@ -1,6 +1,7 @@
 package nexus
 
 import (
+ "OpenLinkHub/src/inputmanager"
  "OpenLinkHub/src/systeminfo"
  "OpenLinkHub/src/temperatures"
  "fmt"
@@ -120,6 +121,7 @@ func cloneScreenConfiguration(c ScreenConfiguration) ScreenConfiguration {
   out.Screens[i].Widgets=make([]Widget,len(s.Widgets))
   for j,w:=range s.Widgets {
    out.Screens[i].Widgets[j]=w
+   out.Screens[i].Widgets[j].Steps=append([]MacroStep(nil),w.Steps...)
    if w.Settings!=nil {
     out.Screens[i].Widgets[j].Settings=make(map[string]string,len(w.Settings))
     for k,v:=range w.Settings {out.Screens[i].Widgets[j].Settings[k]=v}
@@ -149,4 +151,61 @@ func (d *Device) advanceAutomaticScreen(now time.Time) {
  if now.Sub(d.lastCycle)<time.Duration(c.CyclingSeconds)*time.Second{return}
  c.ActiveScreenID=c.NextScreen()
  d.lastCycle=now
+}
+
+func (d *Device) handleCustomTouch(position uint16) {
+ d.mutex.Lock()
+ cfg:=cloneScreenConfiguration(d.customScreens)
+ d.mutex.Unlock()
+ for _,screen:=range cfg.Screens {
+  if screen.ID!=cfg.ActiveScreenID {continue}
+  // HID reports a horizontal touch position; select the widget at the
+  // horizontal coordinate, preferring the last (topmost) widget.
+  for i:=len(screen.Widgets)-1;i>=0;i-- {
+   w:=screen.Widgets[i]
+   if int(position)<w.X || int(position)>=w.X+w.Width {continue}
+   if w.Type=="button" {d.executeTouchAction(w.Action,w.Target);return}
+   if w.Type=="macro" {d.runTouchMacro(w.Steps);return}
+  }
+  break
+ }
+ if cfg.CyclingMode=="manual" {
+  if position<70 {d.navigateCustomScreen(false)}
+  if position>570 {d.navigateCustomScreen(true)}
+ }
+}
+func (d *Device) executeTouchAction(action,target string) {
+ switch action {
+ case "next":d.navigateScreenAction(true)
+ case "previous":d.navigateScreenAction(false)
+ case "screen":
+  d.mutex.Lock()
+  for _,s:=range d.customScreens.Screens {if s.ID==target {d.customScreens.ActiveScreenID=target;break}}
+  d.lastCycle=time.Now()
+  d.mutex.Unlock()
+ case "media":
+  codes:=map[string]uint16{"volume-up":1,"volume-down":2,"stop":4,"previous-track":5,"play-pause":6,"next-track":7}
+  if code:=codes[target];code!=0 {inputmanager.InputControlKeyboard(code,false)}
+ }
+}
+func (d *Device) navigateScreenAction(next bool) {
+ d.mutex.Lock()
+ defer d.mutex.Unlock()
+ if len(d.customScreens.Screens)==0{return}
+ if next {d.customScreens.ActiveScreenID=d.customScreens.NextScreen()}else{d.customScreens.ActiveScreenID=d.customScreens.PreviousScreen()}
+ d.lastCycle=time.Now()
+}
+func (d *Device) runTouchMacro(steps []MacroStep) {
+ d.mutex.Lock()
+ if d.macroRunning {d.mutex.Unlock();return}
+ d.macroRunning=true
+ d.mutex.Unlock()
+ go func(){
+  defer func(){d.mutex.Lock();d.macroRunning=false;d.mutex.Unlock()}()
+  for _,step:=range steps {
+   if d.Exit {return}
+   if step.Type=="delay" {time.Sleep(time.Duration(step.DelayMs)*time.Millisecond);continue}
+   if step.Type=="next" || step.Type=="previous" {d.executeTouchAction(step.Type,"")} else {d.executeTouchAction(step.Type,step.Value)}
+  }
+ }()
 }
