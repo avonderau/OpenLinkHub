@@ -6,10 +6,10 @@ globalThis.NexusLayoutFiles=(()=>{
  const hex=/^#[0-9A-Fa-f]{6}$/;
  const types=new Set(['text','metric','bar','graph','clock','button','macro']);
  const metrics=new Set(['cpu.temperature','cpu.utilization','gpu.temperature','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate']);
- const actions=new Set(['next','previous','screen','media','hotkey','mouse','macro']);
+ const actions=new Set(['next','previous','screen','media','hotkey','mouse','url','application','macro']);
  const media=new Set(['play-pause','stop','volume-up','volume-down','next-track','previous-track']);
  const mouse=new Set(['left','double-left','right','middle','back','forward','scroll-up','scroll-down','scroll-left','scroll-right']);
- const stepTypes=new Set(['next','previous','screen','media','hotkey','mouse','delay']);
+ const stepTypes=new Set(['next','previous','screen','media','hotkey','mouse','url','application','delay']);
  const clone=value=>JSON.parse(JSON.stringify(value));
  const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
  function checkStep(step,screenIDs){
@@ -22,6 +22,8 @@ globalThis.NexusLayoutFiles=(()=>{
    if(!media.has(step.value))throw Error('Invalid macro media action');
   }else if(step.type==='mouse'){
    if(!mouse.has(step.value))throw Error('Invalid macro mouse action');
+  }else if(step.type==='url'||step.type==='application'){
+   if(typeof step.value!=='string'||step.value.length<1||step.value.length>(step.type==='url'?256:128))throw Error('Invalid macro launch value');
   }else if(step.type==='hotkey'){
    if(typeof step.value!=='string'||step.value.length<1||step.value.length>80)throw Error('Invalid macro shortcut');
   }
@@ -66,6 +68,7 @@ globalThis.NexusLayoutFiles=(()=>{
      if(widget.action==='screen'&&!screenIDs.has(widget.target))throw Error('Button links to missing screen');
      if(widget.action==='media'&&!media.has(widget.target))throw Error('Invalid media action');
      if(widget.action==='mouse'&&!mouse.has(widget.target))throw Error('Invalid mouse action');
+     if((widget.action==='url'||widget.action==='application')&&!(typeof widget.target==='string'&&widget.target.length>0&&widget.target.length<=(widget.action==='url'?256:128)))throw Error('Invalid launch action');
      if(widget.action==='hotkey'&&!(typeof widget.target==='string'&&widget.target.length>0&&widget.target.length<=80))throw Error('Invalid shortcut');
     }
     if(widget.type==='macro'||(widget.type==='button'&&widget.action==='macro')){

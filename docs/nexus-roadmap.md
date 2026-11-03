@@ -51,7 +51,7 @@ Existing saved JSON layouts remain valid across updates.
    execution time, cancellation and safe concurrent input handling.
 3. **Mouse actions [implemented; user-tested: clicks and scrolling]**: left/right/middle click, double-click and scroll via
    the existing input manager; clamp repetition and release on error.
-4. **Application and URL actions**: launch only explicitly approved desktop
+4. **Application and URL actions [first Linux implementation]**: launch only explicitly approved desktop
    entries or executables; validate http/https links. Never use a shell for
    arbitrary user-provided command lines. Require user control and safe errors.
 5. **Visual macro builder**: step list rather than raw JSON, including
@@ -149,3 +149,15 @@ when placed, and navigation references to unknown screens fall back to the
 selected screen. Presets are not synchronized across browsers or hosts, and
 clearing browser data removes them. Server-side synchronized libraries remain
 future work.
+
+### Desktop app and web URL actions
+
+Nexus buttons and macro steps can request an HTTP(S) URL through `xdg-open`
+or a desktop entry ID (such as `firefox.desktop`) through `gtk-launch`.
+The implementation never invokes a shell. IDs and URLs are validated before
+saving. Runtime launch is refused when OpenLinkHub runs as root or without a
+graphical desktop environment (DISPLAY / WAYLAND_DISPLAY). A single bounded
+launcher worker prevents rapid touches spawning unlimited processes; operations
+have a four-second timeout. Desktop sessions can impose additional D-Bus or
+compositor restrictions. No arbitrary executable path or shell command is
+accepted. Application auto-discovery and curated allowlists remain planned.
