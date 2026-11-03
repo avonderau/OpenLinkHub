@@ -35,7 +35,8 @@
             "text": "NEXUS",
             "backgroundColor": "#172b3a",
             "textColor": "#eaf6ff",
-            "borderColor": "#34576e"
+            "borderColor": "#34576e",
+            "style": "flat"
           },
           "id": "widget_2"
         },
