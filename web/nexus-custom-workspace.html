@@ -1,38 +1,7 @@
 {{ define "nexus-custom-workspace" }}
-            <!-- Fork-owned, full-width Nexus editor: device settings remain accessible in a disclosure -->
+            <!-- Nexus device controls beside the integrated screen editor -->
             <div class="nexus-workspace">
-              <header class="nexus-page-heading">
-<div class="nexus-page-heading-icon" aria-hidden="true"><i class="bi bi-grid-1x2"></i></div>
-<div class="nexus-page-heading-copy"><h1>Nexus Editor</h1>
-<p>Design and configure your Nexus screen with widgets, layout, and content.</p></div></header>
-                <div class="nexus-editor-column">
-                    <section id="nexus-editor" class="card system-card"><div class="card-body">
-
-<p id="message" role="status" aria-live="polite"></p>
-<div class="nexus-screen-actions">
-   <label class="nexus-screen-picker"><span>Screen</span><select id="screens" aria-label="Current Nexus screen"></select></label>
-   <button id="addScreen" type="button" class="nexus-icon-action" title="Add screen" aria-label="Add screen"><i class="bi bi-plus-square" aria-hidden="true"></i><span class="nexus-sr-only">Add screen</span></button>
-   <button id="duplicateScreen" type="button" class="nexus-icon-action" title="Duplicate screen" aria-label="Duplicate screen"><i class="bi bi-copy" aria-hidden="true"></i><span class="nexus-sr-only">Duplicate screen</span></button>
-   <details class="nexus-screen-overflow">
-    <summary aria-label="More screen and device options" title="More screen and device options"><i class="bi bi-three-dots" aria-hidden="true"></i><span class="nexus-sr-only">More screen and device options</span></summary>
-    <div class="nexus-screen-overflow-panel">
-     <strong class="nexus-overflow-title">Screen management</strong>
-     <label class="nexus-new-screen-choice" for="newScreenPreset">New screen layout
- <select id="newScreenPreset" aria-label="New screen layout">
- <option value="blank">Blank</option><option value="system-overview">System Overview</option>
- <option value="performance-bars">Performance Bars</option>
- <option value="network-and-storage">Network &amp; Storage</option>
- <option value="media-deck">Media Controls</option><option value="navigation">Screen Navigation (animated)</option>
- </select></label>
-     <div class="nexus-screen-extra-buttons">
-       <button id="replaceScreenWithPreset" type="button" disabled>Replace selected</button>
-       <button id="moveScreenUp" type="button"><i class="bi bi-arrow-up" aria-hidden="true"></i>Move up</button>
-       <button id="moveScreenDown" type="button"><i class="bi bi-arrow-down" aria-hidden="true"></i>Move down</button>
-       <button id="renameScreen" type="button"><i class="bi bi-pencil" aria-hidden="true"></i>Rename</button>
-       <button id="deleteScreen" type="button"><i class="bi bi-trash3" aria-hidden="true"></i>Delete screen</button>
-     </div>
-     <div class="nexus-overflow-device">                <div class="nexus-device-column">
-                    <details class="nexus-device-settings"><summary><i class="bi bi-gear" aria-hidden="true"></i><strong>Device &amp; display settings</strong><span>Firmware, cycling, brightness</span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div class="nexus-device-column">
                     <div class="card system-card text-center">
                         <div class="card-header">
                             {{ .Device.Product }}
@@ -75,42 +44,52 @@
 <option value="100" selected>100% (full)</option>
 </select>
 <small class="nexus-cycle-note">Dims rendered pixels, not the hardware backlight.</small>
-
+                                    <button id="save" type="button">Save Layout</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    </details>
                 </div>
+                <div class="nexus-editor-column">
+                    <section id="nexus-editor" class="card system-card"><div class="card-body">
+
+<p id="message" role="status" aria-live="polite"></p>
+<div class="nexus-screen-actions">
+<label>Screen <select id="screens"></select></label>
+<label class="nexus-new-screen-choice" for="newScreenPreset">New screen
+<select id="newScreenPreset" aria-label="New screen layout">
+<option value="blank">Blank</option>
+<option value="system-overview">System Overview</option>
+<option value="performance-bars">Performance Bars</option>
+<option value="network-and-storage">Network &amp; Storage</option>
+<option value="media-deck">Media Controls</option>
+<option value="navigation">Screen Navigation (animated)</option>
+</select></label>
+<button id="addScreen" type="button">Add screen</button>
+<button id="replaceScreenWithPreset" type="button" disabled>Replace selected</button>
+<button id="moveScreenUp" type="button">Move up</button>
+<button id="moveScreenDown" type="button">Move down</button>
+<button id="renameScreen" type="button">Rename</button>
+<button id="duplicateScreen" type="button">Duplicate screen</button>
+<button id="deleteScreen" type="button">Delete screen</button>
 </div>
-    </div>
-   </details>
-   <button id="save" type="button" class="nexus-primary-save"><i class="bi bi-floppy" aria-hidden="true"></i><span>Save Screen</span></button>
- </div>
-<section class="nexus-preview-strip" aria-label="Screen preview">
- <div class="nexus-preview-heading"><strong>Screen Preview <i class="bi bi-info-circle" aria-hidden="true"></i></strong><small>640 × 48 px</small></div>
- <div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
- <div class="nexus-preview-options"><span class="nexus-preview-zoom" aria-label="Preview scale 100 percent">100%</span>
- <button id="nexusPreviewFullscreen" type="button" title="Expand preview" aria-label="Expand preview"><i class="bi bi-arrows-fullscreen" aria-hidden="true"></i></button></div>
- </section>
- <p id="nexus-keyboard-hint" class="nexus-panel-description">Keyboard editing: [ / ] select widget, arrows move, Shift + arrows resize, Delete removes, Ctrl + C/V copies and pastes.</p>
-<section class="nexus-editor-tabs" aria-label="Nexus editor workspace"><div class="nexus-editor-tablist" role="tablist" aria-label="Nexus editor sections"><button type="button" id="nexus-tab-widget" role="tab" aria-controls="nexus-panel-widget" aria-selected="true" tabindex="0"><i class="bi bi-folder2" aria-hidden="true"></i><span>Widget</span></button>
-<button type="button" id="nexus-tab-library" role="tab" aria-controls="nexus-panel-library" aria-selected="false" tabindex="-1"><i class="bi bi-folder2" aria-hidden="true"></i><span>Widget library</span></button>
-<button type="button" id="nexus-tab-background" role="tab" aria-controls="nexus-panel-background" aria-selected="false" tabindex="-1"><i class="bi bi-folder2" aria-hidden="true"></i><span>Background</span></button>
-<button type="button" id="nexus-tab-layout" role="tab" aria-controls="nexus-panel-layout" aria-selected="false" tabindex="-1"><i class="bi bi-folder2" aria-hidden="true"></i><span>Layout files</span></button>
-<button type="button" id="nexus-tab-applications" role="tab" aria-controls="nexus-panel-applications" aria-selected="false" tabindex="-1"><i class="bi bi-folder2" aria-hidden="true"></i><span>Application screens</span></button></div><div class="nexus-editor-tabcontent">
-<div id="nexus-panel-widget" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-widget"><fieldset class="nexus-panel" id="nexus-add-panel"><legend><i class="bi bi-plus-square" aria-hidden="true"></i><span>Add Widgets</span></legend>
-<p class="nexus-panel-description">Add new widgets to the current screen.</p>
-<div class="nexus-create-actions"><button id="addMetric" type="button"><i class="bi bi-speedometer2" aria-hidden="true"></i><span>Add Metric</span></button><button id="addContent" type="button"><i class="bi bi-type" aria-hidden="true"></i><span>Add Content</span></button><button id="addButton" type="button"><i class="bi bi-cursor" aria-hidden="true"></i><span>Add Button</span></button></div>
+<div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
+<p id="nexus-keyboard-hint" class="nexus-panel-description">Keyboard editing: [ / ] select widget, arrows move, Shift + arrows resize, Delete removes, Ctrl + C/V copies and pastes.</p>
+<section class="nexus-editor-tabs" aria-label="Nexus editor workspace"><div class="nexus-editor-tablist" role="tablist" aria-label="Nexus editor sections"><button type="button" id="nexus-tab-widget" role="tab" aria-controls="nexus-panel-widget" aria-selected="true" tabindex="0">Widget</button>
+<button type="button" id="nexus-tab-library" role="tab" aria-controls="nexus-panel-library" aria-selected="false" tabindex="-1">Widget library</button>
+<button type="button" id="nexus-tab-background" role="tab" aria-controls="nexus-panel-background" aria-selected="false" tabindex="-1">Background</button>
+<button type="button" id="nexus-tab-layout" role="tab" aria-controls="nexus-panel-layout" aria-selected="false" tabindex="-1">Layout files</button>
+<button type="button" id="nexus-tab-applications" role="tab" aria-controls="nexus-panel-applications" aria-selected="false" tabindex="-1">Application screens</button></div><div class="nexus-editor-tabcontent">
+<div id="nexus-panel-widget" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-widget"><fieldset class="nexus-panel" id="nexus-add-panel"><legend>Add Widgets</legend>
+<p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
+<div class="nexus-create-actions"><button id="addMetric" type="button">Add Metric</button><button id="addContent" type="button">Add Content</button><button id="addButton" type="button">Add Button</button></div>
 </fieldset>
-<fieldset class="nexus-panel" id="nexus-selected-panel"><legend class="nexus-sr-only">Selected Widget</legend>
- <header class="nexus-selected-hero"><span class="nexus-selected-hero-icon" aria-hidden="true"><i class="bi bi-sliders2"></i></span>
- <div class="nexus-selected-hero-text"><h2>Selected Widget</h2><p>Edit the properties of the selected widget in your OpenLinkHub Nexus project.</p></div></header>
+<fieldset class="nexus-panel" id="nexus-selected-panel"><legend>Selected Widget</legend>
 <div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
 <div id="properties"></div>
-<div class="nexus-widget-actions"><button id="copyWidget" disabled><i class="bi bi-copy" aria-hidden="true"></i><span>Copy widget</span></button><button id="pasteWidget" disabled><i class="bi bi-clipboard" aria-hidden="true"></i><span>Paste widget</span></button><button id="duplicateWidget" disabled><i class="bi bi-files" aria-hidden="true"></i><span>Duplicate widget</span></button><button id="deleteWidget" disabled><i class="bi bi-trash3" aria-hidden="true"></i><span>Remove selected widget</span></button></div>
+<div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
 </fieldset></div>
-<div id="nexus-panel-library" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-library" hidden><fieldset class="nexus-panel nexus-widget-library"><legend><i class="bi bi-folder2" aria-hidden="true"></i><span>Widget library</span></legend>
+<div id="nexus-panel-library" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-library" hidden><fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
 <p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
 <div class="nexus-widget-library-actions">
 <button id="saveWidgetPreset" type="button" disabled>Save selected widget</button>
@@ -119,9 +98,9 @@
 <button id="deleteWidgetPreset" type="button" disabled>Delete saved widget</button>
 </div>
 </fieldset></div>
-<div id="nexus-panel-background" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-background" hidden><fieldset class="nexus-panel"><legend><i class="bi bi-folder2" aria-hidden="true"></i><span>Background</span></legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
+<div id="nexus-panel-background" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-background" hidden><fieldset class="nexus-panel"><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
 <label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset></div>
-<div id="nexus-panel-layout" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-layout" hidden><fieldset class="nexus-panel nexus-layout-files"><legend><i class="bi bi-folder2" aria-hidden="true"></i><span>Layout files</span></legend>
+<div id="nexus-panel-layout" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-layout" hidden><fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
 <div class="nexus-layout-file-controls">
 <button id="exportLayout" type="button">Export layout</button>
 <button id="exportScreen" type="button">Export selected screen</button>
@@ -135,7 +114,7 @@
 </div>
 <p class="nexus-panel-description">Imports are editable previews until Save Layout. Uploaded backgrounds and icons are referenced by ID; artwork is not included in the JSON file.</p>
 </fieldset></div>
-<div id="nexus-panel-applications" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-applications" hidden><fieldset class="nexus-panel nexus-application-screens"><legend><i class="bi bi-window-stack" aria-hidden="true"></i><span>Automatic application screens</span></legend>
+<div id="nexus-panel-applications" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-applications" hidden><fieldset class="nexus-panel nexus-application-screens"><legend>Automatic application screens</legend>
 <p class="nexus-panel-description">Requires OpenLinkHub Application Monitor and an enabled application profile. Enter its application ID; the selected Nexus screen will activate while that app runs and restore afterward.</p>
 <div class="nexus-app-controls"><label>Application ID <input id="applicationScreenID" type="text" maxlength="128" placeholder="Existing application profile ID"></label>
 <label>Show screen <select id="applicationScreenTarget"></select></label>

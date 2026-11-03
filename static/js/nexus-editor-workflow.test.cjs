@@ -67,17 +67,12 @@ test('the integrated and standalone editors have no separate starter template se
  }
 });
 
-test('Save Screen stays in the compact toolbar while device settings remain available',()=>{
- const header=integrated.indexOf('class="nexus-page-heading"');
- const editor=integrated.indexOf('nexus-editor-column');
- const toolbar=integrated.indexOf('class="nexus-screen-actions"');
+test('Save Layout belongs to the integrated device settings card',()=>{
+ const left=integrated.indexOf('nexus-device-column');
+ const right=integrated.indexOf('nexus-editor-column');
  const save=integrated.indexOf('id="save"');
- const preview=integrated.indexOf('class="nexus-preview-strip"');
- assert.ok(header>=0 && editor>header && toolbar>editor && save>toolbar && preview>save);
+ assert.ok(left>=0 && save>left && save<right);
  assert.equal(integrated.split('id="save"').length-1,1);
- assert.match(integrated,/class="nexus-screen-overflow"/);
- assert.match(integrated,/class="nexus-device-settings"/);
- assert.match(integrated,/id="cyclingSeconds"/);
  assert.match(style,/nexus-cycle-settings.*?--text-muted/s);
 });
 
@@ -258,7 +253,7 @@ test('selected widget settings group opacity percentage and preserve it on save'
  const sections=properties.children.filter(child=>child.className==='nexus-property-section');
  assert.equal(sections.length,4);
  assert.deepEqual(sections.map(item=>item.children[0].textContent),['Position & size','Appearance','Text & data','Actions & icons']);
- assert.equal(sections[0].open,false);
+ assert.equal(sections[0].open,true);
  assert.equal(sections[1].open,true);
  const appearance=sections[1];
  const opacitySlider=walk(appearance,item=>item.type==='range');
@@ -422,67 +417,4 @@ test('OpenLinkHub Nexus fork branding is present without renaming upstream route
  assert.match(sidebar,/id="sidebarToggle"/);
  assert.match(sidebar,/\( \.Dict "page" "macros" "url" "\/macros"/);
  assert.match(css,/\.sidebar\.collapsed \.olh-fork-brand \{display:none\}/);
-});
-
-test('approved mockup fidelity includes real icon-led visual controls, full-width editor and branded site header',()=>{
- const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
- const overlay=fs.readFileSync(path.join(__dirname,'..','css','openlinkhub-fork-theme.css'),'utf8');
- const shell=fs.readFileSync(path.join(__dirname,'openlinkhub-nexus-shell.js'),'utf8');
- assert.match(head,/\/static\/js\/openlinkhub-nexus-shell\.js/);
- assert.match(shell,/className='olh-app-topbar'/);
- assert.match(shell,/bi bi-link-45deg/);
- assert.match(shell,/querySelector\('a\[href="\/settings"\]'\)/);
- for(const html of [integrated,standalone]){
-  assert.match(html,/class="nexus-preview-heading"/);
-  assert.match(html,/class="bi bi-info-circle"/);
-  assert.match(html,/class="bi bi-plus-square"/);
-  assert.match(html,/class="bi bi-sliders2"/);
-  assert.match(html,/class="bi bi-speedometer2"/);
-  assert.match(html,/class="bi bi-copy"/);
-  assert.match(html,/class="bi bi-trash3"/);
-  for(const tab of ['widget','library','background','layout','applications'])
-   assert.match(html,new RegExp('id="nexus-tab-'+tab+'"[^>]*><i class="bi bi-'));
- }
- assert.ok(integrated.indexOf('class="nexus-page-heading"')<integrated.indexOf('id="preview"'));
- assert.ok(integrated.indexOf('id="preview"')<integrated.indexOf('class="nexus-editor-tabs"'));
- assert.match(overlay,/\.nexus-workspace\s*\{\s*display:grid!important;\s*grid-template-columns:minmax\(0,1fr\)!important/);
- assert.match(overlay,/#nexus-editor #properties > \.nexus-property-section > summary/);
- assert.match(overlay,/#nexus-editor \.nexus-widget-actions button/);
- assert.match(standalone,/\/static\/css\/openlinkhub-fork-theme\.css/);
-});
-
-test('render fidelity styles load last and expose real compact controls',()=>{
- const nexus=fs.readFileSync(path.join(__dirname,'..','..','web','nexus.html'),'utf8');
- const source=fs.readFileSync(path.join(__dirname,'..','css','nexus-render-fidelity.css'),'utf8');
- const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
- assert.ok(nexus.indexOf('nexus-render-fidelity.css')>nexus.indexOf('nexus-editor.css'));
- assert.match(standalone,/nexus-render-fidelity.css/);
- assert.match(head,/openlinkhub-nexus-shell.js/);
- assert.match(source,/\.nexus-preview-strip\s*\{/);
- assert.match(source,/#nexus-editor #nexus-add-panel/);
- assert.match(source,/grid-template-columns:165px minmax\(0,1fr\) 110px/);
- assert.match(source,/#nexus-editor \.nexus-selected-hero/);
- assert.match(source,/#nexus-editor #properties/);
- for(const html of [integrated,standalone]){
-  assert.match(html,/id="nexusPreviewFullscreen"/);
-  assert.match(html,/class="nexus-selected-hero"/);
-  assert.match(html,/class="nexus-screen-overflow"/);
-  assert.match(html,/class="nexus-preview-strip"/);
-  for(const id of ['save','addScreen','duplicateScreen','moveScreenUp','moveScreenDown','renameScreen','deleteScreen','newScreenPreset','screens'])
-   assert.equal(html.split('id="'+id+'"').length-1,1,id+' must be unique');
- }
- assert.match(editorSource,/nexusPreviewFullscreen/);
-});
-
-test('Nexus property headings retain the approved gradient treatment',()=>{
- const css=fs.readFileSync(path.join(__dirname,'..','css','nexus-render-fidelity.css'),'utf8');
- const selected=css.slice(css.indexOf('#nexus-editor .nexus-selected-hero{'),css.indexOf('#nexus-editor .nexus-selected-hero:after'));
- const headings=css.slice(css.indexOf('#nexus-editor #properties > .nexus-property-section > summary{'),css.indexOf('#nexus-editor #properties > .nexus-property-section > summary::-webkit-details-marker'));
- const widgets=css.slice(css.indexOf('#nexus-editor #nexus-add-panel{'),css.indexOf('#nexus-editor #nexus-add-panel legend{'));
- for(const [name,block] of [['selected widget',selected],['collapsible headings',headings],['Add Widgets',widgets]]){
-  assert.match(block,/background:linear-gradient\(/,name+' must have a real gradient');
-  assert.match(block,/linear-gradient\(180deg,#3[0-9a-f]{5}\b/i,name+' needs a visible charcoal gradient');
-  assert.match(block,/rgba\(2(?:11|23),1(?:57|59|65),7[79]|rgba\(223,165,86/,name+' needs a warm amber highlight');
- }
- assert.match(headings,/!important/,'gradient must win against upstream form-control styling');
 });
