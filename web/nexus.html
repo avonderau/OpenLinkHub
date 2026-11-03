@@ -73,9 +73,20 @@
             </div>
 
 <style>
-#nexus-editor{max-width:1100px}
+.main-content:has(#nexus-editor){min-width:0;max-width:100%;overflow-x:hidden}
+#nexus-editor{width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow:hidden}
+#nexus-editor>.card-body{min-width:0;max-width:100%;box-sizing:border-box}
+#nexus-editor fieldset{min-width:0;max-width:100%;box-sizing:border-box}
+#nexus-editor #properties{min-width:0;max-width:100%;display:flex;flex-wrap:wrap;gap:.35rem}
+#nexus-editor #preview{width:100%;min-width:0;max-width:100%;box-sizing:border-box;overflow-x:auto;overflow-y:hidden}
+#nexus-editor #screen{flex:none}
+#nexus-editor label{max-width:100%;box-sizing:border-box}
+#nexus-editor input,#nexus-editor select{max-width:100%;box-sizing:border-box}
+#nexus-editor input[type=file]{width:min(260px,100%)}
+#nexus-editor button{white-space:normal;overflow-wrap:anywhere}
+
 #nexus-editor button,#nexus-editor input,#nexus-editor select{font-family:inherit;font-size:0.85rem;font-weight:500;line-height:1.4;padding:.45rem .65rem;margin:.25rem;background:var(--bg-card,#202022);color:var(--text-main,#e8eff5);-webkit-text-fill-color:var(--text-main,#e8eff5);border:1px solid var(--border-subtle,#617c90);border-radius:8px;opacity:1}
-#nexus-editor button{min-width:max-content}
+#nexus-editor button{min-width:0}
 #nexus-editor select{min-width:120px}
 #nexus-editor #device{min-width:190px}
 #nexus-editor #screens{min-width:150px}
@@ -92,7 +103,7 @@
 #nexus-editor .widget.selected{outline:2px solid #ffc36a}
 #nexus-editor #preview{overflow:auto;padding:1rem;background:#080f16;border-radius:8px}
 #nexus-editor #message{min-height:1.5em}
-#nexus-editor fieldset{border:1px solid var(--bs-border-color,#496275);border-radius:8px;margin:1rem 0;padding:1rem}
+#nexus-editor fieldset{border:1px solid var(--border-subtle,#496275);border-radius:8px;margin:1rem 0;padding:1rem}
 #nexus-editor legend{float:none;width:auto;padding:0 .5rem;font-size:1rem}
 #nexus-editor input[type=number]{width:85px}
 </style>
