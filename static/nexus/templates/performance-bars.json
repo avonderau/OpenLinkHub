@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "activeScreenId": "starter_performance_bars",
+  "cyclingMode": "manual",
+  "cyclingSeconds": 15,
+  "screens": [
+    {
+      "id": "starter_performance_bars",
+      "name": "Performance Bars",
+      "background": "preset_neon",
+      "widgets": [
+        {
+          "type": "bar",
+          "metric": "cpu.utilization",
+          "x": 0,
+          "y": 0,
+          "width": 208,
+          "height": 48,
+          "settings": {
+            "label": "CPU",
+            "unit": "%",
+            "backgroundColor": "#263144",
+            "textColor": "#ffffff",
+            "borderColor": "#6c91c7"
+          },
+          "id": "widget_1"
+        },
+        {
+          "type": "bar",
+          "metric": "gpu.utilization",
+          "x": 216,
+          "y": 0,
+          "width": 208,
+          "height": 48,
+          "settings": {
+            "label": "GPU",
+            "unit": "%",
+            "backgroundColor": "#263144",
+            "textColor": "#ffffff",
+            "borderColor": "#6c91c7"
+          },
+          "id": "widget_2"
+        },
+        {
+          "type": "bar",
+          "metric": "memory.utilization",
+          "x": 432,
+          "y": 0,
+          "width": 208,
+          "height": 48,
+          "settings": {
+            "label": "RAM",
+            "unit": "%",
+            "backgroundColor": "#263144",
+            "textColor": "#ffffff",
+            "borderColor": "#6c91c7"
+          },
+          "id": "widget_3"
+        }
+      ]
+    }
+  ]
+}

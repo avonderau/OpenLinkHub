@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "activeScreenId": "starter_navigation",
+  "cyclingMode": "manual",
+  "cyclingSeconds": 15,
+  "screens": [
+    {
+      "id": "starter_navigation",
+      "name": "Screen Navigation",
+      "background": "preset_pulse",
+      "widgets": [
+        {
+          "type": "button",
+          "x": 0,
+          "y": 0,
+          "width": 136,
+          "height": 48,
+          "action": "previous",
+          "settings": {
+            "label": "",
+            "icon": "previous",
+            "style": "outline",
+            "textColor": "#eaf6ff",
+            "borderColor": "#6e9db3"
+          },
+          "id": "widget_1"
+        },
+        {
+          "type": "text",
+          "x": 144,
+          "y": 0,
+          "width": 352,
+          "height": 48,
+          "settings": {
+            "text": "NEXUS",
+            "backgroundColor": "#172b3a",
+            "textColor": "#eaf6ff",
+            "borderColor": "#34576e"
+          },
+          "id": "widget_2"
+        },
+        {
+          "type": "button",
+          "x": 504,
+          "y": 0,
+          "width": 136,
+          "height": 48,
+          "action": "next",
+          "settings": {
+            "label": "",
+            "icon": "next",
+            "style": "outline",
+            "textColor": "#eaf6ff",
+            "borderColor": "#6e9db3"
+          },
+          "id": "widget_3"
+        }
+      ]
+    }
+  ]
+}

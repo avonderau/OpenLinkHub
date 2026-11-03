@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "activeScreenId": "starter_network_and_storage",
+  "cyclingMode": "manual",
+  "cyclingSeconds": 15,
+  "screens": [
+    {
+      "id": "starter_network_and_storage",
+      "name": "Network & Storage",
+      "background": "preset_circuit",
+      "widgets": [
+        {
+          "type": "metric",
+          "metric": "network.rx_rate",
+          "x": 0,
+          "y": 0,
+          "width": 152,
+          "height": 48,
+          "settings": {
+            "label": "NET IN",
+            "backgroundColor": "#143a3b",
+            "textColor": "#dafbf0"
+          },
+          "id": "widget_1"
+        },
+        {
+          "type": "metric",
+          "metric": "network.tx_rate",
+          "x": 160,
+          "y": 0,
+          "width": 152,
+          "height": 48,
+          "settings": {
+            "label": "NET OUT",
+            "backgroundColor": "#143a3b",
+            "textColor": "#dafbf0"
+          },
+          "id": "widget_2"
+        },
+        {
+          "type": "metric",
+          "metric": "disk.read_rate",
+          "x": 320,
+          "y": 0,
+          "width": 152,
+          "height": 48,
+          "settings": {
+            "label": "DISK R",
+            "backgroundColor": "#183646",
+            "textColor": "#e2f3ff"
+          },
+          "id": "widget_3"
+        },
+        {
+          "type": "metric",
+          "metric": "disk.write_rate",
+          "x": 480,
+          "y": 0,
+          "width": 160,
+          "height": 48,
+          "settings": {
+            "label": "DISK W",
+            "backgroundColor": "#183646",
+            "textColor": "#e2f3ff"
+          },
+          "id": "widget_4"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "activeScreenId": "starter_media_deck",
+  "cyclingMode": "manual",
+  "cyclingSeconds": 15,
+  "screens": [
+    {
+      "id": "starter_media_deck",
+      "name": "Media Controls",
+      "background": "preset_sunset",
+      "widgets": [
+        {
+          "type": "button",
+          "x": 0,
+          "y": 0,
+          "width": 96,
+          "height": 48,
+          "action": "media",
+          "target": "previous-track",
+          "settings": {
+            "icon": "previous-track",
+            "style": "solid",
+            "backgroundColor": "#253248",
+            "textColor": "#ffffff",
+            "borderColor": "#4c668f"
+          },
+          "id": "widget_1"
+        },
+        {
+          "type": "button",
+          "x": 104,
+          "y": 0,
+          "width": 96,
+          "height": 48,
+          "action": "media",
+          "target": "play-pause",
+          "settings": {
+            "icon": "play-pause",
+            "style": "solid",
+            "backgroundColor": "#294d69",
+            "textColor": "#ffffff",
+            "borderColor": "#589dc0"
+          },
+          "id": "widget_2"
+        },
+        {
+          "type": "button",
+          "x": 208,
+          "y": 0,
+          "width": 96,
+          "height": 48,
+          "action": "media",
+          "target": "next-track",
+          "settings": {
+            "icon": "next-track",
+            "style": "solid",
+            "backgroundColor": "#253248",
+            "textColor": "#ffffff",
+            "borderColor": "#4c668f"
+          },
+          "id": "widget_3"
+        },
+        {
+          "type": "button",
+          "x": 312,
+          "y": 0,
+          "width": 96,
+          "height": 48,
+          "action": "media",
+          "target": "stop",
+          "settings": {
+            "icon": "stop",
+            "style": "solid",
+            "backgroundColor": "#59333b",
+            "textColor": "#ffffff",
+            "borderColor": "#ba6978"
+          },
+          "id": "widget_4"
+        },
+        {
+          "type": "button",
+          "x": 416,
+          "y": 0,
+          "width": 96,
+          "height": 48,
+          "action": "media",
+          "target": "volume-down",
+          "settings": {
+            "icon": "volume-down",
+            "style": "solid",
+            "backgroundColor": "#253248",
+            "textColor": "#ffffff",
+            "borderColor": "#4c668f"
+          },
+          "id": "widget_5"
+        },
+        {
+          "type": "button",
+          "x": 520,
+          "y": 0,
+          "width": 120,
+          "height": 48,
+          "action": "media",
+          "target": "volume-up",
+          "settings": {
+            "icon": "volume-up",
+            "style": "solid",
+            "backgroundColor": "#253248",
+            "textColor": "#ffffff",
+            "borderColor": "#4c668f"
+          },
+          "id": "widget_6"
+        }
+      ]
+    }
+  ]
+}
