@@ -37,7 +37,7 @@ func RenderScreen(screen Screen, values MetricSnapshot) (*image.RGBA,error) {
   label:=w.Settings["label"]
   if label=="" {label=w.Metric}
   if w.Type=="text" {label=w.Settings["text"]}
-  if w.Type=="button" || w.Type=="macro" {if label=="" {label="Touch"} }
+  if w.Type=="button" || w.Type=="macro" {if label=="" && w.Settings["icon"]=="" {label="Touch"} }
   if (w.Type=="button" || w.Type=="macro") && w.Settings["icon"]!="" && w.Settings["icon"]!="none" {
    drawMediaIcon(canvas,bounds,w.Settings["icon"])
    if label!="" {writeWidgetText(canvas,w.X+3,w.Y+w.Height-3,clipText(label,w.Width),color.RGBA{235,245,252,255})}
