@@ -1039,6 +1039,7 @@ func (d *Device) getListenerData() []byte {
 // backendListener will listen for events from the device
 func (d *Device) backendListener() {
 	blocked := false
+	var touchGesture touchGestureState
 	go func() {
 		listener, err := hid.Open(d.VendorId, d.ProductId, d.Serial)
 		if err != nil {
@@ -1070,9 +1071,10 @@ func (d *Device) backendListener() {
 				}
 
 				if d.DeviceProfile.LCDMode == "custom-screens" {
-					d.processCustomTouchReport(data, &blocked)
+					d.processCustomTouchReport(data, &touchGesture)
 					continue
 				}
+				touchGesture=touchGestureState{} // Reset pending gesture outside custom-screen mode.
 				if d.Keyboard {
 					active := data[5] // Touch activation
 					if active == 1 && blocked == false {

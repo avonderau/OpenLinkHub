@@ -83,7 +83,7 @@ Existing saved JSON layouts remain valid across updates.
     and adaptive text clipping; keep editor and physical Nexus consistent.
 13. **Animated widgets/icons [GIF button icons implemented]**: GIF artwork on buttons/widgets, with independent
     animation timers, disposal handling, memory and size caps.
-14. **Screen navigation [screen reordering implemented]**: true left/right swipe gestures, reorder screens,
+14. **Screen navigation [blank-area swipes and reordering implemented]**: left/right swipe gestures, reorder screens,
     overview and configurable behavior around button hit targets.
 
 ## Phase 4 — Context, hardware controls and finish quality
@@ -195,3 +195,16 @@ five updates per second; static icons retain normal update cadence. Browser
 previews display the original GIF through the icon API. Re-uploading an icon
 with a different format removes the obsolete file. Multiple independent
 animated widgets and richer per-widget animation rates remain future work.
+
+### Horizontal Nexus swipe navigation
+
+Manual screen mode recognizes a horizontal touch movement of at least
+96 pixels completed within 1.2 seconds, **when the gesture begins outside
+interactive button/macro widgets**. A leftward swipe advances to the next
+screen; a rightward swipe selects the previous screen. Existing buttons
+execute immediately on touch-down, and are never also treated as swipes.
+Touching the left/right edges without swiping still navigates on release.
+Automatic and Off modes ignore swipe navigation. Gesture state belongs to one
+Nexus HID listener and is cleared when the device leaves custom-screen mode.
+Real hardware touch reports need user acceptance testing to confirm movement
+updates are provided consistently by the device firmware.
