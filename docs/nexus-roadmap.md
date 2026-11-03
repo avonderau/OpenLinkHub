@@ -301,3 +301,12 @@ refresh detection, at up to five framebuffer updates per second. The icon API
 remains limited to its normalized resolution; large image widgets may look
 soft rather than retaining the source resolution. Existing touch-button icons
 and backgrounds are unaffected.
+
+### Expanded screen capacity
+
+The editor and saved screen configuration now permit up to **256 screens**
+in a layout, while retaining at most 64 widgets per screen, 4096 total
+widgets and a 4-MiB JSON configuration limit. These limits are checked both
+in the Go backend and in the JSON import/editor path. Large layouts are loaded
+on demand by the normal screen selector, while only the active screen is
+rendered to the Nexus. All earlier version-1 JSON layouts remain compatible.
