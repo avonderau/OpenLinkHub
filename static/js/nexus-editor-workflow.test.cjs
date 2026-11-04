@@ -22,7 +22,7 @@ function makeEditor(){
    append(...children){this.children.push(...children)},
    prepend(child){this.children.unshift(child)},
    add(option){this.options.push(option)},
-   setAttribute(){},querySelector(){return null}
+   setAttribute(key,value){this.attributes??={};this.attributes[key]=value},querySelector(){return null}
   };
  }
  function node(id){
@@ -310,7 +310,7 @@ test('narrow Appearance inspector keeps units inline and positions fields withou
  assert.equal(value.children[1].textContent,'%');
  assert.equal(value.children[0].value,'75');
  const gradient=walk(section,el=>el.className==='nexus-gradient-control');
- assert.ok(gradient&&gradient.children.some(ch=>ch.tagName==='SELECT'||ch.options),'gradient remains editable beside radius');
+ assert.ok(gradient&&gradient.children.some(ch=>ch.options?.some(o=>o.label==='None')),'gradient remains editable beside radius');
  const colors=[];
  for(const row of section.children){
   for(const child of row.children||[]){
