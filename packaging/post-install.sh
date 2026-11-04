@@ -3,6 +3,15 @@
 # Never erase a user's saved device profiles or Nexus layouts.
 set -eu
 base=/opt/OpenLinkHub
+# Never follow a pre-existing installation symlink during privileged package
+# setup, even when migrating from a writable upstream/manual installation.
+for entry in "$base" "$base/database" "$base/runtime" \
+  "$base/runtime/nexus-desktop" "$base/config.json"; do
+  if [ -L "$entry" ]; then
+    echo "Refusing a symlink in package installation path: $entry" >&2
+    exit 1
+  fi
+done
 
 if ! getent group openlinkhub >/dev/null 2>&1; then
   groupadd --system openlinkhub
