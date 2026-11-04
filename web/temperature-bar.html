@@ -1,40 +1,50 @@
 {{ define "temperature-bar" }}
 {{ $root := . }}
 {{ $dash := .Dashboard }}
-<!-- Temps -->
-<div class="row g-4 mb-4">
-    <!-- CPU -->
-    <div class="col-md-2">
-        <div class="card p-3">
-            <div class="card-title text-ellipsis">{{ $root.Lang "txtCpuTemperature" }}</div>
-            <div id="cpu_temp" class="stat text-warning text-ellipsis">{{ .CpuTemp }}</div>
-            <small class="text-ellipsis">{{ .SystemInfo.CPU.Model }}</small>
-        </div>
+<!-- Shared live telemetry bar. Sensor IDs and API polling remain unchanged. -->
+<section class="olh-telemetry-bar mb-4" aria-label="System temperatures">
+    <div class="olh-telemetry-heading">
+        <span class="olh-telemetry-heading-icon" aria-hidden="true"><i class="bi bi-thermometer-half"></i></span>
+        <span class="olh-telemetry-heading-title">System temperatures</span>
     </div>
+    <div class="olh-telemetry-readings">
+        <!-- CPU -->
+        <div class="olh-telemetry-segment">
+            <div class="olh-telemetry-label">
+                <i class="bi bi-cpu" aria-hidden="true"></i>
+                <span>{{ $root.Lang "txtCpuTemperature" }}</span>
+            </div>
+            <div id="cpu_temp" class="olh-telemetry-temperature" aria-live="off">{{ .CpuTemp }}</div>
+            <div class="olh-telemetry-device" title="{{ .SystemInfo.CPU.Model }}">{{ .SystemInfo.CPU.Model }}</div>
+        </div>
 
-    <!-- GPUs -->
-    {{ if .SystemInfo.GPU }}
-    {{ range .SystemInfo.GPU }}
-    <div class="col-md-2">
-        <div class="card p-3">
-            <div class="card-title text-ellipsis">{{ $root.Lang "txtGpuTemperature" }}</div>
-            <div id="gpu_temp_{{ .Index }}" class="stat text-warning text-ellipsis">{{ $dash.TemperatureToString .Temperature }}</div>
-            <small class="text-ellipsis">{{ .Model }}</small>
+        <!-- GPUs: preserve each existing numeric API index. -->
+        {{ if .SystemInfo.GPU }}
+        {{ range .SystemInfo.GPU }}
+        <div class="olh-telemetry-segment">
+            <div class="olh-telemetry-label">
+                <i class="bi bi-gpu-card" aria-hidden="true"></i>
+                <span>{{ $root.Lang "txtGpuTemperature" }}</span>
+            </div>
+            <div id="gpu_temp_{{ .Index }}" class="olh-telemetry-temperature" aria-live="off">{{ $dash.TemperatureToString .Temperature }}</div>
+            <div class="olh-telemetry-device" title="{{ .Model }}">{{ .Model }}</div>
         </div>
-    </div>
-    {{ end }}
-    {{ end }}
+        {{ end }}
+        {{ end }}
 
-    {{ if .SystemInfo.Storage }}
-    {{ range .SystemInfo.Storage }}
-    <div class="col-md-2">
-        <div class="card p-3">
-            <div class="card-title text-ellipsis">{{ $root.Lang "txtStorageTemperature" }}</div>
-            <div id="storage_temp-{{ .Key }}" class="stat text-warning text-ellipsis">{{ $dash.TemperatureToString .Temperature }}</div>
-            <small class="text-ellipsis">{{ .Model }}</small>
+        <!-- Storage: don't assume all disks are SSDs. Labels stay translated. -->
+        {{ if .SystemInfo.Storage }}
+        {{ range .SystemInfo.Storage }}
+        <div class="olh-telemetry-segment olh-telemetry-storage">
+            <div class="olh-telemetry-label">
+                <i class="bi bi-device-hdd" aria-hidden="true"></i>
+                <span>{{ $root.Lang "txtStorageTemperature" }}</span>
+            </div>
+            <div id="storage_temp-{{ .Key }}" class="olh-telemetry-temperature" aria-live="off">{{ $dash.TemperatureToString .Temperature }}</div>
+            <div class="olh-telemetry-device" title="{{ .Model }}">{{ .Model }}</div>
         </div>
+        {{ end }}
+        {{ end }}
     </div>
-    {{ end }}
-    {{ end }}
-</div>
+</section>
 {{ end }}
