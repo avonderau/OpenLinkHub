@@ -99,7 +99,7 @@ fi
 
 # Copy udev rule
 cp "$CURRENT_DIR/$PERMISSION_FILE" "$PERMISSION_DIR"
-chmod -x "$PERMISSION_DIR"
+chmod 644 "$PERMISSION_DIR/$PERMISSION_FILE"
 
 # Reload udev rules
 udevadm control --reload-rules
