@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_API="https://api.github.com/repos/jurkovic-nikola/OpenLinkHub/releases/latest"
+REPO_API="https://api.github.com/repos/avonderau/OpenLinkHub/releases/latest"
 PRODUCT="OpenLinkHub"
 SERVICE_NAME="${PRODUCT}.service"
 PERMISSION_FILE="99-openlinkhub.rules"
