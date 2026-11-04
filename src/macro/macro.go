@@ -10,6 +10,7 @@ import (
 	"OpenLinkHub/src/logger"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"strings"
 	"sync"
@@ -89,22 +90,12 @@ func Init() {
 	}
 }
 
-// SnapshotProfile makes an independent copy of shared macro actions for a
-// device runner, protecting it against concurrent edits in the macro UI.
-func SnapshotProfile(id int) (Macro,bool) {
- mutex.Lock()
- defer mutex.Unlock()
- profile,ok:=macros[id]
- if !ok{return Macro{},false}
- copy:=profile
- copy.Actions=make(map[int]Actions,len(profile.Actions))
- for index,action:=range profile.Actions{copy.Actions[index]=action}
- return copy,true
-}
-
 // GetProfile will return macro profile based on macro ID
 func GetProfile(macroId int) *Macro {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if val, ok := macros[macroId]; ok {
+		val.Actions = maps.Clone(val.Actions)
 		return &val
 	}
 	return nil
@@ -112,7 +103,14 @@ func GetProfile(macroId int) *Macro {
 
 // GetProfiles will return all macro profiles
 func GetProfiles() map[int]Macro {
-	return macros
+	mutex.Lock()
+	defer mutex.Unlock()
+	profiles := maps.Clone(macros)
+	for id, profile := range profiles {
+		profile.Actions = maps.Clone(profile.Actions)
+		profiles[id] = profile
+	}
+	return profiles
 }
 
 // DeleteMacroValue will delete macro value
@@ -283,4 +281,25 @@ func SaveProfile(path string, data Macro) {
 		logger.Log(logger.Fields{"error": err, "location": path}).Error("Unable to save macro data")
 		return
 	}
+}
+
+// SnapshotProfile makes an independent copy of shared macro actions for a
+// device runner, protecting it against concurrent edits in the macro UI.
+func SnapshotProfile(id int) (Macro,bool) {
+ mutex.Lock()
+ defer mutex.Unlock()
+ profile,ok:=macros[id]
+ if !ok{return Macro{},false}
+ copy:=profile
+ copy.Actions=make(map[int]Actions,len(profile.Actions))
+ for index,action:=range profile.Actions{copy.Actions[index]=action}
+ return copy,true
+}
+
+// GetProfile will return macro profile based on macro ID
+func GetProfile(macroId int) *Macro {
+	if val, ok := macros[macroId]; ok {
+		return &val
+	}
+	return nil
 }
