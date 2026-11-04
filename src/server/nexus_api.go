@@ -5,6 +5,7 @@ import (
  "OpenLinkHub/src/devices/nexus"
  "encoding/json"
  "io"
+ "mime"
  "net/http"
  "net/url"
  "strings"
@@ -16,18 +17,38 @@ func nexusDevice(r *http.Request)(*nexus.Device,bool){
  d,ok:=devices.GetDevice(serial).(*nexus.Device)
  return d,ok
 }
+// Require same-origin browser writes. A missing Origin is still accepted for
+// direct local CLI/API clients, but browser Fetch Metadata never permits
+// cross-site/same-site subdomain writes without an exact origin match.
 func nexusWriteAllowed(r *http.Request)bool{
- if r.Header.Get("Origin")!="" {
-  origin,err:=url.Parse(r.Header.Get("Origin"))
-  if err!=nil||!strings.EqualFold(origin.Host,r.Host){return false}
+ switch r.Header.Get("Sec-Fetch-Site"){
+ case "","none","same-origin":
+ default:return false
  }
+ raw:=r.Header.Get("Origin")
+ if raw==""{return true}
+ origin,err:=url.Parse(raw)
+ if err!=nil||origin.User!=nil||origin.Opaque!=""||
+  origin.Path!=""||origin.RawQuery!=""||origin.Fragment!=""||
+  (origin.Scheme!="http"&&origin.Scheme!="https")||
+  origin.Host==""||!strings.EqualFold(origin.Host,r.Host){
+  return false
+ }
+ if r.TLS!=nil&&origin.Scheme!="https"{return false}
  return true
+}
+func nexusUploadMediaType(value string)bool{
+ mediaType,_,err:=mime.ParseMediaType(value)
+ if err!=nil{return false}
+ return mediaType=="image/png"||mediaType=="image/jpeg"||mediaType=="image/gif"
 }
 func nexusScreensAPI(w http.ResponseWriter,r *http.Request){
  if r.Method!=http.MethodGet&&r.Method!=http.MethodPut {w.Header().Set("Allow","GET, PUT");http.Error(w,"method not allowed",405);return}
  d,ok:=nexusDevice(r);if !ok {http.Error(w,"Nexus device not found",404);return}
  if r.Method==http.MethodGet {
   w.Header().Set("Content-Type","application/json")
+  w.Header().Set("Cache-Control","private, no-store")
+  w.Header().Set("X-Content-Type-Options","nosniff")
   _=json.NewEncoder(w).Encode(d.GetCustomScreens())
   return
  }
@@ -67,6 +88,9 @@ func nexusBackgroundAPI(w http.ResponseWriter,r *http.Request){
   return
  }
  if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
+ if !nexusUploadMediaType(r.Header.Get("Content-Type")){
+  http.Error(w,"PNG, JPEG or GIF required",http.StatusUnsupportedMediaType);return
+ }
  r.Body=http.MaxBytesReader(w,r.Body,4*1024*1024)
  defer r.Body.Close()
  content,err:=io.ReadAll(r.Body)
@@ -91,7 +115,9 @@ func nexusCustomIconAPI(w http.ResponseWriter,r *http.Request){
   return
  }
  if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
- if !strings.HasPrefix(r.Header.Get("Content-Type"),"image/png") && !strings.HasPrefix(r.Header.Get("Content-Type"),"image/jpeg") && !strings.HasPrefix(r.Header.Get("Content-Type"),"image/gif"){http.Error(w,"PNG, JPEG or GIF required",415);return}
+ if !nexusUploadMediaType(r.Header.Get("Content-Type")){
+  http.Error(w,"PNG, JPEG or GIF required",http.StatusUnsupportedMediaType);return
+ }
  r.Body=http.MaxBytesReader(w,r.Body,512*1024)
  defer r.Body.Close()
  content,err:=io.ReadAll(r.Body)
