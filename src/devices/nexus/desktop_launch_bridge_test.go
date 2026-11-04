@@ -86,3 +86,41 @@ func TestNexusDesktopAgentReceivesValidatedTouchEvents(t *testing.T){
  select{case err:=<-stopped:if err!=nil{t.Fatal(err)}
  case <-time.After(2*time.Second):t.Fatal("desktop agent failed to stop")}
 }
+
+// An agent must never attach to an arbitrary local socket impersonating the
+// daemon, nor accept commands via a symlink or writable socket directory.
+func TestNexusDesktopSocketIdentityAndRuntimeSeparation(t *testing.T){
+ root:=t.TempDir()
+ path:=nexusDesktopLaunchSocketPath(root)
+ if strings.Contains(path,filepath.Join("database","nexus")){t.Fatalf("socket overlaps private Nexus media: %q",path)}
+ broker,err:=startNexusDesktopLaunchBroker(path)
+ if err!=nil{t.Fatal(err)}
+ defer broker.close()
+ owner,err:=verifyNexusDesktopSocket(path)
+ if err!=nil{t.Fatal(err)}
+ if owner!=uint32(os.Geteuid()){t.Fatalf("unexpected socket owner %d",owner)}
+ dir,err:=os.Stat(filepath.Dir(path))
+ if err!=nil{t.Fatal(err)}
+ if dir.Mode().Perm()!=0750{t.Fatalf("socket directory permissions = %#o",dir.Mode().Perm())}
+ agent,err:=net.Dial("unix",path)
+ if err!=nil{t.Fatal(err)}
+ defer agent.Close()
+ peer,err:=nexusDesktopPeerUID(agent)
+ if err!=nil{t.Fatal(err)}
+ if peer!=owner{t.Fatalf("unexpected server peer uid %d",peer)}
+ if err:=os.Chmod(filepath.Dir(path),0777);err!=nil{t.Fatal(err)}
+ if _,err:=verifyNexusDesktopSocket(path);err==nil{t.Fatal("unsafe socket directory accepted")}
+ if err:=os.Chmod(filepath.Dir(path),0750);err!=nil{t.Fatal(err)}
+ if err:=os.Chmod(path,0666);err!=nil{t.Fatal(err)}
+ if _,err:=verifyNexusDesktopSocket(path);err==nil{t.Fatal("world-accessible socket accepted")}
+}
+func TestNexusDesktopSocketRejectsSymlinkDirectory(t *testing.T){
+ root:=t.TempDir()
+ realDir:=filepath.Join(root,"private")
+ if err:=os.Mkdir(realDir,0750);err!=nil{t.Fatal(err)}
+ link:=filepath.Join(root,"alias")
+ if err:=os.Symlink(realDir,link);err!=nil{t.Fatal(err)}
+ if _,err:=startNexusDesktopLaunchBroker(filepath.Join(link,"desktop-launch.sock"));err==nil{
+  t.Fatal("symlink launcher directory unexpectedly accepted")
+ }
+}
