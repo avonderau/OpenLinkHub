@@ -1,0 +1,253 @@
+/* OpenLinkHub Nexus | compact widget inspector
+ * Fork-owned: loaded after the original editor stylesheet on both editors.
+ * Do not change upstream layout, firmware controls, file tabs or API bindings.
+ */
+#nexus-panel-widget{
+  container-type:inline-size;
+  --nci-gold:var(--olh-accent,#d5a65a);
+  --nci-stroke:var(--olh-line-strong,rgba(220,225,232,.20));
+  --nci-muted:var(--olh-muted,#a3a5ae);
+  --nci-ink:var(--olh-ink,#e8e9ec);
+}
+#nexus-panel-widget .nexus-inspector-sr-only{
+  position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0
+}
+/* The add actions replace the large nested Add Widgets fieldset. */
+#nexus-panel-widget #nexus-add-panel{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:12px;padding:10px 5px 15px;margin:0 0 14px;
+  background:transparent;border:0;border-bottom:1px solid var(--nci-stroke);
+  border-radius:0;min-width:0
+}
+#nexus-panel-widget .nexus-add-toolbar-title{
+  font-size:13px;font-weight:750;letter-spacing:.015em;color:var(--nci-ink)
+}
+#nexus-panel-widget #nexus-add-panel .nexus-create-actions{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px
+}
+#nexus-panel-widget #nexus-add-panel .nexus-create-actions button{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  margin:0;padding:8px 11px;min-width:0;min-height:36px;
+  color:var(--nci-ink);font-weight:650;font-size:12px;white-space:nowrap;
+  background:linear-gradient(180deg,#303135,#252629);
+  border:1px solid rgba(255,255,255,.20);border-radius:8px
+}
+#nexus-panel-widget .nexus-create-actions .bi{color:var(--nci-gold);font-size:14px}
+#nexus-panel-widget .nexus-create-actions button:hover{
+  background:linear-gradient(180deg,#38342d,#292827);
+  border-color:rgba(213,166,90,.6)
+}
+/* One primary inspector, not a card containing several unrelated cards. */
+#nexus-panel-widget #nexus-selected-panel{
+  position:relative;display:block;min-width:0;min-height:0;
+  padding:0!important;margin:0!important;border:1px solid var(--nci-stroke);
+  border-radius:11px;background:#1c1d1f;overflow:visible
+}
+#nexus-panel-widget #nexus-selected-panel .nexus-inspector-hero{
+  display:flex;align-items:center;flex-wrap:wrap;gap:12px;
+  padding:13px 15px;margin:0;min-height:70px;
+  background:linear-gradient(110deg,#403729 0%,#302c27 39%,#222325 100%);
+  border-bottom:1px solid rgba(220,175,101,.35);
+  border-radius:10px 10px 0 0
+}
+#nexus-panel-widget .nexus-inspector-badge{
+  flex:none;display:grid;place-items:center;width:39px;height:39px;
+  border:1px solid #947143;border-radius:9px;background:#59472f;
+  color:#f0c581;font-size:20px
+}
+#nexus-panel-widget .nexus-inspector-identity{
+  flex:1 1 145px;display:flex;flex-direction:column;gap:2px;
+  align-items:flex-start;min-width:0
+}
+#nexus-panel-widget .nexus-inspector-identity strong{
+  font-size:15px;color:#f3f0e9;font-weight:700;line-height:1.2;
+  max-width:100%;overflow-wrap:anywhere
+}
+#nexus-panel-widget .nexus-inspector-identity small{
+  font-size:11px;font-weight:450;color:#c2b6a5;letter-spacing:.01em
+}
+#nexus-panel-widget .nexus-inspector-head-actions{
+  display:flex;align-items:center;gap:7px;margin-left:auto
+}
+#nexus-panel-widget .nexus-inspector-head-actions[hidden]{display:none!important}
+#nexus-panel-widget .nexus-selected-widget-type{
+  display:inline-flex;align-items:center;gap:0;margin:0;padding:0;max-width:100%;
+  font-size:0;color:transparent;white-space:nowrap
+}
+#nexus-panel-widget .nexus-selected-widget-type select{
+  min-width:115px;width:auto;max-width:155px;min-height:34px;
+  margin:0;padding:5px 27px 5px 10px;line-height:1.3;
+  background-color:#2b2925;color:#f4d5a5;
+  border:1px solid #806548;border-radius:7px;font-size:12px;font-weight:600
+}
+#nexus-panel-widget .nexus-inspector-icon-button,
+#nexus-panel-widget .nexus-inspector-actions-menu > summary{
+  display:grid;place-items:center;width:34px;height:34px;min-width:34px;
+  padding:0;margin:0;background:#302d2a;border:1px solid #625647;
+  border-radius:7px;color:#e4dfd8;list-style:none;cursor:pointer;font-size:16px
+}
+#nexus-panel-widget .nexus-inspector-actions-menu{position:relative;z-index:20}
+#nexus-panel-widget .nexus-inspector-actions-menu>summary::-webkit-details-marker{display:none}
+#nexus-panel-widget .nexus-inspector-actions-menu .nexus-inspector-actions-popover{
+  position:absolute;right:0;top:calc(100% + 6px);z-index:25;
+  display:flex;flex-direction:column;gap:4px;
+  width:205px;padding:7px;background:#262628;border:1px solid #5a5550;
+  border-radius:9px;box-shadow:0 14px 25px rgba(0,0,0,.45)
+}
+#nexus-panel-widget .nexus-inspector-actions-popover button{
+  display:flex;align-items:center;justify-content:flex-start;gap:9px;
+  text-align:left;padding:9px 10px;min-height:33px;margin:0;
+  background:transparent;border:1px solid transparent;border-radius:6px;
+  color:#e2e3e6;font-size:12px;white-space:nowrap
+}
+#nexus-panel-widget .nexus-inspector-actions-popover button:hover{
+  background:#333335;border-color:#504a40
+}
+#nexus-panel-widget .nexus-inspector-actions-popover .nexus-inspector-danger{
+  color:#e0a0a0
+}
+#nexus-panel-widget .nexus-inspector-actions-popover button:disabled,
+#nexus-panel-widget .nexus-inspector-icon-button:disabled{opacity:.42;cursor:not-allowed}
+#nexus-panel-widget .nexus-inspector-empty{
+  margin:14px;color:var(--nci-muted);font-size:12px
+}
+#nexus-panel-widget .nexus-inspector-empty[hidden]{display:none!important}
+#nexus-panel-widget #properties{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  column-gap:12px;row-gap:12px;align-items:start;
+  padding:14px;margin:0;min-width:0
+}
+#nexus-panel-widget #properties:empty{display:none}
+#nexus-panel-widget #properties>.nexus-property-section{
+  min-width:0;box-sizing:border-box;margin:0;
+  overflow:hidden;border:1px solid #414246;border-radius:9px;
+  background:linear-gradient(150deg,#242527,#202123)
+}
+#nexus-panel-widget #properties>.nexus-property-section[open]{
+  box-shadow:none
+}
+#nexus-panel-widget #properties>.nexus-geometry-section{
+  grid-column:1/-1;grid-row:1;background:#222326
+}
+#nexus-panel-widget #properties>.nexus-data-section{grid-column:1;grid-row:2}
+#nexus-panel-widget #properties>.nexus-appearance-section{grid-column:2;grid-row:2}
+#nexus-panel-widget #properties>.nexus-actions-section{grid-column:1/-1}
+#nexus-panel-widget #properties>.nexus-property-section>summary{
+  display:flex;align-items:center;gap:8px;
+  padding:11px 13px;min-height:40px;
+  background:linear-gradient(100deg,rgba(213,166,90,.18) 0%,rgba(75,67,55,.35) 43%,#28292b 100%);
+  border:0;color:#ebe9e5;font-size:12px;font-weight:750;
+  line-height:1.2;letter-spacing:.015em;cursor:pointer
+}
+#nexus-panel-widget #properties>.nexus-property-section>summary .bi{
+  color:#dfb675;font-size:14px
+}
+#nexus-panel-widget #properties>.nexus-property-section>summary:hover{
+  background:linear-gradient(100deg,rgba(213,166,90,.27) 0%,rgba(75,67,55,.44) 45%,#2d2c2c 100%)
+}
+#nexus-panel-widget #properties>.nexus-property-section[open]>summary{
+  border-bottom:1px solid #46423b
+}
+#nexus-panel-widget #properties>.nexus-property-section .nexus-properties-row{
+  padding:12px;min-width:0;box-sizing:border-box;border:0;align-items:stretch
+}
+#nexus-panel-widget #properties>.nexus-property-section .nexus-properties-row+.nexus-properties-row{
+  border-top:0
+}
+#nexus-panel-widget #properties .nexus-property-section label{
+  display:flex;flex-direction:column;align-items:stretch;gap:5px;
+  min-width:0;max-width:100%;margin:0;
+  font-size:10px;line-height:1.35;letter-spacing:.045em;
+  text-transform:uppercase;color:#a6a8af;font-weight:650
+}
+#nexus-panel-widget #properties .nexus-property-section input:not([type=color]):not([type=range]),
+#nexus-panel-widget #properties .nexus-property-section select{
+  box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:34px;
+  margin:0;padding:7px 10px;
+  font-size:12px;line-height:1.35;letter-spacing:normal;text-transform:none;
+  color:#eef0f2;background:#191a1c;border:1px solid #424349;border-radius:7px
+}
+#nexus-panel-widget #properties .nexus-property-section input:focus-visible,
+#nexus-panel-widget #properties .nexus-property-section select:focus-visible{
+  outline:2px solid rgba(213,166,90,.72);outline-offset:1px
+}
+#nexus-panel-widget #properties .nexus-dimensions-row{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;width:100%
+}
+#nexus-panel-widget #properties .nexus-colors-row{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%
+}
+#nexus-panel-widget #properties .nexus-colors-row label{
+  display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+  gap:7px;min-width:0;min-height:43px;padding:7px;
+  border:1px solid #393b3f;border-radius:7px;background:#1b1c1e;
+  font-size:10px;letter-spacing:0;text-transform:none
+}
+#nexus-panel-widget #properties .nexus-colors-row input[type=color]{
+  flex:none;width:30px;height:27px;padding:2px;margin:0;
+  background:#25262a;border:1px solid #55565b;border-radius:6px
+}
+#nexus-panel-widget #properties .nexus-style-row{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;gap:11px;width:100%
+}
+#nexus-panel-widget #properties .nexus-style-row label:first-child:nth-last-child(odd){
+  grid-column:1/-1
+}
+#nexus-panel-widget #properties .nexus-style-row label:nth-child(2):nth-last-child(odd){
+  grid-column:1/-1
+}
+#nexus-panel-widget #properties .nexus-appearance-row{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;gap:11px;padding-top:3px;width:100%
+}
+#nexus-panel-widget #properties .nexus-opacity-control{
+  grid-column:1/-1;display:flex;flex-wrap:wrap;flex-direction:row;align-items:center;
+  gap:8px;min-height:37px
+}
+#nexus-panel-widget #properties .nexus-opacity-control input[type=range]{
+  flex:1 1 80px;width:auto;max-width:100%;accent-color:#d5a65a;margin:0
+}
+#nexus-panel-widget #properties .nexus-opacity-control input[type=number]{
+  flex:0 0 58px;width:58px!important;max-width:58px!important
+}
+#nexus-panel-widget #properties .nexus-appearance-row label:has(input[type=color]){
+  grid-column:1/-1
+}
+#nexus-panel-widget .nexus-inspector-footer{
+  display:flex;align-items:center;padding:10px 14px;
+  border-top:1px solid #38393d;font-size:11px;color:#999ca2
+}
+#nexus-panel-widget :is(button,summary,input,select):focus-visible{
+  outline:2px solid rgba(213,166,90,.8);outline-offset:2px
+}
+/* Column-aware layout: the integrated editor may be narrow even on a wide display. */
+@container(max-width:610px){
+  #nexus-selected-panel #properties{grid-template-columns:minmax(0,1fr)}
+  #nexus-selected-panel #properties>.nexus-property-section{
+    grid-column:1!important;grid-row:auto!important
+  }
+}
+@container(max-width:420px){
+  #nexus-selected-panel #properties .nexus-dimensions-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+  #nexus-selected-panel #properties .nexus-colors-row{grid-template-columns:1fr}
+}
+@media(max-width:930px){
+  #nexus-panel-widget #properties{grid-template-columns:minmax(0,1fr)}
+  #nexus-panel-widget #properties>.nexus-property-section{
+    grid-column:1!important;grid-row:auto!important
+  }
+}
+@media(max-width:580px){
+  #nexus-panel-widget .nexus-inspector-hero{padding:10px;gap:8px}
+  #nexus-panel-widget .nexus-inspector-head-actions{margin-left:0;flex-basis:100%}
+  #nexus-panel-widget #properties{padding:10px;gap:10px}
+  #nexus-panel-widget #properties .nexus-dimensions-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #nexus-panel-widget #properties .nexus-colors-row{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  #nexus-panel-widget *{scroll-behavior:auto!important}
+}
