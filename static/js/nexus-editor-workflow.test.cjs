@@ -250,11 +250,12 @@ test('selected widget settings group opacity percentage and preserve it on save'
   return null;
  };
  const properties=node('properties');
- const sections=properties.children.filter(child=>child.className==='nexus-property-section');
+ const sections=properties.children.filter(child=>child.className?.includes('nexus-property-section'));
  assert.equal(sections.length,4);
- assert.deepEqual(sections.map(item=>item.children[0].textContent),['Position & size','Appearance','Text & data','Actions & icons']);
+ assert.deepEqual(sections.map(item=>item.children[0].textContent),['Position & size','Appearance','Content & data','Actions & icons']);
  assert.equal(sections[0].open,true);
  assert.equal(sections[1].open,true);
+ assert.equal(sections[2].open,true);
  const appearance=sections[1];
  const opacitySlider=walk(appearance,item=>item.type==='range');
  assert.ok(opacitySlider);
@@ -366,7 +367,7 @@ test('metric display switches Value Bar Graph within Selected Widget and keeps s
  metric.settings.opacity='65';metric.metric='gpu.temperature';
  const find=(root,predicate)=>{if(predicate(root))return root;for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=find(child,predicate);if(hit)return hit}}return null};
  for(const expected of ['bar','graph','metric']){
-  const select=find(node('properties'),el=>el.options?.some(option=>option.label==='Graph'&&option.value==='graph'));
+  const select=find(node('nexusDisplayTypeMount'),el=>el.options?.some(option=>option.label==='Graph'&&option.value==='graph'));
   assert.ok(select,'metric display selector missing');
   select.value=expected;select.listeners.change();
   assert.equal(metric.type,expected);
@@ -383,7 +384,7 @@ test('content type changes Text Image Clock from Selected Widget',async()=>{
  const item=vm.runInContext('cfg.screens[0].widgets.at(-1)',context);
  const find=(root,predicate)=>{if(predicate(root))return root;for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=find(child,predicate);if(hit)return hit}}return null};
  for(const expected of ['image','clock','text']){
-  const select=find(node('properties'),el=>el.options?.some(option=>option.label==='Clock'&&option.value==='clock'));
+  const select=find(node('nexusDisplayTypeMount'),el=>el.options?.some(option=>option.label==='Clock'&&option.value==='clock'));
   assert.ok(select,'content type selector missing');
   select.value=expected;select.listeners.change();
   assert.equal(item.type,expected);
@@ -392,6 +393,66 @@ test('content type changes Text Image Clock from Selected Widget',async()=>{
   if(expected==='text')assert.equal(item.settings.text,'New text');
   if(expected==='clock')assert.equal(item.settings.clockFormat,'24h');
  }
+});
+
+test('compact inspector preserves file tabs and all existing widget action IDs',()=>{
+ const compact=fs.readFileSync(path.join(__dirname,'..','css','nexus-compact-inspector.css'),'utf8');
+ const page=fs.readFileSync(path.join(__dirname,'..','..','web','nexus.html'),'utf8');
+ const expected=['nexusSelectedName','nexusSelectedIcon','nexusSelectedSubtitle','nexusDisplayTypeMount',
+  'nexusInspectorActions','addMetric','addContent','addButton','copyWidget','pasteWidget',
+  'duplicateWidget','deleteWidget','properties','selectedWidgetStatus'];
+ for(const html of [integrated,standalone]){
+  for(const id of expected)assert.equal(html.split('id="'+id+'"').length-1,1,id+' must exist once');
+  assert.ok(html.indexOf('id="nexus-add-panel"')<html.indexOf('id="nexus-selected-panel"'));
+  assert.match(html,/class="nexus-inspector-hero"/);
+  assert.match(html,/class="nexus-inspector-actions-menu"/);
+  for(const tab of ['widget','library','background','layout','applications']){
+   assert.match(html,new RegExp('id="nexus-tab-'+tab+'"'));
+  }
+ }
+ assert.ok(page.indexOf('/static/css/nexus-compact-inspector.css')>page.indexOf('/static/css/nexus-editor.css'));
+ assert.match(standalone,/<link rel="stylesheet" href="\/static\/css\/nexus-compact-inspector.css">/);
+ assert.match(compact,/#nexus-panel-widget #properties>\.nexus-geometry-section\s*\{[^}]*grid-column:1\/-1/);
+ assert.match(compact,/\.nexus-data-section\s*\{grid-column:1;grid-row:2\}/);
+ assert.match(compact,/\.nexus-appearance-section\s*\{grid-column:2;grid-row:2\}/);
+ assert.match(compact,/linear-gradient\(110deg,#403729/);
+ assert.match(compact,/@media\(max-width:580px\)/);
+});
+
+test('compact inspector renders widget identity, button label editing, and only relevant sections',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'metric_cpu',type:'graph',x:0,y:0,width:152,height:48,metric:'cpu.temperature',settings:{label:'CPU',opacity:'75'}});
+ vm.runInContext("selected='metric_cpu';render()",context);
+ assert.equal(node('nexusSelectedName').textContent,'CPU');
+ assert.match(node('nexusSelectedSubtitle').textContent,/Metric widget/);
+ assert.equal(node('nexusInspectorActions').hidden,false);
+ const names=node('properties').children.filter(c=>c.className?.includes('nexus-property-section')).map(c=>c.children[0].textContent);
+ assert.deepEqual(names,['Position & size','Appearance','Content & data']);
+ assert.equal(node('properties').children[0].open,true);
+ const metricSelector=node('nexusDisplayTypeMount').children[0].children.at(-1);
+ assert.equal(metricSelector.value,'graph');
+ screen.widgets.push({id:'button_test',type:'button',x:168,y:0,width:80,height:48,action:'next',settings:{label:'Launch'}});
+ vm.runInContext("selected='button_test';render()",context);
+ assert.equal(node('nexusSelectedName').textContent,'Launch');
+ const actions=node('properties').children.filter(c=>c.className?.includes('nexus-property-section'));
+ assert.equal(actions.at(-1).children[0].textContent,'Actions & icons');
+ const walk=(root,predicate)=>{
+  if(predicate(root))return root;
+  for(const child of root.children||[]){if(child&&typeof child==='object'){const found=walk(child,predicate);if(found)return found}}
+  return null;
+ };
+ const label=walk(node('properties'),c=>c.textContent?.startsWith('label ')&&c.children?.some(ch=>ch.type==='text'));
+ assert.ok(label,'button label remains editable under Content & data');
+ const input=label.children.find(ch=>ch.type==='text');
+ input.value='New name';input.listeners.input();
+ assert.equal(screen.widgets[1].settings.label,'New name');
+ assert.equal(node('nexusSelectedName').textContent,'New name');
+ node('copyWidget').listeners.click();
+ assert.equal(node('pasteWidget').disabled,false);
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].widgets[1].settings.label,'New name');
 });
 
 test('Nexus editor leaves jQuery available to initialize the sidebar collapse button',()=>{
