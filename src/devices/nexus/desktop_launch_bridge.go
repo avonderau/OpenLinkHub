@@ -83,7 +83,7 @@ func startNexusDesktopLaunchBroker(path string)(*nexusDesktopLaunchBroker,error)
  if err:=os.MkdirAll(dir,0750);err!=nil{return nil,fmt.Errorf("create Nexus launcher directory: %w",err)}
  info,err:=os.Lstat(dir)
  if err!=nil||!info.IsDir()||info.Mode()&os.ModeSymlink!=0||
-  info.Mode().Perm()&0022!=0||info.Mode().Perm()&0005!=0{
+  info.Mode().Perm()&0022!=0{
   return nil,errors.New("Nexus launcher directory must be private and not group/world-writable")
  }
  owner,err:=nexusSocketOwner(info)
