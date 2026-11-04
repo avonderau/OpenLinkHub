@@ -1075,6 +1075,28 @@ func setDeviceLcd(w http.ResponseWriter, r *http.Request) {
 	resp.Send(w)
 }
 
+// deleteNexusScreen handles saving of NEXUS screens
+func saveNexusScreen(w http.ResponseWriter, r *http.Request) {
+	request := requests.ProcessSaveNexusScreen(r)
+	resp := &Response{
+		Code:    request.Code,
+		Status:  request.Status,
+		Message: request.Message,
+	}
+	resp.Send(w)
+}
+
+// deleteNexusScreen handles deletion of NEXUS screens
+func deleteNexusScreen(w http.ResponseWriter, r *http.Request) {
+	request := requests.ProcessDeleteNexusScreen(r)
+	resp := &Response{
+		Code:    request.Code,
+		Status:  request.Status,
+		Message: request.Message,
+	}
+	resp.Send(w)
+}
+
 // setDeviceLcdProfile handles device LCD changes
 func setDeviceLcdProfile(w http.ResponseWriter, r *http.Request) {
 	request := requests.ProcessLcdProfileChange(r)
@@ -2883,10 +2905,11 @@ func setRoutes() http.Handler {
 	r := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))
 	r.Handle("/static/", http.StripPrefix("/static/", fs))
- r.HandleFunc("/api/nexus/screens", nexusScreensAPI)
- r.HandleFunc("/api/nexus/telemetry", nexusTelemetryAPI)
- r.HandleFunc("/api/nexus/background", nexusBackgroundAPI)
- r.HandleFunc("/api/nexus/icon", nexusCustomIconAPI)
+	// OpenLinkHub Nexus custom-layout endpoints.
+	r.HandleFunc("/api/nexus/screens", nexusScreensAPI)
+	r.HandleFunc("/api/nexus/telemetry", nexusTelemetryAPI)
+	r.HandleFunc("/api/nexus/background", nexusBackgroundAPI)
+	r.HandleFunc("/api/nexus/icon", nexusCustomIconAPI)
 
 	// GET
 	handleFunc(r, "/api/", http.MethodGet, homePage)
@@ -2972,6 +2995,7 @@ func setRoutes() http.Handler {
 	handleFunc(r, "/api/lcd/device", http.MethodPost, changeDeviceLcd)
 	handleFunc(r, "/api/lcd/rotation", http.MethodPost, setDeviceLcdRotation)
 	handleFunc(r, "/api/lcd/brightness", http.MethodPost, setDeviceLcdBrightness)
+	handleFunc(r, "/api/nexus/screen", http.MethodPost, saveNexusScreen)
 	handleFunc(r, "/api/lcd/profile", http.MethodPost, setDeviceLcdProfile)
 	handleFunc(r, "/api/lcd/image", http.MethodPost, setDeviceLcdImage)
 	handleFunc(r, "/api/brightness", http.MethodPost, changeBrightness)
@@ -3073,6 +3097,7 @@ func setRoutes() http.Handler {
 	handleFunc(r, "/api/userProfile/delete", http.MethodDelete, deleteUserProfile)
 	handleFunc(r, "/api/dashboard/devices/delete", http.MethodDelete, removeDashboardDevice)
 	handleFunc(r, "/api/application/profiles/delete", http.MethodDelete, deleteApplicationProfile)
+	handleFunc(r, "/api/nexus/screen/delete", http.MethodDelete, deleteNexusScreen)
 
 	// Prometheus metrics
 	if config.GetConfig().Metrics {
