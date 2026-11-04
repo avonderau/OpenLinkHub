@@ -535,9 +535,43 @@ function renderTouchProperties(w,panel){
    const input=document.createElement('input');input.type='text';input.maxLength=w.action==='url'?256:128;
    input.value=w.target||'';input.placeholder=w.action==='url'?'https://example.com':'org.gnome.Terminal.desktop';
    input.setAttribute('aria-label',w.action==='url'?'Open URL':'Desktop entry ID');
-   input.addEventListener('change',()=>{w.target=input.value.trim();message('Launcher updated. Save Layout to apply.')});
+   // The editor preview selects/drags widgets; hardware touches execute them.
+   // A deliberate link lets users test a URL in their *current browser*
+   // without exposing an unauthenticated remote launch endpoint.
+   let browserTestLink=null;
+   const refreshBrowserTestLink=()=>{
+    if(!browserTestLink)return;
+    const raw=w.target||'';
+    let valid=false;
+    try {
+     const parsed=typeof URL==='function'?new URL(raw):null;
+     valid=Boolean(parsed&&raw.length>=10&&raw.length<=256&&
+      !/[\s\x00-\x1f\x7f]/.test(raw)&&
+      ['http:','https:'].includes(parsed.protocol)&&
+      parsed.hostname&&!parsed.username&&!parsed.password);
+    }catch(_){}
+    browserTestLink.hidden=!valid;
+    if(valid)browserTestLink.href=raw;
+    else browserTestLink.removeAttribute?.('href');
+   };
+   input.addEventListener('change',()=>{
+    w.target=input.value.trim();
+    refreshBrowserTestLink();
+    message('Launcher updated. Save Layout to apply.');
+   });
    label.append(input);panel.append(label);
-   const note=document.createElement('small');note.textContent='Requires a non-root Linux desktop session; desktop apps use gtk-launch, URLs use xdg-open. No shell commands.';
+   if(w.action==='url'){
+    browserTestLink=document.createElement('a');
+    browserTestLink.textContent='Test URL in this browser';
+    browserTestLink.className='nexus-url-test-link';
+    browserTestLink.target='_blank';
+    browserTestLink.rel='noopener noreferrer';
+    browserTestLink.setAttribute('aria-label','Test URL in this browser (not on the Nexus device)');
+    refreshBrowserTestLink();
+    panel.append(browserTestLink);
+   }
+   const note=document.createElement('small');
+   note.textContent='The screen preview selects widgets; it does not execute them. Physical Nexus URL and app actions open on the host desktop, not a remote WebUI browser. If OpenLinkHub runs without a desktop session, start the local Nexus desktop agent as your logged-in user. No shell commands.';
    panel.append(note);
   }
   if(w.action==='device')field('Device RGB action',w.target,hardwareActions,v=>w.target=v);

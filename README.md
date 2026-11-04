@@ -11,7 +11,7 @@
 - **LCD backgrounds:** per-screen PNG/JPEG background loading and bounded image storage.
 - **Automated tests:** a dedicated Nexus Go CI workflow.
 
-**Development status:** These additions are experimental. The visual editor, configuration/upload HTTP endpoints, and continuous swipe gestures are not yet implemented. Hardware behavior and the latest commits still require validation. Do not assume all upstream installation packages include these features.
+**Development status:** Nexus customization is under active development; physical-device actions and distribution-specific desktop integration should be tested on real hardware. For **Open URL** and **Launch Application** buttons when OpenLinkHub runs as a background service, see the [local Nexus desktop agent setup](docs/nexus-desktop-launch.md). These buttons open on the computer hosting OpenLinkHub, not on a separate WebUI client. Do not assume all upstream installation packages include these features.
 
 See [Nexus development notes](docs/nexus-fork.md) for details and limitations.
 

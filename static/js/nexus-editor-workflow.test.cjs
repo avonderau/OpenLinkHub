@@ -579,6 +579,44 @@ test('compact inspector renders widget identity, button label editing, and only 
  assert.equal(writes.at(-1).screens[0].widgets[1].settings.label,'New name');
 });
 
+test('Open URL shows a safe browser test link but does not execute via preview',async()=>{
+ const {context,node,writes}=makeEditor();
+ context.URL=URL;
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({
+  id:'url_button',type:'button',x:0,y:0,width:160,height:48,
+  action:'url',target:'https://example.com/help',settings:{label:'Help'}
+ });
+ vm.runInContext("selected='url_button';render()",context);
+ const find=(root,predicate)=>{
+  if(predicate(root))return root;
+  for(const child of root.children||[]){
+   if(child&&typeof child==='object'){const found=find(child,predicate);if(found)return found}
+  }
+  return null;
+ };
+ const link=find(node('properties'),el=>el.className==='nexus-url-test-link');
+ assert.ok(link,'URL action exposes browser-side test link');
+ assert.equal(link.href,'https://example.com/help');
+ assert.equal(link.target,'_blank');
+ assert.equal(link.rel,'noopener noreferrer');
+ assert.equal(link.hidden,false);
+ const input=find(node('properties'),el=>el.attributes?.['aria-label']==='Open URL');
+ assert.ok(input,'URL is editable');
+ input.value='javascript:alert(1)';
+ input.listeners.change();
+ assert.equal(link.hidden,true,'unsafe schemes cannot be opened in browser');
+ assert.equal(screen.widgets[0].target,'javascript:alert(1)');
+ input.value='https://example.com/new';
+ input.listeners.change();
+ assert.equal(link.hidden,false);
+ assert.equal(link.href,'https://example.com/new');
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].widgets[0].target,'https://example.com/new');
+ assert.ok(find(node('properties'),el=>el.textContent?.includes('preview selects widgets; it does not execute')));
+});
+
 test('Nexus editor leaves jQuery available to initialize the sidebar collapse button',()=>{
  const page=fs.readFileSync(path.join(__dirname,'..','..','web','nexus.html'),'utf8');
  const sidebar=fs.readFileSync(path.join(__dirname,'sidebar.js'),'utf8');
