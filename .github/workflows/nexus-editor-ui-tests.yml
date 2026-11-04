@@ -1,0 +1,43 @@
+name: Nexus editor UI tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'static/js/nexus-*.js'
+      - 'static/js/nexus-*.test.cjs'
+      - 'static/css/nexus-*.css'
+      - 'static/nexus-editor.html'
+      - 'web/nexus*.html'
+      - '.github/workflows/nexus-editor-ui-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'static/js/nexus-*.js'
+      - 'static/js/nexus-*.test.cjs'
+      - 'static/css/nexus-*.css'
+      - 'static/nexus-editor.html'
+      - 'web/nexus*.html'
+      - '.github/workflows/nexus-editor-ui-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check static/js/nexus-editor.js
+          node --check static/js/nexus-layout-files.js
+          node --check static/js/nexus-widget-library.js
+      - name: Run Nexus UI regression suite
+        run: |
+          node --test static/js/nexus-editor-workflow.test.cjs static/js/nexus-layout-files.test.cjs static/js/nexus-starter-templates.test.cjs static/js/nexus-widget-library.test.cjs
