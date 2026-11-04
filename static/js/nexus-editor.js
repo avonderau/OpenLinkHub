@@ -546,7 +546,7 @@ function renderTouchProperties(w,panel){
     try {
      const parsed=typeof URL==='function'?new URL(raw):null;
      valid=Boolean(parsed&&raw.length>=10&&raw.length<=256&&
-      !/[\\s\\x00-\\x1f\\x7f]/.test(raw)&&
+      !/[\s\x00-\x1f\x7f]/.test(raw)&&
       ['http:','https:'].includes(parsed.protocol)&&
       parsed.hostname&&!parsed.username&&!parsed.password);
     }catch(_){}
