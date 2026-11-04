@@ -83,7 +83,7 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 #nexus-editor .nexus-selected-widget-type,.nexus-selected-widget-type{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.5rem;width:fit-content;max-width:100%;color:var(--text-muted,#a7bac7);margin:.4rem 0}
 #nexus-editor .nexus-selected-widget-type select,.nexus-selected-widget-type select{min-width:120px}
 @media(max-width:640px){#nexus-editor .nexus-editor-tablist [role=tab],.nexus-editor-tablist [role=tab]{flex:1 1 auto;padding:.5rem}.nexus-editor-tabcontent{padding:.6rem}}
-</style></head><body>
+</style><link rel="stylesheet" href="/static/css/nexus-compact-inspector.css"></head><body>
 <div class="nexus-editor-heading"><h1>iCUE NEXUS screen editor</h1><button id="save" type="button">Save Layout</button></div>
 <p>Experimental editor · 640 × 48 pixels · Select a device, drag widgets to position them, and save.</p><p id="message" role="status" aria-live="polite"></p>
 <label>Device <select id="device"></select></label><button id="load">Load</button><label>Display dimming (software) <select id="displayBrightness"><option value="20">20%</option><option value="40">40%</option><option value="60">60%</option><option value="80">80%</option><option value="100" selected>100% (full)</option></select></label>
@@ -113,15 +113,38 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
 <button type="button" id="nexus-tab-background" role="tab" aria-controls="nexus-panel-background" aria-selected="false" tabindex="-1">Background</button>
 <button type="button" id="nexus-tab-layout" role="tab" aria-controls="nexus-panel-layout" aria-selected="false" tabindex="-1">Layout files</button>
 <button type="button" id="nexus-tab-applications" role="tab" aria-controls="nexus-panel-applications" aria-selected="false" tabindex="-1">Application screens</button></div><div class="nexus-editor-tabcontent">
-<div id="nexus-panel-widget" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-widget"><fieldset id="nexus-add-panel"><legend>Add Widgets</legend>
-<p class="nexus-panel-description">Choose a widget to add to the selected screen.</p>
-<div class="nexus-create-actions"><button id="addMetric" type="button">Add Metric</button><button id="addContent" type="button">Add Content</button><button id="addButton" type="button">Add Button</button></div>
-</fieldset>
-
-<fieldset id="nexus-selected-panel"><legend>Selected Widget</legend>
-<div id="selectedWidgetStatus" class="nexus-panel-description">Select a widget in the preview to edit it.</div>
-<div id="properties"></div>
-<div class="nexus-widget-actions"><button id="copyWidget" disabled>Copy widget</button><button id="pasteWidget" disabled>Paste widget</button><button id="duplicateWidget" disabled>Duplicate widget</button><button id="deleteWidget" disabled>Remove selected widget</button></div>
+<div id="nexus-panel-widget" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-widget"><section id="nexus-add-panel" class="nexus-add-toolbar" aria-label="Add widgets">
+  <strong class="nexus-add-toolbar-title">Add widget</strong>
+  <div class="nexus-create-actions">
+    <button id="addMetric" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Metric</button>
+    <button id="addContent" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Content</button>
+    <button id="addButton" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Button</button>
+  </div>
+</section>
+<fieldset id="nexus-selected-panel" class="nexus-compact-inspector">
+  <legend class="nexus-inspector-sr-only">Selected Widget</legend>
+  <header class="nexus-inspector-hero">
+    <span class="nexus-inspector-badge" aria-hidden="true"><i id="nexusSelectedIcon" class="bi bi-sliders2"></i></span>
+    <span class="nexus-inspector-identity">
+      <strong id="nexusSelectedName">Select a widget</strong>
+      <small id="nexusSelectedSubtitle">Choose an item in the screen preview</small>
+    </span>
+    <span class="nexus-inspector-head-actions" id="nexusInspectorActions" hidden>
+      <span id="nexusDisplayTypeMount"></span>
+      <button type="button" id="duplicateWidget" class="nexus-inspector-icon-button" title="Duplicate widget" aria-label="Duplicate widget" disabled><i class="bi bi-files" aria-hidden="true"></i></button>
+      <details class="nexus-inspector-actions-menu">
+        <summary aria-label="More widget actions" title="More widget actions"><i class="bi bi-three-dots" aria-hidden="true"></i></summary>
+        <div class="nexus-inspector-actions-popover">
+          <button id="copyWidget" type="button" disabled><i class="bi bi-copy" aria-hidden="true"></i> Copy widget</button>
+          <button id="pasteWidget" type="button" disabled><i class="bi bi-clipboard" aria-hidden="true"></i> Paste widget</button>
+          <button id="deleteWidget" class="nexus-inspector-danger" type="button" disabled><i class="bi bi-trash3" aria-hidden="true"></i> Remove widget</button>
+        </div>
+      </details>
+    </span>
+  </header>
+  <p id="selectedWidgetStatus" class="nexus-inspector-empty">Select a widget in the preview to edit its properties.</p>
+  <div id="properties"></div>
+  <footer class="nexus-inspector-footer"><span>Changes update the screen preview. Save Layout to apply.</span></footer>
 </fieldset></div>
 <div id="nexus-panel-library" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-library" hidden><fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
 <p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
