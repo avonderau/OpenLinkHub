@@ -650,7 +650,7 @@ test('OpenLinkHub Nexus fork branding is present without renaming upstream route
  const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
  const sidebar=fs.readFileSync(path.join(__dirname,'..','..','web','sidebar.html'),'utf8');
  const css=fs.readFileSync(path.join(__dirname,'..','css','openlinkhub-fork-theme.css'),'utf8');
- assert.match(head,/<title>\{\{ \.Title \}\} \| OpenLinkHub Nexus<\/title>/);
+ assert.match(head,/<title>OpenLinkHub Nexus<\/title>/);
  assert.match(sidebar,/class="olh-fork-brand" aria-label="OpenLinkHub Nexus"/);
  assert.doesNotMatch(sidebar,/class="sidebar-title\b|<h6[^>]*>\s*\{\{ \.Title \}\}/,'redundant WebUI title should not render in sidebar');
  assert.match(sidebar,/id="sidebarToggle"/);

@@ -1,0 +1,140 @@
+/* OpenLinkHub Nexus — segmented live telemetry bar (demo).
+ * Applies to all pages that include the shared temperature-bar template.
+ * Keep device readout IDs and polling behavior in the upstream implementation.
+ */
+.olh-telemetry-bar {
+  container-type:inline-size;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid rgba(219,205,179,.23);
+  border-radius:14px;
+  color:var(--olh-ink,#e8e9ec);
+  background:linear-gradient(155deg,#1b1c1e 0%,#161719 55%,#1b1c1e 100%);
+  box-shadow:0 13px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.055);
+}
+.olh-telemetry-heading {
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:49px;
+  padding:11px 17px;
+  background:linear-gradient(110deg,#302b24 0%,#252426 39%,#1a1b1e 100%);
+  border-bottom:1px solid var(--olh-header-line,rgba(220,175,101,.35));
+}
+.olh-telemetry-heading::after{
+  content:"";
+  position:absolute;bottom:-1px;right:14px;
+  width:66px;height:2px;
+  background:linear-gradient(90deg,transparent,#d5a65a);
+  pointer-events:none;
+}
+.olh-telemetry-heading-icon {
+  flex:none;
+  display:grid;place-items:center;
+  width:28px;height:28px;
+  border:1px solid rgba(213,166,90,.45);
+  border-radius:7px;
+  background:rgba(213,166,90,.12);
+  color:var(--olh-icon-ink,#f0c581);
+  font-size:17px;
+}
+.olh-telemetry-heading-title {
+  color:#f1eee8;
+  font-size:.84rem;
+  font-weight:740;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.olh-telemetry-readings {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr));
+  padding:18px 11px 20px;
+  min-width:0;
+}
+.olh-telemetry-segment {
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+  gap:7px;
+  min-width:0;
+  padding:5px 17px 7px;
+  border-right:1px solid rgba(220,225,232,.21);
+}
+.olh-telemetry-segment:last-child {border-right:0}
+.olh-telemetry-label {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  max-width:100%;
+  min-width:0;
+  color:#d1d1d3;
+  font-size:.72rem;
+  font-weight:680;
+  line-height:1.25;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+}
+.olh-telemetry-label > i {
+  flex:none;
+  color:var(--olh-accent,#d5a65a);
+  font-size:.81rem;
+}
+.olh-telemetry-label > span {
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.olh-telemetry-temperature {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:4px;
+  min-width:0;
+  color:#f2bc43;
+  font-size:clamp(1.52rem,2.4vw,2.22rem);
+  font-weight:750;
+  line-height:1.12;
+  letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.olh-telemetry-number {font:inherit;color:inherit}
+.olh-telemetry-unit {font-size:.58em;font-weight:700;letter-spacing:0}
+.olh-telemetry-device {
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  color:#a9aab0;
+  font-size:.75rem;
+  line-height:1.4;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+@container(max-width:800px) {
+  .olh-telemetry-readings {grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}
+  .olh-telemetry-segment:nth-child(2n) {border-right:0}
+  .olh-telemetry-segment:nth-child(n+3) {border-top:1px solid rgba(220,225,232,.13);padding-top:16px}
+}
+@container(max-width:460px) {
+  .olh-telemetry-readings {grid-template-columns:minmax(0,1fr);padding:4px 14px 8px;row-gap:0}
+  .olh-telemetry-segment {
+    flex-direction:row;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:5px 12px;
+    padding:12px 2px;
+    border-right:0!important;
+    border-top:1px solid rgba(220,225,232,.13);
+  }
+  .olh-telemetry-segment:first-child {border-top:0}
+  .olh-telemetry-segment:nth-child(n+3) {padding-top:12px}
+  .olh-telemetry-label {flex:1 1 135px}
+  .olh-telemetry-temperature {font-size:1.48rem}
+  .olh-telemetry-device {flex:1 1 100%;font-size:.72rem}
+}
+@media(prefers-reduced-motion:reduce) {
+  .olh-telemetry-bar * {transition:none!important;animation:none!important}
+}
