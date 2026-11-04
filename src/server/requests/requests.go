@@ -204,7 +204,7 @@ type Payload struct {
 	Widget                        xeneonedge.Widget     `json:"widget"`
 	ColorTone                     int                   `json:"colorTone"`
 	ColorToneType                 int                   `json:"colorToneType"`
-	Screen                        nexus.Screen          `json:"screen"`
+	Screen                        nexus.NativeScreen          `json:"screen"`
 	Id                            string                `json:"id"`
 	Status                        int
 	Code                          int
