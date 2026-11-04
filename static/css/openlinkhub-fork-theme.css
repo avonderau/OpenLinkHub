@@ -233,3 +233,15 @@ body {
   font-weight:700;
 }
 .sidebar.collapsed .olh-fork-brand {display:none}
+
+/* Respect the upstream collapsed sidebar after this fork theme's .nav-link
+ * typography rules. Without this, the later .sidebar .nav-link font-size:13px
+ * overrides the upstream collapsed font-size:0 rule at equal specificity. */
+.sidebar.collapsed .nav-link {
+  justify-content:center;
+  gap:0;
+  padding:9px;
+  font-size:0;
+}
+.sidebar.collapsed .sidebar-text {display:none}
+.sidebar.collapsed .sidebar-icon {margin-right:0}
