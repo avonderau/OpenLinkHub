@@ -231,6 +231,11 @@ func Init(vendorId, productId uint16, serial, _ string) *common.Device {
 	d.saveDeviceProfile()  // Save profile
 	d.loadLcdProfiles()    // LCD profiles
 	d.loadCustomScreens()  // Fork-owned programmable Nexus screens
+ // A logged-in desktop can explicitly attach to this local group-protected
+ // socket when the device daemon has no graphical session of its own.
+ if err:=initializeNexusDesktopLaunchBroker(pwd);err!=nil {
+  logger.Log(logger.Fields{"error":err.Error()}).Warn("Nexus desktop launch bridge unavailable")
+ }
 	d.loadLcdFonts()       // LCD fonts
 	d.loadLcdBackground()  // LCD background
 	d.setupLCD()           // LCD
