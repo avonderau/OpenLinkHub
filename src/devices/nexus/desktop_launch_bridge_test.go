@@ -3,6 +3,7 @@ package nexus
 import (
  "bufio"
  "encoding/json"
+ "context"
  "net"
  "os"
  "path/filepath"
@@ -50,4 +51,38 @@ func TestNexusDesktopBrokerRejectsWorldWritableAndExistingFiles(t *testing.T){
  if err:=os.Remove(path);err!=nil{t.Fatal(err)}
  if err:=os.Chmod(dir,0777);err!=nil{t.Fatal(err)}
  if _,err:=startNexusDesktopLaunchBroker(path);err==nil{t.Fatal("world-writable socket directory accepted")}
+}
+
+func TestNexusDesktopAgentReceivesValidatedTouchEvents(t *testing.T){
+ if os.Geteuid()==0{t.Skip("desktop agent must run as non-root")}
+ t.Setenv("DISPLAY",":99")
+ t.Setenv("WAYLAND_DISPLAY","")
+ path:=filepath.Join(t.TempDir(),"nexus","desktop-launch.sock")
+ broker,err:=startNexusDesktopLaunchBroker(path)
+ if err!=nil{t.Fatal(err)}
+ defer broker.close()
+ ctx,cancel:=context.WithCancel(context.Background())
+ defer cancel()
+ events:=make(chan nexusDesktopLaunchEvent,1)
+ stopped:=make(chan error,1)
+ go func(){
+  stopped<-runNexusDesktopLaunchAgent(ctx,path,func(a,u string)error{
+   events<-nexusDesktopLaunchEvent{Action:a,Target:u}
+   return nil
+  })
+ }()
+ deadline:=time.After(2*time.Second)
+ for{
+  err=broker.send("url","https://example.com/agent")
+  if err==nil{break}
+  select{case <-deadline:t.Fatalf("agent did not connect: %v",err);default:time.Sleep(10*time.Millisecond)}
+ }
+ select{
+ case event:=<-events:
+  if event.Action!="url"||event.Target!="https://example.com/agent"{t.Fatalf("unexpected action: %+v",event)}
+ case <-time.After(time.Second):t.Fatal("desktop agent did not receive touch")
+ }
+ cancel()
+ select{case err:=<-stopped:if err!=nil{t.Fatal(err)}
+ case <-time.After(2*time.Second):t.Fatal("desktop agent failed to stop")}
 }
