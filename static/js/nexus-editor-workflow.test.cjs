@@ -219,7 +219,7 @@ test('image widgets are separate from touch buttons and expose image upload',asy
  await vm.runInContext('load()',context);
  node('addContent').listeners.click();
  const selectType=(root)=>{if(root.options?.some(x=>x.label==='Image'))return root;for(const child of root.children||[]){if(child&&typeof child==='object'){const hit=selectType(child);if(hit)return hit}}return null};
- const contentType=selectType(node('properties'));
+ const contentType=selectType(node('nexusDisplayTypeMount'));
  assert.ok(contentType);
  contentType.value='image';
  contentType.listeners.change();
