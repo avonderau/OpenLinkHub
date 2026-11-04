@@ -1,0 +1,66 @@
+name: Nexus telemetry demo build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'web/temperature-bar.html'
+      - 'web/head.html'
+      - 'web/login.html'
+      - 'static/js/temperature-bar.js'
+      - 'static/js/temperature-bar.test.cjs'
+      - 'static/css/openlinkhub-telemetry.css'
+      - '.github/workflows/nexus-telemetry-demo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      CGO_CFLAGS_ALLOW: -fno-strict-overflow
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+      - name: Test temperature rendering and existing Nexus interfaces
+        run: |
+          node --check static/js/temperature-bar.js
+          node --test static/js/temperature-bar.test.cjs
+          node --test static/js/nexus-editor-workflow.test.cjs static/js/nexus-layout-files.test.cjs static/js/nexus-starter-templates.test.cjs static/js/nexus-widget-library.test.cjs
+          go test ./src/devices/nexus ./src/server ./src/auth -count=1
+      - name: Compile demo application and stage independent UI overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUNDLE="OpenLinkHub-Nexus-0.9.4N-telemetry-demo-linux-amd64"
+          mkdir -p "dist/$BUNDLE" dist/overlay/web dist/overlay/static/css dist/overlay/static/js
+          go build -trimpath -ldflags="-s -w -X OpenLinkHub/src/version.Version=0.9.4N-telemetry-demo" -o "dist/$BUNDLE/OpenLinkHub" .
+          cp -a static web database docs "dist/$BUNDLE/"
+          cp README.md LICENSE 99-openlinkhub.rules install.sh install-user-space.sh remote-install.sh "dist/$BUNDLE/"
+          cp web/head.html web/login.html web/temperature-bar.html dist/overlay/web/
+          cp static/css/openlinkhub-telemetry.css dist/overlay/static/css/
+          cp static/js/temperature-bar.js dist/overlay/static/js/
+          (cd dist && tar -czf "$BUNDLE.tar.gz" "$BUNDLE" && sha256sum "$BUNDLE.tar.gz" > "$BUNDLE.tar.gz.sha256")
+          (cd dist/overlay && tar -czf "../OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz" web static)
+          (cd dist && sha256sum OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz > OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz.sha256)
+          sha256sum -c "dist/$BUNDLE.tar.gz.sha256"
+          sha256sum -c dist/OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz.sha256
+      - name: Upload demo bundle and frontend overlay (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: openlinkhub-nexus-telemetry-demo
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 14
