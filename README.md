@@ -1,4 +1,4 @@
-# OpenLinkHub — Enhanced Linux Hardware Control
+# OpenLinkHub Nexus — Enhanced Linux Hardware Control
 
 > **Independently maintained fork** of [OpenLinkHub by Nikola Jurkovic](https://github.com/jurkovic-nikola/OpenLinkHub). This repository adds experimental Corsair iCUE NEXUS customization while preserving the original project's broader Linux hardware-control capabilities.
 
