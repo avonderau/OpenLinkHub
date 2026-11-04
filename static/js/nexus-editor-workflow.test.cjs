@@ -165,6 +165,7 @@ test('screen order and cross-screen widget clipboard survive Save Layout',async(
  vm.runInContext("selected=cfg.screens[0].widgets[0].id;render()",context);
  node('copyWidget').listeners.click();
  node('screens').value='existing';node('screens').onchange();
+ assert.equal(node('nexusInspectorActions').hidden,false,'Paste must remain accessible without a selected widget');
  assert.equal(node('pasteWidget').disabled,false);
  node('pasteWidget').listeners.click();
  assert.equal(screens[1].widgets.length,1);
