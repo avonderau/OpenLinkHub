@@ -79,6 +79,9 @@ BuildArch:      x86_64
 Requires:       systemd, shadow-utils
 Conflicts:      OpenLinkHub
 %global debug_package %{nil}
+# Retain the byte-identical, already-reviewed executable from the release.
+# Default RPM BRP stripping would change its ELF bytes.
+%define __os_install_post %{nil}
 
 %description
 Independently maintained OpenLinkHub fork with programmable Corsair
