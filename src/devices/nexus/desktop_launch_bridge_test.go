@@ -90,7 +90,9 @@ func TestNexusDesktopAgentReceivesValidatedTouchEvents(t *testing.T){
 // An agent must never attach to an arbitrary local socket impersonating the
 // daemon, nor accept commands via a symlink or writable socket directory.
 func TestNexusDesktopSocketIdentityAndRuntimeSeparation(t *testing.T){
- root:=t.TempDir()
+ root,err:=os.MkdirTemp("", "nx-")
+ if err!=nil{t.Fatal(err)}
+ t.Cleanup(func(){os.RemoveAll(root)})
  path:=nexusDesktopLaunchSocketPath(root)
  if strings.Contains(path,filepath.Join("database","nexus")){t.Fatalf("socket overlaps private Nexus media: %q",path)}
  broker,err:=startNexusDesktopLaunchBroker(path)
