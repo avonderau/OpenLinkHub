@@ -36,7 +36,7 @@ Section: utils
 Priority: optional
 Architecture: amd64
 Maintainer: OpenLinkHub Nexus <https://github.com/avonderau/OpenLinkHub>
-Depends: libc6, libudev1, libpipewire-0.3-0, systemd, udev, adduser
+Depends: libc6 (>= 2.38), libudev1, libpipewire-0.3-0, systemd, udev, adduser
 Conflicts: openlinkhub
 Homepage: https://github.com/avonderau/OpenLinkHub
 Description: OpenLinkHub Nexus and programmable Corsair screens
