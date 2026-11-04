@@ -79,6 +79,8 @@ func nexusDesktopPeerUID(conn net.Conn)(uint32,error){
  return creds.Uid,nil
 }
 func startNexusDesktopLaunchBroker(path string)(*nexusDesktopLaunchBroker,error){
+ // Linux AF_UNIX sun_path is 108 bytes including the terminating NUL.
+ if len(path)>107{return nil,errors.New("Nexus launcher socket path exceeds Linux Unix socket limit (107 bytes)")}
  dir:=filepath.Dir(path)
  if err:=os.MkdirAll(dir,0750);err!=nil{return nil,fmt.Errorf("create Nexus launcher directory: %w",err)}
  info,err:=os.Lstat(dir)
