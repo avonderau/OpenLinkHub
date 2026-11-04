@@ -1,6 +1,6 @@
 # OpenLinkHub Nexus 0.9.4N — security review
 
-**Repository:** [avonderau/OpenLinkHub](https://github.com/avonderau/OpenLinkHub)  
+**Repository:** [avonderau/OpenLinkHub-Nexus](https://github.com/avonderau/OpenLinkHub-Nexus)  
 **Baseline:** Upstream OpenLinkHub 0.9.4, synchronized with the fork's Nexus functionality  
 **Scope:** Nexus WebUI and API, saved layouts and widgets, image/GIF uploads, macros, synthesized input, URL/app launching, local daemon-to-desktop messaging, service installers, CI, and release packaging.
 

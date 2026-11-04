@@ -654,7 +654,7 @@ test('OpenLinkHub Nexus fork branding is present without renaming upstream route
  assert.match(sidebar,/class="olh-fork-brand" aria-label="OpenLinkHub Nexus"/);
  assert.doesNotMatch(sidebar,/class="sidebar-title\b|<h6[^>]*>\s*\{\{ \.Title \}\}/,'redundant WebUI title should not render in sidebar');
  assert.match(sidebar,/id="sidebarToggle"/);
- assert.match(sidebar,/href="https:\/\/github\.com\/avonderau\/OpenLinkHub"[^>]*rel="noopener noreferrer"/);
+ assert.match(sidebar,/href="https:\/\/github\.com\/avonderau\/OpenLinkHub-Nexus"[^>]*rel="noopener noreferrer"/);
  assert.doesNotMatch(sidebar,/href="https:\/\/github\.com\/jurkovic-nikola\/OpenLinkHub"/);
  assert.match(sidebar,/\( \.Dict "page" "macros" "url" "\/macros"/);
  assert.match(css,/\.sidebar\.collapsed \.olh-fork-brand \{display:none\}/);
@@ -667,7 +667,7 @@ test('fork release and installer security defaults are consistent',()=>{
  const system=fs.readFileSync(path.join(root,'install.sh'),'utf8');
  const userInstall=fs.readFileSync(path.join(root,'install-user-space.sh'),'utf8');
  assert.match(version,/var Version = "0\.9\.4N"/);
- assert.match(remote,/REPO_API="https:\/\/api\.github\.com\/repos\/avonderau\/OpenLinkHub\/releases\/latest"/);
+ assert.match(remote,/REPO_API="https:\/\/api\.github\.com\/repos\/avonderau\/OpenLinkHub-Nexus\/releases\/latest"/);
  assert.match(remote,/sha256sum --check --status/,'installer must check release checksum');
  assert.match(remote,/Release checksum verification failed; refusing to install/);
  for(const script of [remote,system]){
@@ -678,3 +678,22 @@ test('fork release and installer security defaults are consistent',()=>{
  assert.match(userInstall,/chmod 644 "\$PERMISSION_DIR\/\$PERMISSION_FILE"/);
 });
 
+
+
+test('all fork-owned release links and CI guards follow the renamed GitHub repository',()=>{
+ const root=path.join(__dirname,'..','..');
+ const slug='avonderau/OpenLinkHub-Nexus';
+ for(const p of ['README.md','docs/releases/0.9.4N.md','docs/security-review-0.9.4N.md','docs/nexus-fork.md','web/sidebar.html','remote-install.sh','packaging/build-packages.sh','.github/workflows/nexus-fork-release.yml','.github/workflows/nexus-packages.yml']){
+  const content=fs.readFileSync(path.join(root,p),'utf8');
+  assert.ok(content.includes(slug),p+' must refer to renamed fork');
+  assert.ok(!content.includes('avonderau/OpenLinkHub'+'/')&&!content.includes('avonderau/OpenLinkHub"')&&!content.includes("avonderau/OpenLinkHub'"),p+' must not refer to old fork slug');
+ }
+ const release=fs.readFileSync(path.join(root,'.github/workflows/nexus-fork-release.yml'),'utf8');
+ const packages=fs.readFileSync(path.join(root,'.github/workflows/nexus-packages.yml'),'utf8');
+ assert.ok(release.includes("github.repository == '"+slug+"'"));
+ assert.ok(packages.includes("github.repository == '"+slug+"'"));
+ assert.match(packages,/Release asset already exists/,'repeat package publishes must preserve existing checksum-verified files');
+ const sidebar=fs.readFileSync(path.join(root,'web/sidebar.html'),'utf8');
+ assert.match(sidebar,/rel="noopener noreferrer"/);
+ assert.match(fs.readFileSync(path.join(root,'README.md'),'utf8'),/jurkovic-nikola\/OpenLinkHub/,'upstream attribution preserved');
+});

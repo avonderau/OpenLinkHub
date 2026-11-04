@@ -29,7 +29,7 @@ Hardware testing is necessary before treating touchscreen navigation and image o
 
 ## Credits
 
-Original project: Nikola Jurkovic and contributors. Fork modifications: contributors to `avonderau/OpenLinkHub`. See repository history and the existing GPL license.
+Original project: Nikola Jurkovic and contributors. Fork modifications: contributors to `avonderau/OpenLinkHub-Nexus`. See repository history and the existing GPL license.
 
 ## Staying compatible with upstream
 

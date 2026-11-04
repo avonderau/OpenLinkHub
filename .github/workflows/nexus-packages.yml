@@ -77,15 +77,24 @@ jobs:
           path: packages/*
           if-no-files-found: error
       - name: Attach DEB and RPM to existing GitHub release
-        if: github.repository == 'avonderau/OpenLinkHub' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.repository == 'avonderau/OpenLinkHub-Nexus' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           VERSION="${{ steps.download.outputs.version }}"
-          gh release upload "$VERSION" packages/*.deb packages/*.rpm packages/*.sha256 \
-            --repo "$GITHUB_REPOSITORY"
+          # Never overwrite released assets during a workflow rerun or rename.
+          # The published 0.9.4N packages were verified against the release binary.
+          for asset in packages/*.deb packages/*.rpm packages/*.sha256; do
+            name="$(basename "$asset")"
+            if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" \
+                --json assets --jq '.assets[].name' | grep -Fxq "$name"; then
+              echo "Release asset already exists: $name (preserved)"
+            else
+              gh release upload "$VERSION" "$asset" --repo "$GITHUB_REPOSITORY"
+            fi
+          done
           gh release edit "$VERSION" --repo "$GITHUB_REPOSITORY" \
             --notes-file "docs/releases/$VERSION.md"
           gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" --json assets \

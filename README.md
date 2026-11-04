@@ -2,7 +2,7 @@
 
 > **Independently maintained fork** of [OpenLinkHub by Nikola Jurkovic](https://github.com/jurkovic-nikola/OpenLinkHub). This repository adds experimental Corsair iCUE NEXUS customization while preserving the original project's broader Linux hardware-control capabilities.
 
-[![Nexus Go tests](https://github.com/avonderau/OpenLinkHub/actions/workflows/nexus-tests.yml/badge.svg)](https://github.com/avonderau/OpenLinkHub/actions/workflows/nexus-tests.yml)
+[![Nexus Go tests](https://github.com/avonderau/OpenLinkHub-Nexus/actions/workflows/nexus-tests.yml/badge.svg)](https://github.com/avonderau/OpenLinkHub-Nexus/actions/workflows/nexus-tests.yml)
 
 ## What is different in this fork?
 
@@ -20,14 +20,14 @@ See [Nexus development notes](docs/nexus-fork.md) for details and limitations.
 To build **this fork** from source, follow the manual dependency instructions below, then use:
 
 ```bash
-git clone https://github.com/avonderau/OpenLinkHub.git
+git clone https://github.com/avonderau/OpenLinkHub-Nexus.git
 cd OpenLinkHub
 CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
 ```
 
-For the official fork build, use the **[OpenLinkHub Nexus releases](https://github.com/avonderau/OpenLinkHub/releases)**. The first tagged fork release is `0.9.4N` (upstream `0.9.4` plus the Nexus fork's `N` suffix).
+For the official fork build, use the **[OpenLinkHub Nexus releases](https://github.com/avonderau/OpenLinkHub-Nexus/releases)**. The first tagged fork release is `0.9.4N` (upstream `0.9.4` plus the Nexus fork's `N` suffix).
 
-**Native packages (Linux amd64):** The `0.9.4N` release includes a `.deb` for modern Debian/Ubuntu/Linux Mint and a `.rpm` for Fedora-compatible distributions, in addition to the original portable tarball. On a conventional systemd installation, download the appropriate package and its `.sha256` file from [release 0.9.4N](https://github.com/avonderau/OpenLinkHub/releases/tag/0.9.4N) and verify the checksum before installing:
+**Native packages (Linux amd64):** The `0.9.4N` release includes a `.deb` for modern Debian/Ubuntu/Linux Mint and a `.rpm` for Fedora-compatible distributions, in addition to the original portable tarball. On a conventional systemd installation, download the appropriate package and its `.sha256` file from [release 0.9.4N](https://github.com/avonderau/OpenLinkHub-Nexus/releases/tag/0.9.4N) and verify the checksum before installing:
 
 ```bash
 # Debian, Ubuntu or Mint:
@@ -43,7 +43,7 @@ sudo dnf install ./OpenLinkHub-Nexus-0.9.4N-1.x86_64.rpm
 
 **Before migrating from another installation:** Back up `config.json`, device profiles, macros and saved Nexus layouts. The native packages install the `OpenLinkHub.service` system service and may conflict with existing manual, upstream or user-service installations. See the [release notes](docs/releases/0.9.4N.md) for details. For immutable distributions, use the portable bundle instead of DEB/RPM.
 
-The fork's [remote installer](https://github.com/avonderau/OpenLinkHub/blob/main/remote-install.sh) downloads release assets **from this repository**, not upstream. Review the script before running it. Existing upstream package managers and releases do **not** contain these Nexus changes.
+The fork's [remote installer](https://github.com/avonderau/OpenLinkHub-Nexus/blob/main/remote-install.sh) downloads release assets **from this repository**, not upstream. Review the script before running it. Existing upstream package managers and releases do **not** contain these Nexus changes.
 
 See the [0.9.4N security review](docs/security-review-0.9.4N.md) and [desktop launcher guide](docs/nexus-desktop-launch.md) for installation and security boundaries.
 
@@ -164,7 +164,7 @@ $ sudo dnf install pkg-config
 Or use the provided devcontainer in VScode. This is useful for immutable distributions.
 ### 2. Build & install
 ```bash
-$ git clone https://github.com/avonderau/OpenLinkHub.git
+$ git clone https://github.com/avonderau/OpenLinkHub-Nexus.git
 $ cd OpenLinkHub/
 $ CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
 $ chmod +x install.sh
