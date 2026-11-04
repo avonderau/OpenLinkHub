@@ -266,3 +266,18 @@
 @media(prefers-reduced-motion:reduce){
   .olh-settings-page .olh-settings-nav-tab{transition:none}
 }
+
+
+/* Quiet, readable groups within the main Dashboard settings card. */
+.olh-settings-page .olh-settings-subheading{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 13px;
+  border-bottom:1px solid rgba(213,166,90,.18);
+  background:linear-gradient(90deg,rgba(213,166,90,.11),rgba(213,166,90,.015));
+  color:#e1bd83;
+  font-size:.69rem;letter-spacing:.075em;text-transform:uppercase;font-weight:750;
+}
+.olh-settings-page .olh-settings-subheading:not(:first-child){
+  margin-top:4px;border-top:1px solid rgba(220,225,232,.11);
+}
+.olh-settings-page .olh-settings-subheading .bi{font-size:.9rem}
