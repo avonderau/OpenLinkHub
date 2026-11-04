@@ -66,27 +66,29 @@ function changeSelectedWidgetType(widget,type){
 function render(){const s=current();nexusElementById('screen').replaceChildren();nexusElementById('properties').replaceChildren();refreshActionButtons();
  const widget=s?.widgets.find(w=>w.id===selected);
  const status=nexusElementById('selectedWidgetStatus'),remove=nexusElementById('deleteWidget');
+ const typeMount=nexusElementById('nexusDisplayTypeMount');
+ if(typeMount)typeMount.replaceChildren();
+ const name=nexusElementById('nexusSelectedName'),subtitle=nexusElementById('nexusSelectedSubtitle');
+ const symbol=nexusElementById('nexusSelectedIcon'),headActions=nexusElementById('nexusInspectorActions');
+ if(name)name.textContent=widget?(widget.settings?.label||widget.settings?.text||widget.metric||widget.type):'Select a widget';
+ if(subtitle)subtitle.textContent=widget?(
+  ['metric','bar','graph'].includes(widget.type)?'Metric widget · '+({metric:'Value',bar:'Bar',graph:'Graph'}[widget.type]):
+  ['text','image','clock'].includes(widget.type)?'Content widget · '+widget.type:
+  'Touch button'
+ ):'Choose an item in the screen preview';
+ if(symbol){
+  const icons={metric:'speedometer2',bar:'bar-chart',graph:'graph-up',text:'type',image:'image',clock:'clock',button:'cursor',macro:'cursor'};
+  symbol.className='bi bi-'+(widget?icons[widget.type]||'sliders2':'sliders2');
+ }
+ if(headActions)headActions.hidden=!widget;
  if(remove)remove.disabled=!widget;
  if(nexusElementById('duplicateWidget'))nexusElementById('duplicateWidget').disabled=!widget||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
  if(nexusElementById('copyWidget'))nexusElementById('copyWidget').disabled=!widget;
  if(nexusElementById('pasteWidget'))nexusElementById('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
  if(nexusElementById('saveWidgetPreset'))nexusElementById('saveWidgetPreset').disabled=!widget;
  if(status){
-  status.replaceChildren();
-  if(widget && (widget.type==='button'||widget.type==='macro')){
-   const label=document.createElement('label');label.textContent='Button Label ';
-   const input=document.createElement('input');input.type='text';input.maxLength=256;
-   input.value=widget.settings?.label||'';input.placeholder='Button label';
-   input.setAttribute('aria-label','Button Label');
-   input.addEventListener('input',()=>{
-    widget.settings??={};widget.settings.label=input.value;
-    const el=[...nexusElementById('screen').children].find(el=>el.dataset.id===widget.id);
-    if(el){const icon=el.querySelector('.nexus-icon, .nexus-custom-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
-   });
-   label.append(input);status.append(label);
-  }else{
-   status.textContent=widget?(widget.settings?.label||widget.settings?.text||widget.type):'Select a widget in the preview to edit it.';
-  }
+  status.hidden=Boolean(widget);
+  status.textContent=widget?'':'Select a widget in the preview to edit its properties.';
  }
  if(!s)return;
  nexusElementById('background').value=s.background||'';
@@ -137,26 +139,31 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
    render();
   });
   typeLabel.append(typeSelect);
-  properties.append(typeLabel);
+  (typeMount||properties).append(typeLabel);
  }
  const dimensionsRow=document.createElement('div');dimensionsRow.className='nexus-properties-row nexus-dimensions-row';dimensionsRow.setAttribute('aria-label','Widget dimensions');
  const colorsRow=document.createElement('div');colorsRow.className='nexus-properties-row nexus-colors-row';colorsRow.setAttribute('aria-label','Widget colors');
  const styleRow=document.createElement('div');styleRow.className='nexus-properties-row nexus-style-row';styleRow.setAttribute('aria-label','Widget style and settings');
  // Organize the selected widget's controls into concise, accessible groups.
- const section=(title,opened)=>{
+ const section=(title,opened,kind,icon)=>{
   const details=document.createElement('details');
-  details.className='nexus-property-section';
+  details.className='nexus-property-section nexus-'+kind+'-section';
   details.open=opened;
   const summary=document.createElement('summary');
   summary.textContent=title;
+  const glyph=document.createElement('i');
+  glyph.className='bi bi-'+icon;
+  glyph.setAttribute('aria-hidden','true');
+  summary.prepend(glyph);
   details.append(summary);
   properties.append(details);
   return details;
  };
- const geometrySection=section('Position & size',true);
- const appearanceSection=section('Appearance',true);
- const contentSection=section('Text & data',false);
- const touchSection=section('Actions & icons',false);
+ const geometrySection=section('Position & size',true,'geometry','bounding-box');
+ const appearanceSection=section('Appearance',true,'appearance','palette');
+ const contentSection=section('Content & data',true,'data','type');
+ const isActionWidget=['button','macro','image'].includes(w.type);
+ const touchSection=isActionWidget?section('Actions & icons',false,'actions','cursor'):null;
  geometrySection.append(dimensionsRow);
  appearanceSection.append(colorsRow);
  const appearanceRow=document.createElement('div');
@@ -164,11 +171,19 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
  appearanceSection.append(appearanceRow);
  contentSection.append(styleRow);
  const touchRow=document.createElement('div');touchRow.className='nexus-properties-row nexus-touch-row';
- touchSection.append(touchRow);
- const fields=(w.type==='button'||w.type==='macro')?[['x','number'],['y','number'],['width','number'],['height','number']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
+ if(touchSection)touchSection.append(touchRow);
+ const fields=(w.type==='button'||w.type==='macro')?[['x','number'],['y','number'],['width','number'],['height','number'],['label','text']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
  for(const [key,type] of fields){if(key==='metric'&&(w.type==='text'||w.type==='image'||w.type==='clock'||w.type==='button'||w.type==='macro'))continue;if(key==='text'&&w.type!=='text')continue;
  const label=document.createElement('label');label.textContent=key+' ';
  let input;if(type==='select'){input=document.createElement('select');for(const m of metrics)input.add(new Option(m,m));input.value=w.metric}else{input=document.createElement('input');input.type=type;input.value=(key in w?w[key]:(w.settings||{})[key])??''}
+ if(key==='label'){
+  input.addEventListener('input',()=>{
+   w.settings??={};w.settings.label=input.value;
+   if(name)name.textContent=input.value||w.type;
+   const el=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);
+   if(el){const icon=el.querySelector('.nexus-icon, .nexus-custom-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
+  });
+ }
  input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=Math.max(1,Math.min(640,Math.round(v)));if(key==='height')w.height=Math.max(1,Math.min(48,Math.round(v)));if(key==='x')w.x=clamp(Math.round(v),640-w.width);if(key==='y')w.y=clamp(Math.round(v),48-w.height);w.x=clamp(w.x,640-w.width);w.y=clamp(w.y,48-w.height)}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);(['x','y','width','height'].includes(key)?dimensionsRow:styleRow).append(label)}
  renderWidgetColors(w,colorsRow);
  if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){
