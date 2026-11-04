@@ -3,10 +3,24 @@
 
 <!-- Sidebar -->
 <aside class="sidebar p-3 d-flex flex-column {{ if .Dashboard.SidebarCollapsed }}collapsed{{ end }}">
-    <!-- Top -->
-    <button class="system-button secondary mb-3" id="sidebarToggle">☰</button>
-    <!-- Fork identity; keep all existing upstream navigation and translations. -->
-    <div class="olh-fork-brand" aria-label="OpenLinkHub Nexus"><span>OpenLinkHub</span> <strong>Nexus</strong></div>
+    <!-- Shared Nexus site header; preserve sidebarToggle, links and translations. -->
+    <header class="olh-site-header">
+        <a class="olh-site-header-home" href="/" aria-label="OpenLinkHub Nexus dashboard">
+            <span class="olh-site-header-mark" aria-hidden="true"><i class="bi bi-cpu"></i></span>
+            <span class="olh-fork-brand" aria-label="OpenLinkHub Nexus">
+                <span class="olh-site-header-overline">OPENLINKHUB</span>
+                <strong>NEXUS</strong>
+                <span class="olh-site-header-caption">CONTROL CENTER</span>
+            </span>
+        </a>
+        <button class="system-button secondary olh-header-toggle" id="sidebarToggle" type="button"
+                aria-controls="olh-primary-navigation"
+                aria-expanded="{{ if .Dashboard.SidebarCollapsed }}false{{ else }}true{{ end }}"
+                aria-label="{{ if .Dashboard.SidebarCollapsed }}Expand{{ else }}Collapse{{ end }} sidebar"
+                title="{{ if .Dashboard.SidebarCollapsed }}Expand{{ else }}Collapse{{ end }} sidebar">
+            <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
+        </button>
+    </header>
     <div>
         {{ $menu := .Slice
         ( .Dict "page" "apps" "url" "/apps" "icon" "icon-applications.svg" "alt" "Applications" "lang" "txtApplications" )
@@ -17,7 +31,7 @@
         ( .Dict "page" "temperature" "url" "/temperature" "icon" "icon-temperature.svg" "alt" "Temperature Profiles" "lang" "txtProfiles" )
         ( .Dict "page" "settings" "url" "/settings" "icon" "icon-settings.svg" "alt" "Settings" "lang" "txtSettings" )
         }}
-        <nav class="nav flex-column sidebar-nav">
+        <nav class="nav flex-column sidebar-nav" id="olh-primary-navigation" aria-label="Primary navigation">
             <!-- Dashboard -->
             <a class='nav-link {{ if eq .Page "index" }}active{{ end }}' href="/" data-label="{{ .Lang "txtDashboard" }}">
             <img src="/static/img/icons/icon-dashboard.svg" class="sidebar-icon" alt="">

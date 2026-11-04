@@ -753,3 +753,39 @@ test('Settings pilot preserves actions, localization and all seven section icons
  assert.match(page,/src="\/static\/js\/sidebar\.js"/);
  assert.match(page,/\{\{ if \.Dashboard\.TemperatureBar \}\}/);
 });
+
+
+test('shared Nexus site header replaces the old text-only sidebar title on every page',()=>{
+ const root=path.join(__dirname,'..','..');
+ const sidebar=fs.readFileSync(path.join(root,'web','sidebar.html'),'utf8');
+ const css=fs.readFileSync(path.join(root,'static','css','openlinkhub-nexus-design.css'),'utf8');
+ const js=fs.readFileSync(path.join(root,'static','js','sidebar.js'),'utf8');
+ const head=fs.readFileSync(path.join(root,'web','head.html'),'utf8');
+ assert.match(sidebar,/<header class="olh-site-header">/);
+ assert.match(sidebar,/class="olh-site-header-home" href="\/" aria-label="OpenLinkHub Nexus dashboard"/);
+ assert.match(sidebar,/class="olh-site-header-mark" aria-hidden="true"/);
+ assert.match(sidebar,/class="olh-fork-brand" aria-label="OpenLinkHub Nexus"/);
+ assert.match(sidebar,/class="olh-site-header-caption">CONTROL CENTER<\/span>/);
+ assert.equal((sidebar.match(/id="sidebarToggle"/g)||[]).length,1,'preserve one sidebar toggle');
+ assert.match(sidebar,/aria-controls="olh-primary-navigation"/);
+ assert.match(sidebar,/id="olh-primary-navigation" aria-label="Primary navigation"/);
+ assert.match(sidebar,/aria-expanded="\{\{ if \.Dashboard\.SidebarCollapsed \}\}false\{\{ else \}\}true\{\{ end \}\}"/);
+ assert.match(sidebar,/class="nav flex-column sidebar-nav"/);
+ assert.match(sidebar,/\( \.Dict "page" "settings" "url" "\/settings"/, "Settings route remains in the Go template menu");
+ assert.match(sidebar,/href="https:\/\/github.com\/avonderau\/OpenLinkHub-Nexus"/);
+ assert.doesNotMatch(sidebar,/id="sidebarToggle">☰<\/button>/,'old text-only toggle must be removed');
+ assert.match(css,/\.sidebar \.olh-site-header \{/);
+ assert.match(css,/background:var\(--olh-header-gradient\)/);
+ assert.match(css,/\.sidebar\.collapsed \.olh-site-header \{/);
+ assert.match(css,/\.sidebar\.collapsed \.olh-site-header \.olh-fork-brand \{display:none\}/);
+ assert.match(css,/prefers-reduced-motion/);
+ assert.match(js,/function syncSidebarToggle\(\)/);
+ assert.match(js,/sidebarToggle\.setAttribute\("aria-expanded"/);
+ assert.match(js,/syncSidebarToggle\(\);/);
+ assert.match(js,/\$\('#sidebarToggle'\)\.on\('click'/,'collapse behavior remains bound');
+ assert.match(head,/static\/css\/openlinkhub-nexus-design\.css/,'shared header CSS loads on every app page');
+ for(const page of ['web/index.html','web/settings.html','web/nexus.html']){
+  const body=fs.readFileSync(path.join(root,page),'utf8');
+  assert.match(body,/\{\{ template "sidebar" \. \}\}/,page+' uses shared header');
+ }
+});
