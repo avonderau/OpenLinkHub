@@ -72,14 +72,28 @@ func runNexusLaunchAction(action,target string)error{
 // Prevent repeated touches from creating unlimited launcher processes. The
 // HID reader must not block while a desktop application is starting.
 var launchSlot=make(chan struct{},1)
+// dispatchNexusLaunchAction first tries the current process's graphical
+// session. In headless system services it forwards to the opt-in user desktop
+// agent instead. No commands are launched as root.
+func dispatchNexusLaunchAction(action,target string)error{
+ if err:=validateNexusLaunchAction(action,target);err!=nil{return err}
+ if launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"))==nil{
+  if err:=runNexusLaunchAction(action,target);err==nil{return nil}
+ }
+ return forwardNexusDesktopLaunch(action,target)
+}
+
 func executeNexusLaunchAction(action,target string){
- if err:=validateNexusLaunchAction(action,target);err!=nil{return}
+ if err:=validateNexusLaunchAction(action,target);err!=nil{
+  logger.Log(logger.Fields{"action":action,"error":err.Error()}).Warn("Nexus launch action rejected")
+  return
+ }
  select{case launchSlot<-struct{}{}:default:return}
  go func(){
   defer func(){<-launchSlot}()
   // This is a physical touch path. Do not expose the launcher as an HTTP
   // command endpoint. Log only the action category, never the private URL.
-  if err:=runNexusLaunchAction(action,target);err!=nil{
+  if err:=dispatchNexusLaunchAction(action,target);err!=nil{
    logger.Log(logger.Fields{"action":action,"error":err.Error()}).Warn("Nexus desktop launch failed")
   }
  }()
