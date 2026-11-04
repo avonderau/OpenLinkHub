@@ -418,6 +418,7 @@ test('compact inspector preserves file tabs and all existing widget action IDs',
  assert.match(compact,/\.nexus-appearance-section\s*\{grid-column:2;grid-row:2\}/);
  assert.match(compact,/linear-gradient\(110deg,#403729/);
  assert.match(compact,/@media\(max-width:580px\)/);
+ assert.match(compact,/@container\(max-width:610px\)/,'inspector should adapt to its own column width');
 });
 
 test('compact inspector renders widget identity, button label editing, and only relevant sections',async()=>{
