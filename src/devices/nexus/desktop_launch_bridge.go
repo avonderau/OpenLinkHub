@@ -1,0 +1,124 @@
+package nexus
+
+import (
+ "bufio"
+ "context"
+ "encoding/json"
+ "errors"
+ "fmt"
+ "net"
+ "os"
+ "path/filepath"
+ "sync"
+ "time"
+)
+
+// A system OpenLinkHub service is not the signed-in desktop user. The desktop
+// agent opts in by connecting to a group-protected Unix socket. The daemon
+// sends only validated physical-touch events and never accepts commands here.
+const nexusDesktopSocketName="desktop-launch.sock"
+type nexusDesktopLaunchEvent struct {Action string `json:"action"`;Target string `json:"target"`}
+type nexusDesktopLaunchBroker struct {
+ mu sync.Mutex
+ listener net.Listener
+ client net.Conn
+ path string
+}
+func nexusDesktopLaunchSocketPath(root string)string{return filepath.Join(root,"database","nexus",nexusDesktopSocketName)}
+func startNexusDesktopLaunchBroker(path string)(*nexusDesktopLaunchBroker,error){
+ dir:=filepath.Dir(path)
+ if err:=os.MkdirAll(dir,0755);err!=nil{return nil,fmt.Errorf("create Nexus launcher directory: %w",err)}
+ info,err:=os.Stat(dir)
+ if err!=nil||!info.IsDir()||info.Mode().Perm()&0002!=0{
+  return nil,errors.New("Nexus launcher directory must exist and not be world-writable")
+ }
+ if existing,err:=os.Lstat(path);err==nil {
+  if existing.Mode()&os.ModeSocket==0{return nil,errors.New("Nexus launcher socket path is not a socket")}
+  if conn,err:=net.DialTimeout("unix",path,150*time.Millisecond);err==nil{
+   conn.Close();return nil,errors.New("Nexus launcher socket already in use")
+  }
+  if err:=os.Remove(path);err!=nil{return nil,err}
+ }else if !os.IsNotExist(err){return nil,err}
+ listener,err:=net.Listen("unix",path)
+ if err!=nil{return nil,fmt.Errorf("listen for Nexus desktop agent: %w",err)}
+ if err:=os.Chmod(path,0660);err!=nil{listener.Close();os.Remove(path);return nil,err}
+ b:=&nexusDesktopLaunchBroker{listener:listener,path:path}
+ go b.accept()
+ return b,nil
+}
+func (b *nexusDesktopLaunchBroker)accept(){
+ for {
+  conn,err:=b.listener.Accept()
+  if err!=nil{return}
+  b.mu.Lock()
+  if b.client!=nil{b.client.Close()}
+  b.client=conn
+  b.mu.Unlock()
+ }
+}
+func (b *nexusDesktopLaunchBroker)send(action,target string)error{
+ if err:=validateNexusLaunchAction(action,target);err!=nil{return err}
+ b.mu.Lock();defer b.mu.Unlock()
+ if b.client==nil{return errors.New("no Nexus desktop agent connected; start OpenLinkHub --nexus-desktop-agent in the logged-in desktop session")}
+ b.client.SetWriteDeadline(time.Now().Add(500*time.Millisecond))
+ if err:=json.NewEncoder(b.client).Encode(nexusDesktopLaunchEvent{Action:action,Target:target});err!=nil{
+  b.client.Close();b.client=nil;return fmt.Errorf("Nexus desktop agent disconnected: %w",err)
+ }
+ return nil
+}
+func (b *nexusDesktopLaunchBroker)close(){
+ b.mu.Lock();defer b.mu.Unlock()
+ if b.client!=nil{b.client.Close();b.client=nil}
+ b.listener.Close();os.Remove(b.path)
+}
+var nexusLaunchBrokerGlobal struct{once sync.Once;broker *nexusDesktopLaunchBroker;err error}
+func initializeNexusDesktopLaunchBroker(root string)error{
+ nexusLaunchBrokerGlobal.once.Do(func(){
+  nexusLaunchBrokerGlobal.broker,nexusLaunchBrokerGlobal.err=startNexusDesktopLaunchBroker(nexusDesktopLaunchSocketPath(root))
+ })
+ return nexusLaunchBrokerGlobal.err
+}
+func forwardNexusDesktopLaunch(action,target string)error{
+ broker:=nexusLaunchBrokerGlobal.broker
+ if broker==nil{return errors.New("Nexus desktop agent unavailable; run OpenLinkHub --nexus-desktop-agent in the graphical session")}
+ return broker.send(action,target)
+}
+
+func runNexusDesktopLaunchAgent(ctx context.Context,socketPath string,execute func(string,string)error)error{
+ if err:=launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"));err!=nil{
+  return fmt.Errorf("Nexus desktop agent must run as a logged-in desktop user: %w",err)
+ }
+ if execute==nil{return errors.New("missing desktop launcher")}
+ for {
+  if ctx.Err()!=nil{return nil}
+  conn,err:=net.DialTimeout("unix",socketPath,500*time.Millisecond)
+  if err!=nil{if waitNexusAgentRetry(ctx)!=nil{return nil};continue}
+  done:=make(chan struct{})
+  go func(){select{case <-ctx.Done():conn.Close();case <-done:}}()
+  scanner:=bufio.NewScanner(conn)
+  scanner.Buffer(make([]byte,4096),4096)
+  for scanner.Scan(){
+   var event nexusDesktopLaunchEvent
+   if json.Unmarshal(scanner.Bytes(),&event)!=nil{continue}
+   if validateNexusLaunchAction(event.Action,event.Target)!=nil{continue}
+   if err:=execute(event.Action,event.Target);err!=nil{
+    fmt.Fprintf(os.Stderr,"Nexus desktop %s launch failed: %v\n",event.Action,err)
+   }
+  }
+  close(done);conn.Close()
+  if waitNexusAgentRetry(ctx)!=nil{return nil}
+ }
+}
+func waitNexusAgentRetry(ctx context.Context)error{
+ timer:=time.NewTimer(time.Second);defer timer.Stop()
+ select{case <-ctx.Done():return ctx.Err();case <-timer.C:return nil}
+}
+// RunNexusDesktopLaunchAgent runs locally as a desktop user; it does not
+// start the WebUI or access HID devices. A blank path uses the current cwd.
+func RunNexusDesktopLaunchAgent(ctx context.Context,socketPath string)error{
+ if socketPath==""{
+  root,err:=os.Getwd();if err!=nil{return err}
+  socketPath=nexusDesktopLaunchSocketPath(root)
+ }
+ return runNexusDesktopLaunchAgent(ctx,socketPath,runNexusLaunchAction)
+}
