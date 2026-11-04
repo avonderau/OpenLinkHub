@@ -190,6 +190,7 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
  if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){
   // Opacity is an independent percentage, not a preset background style.
   const radiusLabel=document.createElement('label');
+  radiusLabel.className='nexus-radius-control';
   radiusLabel.textContent='Corner radius ';
   const radius=document.createElement('input');
   radius.type='number';radius.min='0';radius.max='24';radius.step='1';
@@ -200,7 +201,9 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
    w.settings??={};w.settings.cornerRadius=String(Math.max(0,Math.min(24,Math.round(v))));
    render();
   });
-  radiusLabel.append(radius,' px');appearanceRow.append(radiusLabel);
+  const radiusInline=document.createElement('span');radiusInline.className='nexus-input-unit';
+  const radiusUnit=document.createElement('span');radiusUnit.className='nexus-input-suffix';radiusUnit.textContent='px';
+  radiusInline.append(radius,radiusUnit);radiusLabel.append(radiusInline);appearanceRow.append(radiusLabel);
   const opacityLabel=document.createElement('label');opacityLabel.className='nexus-opacity-control';
   opacityLabel.textContent='Opacity ';
   const opacitySlider=document.createElement('input');
@@ -222,9 +225,13 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   };
   opacitySlider.addEventListener('input',()=>updateOpacity(opacitySlider.value));
   opacityInput.addEventListener('change',()=>updateOpacity(opacityInput.value));
-  opacityLabel.append(opacitySlider,opacityInput,'%');
+  const opacityInline=document.createElement('span');opacityInline.className='nexus-opacity-inline';
+  const opacityValue=document.createElement('span');opacityValue.className='nexus-opacity-value';
+  const opacityUnit=document.createElement('span');opacityUnit.className='nexus-input-suffix';opacityUnit.textContent='%';
+  opacityValue.append(opacityInput,opacityUnit);opacityInline.append(opacitySlider,opacityValue);
+  opacityLabel.append(opacityInline);
   appearanceRow.append(opacityLabel);
-  const directionLabel=document.createElement('label');directionLabel.textContent='Gradient ';
+  const directionLabel=document.createElement('label');directionLabel.className='nexus-gradient-control';directionLabel.textContent='Gradient ';
   const direction=document.createElement('select');direction.setAttribute('aria-label','Background gradient direction');
   for(const [value,name] of [['none','None'],['horizontal','Left to right'],['vertical','Top to bottom']])direction.add(new Option(name,value));
   direction.value=w.settings?.gradientDirection||'none';
@@ -430,8 +437,9 @@ async function loadSharedMacroProfiles(){
 function renderWidgetColors(w,panel){
  if(!['button','macro','metric','bar','graph','text','clock','image'].includes(w.type))return;
  for(const [key,name,defaultColor] of [['backgroundColor','Background','#1b2935'],['textColor','Text & icon','#ebf5fc'],['borderColor','Border','#80bdd9']]){
-  const label=document.createElement('label');label.textContent=name+' ';
-  const input=document.createElement('input');input.type='color';input.value=/^#[0-9a-fA-F]{6}$/.test(w.settings?.[key]||'')?w.settings[key]:defaultColor;
+  const label=document.createElement('label');label.className='nexus-color-control';
+  label.textContent=(key==='backgroundColor'?'BG':key==='textColor'?'Text':'Border')+' ';
+  const input=document.createElement('input');input.type='color';input.setAttribute('aria-label',name+' color');input.value=/^#[0-9a-fA-F]{6}$/.test(w.settings?.[key]||'')?w.settings[key]:defaultColor;
   input.oninput=()=>{
    w.settings??={};w.settings[key]=input.value;
    const widget=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);

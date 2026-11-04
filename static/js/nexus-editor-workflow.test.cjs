@@ -22,7 +22,7 @@ function makeEditor(){
    append(...children){this.children.push(...children)},
    prepend(child){this.children.unshift(child)},
    add(option){this.options.push(option)},
-   setAttribute(){},querySelector(){return null}
+   setAttribute(key,value){this.attributes??={};this.attributes[key]=value},querySelector(){return null}
   };
  }
  function node(id){
@@ -280,6 +280,66 @@ test('selected widget settings group opacity percentage and preserve it on save'
  assert.equal(writes.at(-1).screens[0].widgets[0].settings.opacity,'62');
 });
 
+
+test('narrow Appearance inspector keeps units inline and positions fields without wrapping',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'appearance_compact',type:'metric',metric:'cpu.temperature',x:0,y:0,width:152,height:48,settings:{cornerRadius:'15',opacity:'75'}});
+ vm.runInContext("selected='appearance_compact';render()",context);
+ const walk=(root,predicate)=>{
+  if(predicate(root))return root;
+  for(const child of root.children||[]){if(child&&typeof child==='object'){const found=walk(child,predicate);if(found)return found}}
+  return null;
+ };
+ const section=walk(node('properties'),el=>el.className?.includes('nexus-appearance-section'));
+ assert.ok(section,'appearance section must be rendered');
+ const radius=walk(section,el=>el.className==='nexus-radius-control');
+ const inlineRadius=walk(radius,el=>el.className==='nexus-input-unit');
+ assert.ok(inlineRadius,'radius value and px suffix must share an inline wrapper');
+ assert.equal(inlineRadius.children[0].type,'number');
+ assert.equal(inlineRadius.children[1].textContent,'px');
+ assert.equal(inlineRadius.children[0].value,'15');
+ const opacity=walk(section,el=>el.className==='nexus-opacity-control');
+ const inlineOpacity=walk(opacity,el=>el.className==='nexus-opacity-inline');
+ const value=walk(opacity,el=>el.className==='nexus-opacity-value');
+ assert.ok(inlineOpacity&&value,'opacity range, number and percent need shared row');
+ assert.equal(inlineOpacity.children[0].type,'range');
+ assert.equal(inlineOpacity.children[1],value);
+ assert.equal(value.children[0].type,'number');
+ assert.equal(value.children[1].textContent,'%');
+ assert.equal(value.children[0].value,'75');
+ const gradient=walk(section,el=>el.className==='nexus-gradient-control');
+ assert.ok(gradient&&gradient.children.some(ch=>ch.options?.some(o=>o.label==='None')),'gradient remains editable beside radius');
+ const colors=[];
+ for(const row of section.children){
+  for(const child of row.children||[]){
+   if(child.className==='nexus-color-control')colors.push(child);
+  }
+ }
+ assert.deepEqual(colors.map(el=>el.textContent.trim()),['BG','Text','Border']);
+ assert.deepEqual(colors.map(el=>el.children[0].attributes['aria-label']),['Background color','Text & icon color','Border color']);
+ value.children[0].value='64';
+ value.children[0].listeners.change();
+ assert.equal(screen.widgets[0].settings.opacity,'64');
+ inlineRadius.children[0].value='8';
+ inlineRadius.children[0].listeners.change();
+ assert.equal(screen.widgets[0].settings.cornerRadius,'8');
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].widgets[0].settings.opacity,'64');
+ assert.equal(writes.at(-1).screens[0].widgets[0].settings.cornerRadius,'8');
+});
+
+test('compact Appearance CSS prevents wrapping at narrow card widths',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','nexus-compact-inspector.css'),'utf8');
+ assert.match(css,/\.nexus-appearance-row \.nexus-radius-control\s*\{\s*grid-column:1;grid-row:1/);
+ assert.match(css,/\.nexus-appearance-row \.nexus-gradient-control\s*\{\s*grid-column:2;grid-row:1/);
+ assert.match(css,/label\.nexus-opacity-control\s*\{[^}]*grid-column:1\/-1;grid-row:2/);
+ assert.match(css,/\.nexus-opacity-inline\s*\{[^}]*grid-template-columns:minmax\(0,1fr\) auto/);
+ assert.match(css,/\.nexus-input-unit,[\s\S]*?\.nexus-opacity-value\s*\{[^}]*flex-wrap:nowrap/);
+ assert.match(css,/\.nexus-colors-row label\.nexus-color-control\s*\{[^}]*flex-wrap:nowrap/);
+ assert.match(css,/#nexus-editor #nexus-panel-widget #nexus-selected-panel #properties \.nexus-colors-row \.nexus-color-control input\[type=color\]/);
+});
 
 test('new widgets use the full 48 pixel Nexus height without modifying existing items',async()=>{
  const {context,node}=makeEditor();
