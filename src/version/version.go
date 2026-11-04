@@ -16,8 +16,9 @@ type BuildInfo struct {
 	BuildVersion string    `json:"buildVersion"`
 }
 
-// Version is set via -ldflags automatically upon a build process, no need to modify this manually.
-var Version = "0.0.0"
+// Version identifies this fork even when a build omits -ldflags.
+// Release builds inject the same value via -ldflags for reproducibility.
+var Version = "0.9.4N"
 var buildInfo *BuildInfo
 
 // GetBuildInfo will return BuildInfo struct
