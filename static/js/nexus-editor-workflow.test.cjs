@@ -668,6 +668,8 @@ test('fork release and installer security defaults are consistent',()=>{
  const userInstall=fs.readFileSync(path.join(root,'install-user-space.sh'),'utf8');
  assert.match(version,/var Version = "0\.9\.4N"/);
  assert.match(remote,/REPO_API="https:\/\/api\.github\.com\/repos\/avonderau\/OpenLinkHub\/releases\/latest"/);
+ assert.match(remote,/sha256sum --check --status/,'installer must check release checksum');
+ assert.match(remote,/Release checksum verification failed; refusing to install/);
  for(const script of [remote,system]){
   assert.doesNotMatch(script,/chmod -R 755/,'installer must not make configs world readable');
   assert.match(script,/chmod -R o-rwx/,'installer should close world permissions');
