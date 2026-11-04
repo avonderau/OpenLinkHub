@@ -670,3 +670,23 @@
     flex:1 1 auto;
   }
 }
+
+/* URL editor: a direct, user-initiated link tests the target in this browser.
+ * This does not execute a privileged action or alter the physical device. */
+#nexus-panel-widget .nexus-url-test-link{
+ display:inline-flex;align-items:center;justify-content:center;
+ max-width:100%;width:fit-content;min-height:34px;
+ margin:4px 0;padding:7px 11px;
+ color:#f4d5a5;text-decoration:none;
+ border:1px solid #806548;border-radius:7px;
+ background:linear-gradient(180deg,#353025,#272626);
+ font-size:12px;font-weight:650
+}
+#nexus-panel-widget .nexus-url-test-link:hover{
+ color:#ffe9c4;border-color:#d5a65a;
+ background:linear-gradient(180deg,#494030,#302b25)
+}
+#nexus-panel-widget .nexus-url-test-link:focus-visible{
+ outline:2px solid rgba(213,166,90,.82);outline-offset:2px
+}
+#nexus-panel-widget .nexus-url-test-link[hidden]{display:none!important}
