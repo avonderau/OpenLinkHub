@@ -1,0 +1,92 @@
+name: Package OpenLinkHub Nexus DEB and RPM
+
+on:
+  pull_request:
+    paths:
+      - 'packaging/**'
+      - '.github/workflows/nexus-packages.yml'
+      - '.github/workflows/nexus-fork-release.yml'
+      - 'docs/releases/**'
+      - 'README.md'
+  push:
+    branches: [main]
+    paths:
+      - 'packaging/**'
+      - '.github/workflows/nexus-packages.yml'
+      - '.github/workflows/nexus-fork-release.yml'
+      - 'docs/releases/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing Nexus release to package
+        required: true
+        default: '0.9.4N'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm cpio
+      - name: Validate shell scripts
+        run: |
+          bash -n packaging/build-packages.sh packaging/verify-packages.sh
+          sh -n packaging/post-install.sh
+      - name: Download existing release archive and verify published SHA-256
+        id: download
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION_INPUT:-0.9.4N}"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+N$ ]]
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          BUNDLE="OpenLinkHub-Nexus-${VERSION}-linux-amd64"
+          mkdir -p archive
+          gh release download "$VERSION" --repo "$GITHUB_REPOSITORY" \
+            --pattern "${BUNDLE}.tar.gz" --pattern "${BUNDLE}.sha256" --dir archive
+          test -s "archive/${BUNDLE}.tar.gz"
+          test -s "archive/${BUNDLE}.sha256"
+          (cd archive && sha256sum --check "${BUNDLE}.sha256")
+      - name: Build native packages using unchanged release binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.download.outputs.version }}"
+          bash packaging/build-packages.sh "$VERSION" "archive/OpenLinkHub-Nexus-${VERSION}-linux-amd64.tar.gz" packages
+      - name: Verify package metadata and exact release executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.download.outputs.version }}"
+          bash packaging/verify-packages.sh "$VERSION" "archive/OpenLinkHub-Nexus-${VERSION}-linux-amd64.tar.gz" packages
+      - name: Upload packages for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-native-packages
+          path: packages/*
+          if-no-files-found: error
+      - name: Attach DEB and RPM to existing GitHub release
+        if: github.repository == 'avonderau/OpenLinkHub' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.download.outputs.version }}"
+          gh release upload "$VERSION" packages/*.deb packages/*.rpm packages/*.sha256 \
+            --repo "$GITHUB_REPOSITORY"
+          gh release edit "$VERSION" --repo "$GITHUB_REPOSITORY" \
+            --notes-file "docs/releases/$VERSION.md"
+          gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[].name'

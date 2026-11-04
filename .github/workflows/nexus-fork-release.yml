@@ -49,7 +49,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+          sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config rpm cpio
       - name: Verify release sources
         run: |
           go vet ./src/devices/nexus ./src/server ./src/version
@@ -67,6 +67,14 @@ jobs:
           cp -a static web database docs "dist/$BUNDLE/"
           cp README.md LICENSE 99-openlinkhub.rules install.sh install-user-space.sh remote-install.sh "dist/$BUNDLE/"
           (cd dist && tar -czf "${BUNDLE}.tar.gz" "$BUNDLE" && sha256sum "${BUNDLE}.tar.gz" > "${BUNDLE}.sha256")
+      - name: Build native DEB/RPM packages from release bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.release.outputs.version }}"
+          BUNDLE="OpenLinkHub-Nexus-${VERSION}-linux-amd64"
+          bash packaging/build-packages.sh "$VERSION" "dist/${BUNDLE}.tar.gz" dist
+          bash packaging/verify-packages.sh "$VERSION" "dist/${BUNDLE}.tar.gz" dist
       - name: Create GitHub release with downloadable bundle and checksum
         shell: bash
         run: |
@@ -74,6 +82,8 @@ jobs:
           VERSION="${{ steps.release.outputs.version }}"
           BUNDLE="OpenLinkHub-Nexus-${VERSION}-linux-amd64"
           gh release create "$VERSION" "dist/${BUNDLE}.tar.gz" "dist/${BUNDLE}.sha256" \
+            "dist/OpenLinkHub-Nexus_${VERSION}_amd64.deb" "dist/OpenLinkHub-Nexus_${VERSION}_amd64.deb.sha256" \
+            "dist/OpenLinkHub-Nexus-${VERSION}-1.x86_64.rpm" "dist/OpenLinkHub-Nexus-${VERSION}-1.x86_64.rpm.sha256" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "OpenLinkHub Nexus ${VERSION}" \
             --notes-file "docs/releases/${VERSION}.md" \
