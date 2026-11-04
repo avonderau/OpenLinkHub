@@ -35,14 +35,14 @@ then run `./OpenLinkHub --nexus-desktop-agent`. The agent stays running in
 that terminal and reconnects if the daemon is restarted.
 
 The default socket is
-`<OpenLinkHub working directory>/database/nexus/desktop-launch.sock`.
+`<OpenLinkHub working directory>/runtime/nexus-desktop/desktop-launch.sock`.
 When your agent has a different working directory:
 
 ```sh
-./OpenLinkHub --nexus-desktop-agent --socket /opt/OpenLinkHub/database/nexus/desktop-launch.sock
+./OpenLinkHub --nexus-desktop-agent --socket /opt/OpenLinkHub/runtime/nexus-desktop/desktop-launch.sock
 ```
 
-The Unix socket is local-only, mode **0660**, and is not exposed to
+The Unix socket is local-only, mode **0660**, inside a daemon-owned mode **0750** runtime folder. The agent checks the socket owner and Linux peer credentials. It is not exposed to
 the network. The desktop account must have access to the socket's group.
 For the packaged service check membership with `id -nG`, and if needed:
 
