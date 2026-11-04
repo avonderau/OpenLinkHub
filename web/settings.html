@@ -32,406 +32,381 @@
                 </div>
             </div>
 
-            <!-- Settings -->
-            <div class="olh-settings-grid">
-                <div class="olh-settings-column">
-                    <div class="stack-gap-4">
-                        <!-- Dashboard Settings -->
-                        <div class="card system-card text-center">
-                            <div class="card-header olh-section-header">
-                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
-                                <span class="olh-section-title">{{ .Lang "txtDashboard" }}</span>
-                            </div>
-                            <div class="card-body">
-                                <div class="settings-list">
-                                    <!-- Temperature (C / F) -->
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtShowTempInC" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="checkbox-celsius">
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtShowTemperatureBar" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="checkbox-temperatureBar">
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtShowDeviceLabels" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="checkbox-deviceLabels">
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtAddDeviceToDashboard" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="checkbox-addDeviceToDashboard">
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-
-                                    <!-- Language -->
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtLanguage" }}</span>
-                                        <label for="userLanguage">
-                                            <select id="userLanguage" class="form-select system-select auto-width compact userLanguage">
-                                                {{ range $k, $v := .Languages }}
-                                                {{ if eq $languageCode $k }}
-                                                <option value="{{ $k }}" selected>{{ $v.Name }}</option>
-                                                {{ else }}
-                                                <option value="{{ $k }}">{{ $v.Name }}</option>
-                                                {{ end }}
-                                                {{ end }}
-                                            </select>
-                                        </label>
-                                    </div>
-
-                                    <!-- Style -->
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtStyle" }}</span>
-                                        <label for="theme">
-                                            <select id="theme" class="form-select system-select auto-width compact theme">
-                                                {{ range $v := .Dashboard.Themes }}
-                                                {{ if eq $dash.Theme $v }}
-                                                <option value="{{ $v }}" selected>{{ $v }}</option>
-                                                {{ else }}
-                                                <option value="{{ $v }}">{{ $v }}</option>
-                                                {{ end }}
-                                                {{ end }}
-                                            </select>
-                                        </label>
-                                    </div>
-
-                                    <!-- Global RGB -->
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtRgb" }}</span>
-                                        <label for="allDevicesRgb">
-                                            <select id="allDevicesRgb" class="form-select system-select auto-width compact allDevicesRgb">
-                                                <option value="none">None</option>
-                                                {{ range $key, $mode := .RGBModes }}
-                                                <option value="{{ $mode }}">{{ $mode }}</option>
-                                                {{ end }}
-                                            </select>
-                                        </label>
-                                    </div>
-
-                                    <!-- Static color for all devices -->
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtApplyColorToAll" }}</span>
-                                        <div class="settings-actions">
-                                            <div class="system-color compact">
-                                                <label>
-                                                    <input type="color" id="allDevicesColor" class="allDevicesColor system-color compact" value="#ff0000">
-                                                </label>
-                                            </div>
-                                            <button class="system-button applyColorToAll compact">{{ .Lang "txtApplyToAll" }}</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- RGB Turn Off / On -->
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtRgbOnOff" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="checkbox-rgbOff">
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-
-                                    <!-- Style -->
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtKeyboardLayout" }}</span>
-                                        <label for="theme">
-                                            <select id="keyboardLayout" class="form-select system-select auto-width compact theme">
-                                                {{ range $k, $v := .Dashboard.KeyboardLayouts }}
-                                                {{ if eq $dash.KeyboardLayout $k }}
-                                                <option value="{{ $k }}" selected>{{ $v }}</option>
-                                                {{ else }}
-                                                <option value="{{ $k }}">{{ $v }}</option>
-                                                {{ end }}
-                                                {{ end }}
-                                            </select>
-                                        </label>
-                                    </div>
-
-                                    <!-- Save settings -->
-                                    <div class="settings-row">
-                                        <button class="system-button" id="btnSaveDashboardSettings">{{ .Lang "txtSave" }}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Backup and restore -->
-                        <div class="card system-card text-center">
-                            <div class="card-header olh-section-header">
-                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-cloud-arrow-up"></i></span>
-                                <span class="olh-section-title">{{ .Lang "txtBackupRestore" }}</span>
-                            </div>
-                            <div class="card-body text-left sentence-text">
-                                {{ .Lang "txtBackupInfo" }}
-                            </div>
-                            <div class="card-body">
-                                <div class="settings-list">
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtBackup" }}</span>
-                                        <label class="system-toggle compact">
-                                            <button class="system-button success"
-                                                    type="button"
-                                                    id="btnBackup">{{ .Lang "txtBackup" }}
-                                            </button>
-                                        </label>
-                                    </div>
-
-                                    <div class="settings-row">
-                                        <form id="restoreForm" enctype="multipart/form-data" class="file-form full-width">
-                                            <input type="file"
-                                                   class="system-input file-input"
-                                                   id="backupFile"
-                                                   name="backupFile"
-                                                   accept=".zip">
-                                            <button class="system-button danger" type="submit" id="btnRestore">
-                                                {{ .Lang "txtRestore" }}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Nexus Settings categories: preserve upstream IDs, controls and API bindings. -->
+            <div class="olh-settings-shell"><div class="olh-settings-nav" role="tablist" aria-label="Settings categories"><button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-general" aria-controls="olh-settings-general" aria-selected="true" tabindex="0"><i class="bi bi-sliders2" aria-hidden="true"></i><span>General</span></button>
+<button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-devices" aria-controls="olh-settings-devices" aria-selected="false" tabindex="-1"><i class="bi bi-pc-display" aria-hidden="true"></i><span>Devices &amp; Displays</span></button>
+<button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-security" aria-controls="olh-settings-security" aria-selected="false" tabindex="-1"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Security &amp; Backup</span></button></div><div class="olh-settings-tab-panels"><section class="olh-settings-tab-panel" id="olh-settings-general" role="tabpanel" aria-labelledby="olh-settings-tab-general" tabindex="0"><div class="olh-settings-section-intro"><div><h2>General preferences</h2><p>Dashboard appearance, lighting schedules and audio options.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Save each section separately</span></div><div class="olh-settings-category-grid olh-settings-general-grid"><div class="card system-card text-center">
+            <div class="card-header olh-section-header">
+                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
+                <span class="olh-section-title">{{ .Lang "txtDashboard" }}</span>
+            </div>
+            <div class="card-body">
+                <div class="settings-list">
+                    <!-- Temperature (C / F) -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtShowTempInC" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="checkbox-celsius">
+                            <span class="toggle-track"></span>
+                        </label>
                     </div>
-                </div>
-                <div class="olh-settings-column">
-                    <div class="stack-gap-4">
-                        <!-- RGB Scheduler -->
-                        <div class="card system-card text-center">
-                            <div class="card-header olh-section-header">
-                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-calendar-week"></i></span>
-                                <span class="olh-section-title">{{ .Lang "txtRgbScheduler" }}</span>
-                            </div>
-                            <div class="card-body">
-                                <div class="settings-list">
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtEnable" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="rgbControl" {{ if .Scheduler.RGBControl }}checked{{end}}>
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
 
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtRgbOffTime" }}</span>
-                                        <label class="compact">
-                                            <input type="time"
-                                                   id="rgbOff"
-                                                   name="rgbOff"
-                                                   value="{{ .Scheduler.RGBOff }}"
-                                                   class="system-input system-time compact">
-                                        </label>
-                                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtShowTemperatureBar" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="checkbox-temperatureBar">
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
 
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "rgbOnTime" }}</span>
-                                        <label class="compact">
-                                            <input type="time"
-                                                   id="rgbOn"
-                                                   name="rgbOn"
-                                                   value="{{ .Scheduler.RGBOn }}"
-                                                   class="system-input system-time compact">
-                                        </label>
-                                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtShowDeviceLabels" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="checkbox-deviceLabels">
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
 
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtLcdOffDuringDarkHours" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="lcdControl" {{ if .Scheduler.LCDControl }}checked{{end}}>
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-                                    <!-- Save profile -->
-                                    <div class="settings-row">
-                                        <button class="system-button saveRgbControl">{{ .Lang "txtSave" }}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtAddDeviceToDashboard" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="checkbox-addDeviceToDashboard">
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
 
-                        <!-- Virtual Audio -->
-                        <div class="card system-card text-center">
-                            <div class="card-header olh-section-header">
-                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-volume-up"></i></span>
-                                <span class="olh-section-title">{{ .Lang "txtVirtualAudio" }}</span>
-                            </div>
-                            <div class="card-body text-left">
-                                {{ if .SystemService }}
-                                <span class="settings-label text-warning">{{ .Lang "txtVirtualAudioUnavailable" }}</span>
+                    <!-- Language -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtLanguage" }}</span>
+                        <label for="userLanguage">
+                            <select id="userLanguage" class="form-select system-select auto-width compact userLanguage">
+                                {{ range $k, $v := .Languages }}
+                                {{ if eq $languageCode $k }}
+                                <option value="{{ $k }}" selected>{{ $v.Name }}</option>
                                 {{ else }}
-                                <div class="settings-list">
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtEnable" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="virtualAudio" {{ if $audio.Enabled }}checked{{end}}>
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-
-                                    {{ if $audio.Enabled }}
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtOutputDevice" }}</span>
-                                        <label for="outputDevice">
-                                            <select id="outputDevice" class="form-select system-select max-width-300 compact outputDevice">
-                                                {{ range $k, $v := .OutputDevices }}
-                                                <option value="{{ $v.Name }};{{ $v.Desc }};{{ $v.Serial }}" {{ if eq $audio.SinkDesc $v.Desc }}selected{{end}}>{{ $v.Desc }}</option>
-                                                {{ end }}
-                                            </select>
-                                        </label>
-                                    </div>
-                                    {{ end }}
-
-                                    <!-- Enable virtual audio -->
-                                    <div class="settings-row">
-                                        <button class="system-button enableVirtualAudio">{{ .Lang "txtSave" }}</button>
-                                        {{ if $audio.Enabled }}
-                                        <button class="system-button setTargetDevice">{{ .Lang "txtSetTargetDevice" }}</button>
-                                        {{ end }}
-                                    </div>
-                                </div>
+                                <option value="{{ $k }}">{{ $v.Name }}</option>
                                 {{ end }}
-                            </div>
-                        </div>
+                                {{ end }}
+                            </select>
+                        </label>
+                    </div>
 
-                        <!-- Display -->
-                        <div class="card system-card text-center">
-                            <div class="card-header olh-section-header">
-                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-display"></i></span>
-                                <span class="olh-section-title">{{ .Lang "txtDisplay" }}</span>
-                            </div>
-                            <div class="card-body text-left">
-                                <div class="settings-list">
-                                    {{ range $key, $val := .Displays }}
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ $val.Index }}</span>
-                                        <div class="system-input text-input compact">
-                                            <label for="displayWidth_{{ $val.Index }}">
-                                                <input type="text" id="displayWidth_{{ $val.Index }}" class="displayWidth_{{ $val.Index }}" placeholder="Width" autocomplete="off" value="{{ $val.Width }}">
-                                            </label>
-                                        </div>
-                                        <div class="system-input text-input compact">
-                                            <label for="displayHeight_{{ $val.Index }}">
-                                                <input type="text" id="displayHeight_{{ $val.Index }}" class="displayHeight_{{ $val.Index }}" placeholder="Height" autocomplete="off" value="{{ $val.Height }}">
-                                            </label>
-                                        </div>
-                                        <label for="displayPosition_{{ $val.Index }}">
-                                            <select id="displayPosition_{{ $val.Index }}" class="form-select system-select auto-width compact displayPosition_{{ $val.Index }}">
-                                                <option value="0">None</option>
-                                                <option value="1" {{ if $val.Left }} selected {{ end }}>Left</option>
-                                                <option value="2" {{ if $val.Top }} selected {{ end }}>Top</option>
-                                            </select>
-                                        </label>
-                                        <button class="system-button updateDisplay" type="button" data-info="{{ $val.Index }}">{{ $save }}</button>
-                                    </div>
-                                    {{ end }}
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Style -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtStyle" }}</span>
+                        <label for="theme">
+                            <select id="theme" class="form-select system-select auto-width compact theme">
+                                {{ range $v := .Dashboard.Themes }}
+                                {{ if eq $dash.Theme $v }}
+                                <option value="{{ $v }}" selected>{{ $v }}</option>
+                                {{ else }}
+                                <option value="{{ $v }}">{{ $v }}</option>
+                                {{ end }}
+                                {{ end }}
+                            </select>
+                        </label>
+                    </div>
 
-                        <!-- Dashboard Auth -->
-                        <div class="card system-card text-center">
-                            <div class="card-header olh-section-header">
-                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
-                                <span class="olh-section-title">{{ .Lang "txtDashboardAuth" }}</span>
+                    <!-- Global RGB -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtRgb" }}</span>
+                        <label for="allDevicesRgb">
+                            <select id="allDevicesRgb" class="form-select system-select auto-width compact allDevicesRgb">
+                                <option value="none">None</option>
+                                {{ range $key, $mode := .RGBModes }}
+                                <option value="{{ $mode }}">{{ $mode }}</option>
+                                {{ end }}
+                            </select>
+                        </label>
+                    </div>
+
+                    <!-- Static color for all devices -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtApplyColorToAll" }}</span>
+                        <div class="settings-actions">
+                            <div class="system-color compact">
+                                <label>
+                                    <input type="color" id="allDevicesColor" class="allDevicesColor system-color compact" value="#ff0000">
+                                </label>
                             </div>
-                            <div class="card-body text-left">
-                                <div class="settings-list">
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtEnabled" }}</span>
-                                        <label class="system-toggle compact">
-                                            <input type="checkbox" id="checkbox-auth-enabled" {{ if $dash.AuthEnabled }}checked{{end}}>
-                                            <span class="toggle-track"></span>
-                                        </label>
-                                    </div>
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtUsername" }}</span>
-                                        <div class="system-input text-input compact">
-                                            <label for="auth_username">
-                                                <input type="text" id="auth_username" class="auth_username" placeholder="Username" autocomplete="off" value="{{ $dash.AuthUsername }}">
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtPassword" }}</span>
-                                        <div class="system-input text-input compact">
-                                            <label for="auth_password">
-                                                <input type="password" id="auth_password" class="auth_password" placeholder="Password" autocomplete="off" value="">
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtOrigin" }}</span>
-                                        <div class="system-input text-input compact">
-                                            <label for="auth_origin">
-                                                <input type="text" id="auth_origin" class="auth_origin" placeholder="Origin" autocomplete="off" value="{{ $dash.AuthOrigin }}">
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis">{{ .Lang "txtSessionLifetime" }}</span>
-                                        <div class="system-input text-input compact">
-                                            <label for="auth_lifetime">
-                                                <input type="text" id="auth_lifetime" class="auth_lifetime" placeholder="Session Lifetime" autocomplete="off" value="{{ $dash.SessionLifetime }}">
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="settings-row">
-                                        <span class="settings-label text-ellipsis warning">{{ .Lang "txtServiceRestartRequired" }}</span>
-                                        <label class="system-toggle compact">
-                                            <button class="system-button" id="btnSaveAuthSettings">{{ .Lang "txtSave" }}</button>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+                            <button class="system-button applyColorToAll compact">{{ .Lang "txtApplyToAll" }}</button>
                         </div>
                     </div>
-                </div>
-                <div class="olh-settings-column">
-                    <div class="card system-card text-center">
-                        <div class="card-header olh-section-header">
-                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-cpu"></i></span>
-                                <span class="olh-section-title">{{ .Lang "txtSupportedDevices" }}</span>
-                            </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="dataTable compact" id="dataTable" style="width: 100%;">
-                                    <thead>
-                                    <tr>
-                                        <th>{{ .Lang "txtProductId" }}</th>
-                                        <th>{{ .Lang "txtProductName" }}</th>
-                                        <th>{{ .Lang "txtEnabled" }}</th>
-                                    </tr>
-                                    </thead>
-                                </table>
-                            </div><br />
-                            <div class="settings-list">
-                                <div class="settings-row">
-                                    <span class="settings-label text-ellipsis warning">{{ .Lang "txtServiceRestartRequired" }}</span>
-                                    <label class="system-toggle compact">
-                                        <button class="system-button" id="btnSaveSupportedDevices">{{ .Lang "txtSave" }}</button>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+
+                    <!-- RGB Turn Off / On -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtRgbOnOff" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="checkbox-rgbOff">
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+
+                    <!-- Style -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtKeyboardLayout" }}</span>
+                        <label for="theme">
+                            <select id="keyboardLayout" class="form-select system-select auto-width compact theme">
+                                {{ range $k, $v := .Dashboard.KeyboardLayouts }}
+                                {{ if eq $dash.KeyboardLayout $k }}
+                                <option value="{{ $k }}" selected>{{ $v }}</option>
+                                {{ else }}
+                                <option value="{{ $k }}">{{ $v }}</option>
+                                {{ end }}
+                                {{ end }}
+                            </select>
+                        </label>
+                    </div>
+
+                    <!-- Save settings -->
+                    <div class="settings-row">
+                        <button class="system-button" id="btnSaveDashboardSettings">{{ .Lang "txtSave" }}</button>
                     </div>
                 </div>
             </div>
+        </div><div class="olh-settings-category-stack"><div class="card system-card text-center">
+            <div class="card-header olh-section-header">
+                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-calendar-week"></i></span>
+                <span class="olh-section-title">{{ .Lang "txtRgbScheduler" }}</span>
+            </div>
+            <div class="card-body">
+                <div class="settings-list">
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtEnable" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="rgbControl" {{ if .Scheduler.RGBControl }}checked{{end}}>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtRgbOffTime" }}</span>
+                        <label class="compact">
+                            <input type="time"
+                                   id="rgbOff"
+                                   name="rgbOff"
+                                   value="{{ .Scheduler.RGBOff }}"
+                                   class="system-input system-time compact">
+                        </label>
+                    </div>
+
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "rgbOnTime" }}</span>
+                        <label class="compact">
+                            <input type="time"
+                                   id="rgbOn"
+                                   name="rgbOn"
+                                   value="{{ .Scheduler.RGBOn }}"
+                                   class="system-input system-time compact">
+                        </label>
+                    </div>
+
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtLcdOffDuringDarkHours" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="lcdControl" {{ if .Scheduler.LCDControl }}checked{{end}}>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                    <!-- Save profile -->
+                    <div class="settings-row">
+                        <button class="system-button saveRgbControl">{{ .Lang "txtSave" }}</button>
+                    </div>
+                </div>
+            </div>
+        </div><div class="card system-card text-center">
+            <div class="card-header olh-section-header">
+                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-volume-up"></i></span>
+                <span class="olh-section-title">{{ .Lang "txtVirtualAudio" }}</span>
+            </div>
+            <div class="card-body text-left">
+                {{ if .SystemService }}
+                <span class="settings-label text-warning">{{ .Lang "txtVirtualAudioUnavailable" }}</span>
+                {{ else }}
+                <div class="settings-list">
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtEnable" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="virtualAudio" {{ if $audio.Enabled }}checked{{end}}>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+
+                    {{ if $audio.Enabled }}
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtOutputDevice" }}</span>
+                        <label for="outputDevice">
+                            <select id="outputDevice" class="form-select system-select max-width-300 compact outputDevice">
+                                {{ range $k, $v := .OutputDevices }}
+                                <option value="{{ $v.Name }};{{ $v.Desc }};{{ $v.Serial }}" {{ if eq $audio.SinkDesc $v.Desc }}selected{{end}}>{{ $v.Desc }}</option>
+                                {{ end }}
+                            </select>
+                        </label>
+                    </div>
+                    {{ end }}
+
+                    <!-- Enable virtual audio -->
+                    <div class="settings-row">
+                        <button class="system-button enableVirtualAudio">{{ .Lang "txtSave" }}</button>
+                        {{ if $audio.Enabled }}
+                        <button class="system-button setTargetDevice">{{ .Lang "txtSetTargetDevice" }}</button>
+                        {{ end }}
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+        </div></div></div></section><section class="olh-settings-tab-panel" id="olh-settings-devices" role="tabpanel" aria-labelledby="olh-settings-tab-devices" tabindex="0" hidden><div class="olh-settings-section-intro"><div><h2>Devices &amp; displays</h2><p>Connected displays and supported hardware.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Some changes require a restart</span></div><div class="olh-settings-category-grid olh-settings-devices-grid"><div class="card system-card text-center">
+            <div class="card-header olh-section-header">
+                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-display"></i></span>
+                <span class="olh-section-title">{{ .Lang "txtDisplay" }}</span>
+            </div>
+            <div class="card-body text-left">
+                <div class="settings-list">
+                    {{ range $key, $val := .Displays }}
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ $val.Index }}</span>
+                        <div class="system-input text-input compact">
+                            <label for="displayWidth_{{ $val.Index }}">
+                                <input type="text" id="displayWidth_{{ $val.Index }}" class="displayWidth_{{ $val.Index }}" placeholder="Width" autocomplete="off" value="{{ $val.Width }}">
+                            </label>
+                        </div>
+                        <div class="system-input text-input compact">
+                            <label for="displayHeight_{{ $val.Index }}">
+                                <input type="text" id="displayHeight_{{ $val.Index }}" class="displayHeight_{{ $val.Index }}" placeholder="Height" autocomplete="off" value="{{ $val.Height }}">
+                            </label>
+                        </div>
+                        <label for="displayPosition_{{ $val.Index }}">
+                            <select id="displayPosition_{{ $val.Index }}" class="form-select system-select auto-width compact displayPosition_{{ $val.Index }}">
+                                <option value="0">None</option>
+                                <option value="1" {{ if $val.Left }} selected {{ end }}>Left</option>
+                                <option value="2" {{ if $val.Top }} selected {{ end }}>Top</option>
+                            </select>
+                        </label>
+                        <button class="system-button updateDisplay" type="button" data-info="{{ $val.Index }}">{{ $save }}</button>
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+        </div><div class="card system-card text-center">
+        <div class="card-header olh-section-header">
+                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-cpu"></i></span>
+                <span class="olh-section-title">{{ .Lang "txtSupportedDevices" }}</span>
+            </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="dataTable compact" id="dataTable" style="width: 100%;">
+                    <thead>
+                    <tr>
+                        <th>{{ .Lang "txtProductId" }}</th>
+                        <th>{{ .Lang "txtProductName" }}</th>
+                        <th>{{ .Lang "txtEnabled" }}</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div><br />
+            <div class="settings-list">
+                <div class="settings-row">
+                    <span class="settings-label text-ellipsis warning">{{ .Lang "txtServiceRestartRequired" }}</span>
+                    <label class="system-toggle compact">
+                        <button class="system-button" id="btnSaveSupportedDevices">{{ .Lang "txtSave" }}</button>
+                    </label>
+                </div>
+            </div>
+        </div>
+                    </div></div></section><section class="olh-settings-tab-panel" id="olh-settings-security" role="tabpanel" aria-labelledby="olh-settings-tab-security" tabindex="0" hidden><div class="olh-settings-section-intro"><div><h2>Security &amp; backup</h2><p>Access controls and configuration export or restore.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Review access changes carefully</span></div><div class="olh-settings-category-grid olh-settings-security-grid"><div class="card system-card text-center">
+            <div class="card-header olh-section-header">
+                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
+                <span class="olh-section-title">{{ .Lang "txtDashboardAuth" }}</span>
+            </div>
+            <div class="card-body text-left">
+                <div class="settings-list">
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtEnabled" }}</span>
+                        <label class="system-toggle compact">
+                            <input type="checkbox" id="checkbox-auth-enabled" {{ if $dash.AuthEnabled }}checked{{end}}>
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtUsername" }}</span>
+                        <div class="system-input text-input compact">
+                            <label for="auth_username">
+                                <input type="text" id="auth_username" class="auth_username" placeholder="Username" autocomplete="off" value="{{ $dash.AuthUsername }}">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtPassword" }}</span>
+                        <div class="system-input text-input compact">
+                            <label for="auth_password">
+                                <input type="password" id="auth_password" class="auth_password" placeholder="Password" autocomplete="off" value="">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtOrigin" }}</span>
+                        <div class="system-input text-input compact">
+                            <label for="auth_origin">
+                                <input type="text" id="auth_origin" class="auth_origin" placeholder="Origin" autocomplete="off" value="{{ $dash.AuthOrigin }}">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtSessionLifetime" }}</span>
+                        <div class="system-input text-input compact">
+                            <label for="auth_lifetime">
+                                <input type="text" id="auth_lifetime" class="auth_lifetime" placeholder="Session Lifetime" autocomplete="off" value="{{ $dash.SessionLifetime }}">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis warning">{{ .Lang "txtServiceRestartRequired" }}</span>
+                        <label class="system-toggle compact">
+                            <button class="system-button" id="btnSaveAuthSettings">{{ .Lang "txtSave" }}</button>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div><div class="card system-card text-center">
+            <div class="card-header olh-section-header">
+                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-cloud-arrow-up"></i></span>
+                <span class="olh-section-title">{{ .Lang "txtBackupRestore" }}</span>
+            </div>
+            <div class="card-body text-left sentence-text">
+                {{ .Lang "txtBackupInfo" }}
+            </div>
+            <div class="card-body">
+                <div class="settings-list">
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtBackup" }}</span>
+                        <label class="system-toggle compact">
+                            <button class="system-button success"
+                                    type="button"
+                                    id="btnBackup">{{ .Lang "txtBackup" }}
+                            </button>
+                        </label>
+                    </div>
+
+                    <div class="settings-row">
+                        <form id="restoreForm" enctype="multipart/form-data" class="file-form full-width">
+                            <input type="file"
+                                   class="system-input file-input"
+                                   id="backupFile"
+                                   name="backupFile"
+                                   accept=".zip">
+                            <button class="system-button danger" type="submit" id="btnRestore">
+                                {{ .Lang "txtRestore" }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div></div></section></div></div>
         </main>
     </div>
 </div>
 <script src="/static/js/settings.js"></script>
+<script src="/static/js/settings-sections.js"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
