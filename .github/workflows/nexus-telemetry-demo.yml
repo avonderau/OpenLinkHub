@@ -53,8 +53,7 @@ jobs:
           (cd dist && tar -czf "$BUNDLE.tar.gz" "$BUNDLE" && sha256sum "$BUNDLE.tar.gz" > "$BUNDLE.tar.gz.sha256")
           (cd dist/overlay && tar -czf "../OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz" web static)
           (cd dist && sha256sum OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz > OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz.sha256)
-          sha256sum -c "dist/$BUNDLE.tar.gz.sha256"
-          sha256sum -c dist/OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz.sha256
+          (cd dist && sha256sum -c "$BUNDLE.tar.gz.sha256" && sha256sum -c OpenLinkHub-Nexus-telemetry-demo-overlay.tar.gz.sha256)
       - name: Upload demo bundle and frontend overlay (not a release)
         uses: actions/upload-artifact@v4
         with:
