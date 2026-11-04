@@ -1,0 +1,36 @@
+name: Nexus release security
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CGO_CFLAGS_ALLOW: -fno-strict-overflow
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install build libraries
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+      - name: Static analysis
+        run: go vet ./src/devices/nexus ./src/server ./src/auth ./src/version
+      - name: Race-enabled Nexus and API tests
+        run: go test -race ./src/devices/nexus ./src/server ./src/auth -count=1 -timeout=8m
+      - name: Installer shell syntax
+        run: bash -n install.sh install-user-space.sh remote-install.sh
+      - name: Scan known Go vulnerabilities
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          "$(go env GOPATH)/bin/govulncheck" ./...

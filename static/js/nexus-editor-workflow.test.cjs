@@ -654,6 +654,27 @@ test('OpenLinkHub Nexus fork branding is present without renaming upstream route
  assert.match(sidebar,/class="olh-fork-brand" aria-label="OpenLinkHub Nexus"/);
  assert.doesNotMatch(sidebar,/class="sidebar-title\b|<h6[^>]*>\s*\{\{ \.Title \}\}/,'redundant WebUI title should not render in sidebar');
  assert.match(sidebar,/id="sidebarToggle"/);
+ assert.match(sidebar,/href="https:\/\/github\.com\/avonderau\/OpenLinkHub"[^>]*rel="noopener noreferrer"/);
+ assert.doesNotMatch(sidebar,/href="https:\/\/github\.com\/jurkovic-nikola\/OpenLinkHub"/);
  assert.match(sidebar,/\( \.Dict "page" "macros" "url" "\/macros"/);
  assert.match(css,/\.sidebar\.collapsed \.olh-fork-brand \{display:none\}/);
 });
+
+test('fork release and installer security defaults are consistent',()=>{
+ const root=path.join(__dirname,'..','..');
+ const version=fs.readFileSync(path.join(root,'src','version','version.go'),'utf8');
+ const remote=fs.readFileSync(path.join(root,'remote-install.sh'),'utf8');
+ const system=fs.readFileSync(path.join(root,'install.sh'),'utf8');
+ const userInstall=fs.readFileSync(path.join(root,'install-user-space.sh'),'utf8');
+ assert.match(version,/var Version = "0\.9\.4N"/);
+ assert.match(remote,/REPO_API="https:\/\/api\.github\.com\/repos\/avonderau\/OpenLinkHub\/releases\/latest"/);
+ assert.match(remote,/sha256sum --check --status/,'installer must check release checksum');
+ assert.match(remote,/Release checksum verification failed; refusing to install/);
+ for(const script of [remote,system]){
+  assert.doesNotMatch(script,/chmod -R 755/,'installer must not make configs world readable');
+  assert.match(script,/chmod -R o-rwx/,'installer should close world permissions');
+ }
+ assert.doesNotMatch(userInstall,/chmod -x "\$PERMISSION_DIR"/,'udev directory must remain traversable');
+ assert.match(userInstall,/chmod 644 "\$PERMISSION_DIR\/\$PERMISSION_FILE"/);
+});
+

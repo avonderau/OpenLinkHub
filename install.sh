@@ -54,7 +54,7 @@ if [ -f $SYSTEMD_FILE ]; then
   echo "$PRODUCT is already installed. Performing upgrade"
   sudo systemctl stop $PRODUCT
   cp -r ../OpenLinkHub /opt
-  chmod -R 755 /opt/$PRODUCT/
+  chmod -R o-rwx /opt/$PRODUCT/
   chown -R "$USER_TO_CHECK":"$USER_TO_CHECK" /opt/$PRODUCT/
   cp /opt/$PRODUCT/99-openlinkhub.rules /etc/udev/rules.d/
   echo "Reloading udev..."
@@ -69,7 +69,7 @@ echo "Installation is running..."
 cp -r ../OpenLinkHub /opt
 # Permissions
 echo "Setting permissions..."
-chmod -R 755 /opt/$PRODUCT/
+chmod -R o-rwx /opt/$PRODUCT/
 chown -R "$USER_TO_CHECK":"$USER_TO_CHECK" /opt/$PRODUCT/
 
 # systemd file

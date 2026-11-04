@@ -1,0 +1,80 @@
+name: OpenLinkHub Nexus fork release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/releases/fork-version.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'avonderau/OpenLinkHub'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CGO_CFLAGS_ALLOW: -fno-strict-overflow
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Read and validate fork version
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(tr -d '\n\r' < .github/releases/fork-version.txt)"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+N$ ]]; then
+            echo "Unsafe fork version: $VERSION" >&2
+            exit 1
+          fi
+          test -f "docs/releases/${VERSION}.md"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists. Refusing to overwrite." >&2
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "Tag $VERSION already exists. Refusing to retag." >&2
+            exit 1
+          fi
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+      - name: Verify release sources
+        run: |
+          go vet ./src/devices/nexus ./src/server ./src/version
+          go test ./src/devices/nexus ./src/server ./src/auth -count=1
+          node --test static/js/nexus-editor-workflow.test.cjs static/js/nexus-layout-files.test.cjs static/js/nexus-starter-templates.test.cjs static/js/nexus-widget-library.test.cjs
+          bash -n install.sh install-user-space.sh remote-install.sh
+      - name: Build Linux amd64 bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.release.outputs.version }}"
+          BUNDLE="OpenLinkHub-Nexus-${VERSION}-linux-amd64"
+          mkdir -p "dist/$BUNDLE"
+          go build -trimpath -ldflags="-s -w -X OpenLinkHub/src/version.Version=${VERSION}" -o "dist/$BUNDLE/OpenLinkHub" .
+          cp -a static web database docs "dist/$BUNDLE/"
+          cp README.md LICENSE 99-openlinkhub.rules install.sh install-user-space.sh remote-install.sh "dist/$BUNDLE/"
+          (cd dist && tar -czf "${BUNDLE}.tar.gz" "$BUNDLE" && sha256sum "${BUNDLE}.tar.gz" > "${BUNDLE}.sha256")
+      - name: Create GitHub release with downloadable bundle and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.release.outputs.version }}"
+          BUNDLE="OpenLinkHub-Nexus-${VERSION}-linux-amd64"
+          gh release create "$VERSION" "dist/${BUNDLE}.tar.gz" "dist/${BUNDLE}.sha256" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "OpenLinkHub Nexus ${VERSION}" \
+            --notes-file "docs/releases/${VERSION}.md" \
+            --latest

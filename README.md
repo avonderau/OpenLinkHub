@@ -25,6 +25,12 @@ cd OpenLinkHub
 CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
 ```
 
+For the official fork build, use the **[OpenLinkHub Nexus releases](https://github.com/avonderau/OpenLinkHub/releases)**. The first tagged fork release is `0.9.4N` (upstream `0.9.4` plus the Nexus fork's `N` suffix).
+
+The fork's [remote installer](https://github.com/avonderau/OpenLinkHub/blob/main/remote-install.sh) downloads release assets **from this repository**, not upstream. Review the script before running it. Existing upstream package managers and releases do **not** contain these Nexus changes.
+
+See the [0.9.4N security review](docs/security-review-0.9.4N.md) and [desktop launcher guide](docs/nexus-desktop-launch.md) for installation and security boundaries.
+
 Do not use the upstream installer, PPA, Copr, or upstream releases if you intend to install this fork's experimental features. The legacy installation sections below document **upstream distribution channels**, not builds of this fork.
 
 ## AI-Assisted Development

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_API="https://api.github.com/repos/jurkovic-nikola/OpenLinkHub/releases/latest"
+REPO_API="https://api.github.com/repos/avonderau/OpenLinkHub/releases/latest"
 PRODUCT="OpenLinkHub"
 SERVICE_NAME="${PRODUCT}.service"
 PERMISSION_FILE="99-openlinkhub.rules"
@@ -132,12 +132,25 @@ fi
 success "Found latest release archive"
 info "$TAR_URL"
 
-ARCHIVE="$TMP_DIR/openlinkhub.tar.gz"
+# Verify the downloaded fork asset before extracting or installing it.
+# The companion checksum is published by the fork's GitHub release workflow.
+ASSET_NAME="${TAR_URL##*/}"
+if [[ ! "$ASSET_NAME" =~ ^OpenLinkHub-Nexus-[0-9]+\.[0-9]+\.[0-9]+N-linux-amd64\.tar\.gz$ ]]; then
+  error "Unexpected or unsupported fork release asset: $ASSET_NAME"
+  exit 1
+fi
+CHECKSUM_NAME="${ASSET_NAME%.tar.gz}.sha256"
+CHECKSUM_URL="${TAR_URL%.tar.gz}.sha256"
+ARCHIVE="$TMP_DIR/$ASSET_NAME"
 
-section "Downloading archive"
-
+section "Downloading and verifying release"
 curl -fL --progress-bar "$TAR_URL" -o "$ARCHIVE"
-success "Download complete"
+curl -fL --progress-bar "$CHECKSUM_URL" -o "$TMP_DIR/$CHECKSUM_NAME"
+if ! (cd "$TMP_DIR" && sha256sum --check --status "$CHECKSUM_NAME"); then
+  error "Release checksum verification failed; refusing to install"
+  exit 1
+fi
+success "SHA-256 verified: $ASSET_NAME"
 
 section "Checking systemd service"
 
@@ -224,7 +237,7 @@ udevadm control --reload-rules
 udevadm trigger
 
 chown -R "$USER_TO_CHECK":"$USER_TO_CHECK" "$CURRENT_DIR"
-chmod -R 755 "$CURRENT_DIR"
+chmod -R o-rwx "$CURRENT_DIR"
 EOF
 
 success "Permissions and udev rules installed"

@@ -10,7 +10,10 @@ import (
  "os"
  "path/filepath"
  "sync"
+ "syscall"
  "time"
+
+ "golang.org/x/sys/unix"
 )
 
 // A system OpenLinkHub service is not the signed-in desktop user. The desktop
@@ -24,16 +27,77 @@ type nexusDesktopLaunchBroker struct {
  client net.Conn
  path string
 }
-func nexusDesktopLaunchSocketPath(root string)string{return filepath.Join(root,"database","nexus",nexusDesktopSocketName)}
-func startNexusDesktopLaunchBroker(path string)(*nexusDesktopLaunchBroker,error){
- dir:=filepath.Dir(path)
- if err:=os.MkdirAll(dir,0755);err!=nil{return nil,fmt.Errorf("create Nexus launcher directory: %w",err)}
- info,err:=os.Stat(dir)
- if err!=nil||!info.IsDir()||info.Mode().Perm()&0002!=0{
-  return nil,errors.New("Nexus launcher directory must exist and not be world-writable")
+// Keep launch IPC outside the 0700 media/config folder. A system service
+// normally owns this directory as user/group openlinkhub, while authorized
+// desktop users can traverse via the openlinkhub group.
+func nexusDesktopLaunchSocketPath(root string)string{
+ return filepath.Join(root,"runtime","nexus-desktop",nexusDesktopSocketName)
+}
+
+func nexusSocketOwner(info os.FileInfo)(uint32,error){
+ stat,ok:=info.Sys().(*syscall.Stat_t)
+ if !ok{return 0,errors.New("cannot determine Unix socket owner")}
+ return stat.Uid,nil
+}
+
+func verifyNexusDesktopSocket(path string)(uint32,error){
+ directory,err:=os.Lstat(filepath.Dir(path))
+ if err!=nil{return 0,err}
+ if !directory.IsDir()||directory.Mode()&os.ModeSymlink!=0||
+  directory.Mode().Perm()&0022!=0 || directory.Mode().Perm()&0005!=0 {
+  return 0,errors.New("Nexus launcher directory has unsafe permissions")
  }
+ owner,err:=nexusSocketOwner(directory)
+ if err!=nil{return 0,err}
+ entry,err:=os.Lstat(path)
+ if err!=nil{return 0,err}
+ if entry.Mode()&os.ModeSocket==0||entry.Mode()&os.ModeSymlink!=0||
+  entry.Mode().Perm()&0007!=0 {
+  return 0,errors.New("Nexus launcher socket has unsafe type or permissions")
+ }
+ socketOwner,err:=nexusSocketOwner(entry)
+ if err!=nil{return 0,err}
+ if socketOwner!=owner{return 0,errors.New("Nexus launcher socket has a different owner than its directory")}
+ return owner,nil
+}
+
+// Confirm the process on the other end of the Unix connection owns the
+// inspected socket. This prevents a local socket-path swap from redirecting
+// an agent into a different user's launcher.
+func nexusDesktopPeerUID(conn net.Conn)(uint32,error){
+ socket,ok:=conn.(*net.UnixConn)
+ if !ok{return 0,errors.New("launcher transport is not a Unix connection")}
+ raw,err:=socket.SyscallConn()
+ if err!=nil{return 0,err}
+ var creds *unix.Ucred
+ var credentialErr error
+ if err=raw.Control(func(fd uintptr){
+  creds,credentialErr=unix.GetsockoptUcred(int(fd),unix.SOL_SOCKET,unix.SO_PEERCRED)
+ });err!=nil{return 0,err}
+ if credentialErr!=nil{return 0,credentialErr}
+ if creds==nil{return 0,errors.New("missing Unix peer credentials")}
+ return creds.Uid,nil
+}
+func startNexusDesktopLaunchBroker(path string)(*nexusDesktopLaunchBroker,error){
+ // Linux AF_UNIX sun_path is 108 bytes including the terminating NUL.
+ if len(path)>107{return nil,errors.New("Nexus launcher socket path exceeds Linux Unix socket limit (107 bytes)")}
+ dir:=filepath.Dir(path)
+ if err:=os.MkdirAll(dir,0750);err!=nil{return nil,fmt.Errorf("create Nexus launcher directory: %w",err)}
+ info,err:=os.Lstat(dir)
+ if err!=nil||!info.IsDir()||info.Mode()&os.ModeSymlink!=0||
+  info.Mode().Perm()&0022!=0{
+  return nil,errors.New("Nexus launcher directory must be private and not group/world-writable")
+ }
+ owner,err:=nexusSocketOwner(info)
+ if err!=nil{return nil,err}
+ if owner!=uint32(os.Geteuid()){return nil,errors.New("Nexus launcher directory must be owned by daemon user")}
+ // The desktop user needs group execute permission, but must not be able
+ // to replace the daemon-owned socket file.
+ if err:=os.Chmod(dir,0750);err!=nil{return nil,err}
  if existing,err:=os.Lstat(path);err==nil {
   if existing.Mode()&os.ModeSocket==0{return nil,errors.New("Nexus launcher socket path is not a socket")}
+  staleOwner,err:=nexusSocketOwner(existing)
+  if err!=nil||staleOwner!=owner{return nil,errors.New("Nexus launcher socket owner mismatch")}
   if conn,err:=net.DialTimeout("unix",path,150*time.Millisecond);err==nil{
    conn.Close();return nil,errors.New("Nexus launcher socket already in use")
   }
@@ -42,6 +106,9 @@ func startNexusDesktopLaunchBroker(path string)(*nexusDesktopLaunchBroker,error)
  listener,err:=net.Listen("unix",path)
  if err!=nil{return nil,fmt.Errorf("listen for Nexus desktop agent: %w",err)}
  if err:=os.Chmod(path,0660);err!=nil{listener.Close();os.Remove(path);return nil,err}
+ if _,err:=verifyNexusDesktopSocket(path);err!=nil{
+  listener.Close();os.Remove(path);return nil,err
+ }
  b:=&nexusDesktopLaunchBroker{listener:listener,path:path}
  go b.accept()
  return b,nil
@@ -91,8 +158,18 @@ func runNexusDesktopLaunchAgent(ctx context.Context,socketPath string,execute fu
  if execute==nil{return errors.New("missing desktop launcher")}
  for {
   if ctx.Err()!=nil{return nil}
+  // Refuse spoofed socket files/symlinks or directories writable by other
+  // local users. A disconnected service is retried without executing events.
+  expectedOwner,err:=verifyNexusDesktopSocket(socketPath)
+  if err!=nil{if waitNexusAgentRetry(ctx)!=nil{return nil};continue}
   conn,err:=net.DialTimeout("unix",socketPath,500*time.Millisecond)
   if err!=nil{if waitNexusAgentRetry(ctx)!=nil{return nil};continue}
+  peer,err:=nexusDesktopPeerUID(conn)
+  if err!=nil||peer!=expectedOwner{
+   conn.Close()
+   if waitNexusAgentRetry(ctx)!=nil{return nil}
+   continue
+  }
   done:=make(chan struct{})
   go func(){select{case <-ctx.Done():conn.Close();case <-done:}}()
   scanner:=bufio.NewScanner(conn)
