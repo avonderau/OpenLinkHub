@@ -771,7 +771,7 @@ test('shared Nexus site header replaces the old text-only sidebar title on every
  assert.match(sidebar,/id="olh-primary-navigation" aria-label="Primary navigation"/);
  assert.match(sidebar,/aria-expanded="\{\{ if \.Dashboard\.SidebarCollapsed \}\}false\{\{ else \}\}true\{\{ end \}\}"/);
  assert.match(sidebar,/class="nav flex-column sidebar-nav"/);
- assert.match(sidebar,/href="\/settings"/);
+ assert.match(sidebar,/\( \.Dict "page" "settings" "url" "\/settings"/, "Settings route remains in the Go template menu");
  assert.match(sidebar,/href="https:\/\/github.com\/avonderau\/OpenLinkHub-Nexus"/);
  assert.doesNotMatch(sidebar,/id="sidebarToggle">☰<\/button>/,'old text-only toggle must be removed');
  assert.match(css,/\.sidebar \.olh-site-header \{/);
