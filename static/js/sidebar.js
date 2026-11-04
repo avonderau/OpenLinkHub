@@ -48,12 +48,23 @@ $(document).ready(function () {
     // Sidebar toggle collapse
     const sidebar = document.querySelector(".sidebar");
     const key = "openlinkhub-sidebarCollapsed";
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    function syncSidebarToggle() {
+        if (!sidebarToggle || !sidebar) return;
+        const collapsed = sidebar.classList.contains("collapsed");
+        sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+        sidebarToggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+        sidebarToggle.setAttribute("title", collapsed ? "Expand sidebar" : "Collapse sidebar");
+    }
+
     if (localStorage.getItem(key) === "true") {
         sidebar.classList.add("collapsed");
     }
+    syncSidebarToggle();
 
     $('#sidebarToggle').on('click', function () {
         sidebar.classList.toggle("collapsed");
+        syncSidebarToggle();
         localStorage.setItem(key, sidebar.classList.contains("collapsed"));
 
         const pf = {
