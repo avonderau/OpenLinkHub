@@ -650,23 +650,23 @@
   outline-offset:2px;
 }
 @container(max-width:660px){
-  .nexus-tool-tabpanel .nexus-tool-body{
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-body{
     grid-template-columns:minmax(0,1fr);
   }
 }
 @container(max-width:430px){
-  .nexus-tool-tabpanel .nexus-tool-grid{
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-grid{
     grid-template-columns:minmax(0,1fr);
   }
-  .nexus-tool-tabpanel .nexus-tool-hero{
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-hero{
     gap:9px;
     padding:11px 12px;
   }
-  .nexus-tool-tabpanel .nexus-tool-body{
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-body{
     padding:10px;
     gap:10px;
   }
-  .nexus-tool-tabpanel .nexus-tool-actions button{
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button{
     flex:1 1 auto;
   }
 }
