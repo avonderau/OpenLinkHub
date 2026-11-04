@@ -17,9 +17,6 @@
         ( .Dict "page" "temperature" "url" "/temperature" "icon" "icon-temperature.svg" "alt" "Temperature Profiles" "lang" "txtProfiles" )
         ( .Dict "page" "settings" "url" "/settings" "icon" "icon-settings.svg" "alt" "Settings" "lang" "txtSettings" )
         }}
-        <h6 class="sidebar-title mb-4">
-            {{ .Title }}
-        </h6>
         <nav class="nav flex-column sidebar-nav">
             <!-- Dashboard -->
             <a class='nav-link {{ if eq .Page "index" }}active{{ end }}' href="/" data-label="{{ .Lang "txtDashboard" }}">
