@@ -133,3 +133,136 @@
  .olh-settings-page .settings-row > .system-input{max-width:100%;flex:1 1 100%}
  .olh-settings-page .settings-row > .settings-actions{max-width:100%}
 }
+
+
+/* Nexus Settings 2.0 — category navigation and intentionally quieter settings layout.
+ * Override the original multi-column CSS without touching upstream theme controls.
+ */
+.olh-settings-page .olh-settings-shell{min-width:0}
+.olh-settings-page .olh-settings-nav{
+  display:flex;align-items:stretch;flex-wrap:wrap;gap:7px;
+  margin:0 0 20px;padding:7px;
+  background:linear-gradient(160deg,#1c1d20,#18191b);
+  border:1px solid var(--olh-line-strong);
+  border-radius:12px;
+  box-shadow:0 8px 20px rgba(0,0,0,.14);
+}
+.olh-settings-page .olh-settings-nav-tab{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  flex:1 1 190px;min-height:46px;
+  border:1px solid transparent;border-radius:8px;
+  padding:10px 15px;
+  background:transparent;color:var(--olh-muted);
+  font-size:.84rem;font-weight:650;letter-spacing:.012em;
+  white-space:nowrap;
+  transition:background .16s ease,border-color .16s ease,color .16s ease;
+}
+.olh-settings-page .olh-settings-nav-tab .bi{font-size:1rem;color:var(--olh-accent)}
+.olh-settings-page .olh-settings-nav-tab:hover{
+  background:rgba(213,166,90,.075);
+  border-color:rgba(213,166,90,.2);
+  color:var(--olh-ink);
+}
+.olh-settings-page .olh-settings-nav-tab[aria-selected="true"]{
+  background:linear-gradient(110deg,#403729,#302c27 45%,#252527);
+  border-color:rgba(213,166,90,.45);
+  color:#f3f0e9;
+  box-shadow:inset 0 -2px 0 rgba(213,166,90,.65),0 4px 10px rgba(0,0,0,.14);
+}
+.olh-settings-page .olh-settings-nav-tab:focus-visible{
+  outline:2px solid var(--olh-focus);
+  outline-offset:2px;
+}
+.olh-settings-page .olh-settings-tab-panel[hidden]{display:none!important}
+.olh-settings-page .olh-settings-tab-panel{min-width:0}
+.olh-settings-page .olh-settings-tab-panel:focus{outline:none}
+.olh-settings-page .olh-settings-tab-panel:focus-visible{
+  outline:2px solid var(--olh-focus);outline-offset:5px;border-radius:9px
+}
+.olh-settings-page .olh-settings-section-intro{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  min-width:0;margin:0 0 17px;padding:1px 2px;
+}
+.olh-settings-page .olh-settings-section-intro h2{
+  margin:0 0 4px;
+  font-size:1.04rem;font-weight:700;letter-spacing:.015em;color:var(--olh-ink);
+}
+.olh-settings-page .olh-settings-section-intro p{
+  margin:0;max-width:680px;color:var(--olh-muted);font-size:.79rem;line-height:1.5;
+}
+.olh-settings-page .olh-settings-save-hint{
+  flex:none;display:inline-flex;align-items:center;gap:7px;
+  padding:8px 10px;
+  border:1px solid rgba(213,166,90,.18);
+  border-radius:8px;color:#b7ab96;
+  background:rgba(213,166,90,.04);
+  font-size:.71rem;line-height:1.25;white-space:nowrap;
+}
+.olh-settings-page .olh-settings-save-hint i{color:var(--olh-accent);font-size:.85rem}
+.olh-settings-page .olh-settings-category-grid{
+  display:grid;min-width:0;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;gap:17px;
+}
+.olh-settings-page .olh-settings-general-grid{grid-template-columns:minmax(360px,1.2fr) minmax(340px,.95fr)}
+.olh-settings-page .olh-settings-devices-grid{grid-template-columns:minmax(300px,.75fr) minmax(400px,1.45fr)}
+.olh-settings-page .olh-settings-security-grid{grid-template-columns:minmax(370px,1fr) minmax(330px,1fr)}
+.olh-settings-page .olh-settings-category-stack{display:flex;flex-direction:column;gap:17px;min-width:0}
+.olh-settings-page .olh-settings-category-grid > .system-card,
+.olh-settings-page .olh-settings-category-stack > .system-card{width:100%;min-width:0}
+.olh-settings-page .olh-settings-category-grid .card-body{padding:13px}
+.olh-settings-page .olh-settings-category-grid .settings-list{
+  background:rgba(13,14,16,.12);
+  border:1px solid rgba(220,225,232,.095);
+}
+.olh-settings-page .olh-settings-category-grid .settings-row{
+  min-height:48px;padding:11px 13px;gap:12px;
+}
+.olh-settings-page .olh-settings-category-grid .settings-row > .settings-label{
+  font-size:.8rem;color:#c2c2c7;
+}
+.olh-settings-page .olh-settings-category-grid .settings-row > label:not(.system-toggle),
+.olh-settings-page .olh-settings-category-grid .settings-row > .system-input{
+  max-width:min(56%,260px);
+}
+.olh-settings-page .olh-settings-category-grid .settings-row :is(.form-select,.system-select,input[type="text"],input[type="password"],input[type="time"]){
+  min-height:35px;
+}
+.olh-settings-page .olh-settings-category-grid .settings-row:has(> #btnSaveDashboardSettings),
+.olh-settings-page .olh-settings-category-grid .settings-row:has(> .saveRgbControl),
+.olh-settings-page .olh-settings-category-grid .settings-row:has(> .enableVirtualAudio){
+  justify-content:flex-end;background:rgba(10,11,13,.18);
+}
+.olh-settings-page .olh-settings-category-grid .settings-row:has(> .saveRgbControl) button,
+.olh-settings-page .olh-settings-category-grid .settings-row:has(> .enableVirtualAudio) button{
+  min-width:92px;
+}
+.olh-settings-page .olh-settings-category-grid .card-header.olh-section-header{
+  min-height:59px;padding:11px 15px;
+}
+.olh-settings-page .olh-settings-category-grid .table-responsive{min-width:0}
+.olh-settings-page .olh-settings-devices-grid .dataTables_wrapper{width:100%}
+.olh-settings-page .olh-settings-devices-grid .dataTables_wrapper :is(input,select){max-width:100%}
+@media(max-width:1480px){
+  .olh-settings-page .olh-settings-general-grid,
+  .olh-settings-page .olh-settings-devices-grid,
+  .olh-settings-page .olh-settings-security-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:1080px){
+  .olh-settings-page .olh-settings-category-grid{grid-template-columns:minmax(0,1fr)}
+  .olh-settings-page .olh-settings-section-intro{align-items:flex-start;flex-direction:column;gap:9px}
+}
+@media(max-width:560px){
+  .olh-settings-page .olh-settings-nav{padding:5px;gap:4px}
+  .olh-settings-page .olh-settings-nav-tab{flex:1 1 100%;justify-content:flex-start;min-height:40px;padding:8px 12px}
+  .olh-settings-page .olh-settings-category-grid,.olh-settings-page .olh-settings-category-stack{gap:12px}
+  .olh-settings-page .olh-settings-category-grid .settings-row{flex-wrap:wrap}
+  .olh-settings-page .olh-settings-category-grid .settings-row > label:not(.system-toggle),
+  .olh-settings-page .olh-settings-category-grid .settings-row > .system-input{max-width:100%}
+  .olh-settings-page .olh-settings-save-hint{white-space:normal}
+}
+@media(prefers-reduced-motion:reduce){
+  .olh-settings-page .olh-settings-nav-tab{transition:none}
+}
