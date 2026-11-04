@@ -63,13 +63,13 @@ type Tile struct {
 	Target string `json:"target,omitempty"`
 }
 
-type Screen struct {
+type NativeScreen struct {
 	Name  string `json:"name"`
 	Tiles []Tile `json:"tiles"`
 }
 
 type DeviceProfile struct {
-	Screens     map[string]Screen `json:"screens,omitempty"`
+	Screens     map[string]NativeScreen `json:"screens,omitempty"`
 	Active      bool
 	Path        string
 	Product     string
@@ -1009,16 +1009,16 @@ func drawString(fontData *opentype.Font, x, y int, fontSite float64, text string
 }
 
 // ScreenCatalog returns the editable layouts. Saved layouts are replaced, never mutated.
-func (d *Device) ScreenCatalog() map[string]Screen {
+func (d *Device) ScreenCatalog() map[string]NativeScreen {
 	d.screenMutex.RLock()
 	defer d.screenMutex.RUnlock()
 
-	screens := make(map[string]Screen)
+	screens := make(map[string]NativeScreen)
 	screens["constructor"] = constructorScreen()
 
 	if d.LCDProfiles != nil {
 		if profile, ok := d.LCDProfiles.Profiles["media-control"]; ok {
-			screen := Screen{Name: profile.Name}
+			screen := NativeScreen{Name: profile.Name}
 			for _, id := range slices.Sorted(maps.Keys(profile.Buttons)) {
 				button := profile.Buttons[id]
 				screen.Tiles = append(screen.Tiles, Tile{
@@ -1043,8 +1043,8 @@ func (d *Device) ScreenCatalog() map[string]Screen {
 }
 
 // constructorScreen returns the default Constructor layout with CPU temperature, GPU temperature and a clock.
-func constructorScreen() Screen {
-	return Screen{
+func constructorScreen() NativeScreen {
+	return NativeScreen{
 		Name: language.GetValue("txtNexusConstructor"),
 		Tiles: []Tile{
 			{Type: "sensor", Label: "CPU", Source: "cpu", Width: 2},
@@ -1170,7 +1170,7 @@ func (d *Device) runTouchMacro(target string) {
 }
 
 // SaveDeviceScreen will save and activate a custom screen. An empty id creates a new copy.
-func (d *Device) SaveDeviceScreen(id string, screen Screen) uint8 {
+func (d *Device) SaveDeviceScreen(id string, screen NativeScreen) uint8 {
 	d.screenMutex.Lock()
 	defer d.screenMutex.Unlock()
 
@@ -1185,7 +1185,7 @@ func (d *Device) SaveDeviceScreen(id string, screen Screen) uint8 {
 
 	screens := maps.Clone(d.DeviceProfile.Screens)
 	if screens == nil {
-		screens = make(map[string]Screen)
+		screens = make(map[string]NativeScreen)
 	}
 
 	if id == "" {
@@ -1399,7 +1399,7 @@ func (d *Device) tileValue(tile Tile) string {
 }
 
 // renderScreen will render screen and return byte array
-func (d *Device) renderScreen(screen Screen) []byte {
+func (d *Device) renderScreen(screen NativeScreen) []byte {
 	profile := d.LCDProfiles.Profiles["default"]
 	if profile.SfntFont == nil {
 		return nil
@@ -1436,14 +1436,14 @@ func (d *Device) renderScreen(screen Screen) []byte {
 }
 
 // activeScreen will activate screen
-func (d *Device) activeScreen() (Screen, bool) {
+func (d *Device) activeScreen() (NativeScreen, bool) {
 	if screen, ok := d.DeviceProfile.Screens[d.DeviceProfile.LCDMode]; ok {
 		return screen, true
 	}
 	if d.DeviceProfile.LCDMode == "constructor" {
 		return constructorScreen(), true
 	}
-	return Screen{}, false
+	return NativeScreen{}, false
 }
 
 // touchX interpolates between the boundaries of the shipped media touch zones.
