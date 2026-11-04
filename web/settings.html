@@ -17,20 +17,30 @@
         {{ template "sidebar" . }}
 
         <!-- Main -->
-        <main class="main-content p-4">
+        <main class="main-content p-4 olh-settings-page">
             <!-- Temperature bar -->
             {{ if .Dashboard.TemperatureBar }}
             {{ template "temperature-bar" . }}
             {{ end }}
 
+            <!-- Fork-owned Settings page heading, localized title and no changes to controls. -->
+            <div class="olh-page-intro">
+                <span class="olh-page-emblem" aria-hidden="true"><i class="bi bi-sliders2-vertical"></i></span>
+                <div class="olh-page-copy">
+                    <span class="olh-page-kicker">OpenLinkHub Nexus</span>
+                    <h1>{{ .Lang "txtSettings" }}</h1>
+                </div>
+            </div>
+
             <!-- Settings -->
-            <div class="row g-4 mb-4 align-items-start">
-                <div class="col-md-3">
+            <div class="olh-settings-grid">
+                <div class="olh-settings-column">
                     <div class="stack-gap-4">
                         <!-- Dashboard Settings -->
                         <div class="card system-card text-center">
-                            <div class="card-header">
-                                {{ .Lang "txtDashboard" }}
+                            <div class="card-header olh-section-header">
+                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
+                                <span class="olh-section-title">{{ .Lang "txtDashboard" }}</span>
                             </div>
                             <div class="card-body">
                                 <div class="settings-list">
@@ -160,8 +170,9 @@
 
                         <!-- Backup and restore -->
                         <div class="card system-card text-center">
-                            <div class="card-header">
-                                {{ .Lang "txtBackupRestore" }}
+                            <div class="card-header olh-section-header">
+                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-cloud-arrow-up"></i></span>
+                                <span class="olh-section-title">{{ .Lang "txtBackupRestore" }}</span>
                             </div>
                             <div class="card-body text-left sentence-text">
                                 {{ .Lang "txtBackupInfo" }}
@@ -195,12 +206,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="olh-settings-column">
                     <div class="stack-gap-4">
                         <!-- RGB Scheduler -->
                         <div class="card system-card text-center">
-                            <div class="card-header">
-                                {{ .Lang "txtRgbScheduler" }}
+                            <div class="card-header olh-section-header">
+                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-calendar-week"></i></span>
+                                <span class="olh-section-title">{{ .Lang "txtRgbScheduler" }}</span>
                             </div>
                             <div class="card-body">
                                 <div class="settings-list">
@@ -251,8 +263,9 @@
 
                         <!-- Virtual Audio -->
                         <div class="card system-card text-center">
-                            <div class="card-header">
-                                {{ .Lang "txtVirtualAudio" }}
+                            <div class="card-header olh-section-header">
+                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-volume-up"></i></span>
+                                <span class="olh-section-title">{{ .Lang "txtVirtualAudio" }}</span>
                             </div>
                             <div class="card-body text-left">
                                 {{ if .SystemService }}
@@ -294,8 +307,9 @@
 
                         <!-- Display -->
                         <div class="card system-card text-center">
-                            <div class="card-header">
-                                {{ .Lang "txtDisplay" }}
+                            <div class="card-header olh-section-header">
+                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-display"></i></span>
+                                <span class="olh-section-title">{{ .Lang "txtDisplay" }}</span>
                             </div>
                             <div class="card-body text-left">
                                 <div class="settings-list">
@@ -328,8 +342,9 @@
 
                         <!-- Dashboard Auth -->
                         <div class="card system-card text-center">
-                            <div class="card-header">
-                                {{ .Lang "txtDashboardAuth" }}
+                            <div class="card-header olh-section-header">
+                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
+                                <span class="olh-section-title">{{ .Lang "txtDashboardAuth" }}</span>
                             </div>
                             <div class="card-body text-left">
                                 <div class="settings-list">
@@ -383,11 +398,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="olh-settings-column">
                     <div class="card system-card text-center">
-                        <div class="card-header">
-                            {{ .Lang "txtSupportedDevices" }}
-                        </div>
+                        <div class="card-header olh-section-header">
+                                <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-cpu"></i></span>
+                                <span class="olh-section-title">{{ .Lang "txtSupportedDevices" }}</span>
+                            </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="dataTable compact" id="dataTable" style="width: 100%;">

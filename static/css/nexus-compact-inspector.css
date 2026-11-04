@@ -47,13 +47,13 @@
 #nexus-panel-widget #nexus-selected-panel .nexus-inspector-hero{
   display:flex;align-items:center;flex-wrap:wrap;gap:12px;
   padding:13px 15px;margin:0;min-height:70px;
-  background:linear-gradient(110deg,#403729 0%,#302c27 39%,#222325 100%);
+  background:var(--olh-header-gradient,linear-gradient(110deg,#403729 0%,#302c27 39%,#222325 100%));
   border-bottom:1px solid rgba(220,175,101,.35);
   border-radius:10px 10px 0 0
 }
 #nexus-panel-widget .nexus-inspector-badge{
   flex:none;display:grid;place-items:center;width:39px;height:39px;
-  border:1px solid #947143;border-radius:9px;background:#59472f;
+  border:1px solid var(--olh-icon-stroke,#947143);border-radius:9px;background:var(--olh-icon-bg,#59472f);
   color:#f0c581;font-size:20px
 }
 #nexus-panel-widget .nexus-inspector-identity{
@@ -374,7 +374,7 @@
   gap:12px;
   padding:13px 15px;
   min-height:70px;
-  background:linear-gradient(110deg,#403729 0%,#302c27 39%,#222325 100%);
+  background:var(--olh-header-gradient,linear-gradient(110deg,#403729 0%,#302c27 39%,#222325 100%));
   border-bottom:1px solid rgba(220,175,101,.35);
 }
 :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-icon{

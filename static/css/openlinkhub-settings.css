@@ -1,0 +1,135 @@
+/* Settings pilot for the OpenLinkHub Nexus visual system.
+ * Scope everything to this page. IDs and JavaScript workflows remain upstream.
+ */
+.olh-settings-page{min-width:0}
+.olh-settings-grid{
+  display:grid;
+  grid-template-columns:minmax(260px,.94fr) minmax(270px,1fr) minmax(410px,1.38fr);
+  align-items:start;
+  gap:19px;
+  min-width:0;
+  margin-bottom:22px;
+}
+.olh-settings-column{display:flex;flex-direction:column;gap:19px;min-width:0}
+.olh-settings-column>.stack-gap-4{display:flex;flex-direction:column;gap:19px;min-width:0}
+.main-content .olh-settings-page .system-card{
+  height:auto;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid var(--olh-line-strong);
+  border-radius:var(--olh-panel-radius);
+  background:var(--olh-panel-gradient);
+  box-shadow:var(--olh-panel-shadow);
+}
+.olh-settings-page .system-card .card-body{
+  text-align:left;
+  color:var(--olh-ink);
+  font-size:.8rem;
+  letter-spacing:normal;
+  text-transform:none;
+  padding:12px;
+}
+.olh-settings-page .system-card .card-body.sentence-text{
+  padding:14px 15px 6px;
+  font-size:.79rem;
+  line-height:1.5;
+  color:var(--olh-muted);
+}
+.olh-settings-page .settings-list{
+  overflow:hidden;
+  border:1px solid var(--olh-line);
+  border-radius:9px;
+  background:rgba(12,13,15,.22);
+}
+.olh-settings-page .settings-row{
+  min-height:46px;
+  padding:10px 11px;
+  gap:10px;
+}
+.olh-settings-page .settings-row + .settings-row{border-top:1px solid var(--olh-line)}
+.olh-settings-page .settings-label{
+  color:var(--olh-muted);
+  font-size:.76rem;
+  line-height:1.4;
+  letter-spacing:normal;
+  text-transform:none;
+}
+.olh-settings-page .settings-row > .settings-label{flex:1 1 auto;min-width:90px}
+.olh-settings-page .settings-row .settings-label.warning{color:#e0b36f}
+.olh-settings-page .settings-row > label:not(.system-toggle),
+.olh-settings-page .settings-row > .system-input{
+  min-width:0;
+  margin:0;
+  max-width:min(58%,240px);
+}
+.olh-settings-page .settings-row .system-input{margin-top:0}
+.olh-settings-page .settings-row :is(.system-select,.form-select,.system-input input[type="text"],.system-input input[type="time"],.system-input input[type="number"]){
+  max-width:100%;
+  min-width:0;
+  font-size:.78rem;
+  min-height:34px;
+}
+.olh-settings-page .settings-row > label select,
+.olh-settings-page .settings-row > .system-input input{width:100%;max-width:100%}
+.olh-settings-page .settings-row > .settings-actions{flex-wrap:wrap;justify-content:flex-end}
+.olh-settings-page .settings-row .system-button{
+  min-height:34px;
+  border-radius:7px;
+  font-size:.77rem;
+  padding:7px 11px;
+  letter-spacing:normal;
+  text-transform:none;
+}
+.olh-settings-page .settings-row :is(#btnSaveDashboardSettings,.saveRgbControl,.enableVirtualAudio,#btnSaveAuthSettings,#btnSaveSupportedDevices){
+  background:linear-gradient(180deg,#e3b96f,#c9964b);
+  border:1px solid #b88740;
+  color:#1b1712;
+  font-weight:700;
+}
+.olh-settings-page .settings-row :is(#btnSaveDashboardSettings,.saveRgbControl,.enableVirtualAudio,#btnSaveAuthSettings,#btnSaveSupportedDevices):hover{
+  background:linear-gradient(180deg,#edc789,#d4a158);
+  border-color:#d4a158;
+  color:#1b1712;
+}
+.olh-settings-page .settings-row :is(button,input,select):focus-visible,
+.olh-settings-page .dataTables_wrapper :is(button,input,select):focus-visible{
+  outline:2px solid var(--olh-focus);
+  outline-offset:2px;
+}
+.olh-settings-page .settings-row .system-toggle input:focus-visible + .toggle-track{
+  outline:2px solid var(--olh-focus);
+  outline-offset:3px;
+}
+.olh-settings-page .settings-row .system-toggle input:checked + .toggle-track{
+  background:rgba(213,166,90,.35);
+  border-color:rgba(213,166,90,.7);
+}
+.olh-settings-page .settings-row .file-form{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:9px;min-width:0;
+}
+.olh-settings-page .settings-row .file-form input[type="file"]{max-width:100%;min-width:0}
+.olh-settings-page .table-responsive{overflow-x:auto}
+.olh-settings-page .dataTables_wrapper{min-width:0}
+.olh-settings-page table.dataTable{border-color:var(--olh-line-strong);border-radius:9px}
+.olh-settings-page table.dataTable thead th{
+  background:linear-gradient(180deg,#302b26,#222325);
+  color:#e3c69d;
+  border-bottom-color:var(--olh-header-line);
+}
+.olh-settings-page table.dataTable tbody tr:hover{background:rgba(213,166,90,.055)}
+@media(max-width:1450px){
+ .olh-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .olh-settings-grid>.olh-settings-column:last-child{grid-column:1/-1}
+}
+@media(max-width:880px){
+ .olh-settings-grid{grid-template-columns:minmax(0,1fr);gap:14px}
+ .olh-settings-grid>.olh-settings-column:last-child{grid-column:auto}
+ .olh-settings-column,.olh-settings-column>.stack-gap-4{gap:14px}
+}
+@media(max-width:440px){
+ .olh-settings-page .settings-row{flex-wrap:wrap}
+ .olh-settings-page .settings-row > label:not(.system-toggle),
+ .olh-settings-page .settings-row > .system-input{max-width:100%;flex:1 1 100%}
+ .olh-settings-page .settings-row > .settings-actions{max-width:100%}
+}

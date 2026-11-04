@@ -697,3 +697,59 @@ test('all fork-owned release links and CI guards follow the renamed GitHub repos
  assert.match(sidebar,/rel="noopener noreferrer"/);
  assert.match(fs.readFileSync(path.join(root,'README.md'),'utf8'),/jurkovic-nikola\/OpenLinkHub/,'upstream attribution preserved');
 });
+
+
+test('Nexus design system loads after upstream and keeps Settings styles scoped',()=>{
+ const root=path.join(__dirname,'..','..');
+ const head=fs.readFileSync(path.join(root,'web','head.html'),'utf8');
+ const siteTheme=fs.readFileSync(path.join(root,'static','css','openlinkhub-fork-theme.css'),'utf8');
+ const design=fs.readFileSync(path.join(root,'static','css','openlinkhub-nexus-design.css'),'utf8');
+ const settingsCss=fs.readFileSync(path.join(root,'static','css','openlinkhub-settings.css'),'utf8');
+ const inspector=fs.readFileSync(path.join(root,'static','css','nexus-compact-inspector.css'),'utf8');
+ const sources=['/static/css/themes/{{ .Dashboard.Theme }}.css" rel="stylesheet"','/static/css/openlinkhub-fork-theme.css" rel="stylesheet"','/static/css/openlinkhub-nexus-design.css" rel="stylesheet"','/static/css/openlinkhub-settings.css" rel="stylesheet"'];
+ let last=-1;
+ for(const item of sources){
+  const idx=head.indexOf(item);
+  assert.ok(idx>last,'CSS cascade must preserve upstream, fork, shared and scoped layering: '+item);
+  last=idx;
+  assert.equal(head.split(item).length-1,1,'stylesheet included exactly once');
+ }
+ assert.match(siteTheme,/--olh-accent:\s*#d5a65a/);
+ assert.match(design,/--olh-header-gradient:\s*linear-gradient\(110deg,#403729/);
+ assert.match(design,/\.olh-section-header \.olh-section-icon/);
+ assert.match(design,/\.main-content \.olh-page-intro/);
+ assert.match(inspector,/background:var\(--olh-header-gradient,/,'Nexus editor consumes shared token');
+ assert.match(settingsCss,/\.olh-settings-page \.settings-row/);
+ assert.match(settingsCss,/\.olh-settings-grid/);
+ assert.match(settingsCss,/@media\(max-width:880px\)/);
+ assert.doesNotMatch(settingsCss,/^\s*(?:body|html|\.main-content|\.card|\.card-header)\s*[{,]/m,'Settings-only CSS must be scoped, not rewrite other pages');
+});
+
+test('Settings pilot preserves actions, localization and all seven section icons',()=>{
+ const root=path.join(__dirname,'..','..');
+ const page=fs.readFileSync(path.join(root,'web','settings.html'),'utf8');
+ const expectedIds=['deviceId','checkbox-celsius','checkbox-temperatureBar','checkbox-deviceLabels',
+  'checkbox-addDeviceToDashboard','userLanguage','theme','allDevicesRgb','allDevicesColor',
+  'checkbox-rgbOff','keyboardLayout','btnSaveDashboardSettings','btnBackup','restoreForm',
+  'backupFile','btnRestore','rgbControl','rgbOff','rgbOn','lcdControl','virtualAudio',
+  'outputDevice','checkbox-auth-enabled','auth_username','auth_password','auth_origin',
+  'auth_lifetime','btnSaveAuthSettings','dataTable','btnSaveSupportedDevices'];
+ for(const id of expectedIds){
+  assert.match(page,new RegExp('id="'+id+'"'),'existing Settings UI control preserved: '+id);
+ }
+ const sectionIds=['txtDashboard','txtBackupRestore','txtRgbScheduler','txtVirtualAudio','txtDisplay','txtDashboardAuth','txtSupportedDevices'];
+ const headers=[...page.matchAll(/<div class="card-header olh-section-header">([\s\S]*?)<\/div>/g)];
+ assert.equal(headers.length,sectionIds.length,'all Settings panels have redesigned, accessible headers');
+ for(const key of sectionIds){
+  assert.ok(headers.some(([markup])=>markup.includes('{{ .Lang "'+key+'" }}')),'localized header preserved: '+key);
+ }
+ assert.equal((page.match(/class="olh-section-icon"/g)||[]).length,7,'one icon per section');
+ assert.match(page,/class="main-content p-4 olh-settings-page"/);
+ assert.match(page,/class="olh-settings-grid"/);
+ assert.equal((page.match(/class="olh-settings-column"/g)||[]).length,3);
+ assert.match(page,/class="olh-page-intro"/);
+ assert.match(page,/\{\{ \.Lang "txtSettings" \}\}/,'page heading uses current localization');
+ assert.match(page,/src="\/static\/js\/settings\.js"/);
+ assert.match(page,/src="\/static\/js\/sidebar\.js"/);
+ assert.match(page,/\{\{ if \.Dashboard\.TemperatureBar \}\}/);
+});
