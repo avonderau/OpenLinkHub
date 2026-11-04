@@ -224,7 +224,7 @@ udevadm control --reload-rules
 udevadm trigger
 
 chown -R "$USER_TO_CHECK":"$USER_TO_CHECK" "$CURRENT_DIR"
-chmod -R 755 "$CURRENT_DIR"
+chmod -R o-rwx "$CURRENT_DIR"
 EOF
 
 success "Permissions and udev rules installed"
