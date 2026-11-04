@@ -14,6 +14,11 @@ on:
       - 'static/js/sidebar.js'
       - 'static/css/openlinkhub-nexus-design.css'
       - 'static/css/openlinkhub-settings.css'
+      - 'static/js/settings-sections.js'
+      - 'static/js/settings-sections.test.cjs'
+      - 'static/js/settings-dashboard.test.cjs'
+      - 'static/js/settings.js'
+      - 'web/settings.html'
       - 'static/css/openlinkhub-telemetry.css'
       - 'static/js/temperature-bar.js'
       - 'static/js/temperature-bar.test.cjs'
@@ -33,6 +38,11 @@ on:
       - 'static/js/sidebar.js'
       - 'static/css/openlinkhub-nexus-design.css'
       - 'static/css/openlinkhub-settings.css'
+      - 'static/js/settings-sections.js'
+      - 'static/js/settings-sections.test.cjs'
+      - 'static/js/settings-dashboard.test.cjs'
+      - 'static/js/settings.js'
+      - 'web/settings.html'
       - 'static/css/openlinkhub-telemetry.css'
       - 'static/js/temperature-bar.js'
       - 'static/js/temperature-bar.test.cjs'
@@ -59,7 +69,9 @@ jobs:
           node --check static/js/nexus-layout-files.js
           node --check static/js/nexus-widget-library.js
           node --check static/js/sidebar.js
+          node --check static/js/settings-sections.js
+          node --check static/js/settings.js
           node --check static/js/temperature-bar.js
       - name: Run Nexus UI regression suite
         run: |
-          node --test static/js/nexus-editor-workflow.test.cjs static/js/nexus-layout-files.test.cjs static/js/nexus-starter-templates.test.cjs static/js/nexus-widget-library.test.cjs static/js/temperature-bar.test.cjs
+          node --test static/js/nexus-editor-workflow.test.cjs static/js/nexus-layout-files.test.cjs static/js/nexus-starter-templates.test.cjs static/js/nexus-widget-library.test.cjs static/js/temperature-bar.test.cjs static/js/settings-sections.test.cjs static/js/settings-dashboard.test.cjs

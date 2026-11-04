@@ -334,14 +334,11 @@ $(document).ready(function () {
             }
         });
     });
-
-    const checkboxCpu = $('#checkbox-cpu');
-    const checkboxGpu = $('#checkbox-gpu');
-    const checkboxStorage = $('#checkbox-storage');
-    const checkboxDevices = $('#checkbox-devices');
+    // Only controls that actually exist in the current upstream Settings page.
+    // The backend preserves historical visibility flags during dashboard updates;
+    // do not send fabricated unchecked values for removed controls.
     const checkboxDeviceLabels = $('#checkbox-deviceLabels');
     const checkboxCelsius = $('#checkbox-celsius');
-    const checkboxBattery = $('#checkbox-battery');
     const checkboxTemperatureBar = $('#checkbox-temperatureBar');
     const checkboxAddDeviceToDashboard = $('#checkbox-addDeviceToDashboard');
     const checkboxRgbOff = $('#checkbox-rgbOff');
@@ -354,26 +351,11 @@ $(document).ready(function () {
             cache: false,
             success: function(response) {
                 if (response.status === 1) {
-                    if (response.dashboard.showCpu === true) {
-                        checkboxCpu.attr('Checked','Checked');
-                    }
-                    if (response.dashboard.showGpu === true) {
-                        checkboxGpu.attr('Checked','Checked');
-                    }
-                    if (response.dashboard.showDisk === true) {
-                        checkboxStorage.attr('Checked','Checked');
-                    }
-                    if (response.dashboard.showDevices === true) {
-                        checkboxDevices.attr('Checked','Checked');
-                    }
                     if (response.dashboard.showLabels === true) {
                         checkboxDeviceLabels.attr('Checked','Checked');
                     }
                     if (response.dashboard.celsius === true) {
                         checkboxCelsius.attr('Checked','Checked');
-                    }
-                    if (response.dashboard.showBattery === true) {
-                        checkboxBattery.attr('Checked','Checked');
                     }
                     if (response.dashboard.temperatureBar === true) {
                         checkboxTemperatureBar.attr('Checked','Checked');
@@ -389,13 +371,8 @@ $(document).ready(function () {
         });
 
         $('#btnSaveDashboardSettings').on('click', function () {
-            const v_checkboxCpu = checkboxCpu.is(':checked');
-            const v_checkboxGpu = checkboxGpu.is(':checked');
-            const v_checkboxStorage = checkboxStorage.is(':checked');
-            const v_checkboxDevices = checkboxDevices.is(':checked');
             const v_checkboxDeviceLabels = checkboxDeviceLabels.is(':checked');
             const v_checkboxCelsius = checkboxCelsius.is(':checked');
-            const v_checkboxBattery = checkboxBattery.is(':checked');
             const v_checkboxTemperatureBar = checkboxTemperatureBar.is(':checked');
             const v_checkboxAddDeviceToDashboard = checkboxAddDeviceToDashboard.is(':checked');
             const v_checkboxRgbOff = checkboxRgbOff.is(':checked');
@@ -404,13 +381,8 @@ $(document).ready(function () {
             const v_keyboardLayout = $("#keyboardLayout").val();
 
             const pf = {};
-            pf["showCpu"] = v_checkboxCpu;
-            pf["showGpu"] = v_checkboxGpu;
-            pf["showDisk"] = v_checkboxStorage;
-            pf["showDevices"] = v_checkboxDevices;
             pf["showLabels"] = v_checkboxDeviceLabels;
             pf["celsius"] = v_checkboxCelsius;
-            pf["showBattery"] = v_checkboxBattery;
             pf["temperatureBar"] = v_checkboxTemperatureBar;
             pf["addDeviceToDashboard"] = v_checkboxAddDeviceToDashboard;
             pf["rgbOff"] = v_checkboxRgbOff;

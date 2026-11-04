@@ -720,7 +720,8 @@ test('Nexus design system loads after upstream and keeps Settings styles scoped'
  assert.match(design,/\.main-content \.olh-page-intro/);
  assert.match(inspector,/background:var\(--olh-header-gradient,/,'Nexus editor consumes shared token');
  assert.match(settingsCss,/\.olh-settings-page \.settings-row/);
- assert.match(settingsCss,/\.olh-settings-grid/);
+ assert.match(settingsCss,/\.olh-settings-nav/);
+ assert.match(settingsCss,/\.olh-settings-category-grid/);
  assert.match(settingsCss,/@media\(max-width:880px\)/);
  assert.doesNotMatch(settingsCss,/^\s*(?:body|html|\.main-content|\.card|\.card-header)\s*[{,]/m,'Settings-only CSS must be scoped, not rewrite other pages');
 });
@@ -745,8 +746,15 @@ test('Settings pilot preserves actions, localization and all seven section icons
  }
  assert.equal((page.match(/class="olh-section-icon"/g)||[]).length,7,'one icon per section');
  assert.match(page,/class="main-content p-4 olh-settings-page"/);
- assert.match(page,/class="olh-settings-grid"/);
- assert.equal((page.match(/class="olh-settings-column"/g)||[]).length,3);
+ assert.equal((page.match(/class="olh-settings-subheading"/g)||[]).length,3,'Dashboard options are grouped by purpose');
+ assert.match(page,/for="keyboardLayout"/,'keyboard layout label targets correct field');
+  assert.match(page,/class="olh-settings-shell"/);
+ assert.match(page,/class="olh-settings-nav" role="tablist"/);
+ assert.equal((page.match(/class="olh-settings-nav-tab"/g)||[]).length,3);
+ assert.equal((page.match(/class="olh-settings-tab-panel"/g)||[]).length,3);
+ assert.match(page,/id="olh-settings-general" role="tabpanel"/);
+ assert.match(page,/id="olh-settings-devices" role="tabpanel"/);
+ assert.match(page,/id="olh-settings-security" role="tabpanel"/);
  assert.match(page,/class="olh-page-intro"/);
  assert.match(page,/\{\{ \.Lang "txtSettings" \}\}/,'page heading uses current localization');
  assert.match(page,/src="\/static\/js\/settings\.js"/);
@@ -788,4 +796,30 @@ test('shared Nexus site header replaces the old text-only sidebar title on every
   const body=fs.readFileSync(path.join(root,page),'utf8');
   assert.match(body,/\{\{ template "sidebar" \. \}\}/,page+' uses shared header');
  }
+});
+
+
+test('Settings categorization preserves all original API handlers and section-specific save actions',()=>{
+ const root=path.join(__dirname,'..','..');
+ const page=fs.readFileSync(path.join(root,'web','settings.html'),'utf8');
+ const settings=fs.readFileSync(path.join(root,'static/js/settings.js'),'utf8');
+ const css=fs.readFileSync(path.join(root,'static/css/openlinkhub-settings.css'),'utf8');
+ const sec=fs.readFileSync(path.join(root,'static/js/settings-sections.js'),'utf8');
+ assert.match(page,/src="\/static\/js\/settings-sections\.js"/);
+ assert.match(page,/id="btnSaveDashboardSettings"/);
+ assert.match(page,/class="system-button saveRgbControl"/);
+ assert.match(page,/class="system-button enableVirtualAudio"/);
+ assert.match(page,/id="btnSaveAuthSettings"/);
+ assert.match(page,/id="btnSaveSupportedDevices"/);
+ assert.match(page,/id="btnBackup"/);
+ assert.match(page,/id="restoreForm"/);
+ assert.match(settings,/\/api\/dashboard\/update/);
+ assert.match(settings,/\/api\/scheduler\/rgb/);
+ assert.match(settings,/\/api\/setSupportedDevices/);
+ assert.match(settings,/\/api\/auth\/update/);
+ assert.match(settings,/\/api\/backup/);
+ assert.match(settings,/\/api\/restore/);
+ assert.match(css,/\.olh-settings-tab-panel\[hidden\]\{display:none!important\}/);
+ assert.match(css,/@media\(max-width:560px\)/);
+ assert.match(sec,/\.columns\.adjust\(\)/,'table column sizing updated on reveal');
 });
