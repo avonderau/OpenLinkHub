@@ -251,3 +251,98 @@
 @media(prefers-reduced-motion:reduce){
   #nexus-panel-widget *{scroll-behavior:auto!important}
 }
+
+
+/* Appearance v2: keep compact controls aligned inside a ~320px inspector card.
+ * Each unit is a sibling inside a no-wrap inline group, not a flex child of
+ * the column-oriented field label (which previously stranded "px" and "%").
+ */
+#nexus-panel-widget #properties>.nexus-appearance-section{
+  container-type:inline-size;
+}
+#nexus-panel-widget #properties .nexus-appearance-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px 10px;
+  align-items:start;
+  width:100%;
+}
+#nexus-panel-widget #properties .nexus-appearance-row .nexus-radius-control{
+  grid-column:1;grid-row:1;
+}
+#nexus-panel-widget #properties .nexus-appearance-row .nexus-gradient-control{
+  grid-column:2;grid-row:1;
+}
+#nexus-panel-widget #properties .nexus-property-section label.nexus-opacity-control{
+  grid-column:1/-1;grid-row:2;
+  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;
+  gap:7px;width:100%;min-width:0;margin:0;
+}
+#nexus-panel-widget #properties .nexus-input-unit,
+#nexus-panel-widget #properties .nexus-opacity-inline,
+#nexus-panel-widget #properties .nexus-opacity-value{
+  display:flex;align-items:center;flex-wrap:nowrap;min-width:0;
+}
+#nexus-panel-widget #properties .nexus-input-unit{
+  gap:7px;white-space:nowrap;
+}
+#nexus-panel-widget #properties .nexus-input-suffix{
+  color:var(--nci-muted,#a3a5ae);font-size:11px;font-weight:600;
+  letter-spacing:normal;text-transform:none;white-space:nowrap;
+}
+#nexus-panel-widget #properties .nexus-radius-control input[type=number]{
+  box-sizing:border-box;width:68px;max-width:68px;flex:0 0 68px;
+}
+#nexus-panel-widget #properties .nexus-opacity-inline{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;width:100%;
+}
+#nexus-panel-widget #properties .nexus-opacity-inline input[type=range]{
+  display:block;width:100%;min-width:0;max-width:100%;
+  height:24px;margin:0;flex:none;accent-color:#d5a65a;
+}
+#nexus-panel-widget #properties .nexus-opacity-value{
+  gap:5px;justify-content:flex-end;white-space:nowrap;
+}
+#nexus-panel-widget #properties .nexus-opacity-value input[type=number]{
+  box-sizing:border-box;flex:0 0 56px;width:56px!important;
+  min-width:56px;max-width:56px!important;margin:0;
+}
+#nexus-panel-widget #properties .nexus-gradient-control select{
+  width:100%;min-width:0;
+}
+#nexus-panel-widget #properties .nexus-colors-row{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+}
+#nexus-panel-widget #properties .nexus-colors-row label.nexus-color-control{
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;
+  justify-content:space-between;
+  width:100%;height:38px;min-height:38px;min-width:0;
+  gap:4px;padding:5px 6px;white-space:nowrap;
+  font-size:10px;line-height:1.1;letter-spacing:0;text-transform:none;
+}
+#nexus-panel-widget #properties .nexus-colors-row .nexus-color-control input[type=color],
+#nexus-editor #nexus-panel-widget #nexus-selected-panel #properties .nexus-colors-row .nexus-color-control input[type=color]{
+  box-sizing:border-box;flex:0 0 29px;
+  width:29px;height:27px;min-width:29px;min-height:27px;
+  max-width:29px;margin:0;padding:2px;
+  border-radius:6px;
+}
+/* The editor is often two columns on desktop; viewport breakpoints alone
+ * don't reflect the narrower width of an individual Appearance card. */
+@container(max-width:420px){
+  #nexus-panel-widget #properties .nexus-colors-row{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@container(max-width:260px){
+  #nexus-panel-widget #properties .nexus-colors-row{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:580px){
+  #nexus-panel-widget #properties .nexus-colors-row{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
