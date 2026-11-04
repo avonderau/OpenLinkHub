@@ -80,7 +80,8 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   const icons={metric:'speedometer2',bar:'bar-chart',graph:'graph-up',text:'type',image:'image',clock:'clock',button:'cursor',macro:'cursor'};
   symbol.className='bi bi-'+(widget?icons[widget.type]||'sliders2':'sliders2');
  }
- if(headActions)headActions.hidden=!widget;
+ // Paste remains available after switching to an empty screen with a copied widget.
+ if(headActions)headActions.hidden=!widget&&!copiedWidget;
  if(remove)remove.disabled=!widget;
  if(nexusElementById('duplicateWidget'))nexusElementById('duplicateWidget').disabled=!widget||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
  if(nexusElementById('copyWidget'))nexusElementById('copyWidget').disabled=!widget;
