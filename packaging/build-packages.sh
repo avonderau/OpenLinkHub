@@ -35,10 +35,10 @@ Version: $version
 Section: utils
 Priority: optional
 Architecture: amd64
-Maintainer: OpenLinkHub Nexus <https://github.com/avonderau/OpenLinkHub>
+Maintainer: OpenLinkHub Nexus <https://github.com/avonderau/OpenLinkHub-Nexus>
 Depends: libc6 (>= 2.38), libudev1, libpipewire-0.3-0, systemd, udev, adduser
 Conflicts: openlinkhub
-Homepage: https://github.com/avonderau/OpenLinkHub
+Homepage: https://github.com/avonderau/OpenLinkHub-Nexus
 Description: OpenLinkHub Nexus and programmable Corsair screens
  Independently maintained OpenLinkHub fork with customizable Nexus
  screens, widgets, live metrics, and touch controls.
@@ -74,7 +74,7 @@ Version:        $version
 Release:        1
 Summary:        OpenLinkHub Nexus hardware control and customizable screens
 License:        GPL-3.0-or-later
-URL:            https://github.com/avonderau/OpenLinkHub
+URL:            https://github.com/avonderau/OpenLinkHub-Nexus
 BuildArch:      x86_64
 Requires:       systemd, shadow-utils
 Conflicts:      OpenLinkHub

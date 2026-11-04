@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   publish:
-    if: github.repository == 'avonderau/OpenLinkHub'
+    if: github.repository == 'avonderau/OpenLinkHub-Nexus'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
