@@ -1,5 +1,5 @@
 'use strict';
-const $=id=>document.getElementById(id);
+const nexusElementById=id=>document.getElementById(id);
 let cfg=null,selected=null,serial='',drag=null,copiedWidget=null;
 let nexusPreviewTelemetry=null,nexusTelemetryRequestInFlight=false;
 const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
@@ -22,21 +22,21 @@ function uniqueID(prefix,used){
  do {candidate=prefix+'_'+Date.now().toString(36)+(seq?'_'+seq:'');seq++}while(used.has(candidate));
  return candidate;
 }
-function selectedScreenID(){return $('screens').value}
+function selectedScreenID(){return nexusElementById('screens').value}
 function refreshActionButtons(){
  const screen=current(),count=cfg?.screens.length||0;
- for(const id of ['renameScreen','duplicateScreen'])if($(id))$(id).disabled=!screen||(id==='duplicateScreen'&&count>=NEXUS_MAX_SCREENS);
- if($('deleteScreen'))$('deleteScreen').disabled=count<=1;
+ for(const id of ['renameScreen','duplicateScreen'])if(nexusElementById(id))nexusElementById(id).disabled=!screen||(id==='duplicateScreen'&&count>=NEXUS_MAX_SCREENS);
+ if(nexusElementById('deleteScreen'))nexusElementById('deleteScreen').disabled=count<=1;
  const index=cfg?.screens.findIndex(s=>s.id===selectedScreenID())??-1;
- if($('moveScreenUp'))$('moveScreenUp').disabled=index<=0;
- if($('moveScreenDown'))$('moveScreenDown').disabled=index<0||index>=count-1;
- if($('replaceScreenWithPreset'))$('replaceScreenWithPreset').disabled=!screen||$('newScreenPreset')?.value==='blank';
+ if(nexusElementById('moveScreenUp'))nexusElementById('moveScreenUp').disabled=index<=0;
+ if(nexusElementById('moveScreenDown'))nexusElementById('moveScreenDown').disabled=index<0||index>=count-1;
+ if(nexusElementById('replaceScreenWithPreset'))nexusElementById('replaceScreenWithPreset').disabled=!screen||nexusElementById('newScreenPreset')?.value==='blank';
 }
 const snapPosition=(value,max)=>clamp(snap(value),Math.floor(max/GRID)*GRID);
 const snapSize=(value,max)=>clamp(Math.max(GRID,snap(value)),max);
-function message(t){$('message').textContent=t}
-function current(){return cfg?.screens.find(s=>s.id===$('screens').value)}
-function refreshScreens(){const old=$('screens').value;$('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);$('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;$('screens').value=chosen;render();refreshApplicationScreenMappings()}
+function message(t){nexusElementById('message').textContent=t}
+function current(){return cfg?.screens.find(s=>s.id===nexusElementById('screens').value)}
+function refreshScreens(){const old=nexusElementById('screens').value;nexusElementById('screens').replaceChildren();for(const s of cfg.screens){const opt=new Option(s.name,s.id);nexusElementById('screens').add(opt)}const chosen=cfg.screens.some(s=>s.id===cfg.activeScreenId)?cfg.activeScreenId:old;nexusElementById('screens').value=chosen;render();refreshApplicationScreenMappings()}
 // Change only the representation within a widget family. Geometry, colors,
 // placement and a metric's source remain unchanged when its display changes.
 function changeSelectedWidgetType(widget,type){
@@ -63,14 +63,14 @@ function changeSelectedWidgetType(widget,type){
  }
  return true;
 }
-function render(){const s=current();$('screen').replaceChildren();$('properties').replaceChildren();refreshActionButtons();
+function render(){const s=current();nexusElementById('screen').replaceChildren();nexusElementById('properties').replaceChildren();refreshActionButtons();
  const widget=s?.widgets.find(w=>w.id===selected);
- const status=$('selectedWidgetStatus'),remove=$('deleteWidget');
+ const status=nexusElementById('selectedWidgetStatus'),remove=nexusElementById('deleteWidget');
  if(remove)remove.disabled=!widget;
- if($('duplicateWidget'))$('duplicateWidget').disabled=!widget||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
- if($('copyWidget'))$('copyWidget').disabled=!widget;
- if($('pasteWidget'))$('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
- if($('saveWidgetPreset'))$('saveWidgetPreset').disabled=!widget;
+ if(nexusElementById('duplicateWidget'))nexusElementById('duplicateWidget').disabled=!widget||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
+ if(nexusElementById('copyWidget'))nexusElementById('copyWidget').disabled=!widget;
+ if(nexusElementById('pasteWidget'))nexusElementById('pasteWidget').disabled=!copiedWidget||!s||s.widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
+ if(nexusElementById('saveWidgetPreset'))nexusElementById('saveWidgetPreset').disabled=!widget;
  if(status){
   status.replaceChildren();
   if(widget && (widget.type==='button'||widget.type==='macro')){
@@ -80,7 +80,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
    input.setAttribute('aria-label','Button Label');
    input.addEventListener('input',()=>{
     widget.settings??={};widget.settings.label=input.value;
-    const el=[...$('screen').children].find(el=>el.dataset.id===widget.id);
+    const el=[...nexusElementById('screen').children].find(el=>el.dataset.id===widget.id);
     if(el){const icon=el.querySelector('.nexus-icon, .nexus-custom-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
    });
    label.append(input);status.append(label);
@@ -89,8 +89,8 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   }
  }
  if(!s)return;
- $('background').value=s.background||'';
- const display=$('screen');display.classList.remove('nexus-bg-preset_aurora','nexus-bg-preset_neon','nexus-bg-preset_circuit','nexus-bg-preset_sunset','nexus-bg-preset_pulse');
+ nexusElementById('background').value=s.background||'';
+ const display=nexusElementById('screen');display.classList.remove('nexus-bg-preset_aurora','nexus-bg-preset_neon','nexus-bg-preset_circuit','nexus-bg-preset_sunset','nexus-bg-preset_pulse');
  if(s.background?.startsWith('preset_'))display.classList.add('nexus-bg-'+s.background);
  // The same GET endpoint serves static PNG/JPEG and animated GIF; browsers
  // animate GIF previews automatically while the physical Nexus uses frames.
@@ -116,11 +116,11 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
   const plot=document.createElement('canvas');plot.className='nexus-graph-plot';
   plot.width=Math.max(8,w.width-8);plot.height=Math.max(8,w.height-27);
   plot.setAttribute('aria-hidden','true');el.append(plot);
- }el.dataset.id=w.id;$('screen').append(el);
+ }el.dataset.id=w.id;nexusElementById('screen').append(el);
  if(w.type==='graph')paintNexusGraph(el,w)
  }
  const w=s.widgets.find(w=>w.id===selected);if(!w)return;
- const properties=$('properties');
+ const properties=nexusElementById('properties');
  const metricTypes=[['metric','Value'],['bar','Bar'],['graph','Graph']];
  const contentTypes=[['text','Text'],['image','Image'],['clock','Clock']];
  const family=['metric','bar','graph'].includes(w.type)?metricTypes:['text','image','clock'].includes(w.type)?contentTypes:null;
@@ -201,7 +201,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
    const percentage=Math.max(0,Math.min(100,Math.round(n)));
    w.settings??={};w.settings.opacity=String(percentage);
    opacitySlider.value=String(percentage);opacityInput.value=String(percentage);
-   const preview=[...$('screen').children].find(el=>el.dataset.id===w.id);
+   const preview=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);
    if(preview)preview.style.opacity=String(percentage/100);
   };
   opacitySlider.addEventListener('input',()=>updateOpacity(opacitySlider.value));
@@ -220,7 +220,7 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
    const candidate=w.settings?.gradientColor;
    input.value=/^#[0-9a-fA-F]{6}$/.test(candidate||'')?candidate:'#0b1824';
    input.setAttribute('aria-label','Gradient end color');
-   input.addEventListener('input',()=>{w.settings??={};w.settings.gradientColor=input.value;const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el)el.style.backgroundImage='linear-gradient('+(direction.value==='horizontal'?'90deg':'180deg')+','+(w.settings.backgroundColor||'#1b2935')+','+input.value+')'});
+   input.addEventListener('input',()=>{w.settings??={};w.settings.gradientColor=input.value;const el=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);if(el)el.style.backgroundImage='linear-gradient('+(direction.value==='horizontal'?'90deg':'180deg')+','+(w.settings.backgroundColor||'#1b2935')+','+input.value+')'});
    input.addEventListener('change',()=>{w.settings.gradientColor=input.value;render()});
    label.append(input);appearanceRow.append(label);
   }
@@ -249,14 +249,14 @@ function render(){const s=current();$('screen').replaceChildren();$('properties'
  }
  if(w.type==='button'||w.type==='macro'||w.type==='image')renderTouchProperties(w,touchRow);
 }
-$('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;selectNexusEditorTab('widget');const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};$('screen').setPointerCapture(e.pointerId);render()});
-$('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...$('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
-$('screen').addEventListener('pointerup',()=>{drag=null;render()});$('screen').addEventListener('pointercancel',()=>{drag=null;render()});
+nexusElementById('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;selectNexusEditorTab('widget');const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};nexusElementById('screen').setPointerCapture(e.pointerId);render()});
+nexusElementById('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
+nexusElementById('screen').addEventListener('pointerup',()=>{drag=null;render()});nexusElementById('screen').addEventListener('pointercancel',()=>{drag=null;render()});
 const editKeys=new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown']);
-$('screen').addEventListener('keydown',event=>{
+nexusElementById('screen').addEventListener('keydown',event=>{
  const screen=current();if(!screen)return;
  const focus=event.target;
- if(focus!==$('screen')&&focus?.closest?.('input, textarea, select'))return;
+ if(focus!==nexusElementById('screen')&&focus?.closest?.('input, textarea, select'))return;
  const widgets=screen.widgets;
  if(event.key==='['||event.key===']'){
   if(!widgets.length)return;
@@ -269,14 +269,14 @@ $('screen').addEventListener('keydown',event=>{
  if(event.key==='Escape'){event.preventDefault();selected=null;render();return}
  const widget=widgets.find(item=>item.id===selected);
  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='c'&&widget){
-  event.preventDefault();$('copyWidget')?.click();return;
+  event.preventDefault();nexusElementById('copyWidget')?.click();return;
  }
  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='v'&&copiedWidget){
-  event.preventDefault();$('pasteWidget')?.click();return;
+  event.preventDefault();nexusElementById('pasteWidget')?.click();return;
  }
  if(!widget)return;
  if(event.key==='Delete'&&!event.ctrlKey&&!event.metaKey){
-  event.preventDefault();$('deleteWidget')?.click();return;
+  event.preventDefault();nexusElementById('deleteWidget')?.click();return;
  }
  if(!editKeys.has(event.key)||event.ctrlKey||event.altKey||event.metaKey)return;
  event.preventDefault();
@@ -294,10 +294,10 @@ $('screen').addEventListener('keydown',event=>{
  message('Widget position updated. Save Layout to apply.');
 });
 
-async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);$('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){$('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!$('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=$('deviceId')?.value||$('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await loadSharedMacroProfiles();selected=null;const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if($('displayBrightness'))$('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
-if($('load'))$('load').onclick=()=>load().catch(e=>message(e.message));
-$('screens').onchange=()=>{cfg.activeScreenId=$('screens').value;selected=null;render()};
+async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);nexusElementById('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){nexusElementById('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!nexusElementById('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
+async function load(){serial=nexusElementById('deviceId')?.value||nexusElementById('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await loadSharedMacroProfiles();selected=null;const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
+if(nexusElementById('load'))nexusElementById('load').onclick=()=>load().catch(e=>message(e.message));
+nexusElementById('screens').onchange=()=>{cfg.activeScreenId=nexusElementById('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
 // screen list. Every resulting screen is edited and saved like any other one.
 const builtInScreens=new Set(['system-overview','performance-bars','network-and-storage','media-deck','navigation']);
@@ -319,12 +319,12 @@ function relinkScreenID(screen, newID){
  }
  return screen;
 }
-$('newScreenPreset')?.addEventListener('change',refreshActionButtons);
-$('addScreen').onclick=async()=>{
+nexusElementById('newScreenPreset')?.addEventListener('change',refreshActionButtons);
+nexusElementById('addScreen').onclick=async()=>{
  try{
   if(!cfg)return message('Load a Nexus layout first.');
   if(cfg.screens.length>=NEXUS_MAX_SCREENS)return message('Maximum 256 screens.');
-  const kind=$('newScreenPreset')?.value||'blank';
+  const kind=nexusElementById('newScreenPreset')?.value||'blank';
   const id=uniqueID('screen',new Set(cfg.screens.map(screen=>screen.id)));
   let screen;
   if(kind==='blank'){
@@ -341,10 +341,10 @@ $('addScreen').onclick=async()=>{
   message('Screen added. Edit and Save Layout when ready.');
  }catch(e){message(e.message)}
 };
-$('replaceScreenWithPreset')?.addEventListener('click',async()=>{
+nexusElementById('replaceScreenWithPreset')?.addEventListener('click',async()=>{
  try{
   if(!cfg)return message('Load a Nexus layout first.');
-  const selectedScreen=current(),kind=$('newScreenPreset')?.value;
+  const selectedScreen=current(),kind=nexusElementById('newScreenPreset')?.value;
   if(!selectedScreen||!builtInScreens.has(kind))return;
   const replacement=await loadExampleScreen(kind);
   if(!confirm('Replace "'+selectedScreen.name+'" with "'+replacement.name+'"? The existing widgets and background will be discarded when saved.'))return;
@@ -363,16 +363,16 @@ function moveSelectedScreen(direction){
  cfg.activeScreenId=selectedScreenID();
  refreshScreens();message('Screen order changed. Save Layout to apply.');
 }
-$('moveScreenUp')?.addEventListener('click',()=>moveSelectedScreen(-1));
-$('moveScreenDown')?.addEventListener('click',()=>moveSelectedScreen(1));
-$('renameScreen')?.addEventListener('click',()=>{
+nexusElementById('moveScreenUp')?.addEventListener('click',()=>moveSelectedScreen(-1));
+nexusElementById('moveScreenDown')?.addEventListener('click',()=>moveSelectedScreen(1));
+nexusElementById('renameScreen')?.addEventListener('click',()=>{
  const s=current();if(!s)return;
  const name=prompt('Rename screen',s.name)?.trim();
  if(name===undefined||name===null||!name||name===s.name)return;
  if(name.length>80)return message('Screen name must be 80 characters or fewer');
  s.name=name;refreshScreens();message('Screen renamed. Save Layout to apply.');
 });
-$('duplicateScreen')?.addEventListener('click',()=>{
+nexusElementById('duplicateScreen')?.addEventListener('click',()=>{
  const source=current();if(!source||!cfg)return;
  if(cfg.screens.length>=NEXUS_MAX_SCREENS)return message('Maximum 256 screens');
  const newID=uniqueID('screen',new Set(cfg.screens.map(s=>s.id)));
@@ -389,7 +389,7 @@ $('duplicateScreen')?.addEventListener('click',()=>{
  cfg.activeScreenId=newID;selected=null;refreshScreens();
  message('Screen duplicated. Save Layout to apply.');
 });
-$('deleteScreen').onclick=()=>{
+nexusElementById('deleteScreen').onclick=()=>{
  if(!cfg||cfg.screens.length<=1)return message('Keep at least one screen');
  const removed=selectedScreenID();
  cfg.screens=cfg.screens.filter(s=>s.id!==removed);
@@ -418,7 +418,7 @@ function renderWidgetColors(w,panel){
   const input=document.createElement('input');input.type='color';input.value=/^#[0-9a-fA-F]{6}$/.test(w.settings?.[key]||'')?w.settings[key]:defaultColor;
   input.oninput=()=>{
    w.settings??={};w.settings[key]=input.value;
-   const widget=[...$('screen').children].find(el=>el.dataset.id===w.id);
+   const widget=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);
    if(widget)widget.style.setProperty(key==='backgroundColor'?'--button-bg':key==='textColor'?'--button-ink':'--button-border',input.value);
   };
   input.onchange=()=>{w.settings[key]=input.value;render()};
@@ -523,16 +523,16 @@ function renderTouchProperties(w,panel){
 
 }
 function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;selectNexusEditorTab('widget');render()}
-$('addMetric').onclick=()=>addWidget('metric');
-$('addContent')?.addEventListener('click',()=>addWidget('text'));
-$('addButton')?.addEventListener('click',()=>addWidget('button'));
-$('copyWidget')?.addEventListener('click',()=>{
+nexusElementById('addMetric').onclick=()=>addWidget('metric');
+nexusElementById('addContent')?.addEventListener('click',()=>addWidget('text'));
+nexusElementById('addButton')?.addEventListener('click',()=>addWidget('button'));
+nexusElementById('copyWidget')?.addEventListener('click',()=>{
  const source=current()?.widgets.find(w=>w.id===selected);
  if(!source)return;
  copiedWidget=JSON.parse(JSON.stringify(source));
  render();message('Widget copied. Select a screen and click Paste widget.');
 });
-$('pasteWidget')?.addEventListener('click',()=>{
+nexusElementById('pasteWidget')?.addEventListener('click',()=>{
  const screen=current();
  if(!screen||!copiedWidget)return;
  if(screen.widgets.length>=64)return message('Maximum 64 widgets');
@@ -544,7 +544,7 @@ $('pasteWidget')?.addEventListener('click',()=>{
  screen.widgets.push(copy);selected=copy.id;render();
  message('Widget pasted. Save Layout to apply.');
 });
-$('duplicateWidget')?.addEventListener('click',()=>{
+nexusElementById('duplicateWidget')?.addEventListener('click',()=>{
  const screen=current();if(!screen)return;
  const source=screen.widgets.find(w=>w.id===selected);
  if(!source)return;
@@ -559,17 +559,17 @@ $('duplicateWidget')?.addEventListener('click',()=>{
  screen.widgets.splice(index+1,0,duplicate);
  selected=duplicate.id;render();message('Widget duplicated. Save Layout to apply.');
 });
-$('deleteWidget').onclick=()=>{const s=current();if(!s)return;s.widgets=s.widgets.filter(w=>w.id!==selected);selected=null;render()};
-$('background').onchange=()=>{const s=current();if(s){s.background=$('background').value.trim();render()}};
-$('upload').onclick=async()=>{try{const f=$('image').files[0];if(!f||!current())return message('Choose an image and load a screen');if(f.size>4*1024*1024)throw Error('Image exceeds 4 MiB');if(!['image/png','image/jpeg','image/gif'].includes(f.type))throw Error('Choose a PNG, JPEG or GIF background');const id='background_'+Date.now();const res=await fetch('/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+id,{method:'POST',headers:{'Content-Type':f.type},body:f});if(!res.ok)throw Error(await res.text());current().background=id;render();message('Background uploaded. Save layout to apply it.')}catch(e){message(e.message)}};
+nexusElementById('deleteWidget').onclick=()=>{const s=current();if(!s)return;s.widgets=s.widgets.filter(w=>w.id!==selected);selected=null;render()};
+nexusElementById('background').onchange=()=>{const s=current();if(s){s.background=nexusElementById('background').value.trim();render()}};
+nexusElementById('upload').onclick=async()=>{try{const f=nexusElementById('image').files[0];if(!f||!current())return message('Choose an image and load a screen');if(f.size>4*1024*1024)throw Error('Image exceeds 4 MiB');if(!['image/png','image/jpeg','image/gif'].includes(f.type))throw Error('Choose a PNG, JPEG or GIF background');const id='background_'+Date.now();const res=await fetch('/api/nexus/background?serial='+encodeURIComponent(serial)+'&id='+id,{method:'POST',headers:{'Content-Type':f.type},body:f});if(!res.ok)throw Error(await res.text());current().background=id;render();message('Background uploaded. Save layout to apply it.')}catch(e){message(e.message)}};
 function syncCycleInterval(){
- const interval=$('cyclingSeconds'),mode=$('cyclingMode');
+ const interval=nexusElementById('cyclingSeconds'),mode=nexusElementById('cyclingMode');
  if(interval&&mode)interval.disabled=mode.value!=='automatic';
 }
-$('cyclingMode')?.addEventListener('change',syncCycleInterval);
+nexusElementById('cyclingMode')?.addEventListener('change',syncCycleInterval);
 syncCycleInterval();
-$('displayBrightness')?.addEventListener('change',()=>{if(!cfg)return;cfg.brightness=Number($('displayBrightness').value);render()});
-$('save').onclick=async()=>{try{if(!cfg)return;if($('displayBrightness'))cfg.brightness=Number($('displayBrightness').value);const mode=$('cyclingMode');const interval=$('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=$('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
+nexusElementById('displayBrightness')?.addEventListener('change',()=>{if(!cfg)return;cfg.brightness=Number(nexusElementById('displayBrightness').value);render()});
+nexusElementById('save').onclick=async()=>{try{if(!cfg)return;if(nexusElementById('displayBrightness'))cfg.brightness=Number(nexusElementById('displayBrightness').value);const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode){cfg.cyclingMode=mode.value;cfg.cyclingSeconds=Number(interval?.value||15)}cfg.activeScreenId=nexusElementById('screens').value;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});if(!res.ok)throw Error(await res.text());message('Saved successfully')}catch(e){message(e.message)}};
 function exportNexusJSON(single){
  try{
   if(!cfg)return message('Load a Nexus layout first.');
@@ -585,27 +585,27 @@ function exportNexusJSON(single){
   message((single?'Screen':'Layout')+' exported.');
  }catch(e){message(e.message)}
 }
-$('exportLayout')?.addEventListener('click',()=>exportNexusJSON(false));
-$('exportScreen')?.addEventListener('click',()=>exportNexusJSON(true));
-$('importLayout')?.addEventListener('click',async()=>{
+nexusElementById('exportLayout')?.addEventListener('click',()=>exportNexusJSON(false));
+nexusElementById('exportScreen')?.addEventListener('click',()=>exportNexusJSON(true));
+nexusElementById('importLayout')?.addEventListener('click',async()=>{
  try{
   if(!cfg)return message('Load a Nexus layout first.');
-  const file=$('layoutFile')?.files?.[0];
+  const file=nexusElementById('layoutFile')?.files?.[0];
   if(!file)return message('Select a JSON layout file.');
   if(file.size<1||file.size>4*1024*1024)throw Error('JSON file must be 4 MiB or smaller');
   const imported=NexusLayoutFiles.validate(JSON.parse(await file.text()));
-  const mode=$('layoutImportMode').value;
+  const mode=nexusElementById('layoutImportMode').value;
   if(mode==='replace-layout'&&!confirm('Replace the entire current layout with '+imported.screens.length+' imported screens? Changes become permanent only when Save Layout is clicked.'))return;
   if(mode==='replace-screen'&&!confirm('Replace selected screen "'+(current()?.name||'')+'"? Changes become permanent only when Save Layout is clicked.'))return;
   const id=mode==='add-screen'?uniqueID('screen',new Set(cfg.screens.map(s=>s.id))):'';
-  const next=NexusLayoutFiles.applyImport(cfg,imported,mode,$('screens').value,id);
+  const next=NexusLayoutFiles.applyImport(cfg,imported,mode,nexusElementById('screens').value,id);
   cfg=next;selected=null;
-  if($('cyclingMode'))$('cyclingMode').value=cfg.cyclingMode||'manual';
-  if($('displayBrightness'))$('displayBrightness').value=String(cfg.brightness||100);
-  if($('cyclingSeconds')){
+  if(nexusElementById('cyclingMode'))nexusElementById('cyclingMode').value=cfg.cyclingMode||'manual';
+  if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);
+  if(nexusElementById('cyclingSeconds')){
    const seconds=cfg.cyclingSeconds||15;
-   if(![...$('cyclingSeconds').options].some(option=>Number(option.value)===seconds))$('cyclingSeconds').add(new Option(seconds+' seconds (imported)',String(seconds)));
-   $('cyclingSeconds').value=String(seconds);
+   if(![...nexusElementById('cyclingSeconds').options].some(option=>Number(option.value)===seconds))nexusElementById('cyclingSeconds').add(new Option(seconds+' seconds (imported)',String(seconds)));
+   nexusElementById('cyclingSeconds').value=String(seconds);
   }
   syncCycleInterval();refreshScreens();
   message('JSON imported into the editor. Review before Save Layout.');
@@ -618,22 +618,22 @@ function widgetLibraryStorage(){
  return localStorage;
 }
 function refreshWidgetLibrary(){
- const select=$('widgetLibrarySelect');if(!select)return;
+ const select=nexusElementById('widgetLibrarySelect');if(!select)return;
  const previouslySelected=select.value;
  select.replaceChildren();
  try{
   const entries=NexusWidgetLibrary.list(widgetLibraryStorage());
   for(const entry of entries)select.add(new Option(entry.name,entry.id));
   if(entries.some(entry=>entry.id===previouslySelected))select.value=previouslySelected;
-  if($('addWidgetPreset'))$('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
-  if($('deleteWidgetPreset'))$('deleteWidgetPreset').disabled=!entries.length;
+  if(nexusElementById('addWidgetPreset'))nexusElementById('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
+  if(nexusElementById('deleteWidgetPreset'))nexusElementById('deleteWidgetPreset').disabled=!entries.length;
  }catch(e){
-  if($('addWidgetPreset'))$('addWidgetPreset').disabled=true;
-  if($('deleteWidgetPreset'))$('deleteWidgetPreset').disabled=true;
+  if(nexusElementById('addWidgetPreset'))nexusElementById('addWidgetPreset').disabled=true;
+  if(nexusElementById('deleteWidgetPreset'))nexusElementById('deleteWidgetPreset').disabled=true;
   message(e.message);
  }
 }
-$('saveWidgetPreset')?.addEventListener('click',()=>{
+nexusElementById('saveWidgetPreset')?.addEventListener('click',()=>{
  try{
   const widget=current()?.widgets.find(w=>w.id===selected);
   if(!widget)return message('Select a widget to save.');
@@ -644,16 +644,16 @@ $('saveWidgetPreset')?.addEventListener('click',()=>{
   const entry={id:uniqueID('preset',new Set(NexusWidgetLibrary.list(storage).map(x=>x.id))),name,widget:JSON.parse(JSON.stringify(widget))};
   NexusWidgetLibrary.add(storage,entry);
   refreshWidgetLibrary();
-  $('widgetLibrarySelect').value=entry.id;message('Widget saved in this browser.');
+  nexusElementById('widgetLibrarySelect').value=entry.id;message('Widget saved in this browser.');
  }catch(e){message(e.message)}
 });
-$('addWidgetPreset')?.addEventListener('click',()=>{
+nexusElementById('addWidgetPreset')?.addEventListener('click',()=>{
  try{
   const screen=current();if(!screen)return;
   if(screen.widgets.length>=64)return message('Maximum 64 widgets');
   if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');
   const storage=widgetLibraryStorage();
-  const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===$('widgetLibrarySelect').value);
+  const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===nexusElementById('widgetLibrarySelect').value);
   if(!entry)return;
   const widget=NexusWidgetLibrary.instantiate(entry,uniqueID('widget',new Set(screen.widgets.map(w=>w.id))),screen.id,cfg.screens.map(s=>s.id));
   screen.widgets.push(widget);selected=widget.id;render();
@@ -661,22 +661,22 @@ $('addWidgetPreset')?.addEventListener('click',()=>{
   message('Widget added from library. Save Layout to apply.');
  }catch(e){message(e.message)}
 });
-$('deleteWidgetPreset')?.addEventListener('click',()=>{
+nexusElementById('deleteWidgetPreset')?.addEventListener('click',()=>{
  try{
-  const storage=widgetLibraryStorage(),id=$('widgetLibrarySelect').value;
+  const storage=widgetLibraryStorage(),id=nexusElementById('widgetLibrarySelect').value;
   const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===id);if(!entry)return;
   if(!confirm('Delete saved widget "'+entry.name+'" from this browser?'))return;
   NexusWidgetLibrary.remove(storage,id);refreshWidgetLibrary();
   message('Saved widget removed from the browser library.');
  }catch(e){message(e.message)}
 });
-$('widgetLibrarySelect')?.addEventListener('change',refreshWidgetLibrary);
+nexusElementById('widgetLibrarySelect')?.addEventListener('change',refreshWidgetLibrary);
 
 // Integrated device pages load their Nexus automatically without a device selector.
 // The standalone editor retains its device dropdown and Load button.
-if ($('deviceId')) {
+if (nexusElementById('deviceId')) {
   load().catch(e => message(e.message));
-} else if ($('device')) {
+} else if (nexusElementById('device')) {
   loadDevices();
 }
 
@@ -711,7 +711,7 @@ function paintNexusGraph(element,widget){
 }
 function updateNexusGraphPlots(){
  const screen=current();if(!screen)return;
- for(const element of $('screen').children){
+ for(const element of nexusElementById('screen').children){
   const widget=screen.widgets.find(w=>w.id===element.dataset.id);
   if(widget?.type==='graph')paintNexusGraph(element,widget)
  }
@@ -737,7 +737,7 @@ if(typeof setInterval==='function')setInterval(pollNexusPreviewTelemetry,1500);
 
 function refreshNexusClockPreviews(){
  const active=current();if(!active)return;
- for(const el of $('screen').children){
+ for(const el of nexusElementById('screen').children){
   const widget=active.widgets.find(w=>w.id===el.dataset.id);
   if(widget?.type==='clock')el.textContent=formatNexusClock(widget.settings);
  }
@@ -745,8 +745,8 @@ function refreshNexusClockPreviews(){
 if(typeof setInterval==='function')setInterval(refreshNexusClockPreviews,1000);
 
 function refreshApplicationScreenMappings(){
- const list=$('applicationScreenMappings');
- const select=$('applicationScreenTarget');
+ const list=nexusElementById('applicationScreenMappings');
+ const select=nexusElementById('applicationScreenTarget');
  if(!list||!select||!cfg)return;
  const prior=select.value;
  select.replaceChildren();
@@ -762,13 +762,13 @@ function refreshApplicationScreenMappings(){
   row.append(name,remove);list.append(row);
  }
 }
-$('addApplicationScreen')?.addEventListener('click',()=>{
+nexusElementById('addApplicationScreen')?.addEventListener('click',()=>{
  if(!cfg)return;
- const id=($('applicationScreenID')?.value||'').trim();
+ const id=(nexusElementById('applicationScreenID')?.value||'').trim();
  if(!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}$/.test(id))return message('Use a valid application ID from OpenLinkHub Application Profiles.');
  cfg.applicationScreens??={};
  if(!Object.hasOwn(cfg.applicationScreens,id)&&Object.keys(cfg.applicationScreens).length>=64)return message('Maximum 64 application bindings.');
- cfg.applicationScreens[id]=$('applicationScreenTarget').value;
+ cfg.applicationScreens[id]=nexusElementById('applicationScreenTarget').value;
  refreshApplicationScreenMappings();
  message('Application screen mapping added. Save Layout to apply.');
 });
@@ -777,13 +777,13 @@ $('addApplicationScreen')?.addEventListener('click',()=>{
 
 
 // A visual click indication also works with keyboard activation in the editor.
-$('screen')?.addEventListener('pointerdown',event=>{
+nexusElementById('screen')?.addEventListener('pointerdown',event=>{
  const target=event.target.closest?.('.widget.nexus-button-style');
  if(!target)return;
  target.classList.add('nexus-pressed-preview');
 });
-$('screen')?.addEventListener('pointerup',()=>{
- for(const item of $('screen').children)item.classList?.remove?.('nexus-pressed-preview');
+nexusElementById('screen')?.addEventListener('pointerup',()=>{
+ for(const item of nexusElementById('screen').children)item.classList?.remove?.('nexus-pressed-preview');
 });
 
 /* Five file tabs share a single editor workspace below the screen preview. */
@@ -792,20 +792,20 @@ function selectNexusEditorTab(name,focus=false){
  const index=names.indexOf(name);
  if(index<0)return;
  for(const [i,id] of names.entries()){
-  const tab=$('nexus-tab-'+id),panel=$('nexus-panel-'+id);
+  const tab=nexusElementById('nexus-tab-'+id),panel=nexusElementById('nexus-panel-'+id);
   if(!tab||!panel)return;
   const active=i===index;
   tab.setAttribute('aria-selected',String(active));
   tab.setAttribute('tabindex',active?'0':'-1');
   panel.hidden=!active;
  }
- if(focus)$('nexus-tab-'+name).focus();
+ if(focus)nexusElementById('nexus-tab-'+name).focus();
 }
 (function setupNexusEditorTabs(){
  const names=['widget','library','background','layout','applications'];
- if(names.some(name=>!$('nexus-tab-'+name)||!$('nexus-panel-'+name)))return;
+ if(names.some(name=>!nexusElementById('nexus-tab-'+name)||!nexusElementById('nexus-panel-'+name)))return;
  names.forEach((name,index)=>{
-  const tab=$('nexus-tab-'+name);
+  const tab=nexusElementById('nexus-tab-'+name);
   tab.addEventListener('click',()=>selectNexusEditorTab(name));
   tab.addEventListener('keydown',event=>{
    const offset=event.key==='ArrowRight'?1:event.key==='ArrowLeft'?-1:0;
