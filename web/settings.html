@@ -35,13 +35,14 @@
             <!-- Nexus Settings categories: preserve upstream IDs, controls and API bindings. -->
             <div class="olh-settings-shell"><div class="olh-settings-nav" role="tablist" aria-label="Settings categories"><button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-general" aria-controls="olh-settings-general" aria-selected="true" tabindex="0"><i class="bi bi-sliders2" aria-hidden="true"></i><span>General</span></button>
 <button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-devices" aria-controls="olh-settings-devices" aria-selected="false" tabindex="-1"><i class="bi bi-pc-display" aria-hidden="true"></i><span>Devices &amp; Displays</span></button>
-<button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-security" aria-controls="olh-settings-security" aria-selected="false" tabindex="-1"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Security &amp; Backup</span></button></div><div class="olh-settings-tab-panels"><section class="olh-settings-tab-panel" id="olh-settings-general" role="tabpanel" aria-labelledby="olh-settings-tab-general" tabindex="0"><div class="olh-settings-section-intro"><div><h2>General preferences</h2><p>Dashboard appearance, lighting schedules and audio options.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Save each section separately</span></div><div class="olh-settings-category-grid olh-settings-general-grid"><div class="card system-card text-center">
+<button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-security" aria-controls="olh-settings-security" aria-selected="false" tabindex="-1"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Security &amp; Backup</span></button></div><div class="olh-settings-tab-panels"><section class="olh-settings-tab-panel" id="olh-settings-general" role="tabpanel" aria-labelledby="olh-settings-tab-general" tabindex="0"><div class="olh-settings-section-intro"><div><h2>General preferences</h2><p>Dashboard appearance, lighting schedules and audio options.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Some changes apply immediately; others use Save</span></div><div class="olh-settings-category-grid olh-settings-general-grid"><div class="card system-card text-center">
             <div class="card-header olh-section-header">
                 <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
                 <span class="olh-section-title">{{ .Lang "txtDashboard" }}</span>
             </div>
             <div class="card-body">
                 <div class="settings-list">
+                    <div class="olh-settings-subheading"><i class="bi bi-window-sidebar" aria-hidden="true"></i><span>Dashboard display</span></div>
                     <!-- Temperature (C / F) -->
                     <div class="settings-row">
                         <span class="settings-label text-ellipsis">{{ .Lang "txtShowTempInC" }}</span>
@@ -75,6 +76,7 @@
                         </label>
                     </div>
 
+                    <div class="olh-settings-subheading"><i class="bi bi-palette" aria-hidden="true"></i><span>Appearance & language</span></div>
                     <!-- Language -->
                     <div class="settings-row">
                         <span class="settings-label text-ellipsis">{{ .Lang "txtLanguage" }}</span>
@@ -107,6 +109,23 @@
                         </label>
                     </div>
 
+                    <!-- Keyboard layout -->
+                    <div class="settings-row">
+                        <span class="settings-label text-ellipsis">{{ .Lang "txtKeyboardLayout" }}</span>
+                        <label for="keyboardLayout">
+                            <select id="keyboardLayout" class="form-select system-select auto-width compact theme">
+                                {{ range $k, $v := .Dashboard.KeyboardLayouts }}
+                                {{ if eq $dash.KeyboardLayout $k }}
+                                <option value="{{ $k }}" selected>{{ $v }}</option>
+                                {{ else }}
+                                <option value="{{ $k }}">{{ $v }}</option>
+                                {{ end }}
+                                {{ end }}
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="olh-settings-subheading"><i class="bi bi-lightbulb" aria-hidden="true"></i><span>Global lighting</span></div>
                     <!-- Global RGB -->
                     <div class="settings-row">
                         <span class="settings-label text-ellipsis">{{ .Lang "txtRgb" }}</span>
@@ -142,21 +161,7 @@
                         </label>
                     </div>
 
-                    <!-- Style -->
-                    <div class="settings-row">
-                        <span class="settings-label text-ellipsis">{{ .Lang "txtKeyboardLayout" }}</span>
-                        <label for="theme">
-                            <select id="keyboardLayout" class="form-select system-select auto-width compact theme">
-                                {{ range $k, $v := .Dashboard.KeyboardLayouts }}
-                                {{ if eq $dash.KeyboardLayout $k }}
-                                <option value="{{ $k }}" selected>{{ $v }}</option>
-                                {{ else }}
-                                <option value="{{ $k }}">{{ $v }}</option>
-                                {{ end }}
-                                {{ end }}
-                            </select>
-                        </label>
-                    </div>
+                    
 
                     <!-- Save settings -->
                     <div class="settings-row">
