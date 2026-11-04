@@ -3,6 +3,7 @@
  * Do not change upstream layout, firmware controls, file tabs or API bindings.
  */
 #nexus-panel-widget{
+  container-type:inline-size;
   --nci-gold:var(--olh-accent,#d5a65a);
   --nci-stroke:var(--olh-line-strong,rgba(220,225,232,.20));
   --nci-muted:var(--olh-muted,#a3a5ae);
@@ -220,6 +221,19 @@
 }
 #nexus-panel-widget :is(button,summary,input,select):focus-visible{
   outline:2px solid rgba(213,166,90,.8);outline-offset:2px
+}
+/* Column-aware layout: the integrated editor may be narrow even on a wide display. */
+@container(max-width:610px){
+  #nexus-selected-panel #properties{grid-template-columns:minmax(0,1fr)}
+  #nexus-selected-panel #properties>.nexus-property-section{
+    grid-column:1!important;grid-row:auto!important
+  }
+}
+@container(max-width:420px){
+  #nexus-selected-panel #properties .nexus-dimensions-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+  #nexus-selected-panel #properties .nexus-colors-row{grid-template-columns:1fr}
 }
 @media(max-width:930px){
   #nexus-panel-widget #properties{grid-template-columns:minmax(0,1fr)}
