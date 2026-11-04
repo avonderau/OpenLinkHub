@@ -456,6 +456,68 @@ test('content type changes Text Image Clock from Selected Widget',async()=>{
  }
 });
 
+test('all secondary Nexus tabs use the shared compact inspector layout and retain control bindings',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','nexus-compact-inspector.css'),'utf8');
+ const sections={
+  library:{label:'Widget library',controls:['saveWidgetPreset','widgetLibrarySelect','addWidgetPreset','deleteWidgetPreset'],groups:['Saved widgets']},
+  background:{label:'Background',controls:['background','image','upload'],groups:['Current background','Upload an image']},
+  layout:{label:'Layout files',controls:['exportLayout','exportScreen','layoutFile','layoutImportMode','importLayout'],groups:['Export','Import']},
+  applications:{label:'Application screens',controls:['applicationScreenID','applicationScreenTarget','addApplicationScreen','applicationScreenMappings'],groups:['New mapping','Active mappings']}
+ };
+ for(const html of [integrated,standalone]){
+  const content=html.slice(html.indexOf('<div id="nexus-panel-library"'));
+  for(const [tab,info] of Object.entries(sections)){
+   const i=content.indexOf('id="nexus-panel-'+tab+'"');
+   assert.ok(i>=0,tab+' must still exist as a file tab panel');
+   const next=content.indexOf('id="nexus-panel-',i+16);
+   const block=content.slice(i,next<0?undefined:next);
+   assert.match(block,/class="nexus-tool-card"/,tab+' uses the compact card');
+   assert.match(block,/class="nexus-tool-hero"/,tab+' has the amber identity header');
+   assert.match(block,/class="nexus-tool-icon"/,tab+' has a graphical icon');
+   assert.match(block,new RegExp('>'+info.label+'<\\/strong>'));
+   assert.match(block,/class="nexus-tool-footer"/,tab+' has a concise informational footer');
+   assert.doesNotMatch(block,/<fieldset\b/,tab+' should not use nested fieldsets');
+   for(const name of info.groups)assert.ok(block.includes('>'+name+'</h3>'),tab+' missing section '+name);
+   for(const id of info.controls){
+    assert.equal(html.split('id="'+id+'"').length-1,1,id+' must occur exactly once');
+    assert.ok(block.includes('id="'+id+'"'),tab+' must retain '+id+' in its tab');
+   }
+  }
+  for(const tab of ['widget','library','background','layout','applications']){
+   assert.equal(html.split('id="nexus-tab-'+tab+'"').length-1,1,tab+' file tab remains present');
+  }
+  assert.ok(html.indexOf('id="preview"')<html.indexOf('nexus-editor-tablist'), 'screen preview stays above tabs');
+  assert.match(html,/id="image" accept="image\/png,image\/jpeg,image\/gif"/);
+  assert.match(html,/id="layoutFile" type="file" accept="\.json,application\/json"/);
+  for(const value of ['add-screen','replace-screen','replace-layout'])assert.ok(html.includes('value="'+value+'"'));
+ }
+ assert.match(css,/Shared compact tool-tab language/);
+ assert.match(css,/linear-gradient\(110deg,#403729/);
+ assert.match(css,/\.nexus-tool-section-heading\s*\{[\s\S]*?linear-gradient\(100deg,rgba\(213,166,90,.18\)/);
+ assert.match(css,/@container\(max-width:660px\)/);
+ assert.match(css,/@container\(max-width:430px\)/);
+ assert.match(css,/\.nexus-app-binding\s*\{/, 'dynamic application mapping rows are styled');
+ assert.match(css,/\.nexus-tool-mappings:empty::before\s*\{/, 'empty mappings have a useful state');
+});
+
+test('application-screen tab retains add/remove and Save Layout behavior',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ node('applicationScreenID').value='example.app';
+ node('applicationScreenTarget').value='existing';
+ assert.equal(typeof node('addApplicationScreen').listeners.click,'function');
+ node('addApplicationScreen').listeners.click();
+ assert.equal(vm.runInContext('cfg.applicationScreens["example.app"]',context),'existing');
+ assert.equal(node('applicationScreenMappings').children.length,1);
+ await node('save').onclick();
+ assert.equal(writes.at(-1).applicationScreens['example.app'],'existing');
+ const row=node('applicationScreenMappings').children[0];
+ assert.equal(row.className,'nexus-app-binding');
+ row.children[1].listeners.click();
+ assert.equal(vm.runInContext('Object.keys(cfg.applicationScreens).length',context),0);
+ assert.equal(node('applicationScreenMappings').children.length,0);
+});
+
 test('compact inspector preserves file tabs and all existing widget action IDs',()=>{
  const compact=fs.readFileSync(path.join(__dirname,'..','css','nexus-compact-inspector.css'),'utf8');
  const page=fs.readFileSync(path.join(__dirname,'..','..','web','nexus.html'),'utf8');
