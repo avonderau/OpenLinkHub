@@ -346,3 +346,327 @@
     grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
+
+
+/* Shared compact tool-tab language: same amber/charcoal inspector as Appearance.
+ * Scoped to the four non-widget panels so upstream editor controls stay intact.
+ * These sections exist in both the integrated and standalone Nexus editor. */
+:is(#nexus-editor,body) .nexus-editor-tabpanel.nexus-tool-tabpanel{
+  min-width:0;
+  padding:13px 0;
+  --nxt-gold:var(--olh-accent,#d5a65a);
+  --nxt-muted:var(--olh-muted,#a3a5ae);
+  --nxt-border:var(--olh-line-strong,rgba(221,226,231,.19));
+  --nxt-ink:var(--olh-ink,#e8e9ec);
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-card{
+  container-type:inline-size;
+  min-width:0;
+  border:1px solid var(--nxt-border);
+  border-radius:11px;
+  background:#1c1d1f;
+  color:var(--nxt-ink);
+  overflow:hidden;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-hero{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px 15px;
+  min-height:70px;
+  background:linear-gradient(110deg,#403729 0%,#302c27 39%,#222325 100%);
+  border-bottom:1px solid rgba(220,175,101,.35);
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-icon{
+  display:grid;
+  place-items:center;
+  flex:0 0 39px;
+  width:39px;height:39px;
+  font-size:20px;
+  color:#f0c581;
+  background:#59472f;
+  border:1px solid #947143;
+  border-radius:9px;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-identity{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-identity strong{
+  color:#f3f0e9;
+  font-size:15px;
+  font-weight:700;
+  line-height:1.25;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-identity small{
+  color:#c2b6a5;
+  font-size:11px;
+  font-weight:450;
+  line-height:1.4;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-body{
+  min-width:0;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  align-items:start;
+  padding:14px;
+}
+:is(#nexus-editor,body) #nexus-panel-library .nexus-tool-body,
+:is(#nexus-editor,body) #nexus-panel-applications .nexus-tool-body{
+  grid-template-columns:minmax(0,1fr);
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section{
+  min-width:0;
+  border:1px solid #414246;
+  border-radius:9px;
+  background:linear-gradient(150deg,#242527,#202123);
+  overflow:hidden;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section-heading{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:40px;
+  margin:0;
+  padding:11px 13px;
+  background:linear-gradient(100deg,rgba(213,166,90,.18),rgba(75,67,55,.35) 43%,#28292b);
+  color:#ebe9e5;
+  border-bottom:1px solid #46423b;
+  font-size:12px;
+  font-weight:750;
+  line-height:1.2;
+  letter-spacing:.015em;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section-heading .bi{
+  font-size:14px;
+  color:#dfb675;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section-body{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px;
+  min-width:0;
+  padding:12px;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section-body.nexus-app-controls,
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section-body.nexus-widget-library-actions,
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section-body.nexus-layout-file-controls{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:end;
+  gap:10px;
+  min-width:0;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-field,
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-section-body>label{
+  display:flex;
+  flex-direction:column;
+  flex-wrap:nowrap;
+  align-items:stretch;
+  gap:6px;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  margin:0;
+  color:#a6a8af;
+  font-size:10px;
+  line-height:1.4;
+  font-weight:650;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-field input,
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-field select{
+  display:block;
+  box-sizing:border-box;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  min-height:36px;
+  margin:0;
+  padding:7px 10px;
+  color:#eef0f2;
+  -webkit-text-fill-color:#eef0f2;
+  background:#191a1c;
+  border:1px solid #424349;
+  border-radius:7px;
+  font-size:12px;
+  font-weight:500;
+  line-height:1.35;
+  letter-spacing:normal;
+  text-transform:none;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-field input[type=file]{
+  min-height:38px;
+  padding:5px 8px;
+  font-size:11px;
+  width:100%;
+  cursor:pointer;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-field input[type=file]::file-selector-button{
+  padding:5px 8px;
+  margin-right:9px;
+  color:#e5e0d6;
+  background:#2a2b2d;
+  border:1px solid #55565a;
+  border-radius:5px;
+  cursor:pointer;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions,
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-layout-file-controls.nexus-tool-actions{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-start;
+  gap:8px;
+  min-width:0;
+  width:100%;
+  margin:0;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button{
+  display:inline-flex;
+  flex:0 1 auto;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:35px;
+  min-width:0;
+  margin:0;
+  padding:8px 11px;
+  color:#e8e8ea;
+  -webkit-text-fill-color:#e8e8ea;
+  background:linear-gradient(180deg,#303135,#252629);
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:7px;
+  font-size:12px;
+  font-weight:650;
+  line-height:1.25;
+  white-space:normal;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button .bi{
+  color:#e3ba7c;
+  font-size:14px;
+  flex:none;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button:hover:not(:disabled){
+  border-color:rgba(213,166,90,.6);
+  background:linear-gradient(180deg,#39352e,#2b2928);
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button.nexus-tool-primary{
+  background:linear-gradient(180deg,#6b5231,#4a3a29);
+  border-color:#9c7543;
+  color:#ffe3b6;
+  -webkit-text-fill-color:#ffe3b6;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button.nexus-tool-primary:hover:not(:disabled){
+  background:linear-gradient(180deg,#80613a,#5b452b);
+  border-color:#d5a65a;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button.nexus-tool-danger:not(:disabled){
+  color:#e6aaaa;
+  -webkit-text-fill-color:#e6aaaa;
+  border-color:rgba(202,119,119,.44);
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button:disabled{
+  opacity:.44;
+  cursor:not-allowed;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-footer{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  min-width:0;
+  padding:11px 14px;
+  background:#1c1d1f;
+  border-top:1px solid #38393d;
+  color:#999ca2;
+  font-size:11px;
+  line-height:1.45;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-footer .bi{
+  flex:none;
+  margin-top:1px;
+  color:#d3ab70;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-mappings{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-height:44px;
+  padding:10px 12px;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-mappings:empty::before{
+  content:'No application mappings yet';
+  color:#999ca2;
+  font-size:12px;
+  padding:4px 0;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-app-binding{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  padding:7px 9px;
+  background:#1b1c1e;
+  border:1px solid #393b3f;
+  border-radius:7px;
+  font-size:12px;
+  color:#e8e9eb;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-app-binding span{
+  flex:1;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-app-binding button{
+  flex:none;
+  margin:0;
+  min-height:30px;
+  padding:5px 9px;
+  font-size:11px;
+  border-radius:6px;
+  color:#e6aaaa;
+  -webkit-text-fill-color:#e6aaaa;
+  border:1px solid rgba(202,119,119,.44);
+  background:transparent;
+}
+:is(#nexus-editor,body) .nexus-tool-tabpanel :is(button,input,select):focus-visible{
+  outline:2px solid rgba(213,166,90,.82);
+  outline-offset:2px;
+}
+@container(max-width:660px){
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-body{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@container(max-width:430px){
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-hero{
+    gap:9px;
+    padding:11px 12px;
+  }
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-body{
+    padding:10px;
+    gap:10px;
+  }
+  :is(#nexus-editor,body) .nexus-tool-tabpanel .nexus-tool-actions button{
+    flex:1 1 auto;
+  }
+}

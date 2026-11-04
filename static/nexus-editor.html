@@ -146,37 +146,131 @@ button{cursor:pointer}button:hover{background:#31546a}label{display:inline-block
   <div id="properties"></div>
   <footer class="nexus-inspector-footer"><span>Changes update the screen preview. Save Layout to apply.</span></footer>
 </fieldset></div>
-<div id="nexus-panel-library" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-library" hidden><fieldset class="nexus-panel nexus-widget-library"><legend>Widget library</legend>
-<p class="nexus-panel-description">Reusable widgets saved in this browser. They are not synchronized with other devices or browsers.</p>
-<div class="nexus-widget-library-actions">
-<button id="saveWidgetPreset" type="button" disabled>Save selected widget</button>
-<label>Saved widget <select id="widgetLibrarySelect" aria-label="Saved widget"></select></label>
-<button id="addWidgetPreset" type="button" disabled>Add to screen</button>
-<button id="deleteWidgetPreset" type="button" disabled>Delete saved widget</button>
+<div id="nexus-panel-library" class="nexus-editor-tabpanel nexus-tool-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-library" hidden>
+  <section class="nexus-tool-card" aria-labelledby="nexus-library-heading">
+    <header class="nexus-tool-hero">
+      <span class="nexus-tool-icon" aria-hidden="true"><i class="bi bi-collection"></i></span>
+      <span class="nexus-tool-identity"><strong id="nexus-library-heading">Widget library</strong><small>Save and reuse your favorite widgets</small></span>
+    </header>
+    <div class="nexus-tool-body">
+      <section class="nexus-tool-section" aria-labelledby="nexus-library-section-heading">
+        <h3 id="nexus-library-section-heading" class="nexus-tool-section-heading"><i class="bi bi-bookmarks" aria-hidden="true"></i> Saved widgets</h3>
+        <div class="nexus-tool-section-body nexus-widget-library-actions">
+          <label class="nexus-tool-field nexus-tool-fill">Saved widget
+            <select id="widgetLibrarySelect" aria-label="Saved widget"></select>
+          </label>
+          <div class="nexus-tool-actions">
+            <button id="addWidgetPreset" class="nexus-tool-primary" type="button" disabled><i class="bi bi-plus-lg" aria-hidden="true"></i> Add to screen</button>
+            <button id="saveWidgetPreset" type="button" disabled><i class="bi bi-bookmark-plus" aria-hidden="true"></i> Save selected widget</button>
+            <button id="deleteWidgetPreset" class="nexus-tool-danger" type="button" disabled><i class="bi bi-trash3" aria-hidden="true"></i> Delete saved widget</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <footer class="nexus-tool-footer"><i class="bi bi-info-circle" aria-hidden="true"></i> Widgets are saved in this browser only, not synchronized between devices or browsers.</footer>
+  </section>
 </div>
-</fieldset></div>
-<div id="nexus-panel-background" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-background" hidden><fieldset><legend>Background</legend><label>Background ID <input id="background" placeholder="e.g. mountains"></label>
-<label>Upload PNG/JPEG/GIF <input type="file" id="image" accept="image/png,image/jpeg,image/gif"></label><button id="upload">Upload and apply</button></fieldset></div>
-<div id="nexus-panel-layout" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-layout" hidden><fieldset class="nexus-panel nexus-layout-files"><legend>Layout files</legend>
-<div class="nexus-layout-file-controls">
-<button id="exportLayout" type="button">Export layout</button>
-<button id="exportScreen" type="button">Export selected screen</button>
-<label>JSON file <input id="layoutFile" type="file" accept=".json,application/json"></label>
-<label>Import mode <select id="layoutImportMode">
-<option value="add-screen">Add as new screen</option>
-<option value="replace-screen">Replace selected screen</option>
-<option value="replace-layout">Replace entire layout</option>
-</select></label>
-<button id="importLayout" type="button">Import JSON</button>
+<div id="nexus-panel-background" class="nexus-editor-tabpanel nexus-tool-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-background" hidden>
+  <section class="nexus-tool-card" aria-labelledby="nexus-background-heading">
+    <header class="nexus-tool-hero">
+      <span class="nexus-tool-icon" aria-hidden="true"><i class="bi bi-image"></i></span>
+      <span class="nexus-tool-identity"><strong id="nexus-background-heading">Background</strong><small>Personalize the selected Nexus screen</small></span>
+    </header>
+    <div class="nexus-tool-body">
+      <section class="nexus-tool-section" aria-labelledby="nexus-background-current-heading">
+        <h3 id="nexus-background-current-heading" class="nexus-tool-section-heading"><i class="bi bi-layers" aria-hidden="true"></i> Current background</h3>
+        <div class="nexus-tool-section-body">
+          <label class="nexus-tool-field">Background ID
+            <input id="background" type="text" placeholder="e.g. mountains">
+          </label>
+        </div>
+      </section>
+      <section class="nexus-tool-section" aria-labelledby="nexus-background-upload-heading">
+        <h3 id="nexus-background-upload-heading" class="nexus-tool-section-heading"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Upload an image</h3>
+        <div class="nexus-tool-section-body nexus-tool-form">
+          <label class="nexus-tool-field">Select image
+            <input type="file" id="image" accept="image/png,image/jpeg,image/gif">
+          </label>
+          <div class="nexus-tool-actions">
+            <button id="upload" class="nexus-tool-primary" type="button"><i class="bi bi-check2" aria-hidden="true"></i> Upload and apply</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <footer class="nexus-tool-footer"><i class="bi bi-info-circle" aria-hidden="true"></i> PNG, JPEG or animated GIF, up to 4 MiB. Save Layout to keep changes.</footer>
+  </section>
 </div>
-<p class="nexus-panel-description">Imports are editable previews until Save Layout. Uploaded backgrounds and icons are referenced by ID; artwork is not included in the JSON file.</p>
-</fieldset></div>
-<div id="nexus-panel-applications" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-applications" hidden><fieldset class="nexus-panel nexus-application-screens"><legend>Automatic application screens</legend>
-<p class="nexus-panel-description">Requires OpenLinkHub Application Monitor and an enabled application profile. Enter its application ID; the selected Nexus screen will activate while that app runs and restore afterward.</p>
-<div class="nexus-app-controls"><label>Application ID <input id="applicationScreenID" type="text" maxlength="128" placeholder="Existing application profile ID"></label>
-<label>Show screen <select id="applicationScreenTarget"></select></label>
-<button id="addApplicationScreen" type="button">Add mapping</button></div>
-<div id="applicationScreenMappings" aria-live="polite"></div></fieldset></div>
+<div id="nexus-panel-layout" class="nexus-editor-tabpanel nexus-tool-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-layout" hidden>
+  <section class="nexus-tool-card" aria-labelledby="nexus-layout-heading">
+    <header class="nexus-tool-hero">
+      <span class="nexus-tool-icon" aria-hidden="true"><i class="bi bi-file-earmark-code"></i></span>
+      <span class="nexus-tool-identity"><strong id="nexus-layout-heading">Layout files</strong><small>Export, share and restore editable screens</small></span>
+    </header>
+    <div class="nexus-tool-body nexus-layout-files">
+      <section class="nexus-tool-section" aria-labelledby="nexus-layout-export-heading">
+        <h3 id="nexus-layout-export-heading" class="nexus-tool-section-heading"><i class="bi bi-box-arrow-up" aria-hidden="true"></i> Export</h3>
+        <div class="nexus-tool-section-body">
+          <div class="nexus-tool-actions nexus-layout-file-controls">
+            <button id="exportLayout" type="button"><i class="bi bi-download" aria-hidden="true"></i> Entire layout</button>
+            <button id="exportScreen" type="button"><i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Selected screen</button>
+          </div>
+        </div>
+      </section>
+      <section class="nexus-tool-section" aria-labelledby="nexus-layout-import-heading">
+        <h3 id="nexus-layout-import-heading" class="nexus-tool-section-heading"><i class="bi bi-box-arrow-in-down" aria-hidden="true"></i> Import</h3>
+        <div class="nexus-tool-section-body nexus-layout-file-controls">
+          <div class="nexus-tool-grid">
+            <label class="nexus-tool-field">JSON file
+              <input id="layoutFile" type="file" accept=".json,application/json">
+            </label>
+            <label class="nexus-tool-field">Import mode
+              <select id="layoutImportMode">
+                <option value="add-screen">Add as new screen</option>
+                <option value="replace-screen">Replace selected screen</option>
+                <option value="replace-layout">Replace entire layout</option>
+              </select>
+            </label>
+          </div>
+          <div class="nexus-tool-actions">
+            <button id="importLayout" class="nexus-tool-primary" type="button"><i class="bi bi-upload" aria-hidden="true"></i> Import JSON</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <footer class="nexus-tool-footer"><i class="bi bi-info-circle" aria-hidden="true"></i> Imported layouts are previews until Save Layout. Image and icon files are referenced by ID, not bundled in JSON.</footer>
+  </section>
+</div>
+<div id="nexus-panel-applications" class="nexus-editor-tabpanel nexus-tool-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-applications" hidden>
+  <section class="nexus-tool-card" aria-labelledby="nexus-applications-heading">
+    <header class="nexus-tool-hero">
+      <span class="nexus-tool-icon" aria-hidden="true"><i class="bi bi-window-stack"></i></span>
+      <span class="nexus-tool-identity"><strong id="nexus-applications-heading">Application screens</strong><small>Show a screen when an application starts</small></span>
+    </header>
+    <div class="nexus-tool-body nexus-application-screens">
+      <section class="nexus-tool-section" aria-labelledby="nexus-applications-create-heading">
+        <h3 id="nexus-applications-create-heading" class="nexus-tool-section-heading"><i class="bi bi-link-45deg" aria-hidden="true"></i> New mapping</h3>
+        <div class="nexus-tool-section-body nexus-app-controls">
+          <div class="nexus-tool-grid">
+            <label class="nexus-tool-field">Application ID
+              <input id="applicationScreenID" type="text" maxlength="128" placeholder="Existing profile ID">
+            </label>
+            <label class="nexus-tool-field">Show screen
+              <select id="applicationScreenTarget"></select>
+            </label>
+          </div>
+          <div class="nexus-tool-actions">
+            <button id="addApplicationScreen" class="nexus-tool-primary" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add mapping</button>
+          </div>
+        </div>
+      </section>
+      <section class="nexus-tool-section" aria-labelledby="nexus-applications-active-heading">
+        <h3 id="nexus-applications-active-heading" class="nexus-tool-section-heading"><i class="bi bi-list-check" aria-hidden="true"></i> Active mappings</h3>
+        <div id="applicationScreenMappings" class="nexus-tool-mappings" aria-live="polite"></div>
+      </section>
+    </div>
+    <footer class="nexus-tool-footer"><i class="bi bi-info-circle" aria-hidden="true"></i> Requires Application Monitor and an enabled application profile. The previous screen returns when the app closes.</footer>
+  </section>
+</div>
 </div></section>
 
 
