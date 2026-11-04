@@ -27,6 +27,20 @@ CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
 
 For the official fork build, use the **[OpenLinkHub Nexus releases](https://github.com/avonderau/OpenLinkHub/releases)**. The first tagged fork release is `0.9.4N` (upstream `0.9.4` plus the Nexus fork's `N` suffix).
 
+**Native packages (Linux amd64):** The `0.9.4N` release includes a `.deb` for Debian/Ubuntu/Linux Mint and a `.rpm` for Fedora/RHEL, in addition to the original portable tarball. On a conventional systemd installation, download the appropriate package and its `.sha256` file from [release 0.9.4N](https://github.com/avonderau/OpenLinkHub/releases/tag/0.9.4N) and verify the checksum before installing:
+
+```bash
+# Debian, Ubuntu or Mint:
+sha256sum -c OpenLinkHub-Nexus_0.9.4N_amd64.deb.sha256
+sudo apt install ./OpenLinkHub-Nexus_0.9.4N_amd64.deb
+
+# Fedora, RHEL or compatible:
+sha256sum -c OpenLinkHub-Nexus-0.9.4N-1.x86_64.rpm.sha256
+sudo dnf install ./OpenLinkHub-Nexus-0.9.4N-1.x86_64.rpm
+```
+
+**Before migrating from another installation:** Back up `config.json`, device profiles, macros and saved Nexus layouts. The native packages install the `OpenLinkHub.service` system service and may conflict with existing manual, upstream or user-service installations. See the [release notes](docs/releases/0.9.4N.md) for details. For immutable distributions, use the portable bundle instead of DEB/RPM.
+
 The fork's [remote installer](https://github.com/avonderau/OpenLinkHub/blob/main/remote-install.sh) downloads release assets **from this repository**, not upstream. Review the script before running it. Existing upstream package managers and releases do **not** contain these Nexus changes.
 
 See the [0.9.4N security review](docs/security-review-0.9.4N.md) and [desktop launcher guide](docs/nexus-desktop-launch.md) for installation and security boundaries.
