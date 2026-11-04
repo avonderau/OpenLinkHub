@@ -746,7 +746,9 @@ test('Settings pilot preserves actions, localization and all seven section icons
  }
  assert.equal((page.match(/class="olh-section-icon"/g)||[]).length,7,'one icon per section');
  assert.match(page,/class="main-content p-4 olh-settings-page"/);
- assert.match(page,/class="olh-settings-shell"/);
+ assert.equal((page.match(/class="olh-settings-subheading"/g)||[]).length,3,'Dashboard options are grouped by purpose');
+ assert.match(page,/for="keyboardLayout"/,'keyboard layout label targets correct field');
+  assert.match(page,/class="olh-settings-shell"/);
  assert.match(page,/class="olh-settings-nav" role="tablist"/);
  assert.equal((page.match(/class="olh-settings-nav-tab"/g)||[]).length,3);
  assert.equal((page.match(/class="olh-settings-tab-panel"/g)||[]).length,3);
