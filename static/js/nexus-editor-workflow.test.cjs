@@ -394,6 +394,21 @@ test('content type changes Text Image Clock from Selected Widget',async()=>{
  }
 });
 
+test('Nexus editor leaves jQuery available to initialize the sidebar collapse button',()=>{
+ const page=fs.readFileSync(path.join(__dirname,'..','..','web','nexus.html'),'utf8');
+ const sidebar=fs.readFileSync(path.join(__dirname,'sidebar.js'),'utf8');
+ assert.ok(page.indexOf('/static/js/nexus-editor.js')<page.indexOf('/static/js/sidebar.js'),
+  'Nexus editor loads before sidebar initialization on the device page');
+ assert.match(sidebar,/\$\(document\)\.ready\(/,'sidebar uses jQuery ready');
+ assert.match(sidebar,/\$\('#sidebarToggle'\)\.on\('click'/,'sidebar binds collapse click with jQuery');
+ const {context}=makeEditor();
+ const jQuery=function(){return {ready(callback){callback()}}};
+ context.$=jQuery;
+ context.jQuery=jQuery;
+ assert.equal(vm.runInContext('$ === jQuery',context),true,
+  'editor must not shadow the global jQuery $ binding for scripts that load afterward');
+});
+
 test('site-wide fork theme loads after upstream CSS without replacing the upstream theme',()=>{
  const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
  const overlayPath=path.join(__dirname,'..','css','openlinkhub-fork-theme.css');
