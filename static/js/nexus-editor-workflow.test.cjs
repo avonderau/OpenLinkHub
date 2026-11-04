@@ -486,7 +486,7 @@ test('all secondary Nexus tabs use the shared compact inspector layout and retai
   for(const tab of ['widget','library','background','layout','applications']){
    assert.equal(html.split('id="nexus-tab-'+tab+'"').length-1,1,tab+' file tab remains present');
   }
-  assert.ok(html.indexOf('id="preview"')<html.indexOf('nexus-editor-tablist'), 'screen preview stays above tabs');
+  assert.ok(html.indexOf('id="preview"')<html.indexOf('class="nexus-editor-tablist"'), 'screen preview stays above tabs');
   assert.match(html,/id="image" accept="image\/png,image\/jpeg,image\/gif"/);
   assert.match(html,/id="layoutFile" type="file" accept="\.json,application\/json"/);
   for(const value of ['add-screen','replace-screen','replace-layout'])assert.ok(html.includes('value="'+value+'"'));
