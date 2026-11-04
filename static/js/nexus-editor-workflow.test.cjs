@@ -477,7 +477,7 @@ test('all secondary Nexus tabs use the shared compact inspector layout and retai
    assert.match(block,new RegExp('>'+info.label+'<\\/strong>'));
    assert.match(block,/class="nexus-tool-footer"/,tab+' has a concise informational footer');
    assert.doesNotMatch(block,/<fieldset\b/,tab+' should not use nested fieldsets');
-   for(const name of info.groups)assert.ok(block.includes('>'+name+'</h3>'),tab+' missing section '+name);
+   for(const name of info.groups)assert.ok(block.includes(' '+name+'</h3>'),tab+' missing section '+name);
    for(const id of info.controls){
     assert.equal(html.split('id="'+id+'"').length-1,1,id+' must occur exactly once');
     assert.ok(block.includes('id="'+id+'"'),tab+' must retain '+id+' in its tab');
