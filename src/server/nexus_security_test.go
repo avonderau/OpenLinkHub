@@ -50,3 +50,25 @@ func TestNexusUploadMediaTypes(t *testing.T){
   if nexusUploadMediaType(typ){t.Errorf("unsafe MIME %q accepted",typ)}
  }
 }
+
+func TestNexusLocalhostHostValidationBlocksDNSRebinding(t *testing.T){
+ checks:=[]struct{bind,host,origin string;allow bool}{
+  {"127.0.0.1","localhost:27003","",true},
+  {"127.0.0.1","127.0.0.1:27003","",true},
+  {"::1","[::1]:27003","",true},
+  {"localhost","LOCALHOST:27003","",true},
+  {"127.0.0.1","attacker.example:27003","",false},
+  {"127.0.0.1","attacker.localhost:27003","",false},
+  {"127.0.0.1","localhost.evil:27003","",false},
+  {"127.0.0.1","https://localhost:27003","",false},
+  {"127.0.0.1","trusted.example:443","https://trusted.example:443",true},
+  {"127.0.0.1","trusted.example:443","http://trusted.example:443",false},
+  {"127.0.0.1","attacker.example:443","https://trusted.example:443",false},
+  {"0.0.0.0","trusted.example:443","",true},
+ }
+ for _,tc:=range checks{
+  if got:=nexusHostAllowed(tc.bind,tc.host,tc.origin);got!=tc.allow{
+   t.Errorf("bind=%q host=%q origin=%q: got %t want %t",tc.bind,tc.host,tc.origin,got,tc.allow)
+  }
+ }
+}
