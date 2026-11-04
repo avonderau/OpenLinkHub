@@ -3,15 +3,49 @@ package server
 import (
  "OpenLinkHub/src/devices"
  "OpenLinkHub/src/devices/nexus"
+ "OpenLinkHub/src/config"
+ "OpenLinkHub/src/dashboard"
  "encoding/json"
  "io"
  "mime"
+ "net"
  "net/http"
  "net/url"
  "strings"
 )
 
+// Bind loopback-only Nexus APIs to loopback Host headers, preventing DNS
+// rebinding against an unauthenticated local WebUI. The operator may still
+// configure an authenticated HTTPS Origin for a reverse proxy.
+func nexusHostAllowed(listenAddress,requestHost,authOrigin string)bool{
+ listenIP:=net.ParseIP(listenAddress)
+ if !strings.EqualFold(listenAddress,"localhost") && (listenIP==nil||!listenIP.IsLoopback()){
+  return true
+ }
+ host:=requestHost
+ if h,_,err:=net.SplitHostPort(requestHost);err==nil{host=h}
+ if strings.ContainsAny(host,"@/\\")||host==""{return false}
+ if strings.EqualFold(host,"localhost"){return true}
+ if ip:=net.ParseIP(host);ip!=nil&&ip.IsLoopback(){return true}
+ if authOrigin!="" {
+  origin,err:=url.Parse(authOrigin)
+  if err==nil&&origin.Scheme=="https"&&origin.Host!=""&&
+   strings.EqualFold(origin.Host,requestHost)&&origin.User==nil&&
+   origin.Path==""&&origin.RawQuery==""&&origin.Fragment==""{
+   return true
+  }
+ }
+ return false
+}
+func nexusRequestHostAllowed(r *http.Request)bool{
+ authOrigin:=""
+ dashboardSettings:=dashboard.GetDashboard()
+ if dashboardSettings.AuthEnabled{authOrigin=dashboardSettings.AuthOrigin}
+ return nexusHostAllowed(config.GetConfig().ListenAddress,r.Host,authOrigin)
+}
+
 func nexusDevice(r *http.Request)(*nexus.Device,bool){
+ if !nexusRequestHostAllowed(r){return nil,false}
  serial:=r.URL.Query().Get("serial")
  if serial=="" {return nil,false}
  d,ok:=devices.GetDevice(serial).(*nexus.Device)
@@ -21,6 +55,7 @@ func nexusDevice(r *http.Request)(*nexus.Device,bool){
 // direct local CLI/API clients, but browser Fetch Metadata never permits
 // cross-site/same-site subdomain writes without an exact origin match.
 func nexusWriteAllowed(r *http.Request)bool{
+ if !nexusRequestHostAllowed(r){return false}
  switch r.Header.Get("Sec-Fetch-Site"){
  case "","none","same-origin":
  default:return false
