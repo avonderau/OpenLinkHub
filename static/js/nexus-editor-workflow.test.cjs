@@ -408,6 +408,20 @@ test('site-wide fork theme loads after upstream CSS without replacing the upstre
  assert.doesNotMatch(overlay,/!important\s*;?\s*\}\s*\*\s*\{/);
 });
 
+test('sidebar collapse remains visible after loading fork navigation styles',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','openlinkhub-fork-theme.css'),'utf8');
+ const original=fs.readFileSync(path.join(__dirname,'..','css','themes','default.css'),'utf8');
+ const sidebarJS=fs.readFileSync(path.join(__dirname,'sidebar.js'),'utf8');
+ assert.match(original,/\\.sidebar\\.collapsed \\.nav-link\\s*\\{[\\s\\S]*?font-size:\\s*0;/);
+ assert.match(sidebarJS,/sidebar\\.classList\\.toggle\\("collapsed"\\)/);
+ const rule=[...css.matchAll(/\\.sidebar\\.collapsed \\.nav-link\\s*\\{([^}]*)\\}/g)].at(-1)?.[1];
+ assert.ok(rule,'fork must explicitly preserve collapsed navigation style');
+ assert.match(rule,/font-size:\\s*0\\s*;/,'collapsed labels must stay hidden');
+ assert.match(rule,/gap:\\s*0\\s*;/,'collapsed icon alignment must be compact');
+ assert.match(rule,/padding:\\s*9px\\s*;/,'collapsed controls must keep compact padding');
+ assert.match(css,/\\.sidebar\\.collapsed \\.sidebar-text\\s*\\{display:none\\}/,'explicit labels must be hidden');
+});
+
 test('OpenLinkHub Nexus fork branding is present without renaming upstream routes',()=>{
  const head=fs.readFileSync(path.join(__dirname,'..','..','web','head.html'),'utf8');
  const sidebar=fs.readFileSync(path.join(__dirname,'..','..','web','sidebar.html'),'utf8');
