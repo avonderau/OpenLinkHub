@@ -296,10 +296,3 @@ func SnapshotProfile(id int) (Macro,bool) {
  return copy,true
 }
 
-// GetProfile will return macro profile based on macro ID
-func GetProfile(macroId int) *Macro {
-	if val, ok := macros[macroId]; ok {
-		return &val
-	}
-	return nil
-}
