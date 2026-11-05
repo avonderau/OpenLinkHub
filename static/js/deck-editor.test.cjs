@@ -138,17 +138,17 @@ async function run() {
   }
 
   assert.match(html, /<select class="form-select" id="deck-metric-style"/);
-  assert.match(html, /class="deck-metric-options" role="group" aria-label="Metric display options">\\s*<div class="deck-metric-option">/);
+  assert.match(html, /class="deck-metric-options" role="group" aria-label="Metric display options">\s*<div class="deck-metric-option">/);
   assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 3,
     'Source, Refresh and Visualization remain independent fields');
   const css = fs.readFileSync(path.join(__dirname, '..', 'css', 'deck-editor.css'), 'utf8');
-  assert.match(css, /\\.deck-metric-options\\s*\\{[^}]*grid-template-columns:\\s*minmax\\(0,1fr\\)/,
+  assert.match(css, /\.deck-metric-options\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\)/,
     'metric controls must stack at the actual narrow inspector width');
-  assert.match(css, /\\.deck-metric-option label\\s*\\{[^}]*display:block/,
+  assert.match(css, /\.deck-metric-option label\s*\{[^}]*display:block/,
     'labels must sit above selects instead of wrapping beside them');
-  assert.match(css, /\\.deck-property \\.deck-metric-option select\\s*\\{[^}]*width:100%/,
+  assert.match(css, /\.deck-property \.deck-metric-option select\s*\{[^}]*width:100%/,
     'selects must fill the inspector without exceeding its width');
-  assert.match(css, /\\.deck-metric-option\\[hidden\\]\\{display:none!important\\}/,
+  assert.match(css, /\.deck-metric-option\[hidden\]\{display:none!important\}/,
     'missing metric sources must not leave an empty row');
   assert.ok(!html.includes("Mini graph"), "metric UI must use visualization names");
   assert.match(html, /id="deck-metric-color" type="color"/);
