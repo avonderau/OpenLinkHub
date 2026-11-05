@@ -101,12 +101,25 @@ async function run() {
     console,
   }, { filename: 'deck-editor.js' });
 
+  // Nonessential helper copy should stay out of the Deck inspector.
+  const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
+  for (const hiddenCopy of [
+    'Changes appear in the preview immediately',
+    'Actions trigger when you press the physical Mirabox key',
+    'Uses the same validated virtual-keyboard backend',
+    'More button actions are coming',
+    'Saved macros reuse the existing Nexus macro engine',
+  ]) {
+    assert.ok(!html.includes(hiddenCopy), `obsolete Deck helper copy: ${hiddenCopy}`);
+  }
+
   // load() fetches data asynchronously and builds the preview.
   await new Promise(resolve => setImmediate(resolve));
   const grid = nodes['deck-key-grid'];
   assert.equal(grid.children.length, 18, 'all LCD keys should be previewed');
   assert.equal(nodes['deck-save'].disabled, false, 'Save & Apply must work even without edits');
   assert.equal(nodes['deck-connection-state'].dataset.connected, 'true');
+  assert.equal(nodes['deck-metric-status'].textContent, '', 'empty metric selection has no helper sentence');
 
   grid.children[0].dispatch('click');
   const label = nodes['deck-key-label'];
@@ -220,6 +233,7 @@ async function run() {
   metric.value = '';
   metric.dispatch('change');
   assert.equal(grid.children[4].dataset.hasMetric, undefined);
+  assert.equal(nodes['deck-metric-status'].textContent, '', 'clearing metric hides generic copy');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[7].pages[1].keys.some(key => key.index === 4), false);
   // Standalone shortcuts remain supported alongside saved macros.
