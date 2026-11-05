@@ -46,6 +46,15 @@ func MiraboxInitialize(writer outputReporter,m Model)error{
  return writeMiraboxReport(writer,m,miraboxCommand("LIG",0,0,0,0))
 }
 
+// initializeMiraboxSession follows the startup order used by mirajazz and
+// the OpenDeck AKP153 plugin: initialize the HID protocol and establish
+// a visible brightness level before polling the device's input stream.
+func initializeMiraboxSession(writer outputReporter,m Model)error{
+ if err:=MiraboxInitialize(writer,m);err!=nil{return fmt.Errorf("initialize protocol: %w",err)}
+ if err:=MiraboxBrightness(writer,m,50);err!=nil{return fmt.Errorf("set startup brightness: %w",err)}
+ return nil
+}
+
 func MiraboxBrightness(writer outputReporter,m Model,percent uint8)error{
  if percent>100{return errors.New("brightness must be 0-100")}
  return writeMiraboxReport(writer,m,miraboxCommand("LIG",0,0,percent))
