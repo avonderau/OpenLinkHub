@@ -12,6 +12,7 @@ import (
 	"OpenLinkHub/src/config"
 	"OpenLinkHub/src/dashboard"
 	"OpenLinkHub/src/devices"
+	"OpenLinkHub/src/devices/deck"
 	"OpenLinkHub/src/devices/lcd"
 	"OpenLinkHub/src/devices/nexus"
 	"OpenLinkHub/src/devices/xeneonedge"
@@ -159,6 +160,7 @@ type Payload struct {
 	PerfAltF4                     bool                  `json:"perf_altF4"`
 	Save                          bool                  `json:"save"`
 	SupportedDevices              map[uint16]bool       `json:"supportedDevices"`
+	DeckSupportedDevices          map[string]bool       `json:"deckSupportedDevices"`
 	VibrationValue                uint8                 `json:"vibrationValue"`
 	VibrationModule               uint8                 `json:"vibrationModule"`
 	EmulationDevice               uint8                 `json:"emulationDevice"`
@@ -5341,12 +5343,28 @@ func ProcessSetSupportedDevices(r *http.Request) *Payload {
 			Status:  0,
 		}
 	}
-	if len(req.SupportedDevices) > 0 {
-		config.UpdateSupportedDevices(req.SupportedDevices)
-		return &Payload{Message: language.GetValue("txtSupportedDeviceListUpdated"), Code: http.StatusOK, Status: 1}
-	} else {
+	if len(req.SupportedDevices) == 0 && len(req.DeckSupportedDevices) == 0 {
 		return &Payload{Message: language.GetValue("txtSupportedDeviceListUpdated"), Code: http.StatusOK, Status: 0}
 	}
+
+	// Never persist arbitrary vendor/product IDs supplied by a web client.
+	// Restrict Deck exclusions to the same model registry used by detection.
+	allowedDecks := make(map[string]bool)
+	for _, model := range deck.SupportedModels() {
+		allowedDecks[deck.DeviceKey(model.VendorID, model.ProductID)] = true
+	}
+	for key := range req.DeckSupportedDevices {
+		if !allowedDecks[key] {
+			return &Payload{Message: language.GetValue("txtUnableToValidateRequest"), Code: http.StatusOK, Status: 0}
+		}
+	}
+	if len(req.SupportedDevices) > 0 {
+		config.UpdateSupportedDevices(req.SupportedDevices)
+	}
+	if len(req.DeckSupportedDevices) > 0 {
+		config.UpdateSupportedDeckDevices(req.DeckSupportedDevices)
+	}
+	return &Payload{Message: language.GetValue("txtSupportedDeviceListUpdated"), Code: http.StatusOK, Status: 1}
 }
 
 // ProcessControllerVibration will process POST request from a client for device vibration change

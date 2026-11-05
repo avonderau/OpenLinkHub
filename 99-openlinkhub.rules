@@ -190,3 +190,10 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="1b20", MODE="0660
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="2e95", ATTRS{idProduct}=="434d", MODE="0660", OWNER="openlinkhub"
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="2e95", ATTRS{idProduct}=="434e", MODE="0660", OWNER="openlinkhub"
 KERNEL=="uinput", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput", OWNER="openlinkhub"
+
+# Fork-owned Mirabox Deck support: grant HID access to the OpenLinkHub daemon.
+# Scope to exact vendor/product pairs; do not grant access to all HID devices.
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="6670", MODE="0660", OWNER="openlinkhub"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="6603", ATTRS{idProduct}=="1014", MODE="0660", OWNER="openlinkhub"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="6603", ATTRS{idProduct}=="1005", MODE="0660", OWNER="openlinkhub"
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="6674", MODE="0660", OWNER="openlinkhub"

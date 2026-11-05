@@ -25,6 +25,7 @@ type Configuration struct {
 	MemorySmBus               string   `json:"memorySmBus"`
 	MemoryType                int      `json:"memoryType"`
 	Exclude                   []uint16 `json:"exclude"`
+	DeckExclude               []string `json:"deckExclude"`
 	MemorySku                 string   `json:"memorySku"`
 	ConfigPath                string   `json:",omitempty"`
 	ResumeDelay               int      `json:"resumeDelay"`
@@ -54,6 +55,7 @@ var (
 	configuration Configuration
 	upgrade       = map[string]any{
 		"memorySku":                 "",
+		"deckExclude":               []string{},
 		"resumeDelay":               15000,
 		"logLevel":                  "info",
 		"logFile":                   "",
@@ -129,6 +131,29 @@ func UpdateSupportedDevices(productIds map[uint16]bool) uint8 {
 	return 1
 }
 
+// DeckEnabled reports whether a specific Deck VID:PID is enabled. Keeping these
+// exclusions independent of the legacy PID-only Corsair list prevents cross-
+// vendor product ID collisions.
+func DeckEnabled(deviceKey string) bool {
+	return !slices.Contains(configuration.DeckExclude, deviceKey)
+}
+
+// UpdateSupportedDeckDevices persists vendor-qualified Deck exclusions.
+// IDs are validated against the model registry by the request layer.
+func UpdateSupportedDeckDevices(enabled map[string]bool) uint8 {
+	for deviceKey, isEnabled := range enabled {
+		if isEnabled {
+			if i := slices.Index(configuration.DeckExclude, deviceKey); i != -1 {
+				configuration.DeckExclude = append(configuration.DeckExclude[:i], configuration.DeckExclude[i+1:]...)
+			}
+		} else if !slices.Contains(configuration.DeckExclude, deviceKey) {
+			configuration.DeckExclude = append(configuration.DeckExclude, deviceKey)
+		}
+	}
+	saveConfigSettings(configuration)
+	return 1
+}
+
 // IsSystemService will return true if service runs under system context
 func IsSystemService() bool {
 	return systemService
@@ -149,6 +174,7 @@ func upgradeFile(cfg string) {
 			MemorySmBus:               "i2c-0",
 			MemoryType:                5,
 			Exclude:                   make([]uint16, 0),
+			DeckExclude:               make([]string, 0),
 			MemorySku:                 "",
 			ResumeDelay:               15000,
 			LogLevel:                  "info",

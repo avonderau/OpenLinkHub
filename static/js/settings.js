@@ -10,6 +10,7 @@ $(document).ready(function () {
             },
             paging: true,
             searching: true,
+            autoWidth: false,
             language: {
                 emptyTable: "Supported device list",
                 searchPlaceholder: "Search for device..."
@@ -21,6 +22,13 @@ $(document).ready(function () {
                 bottomEnd: 'pageLength'
             },
             columns: [
+                {
+                    data: 'VendorId',
+                    title: 'Vendor ID',
+                    render: function(data) {
+                        return '0x' + Number(data).toString(16).toUpperCase().padStart(4, '0');
+                    }
+                },
                 { data: 'ProductId', title: 'Product Id' },
                 {
                     data: 'ProductId',
@@ -38,7 +46,7 @@ $(document).ready(function () {
                         const checked = data ? 'checked' : '';
                         return `
                             <label class="system-toggle compact">
-                                <input type="checkbox" class="device-checkbox" data-id="${row.ProductId}" ${checked}>
+                                <input type="checkbox" class="device-checkbox" data-id="${row.DeviceKey}" ${checked}>
                                 <span class="toggle-track"></span>
                             </label>
                         `;
@@ -171,19 +179,50 @@ $(document).ready(function () {
         });
     });
 
-    $.ajax({
-        url: '/api/getSupportedDevices',
-        dataType: 'JSON',
-        success: function(response) {
-            if (response.code === 0) {
-                toast.warning(response.message);
-            } else {
-                dt.clear();
-                dt.rows.add(response.data);
-                dt.draw();
+    // The Devices tab is initially hidden. Report API and table errors
+    // instead of silently leaving a blank supported-hardware list.
+    const supportedDevicesStatus = $('#olh-supported-devices-status');
+    function showSupportedDeviceStatus(text, isError = false) {
+        supportedDevicesStatus.text(text);
+        supportedDevicesStatus.toggleClass('is-error', isError);
+    }
+    function loadSupportedDevices() {
+        showSupportedDeviceStatus('Loading supported device models...');
+        $.ajax({
+            url: '/api/getSupportedDevices',
+            dataType: 'json',
+            cache: false,
+            success: function(response) {
+                if (response.code !== 200 || !Array.isArray(response.data)) {
+                    showSupportedDeviceStatus('Unable to load supported devices: invalid API response. Refresh the page to retry.', true);
+                    return;
+                }
+                try {
+                    dt.clear();
+                    dt.rows.add(response.data);
+                    dt.draw();
+                    showSupportedDeviceStatus(
+                        response.data.length
+                            ? response.data.length + ' supported device models available.'
+                            : 'The server returned no supported device models. Check the running OpenLinkHub build.',
+                        response.data.length === 0
+                    );
+                    // DataTables may have initialized under a hidden tab:
+                    // resize after it is visible, not during a zero-width layout.
+                    if (!document.getElementById('olh-settings-devices')?.hidden) {
+                        window.requestAnimationFrame(() => dt.columns.adjust().draw(false));
+                    }
+                } catch (error) {
+                    console.error('Supported device table failed to render:', error);
+                    showSupportedDeviceStatus('Unable to display supported devices. Check the browser console for a table error.', true);
+                }
+            },
+            error: function(xhr) {
+                showSupportedDeviceStatus('Unable to load supported devices (HTTP ' + xhr.status + '). Refresh to retry.', true);
             }
-        }
-    });
+        });
+    }
+    loadSupportedDevices();
 
     dt.on('change', '.device-checkbox', function() {
         const productId = $(this).data('id');
@@ -198,12 +237,18 @@ $(document).ready(function () {
 
     $('#btnSaveSupportedDevices').on('click', function() {
         const supportedDevices = {};
+        const deckSupportedDevices = {};
         const pf = {};
         dt.rows().every(function() {
             const data = this.data();
-            supportedDevices[data.ProductId] = data.Enabled; // true/false
+            if (data.Family === 'deck') {
+                deckSupportedDevices[data.DeviceKey] = data.Enabled;
+            } else {
+                supportedDevices[data.ProductId] = data.Enabled;
+            }
         });
         pf["supportedDevices"] = supportedDevices;
+        pf["deckSupportedDevices"] = deckSupportedDevices;
         const json = JSON.stringify(pf, null, 2);
 
         $.ajax({

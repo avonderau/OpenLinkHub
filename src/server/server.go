@@ -2910,6 +2910,9 @@ func setRoutes() http.Handler {
 	r.HandleFunc("/api/nexus/telemetry", nexusTelemetryAPI)
 	r.HandleFunc("/api/nexus/background", nexusBackgroundAPI)
 	r.HandleFunc("/api/nexus/icon", nexusCustomIconAPI)
+	// Fork-owned Deck Editor endpoints.
+	r.HandleFunc("/api/deck/layout", deckLayoutAPI)
+	r.HandleFunc("/api/deck/status", deckStatusAPI)
 
 	// GET
 	handleFunc(r, "/api/", http.MethodGet, homePage)

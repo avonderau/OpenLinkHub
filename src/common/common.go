@@ -95,6 +95,7 @@ const (
 	ProductTypeHydro                = 11
 	ProductTypeNautilusLcdCap       = 12
 	ProductTypeCorsairOne           = 13
+	ProductTypeDeck                 = 800 // Native programmable key decks (Elgato/Mirabox)
 	ProductTypeK65PM                = 101
 	ProductTypeK70Core              = 102
 	ProductTypeK55Core              = 103

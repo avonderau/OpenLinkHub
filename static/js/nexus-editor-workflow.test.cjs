@@ -757,7 +757,7 @@ test('Settings pilot preserves actions, localization and all seven section icons
  assert.match(page,/id="olh-settings-security" role="tabpanel"/);
  assert.match(page,/class="olh-page-intro"/);
  assert.match(page,/\{\{ \.Lang "txtSettings" \}\}/,'page heading uses current localization');
- assert.match(page,/src="\/static\/js\/settings\.js"/);
+ assert.match(page,/src="\/static\/js\/settings\.js(?:\?[^"]*)?"/);
  assert.match(page,/src="\/static\/js\/sidebar\.js"/);
  assert.match(page,/\{\{ if \.Dashboard\.TemperatureBar \}\}/);
 });
