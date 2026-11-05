@@ -121,11 +121,11 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
   // Text clipping uses each widget's selected font metrics.
   drawStyledNexusText(canvas,w,w.Y+11,label,ink)
   if w.Type=="graph"{
-   drawNexusHistoryGraph(canvas,bounds,w.Metric,history[w.Metric],ink)
+   drawNexusHistoryGraph(canvas,bounds,w.Metric,history[QualifiedMetricKey(w.Metric,w.Settings["metricSource"])],ink)
    return
   }
   if w.Type=="text" || w.Type=="button" || w.Type=="macro" {return}
-  value,ok:=values[w.Metric]
+  value,ok:=values[QualifiedMetricKey(w.Metric,w.Settings["metricSource"])]
   shown:="--"
   if ok&&!math.IsNaN(value)&&!math.IsInf(value,0) {shown=fmt.Sprintf("%.1f",value)}
   if unit:=w.Settings["unit"];unit!=""&&shown!="--" {shown+=unit}

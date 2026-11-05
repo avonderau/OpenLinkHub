@@ -160,3 +160,13 @@ preserved; no conversion or migration is required.
 
 Deck's macro execution reuses the bounded Nexus macro runner. Page navigation,
 media controls, artwork and live metrics remain available.
+
+### Selecting individual telemetry sources
+
+For a metric that has multiple host sources, use the **Source** control in
+the selected metric, bar, or graph widget. Disk usage and free-space metrics
+select a mounted filesystem (such as `/` or `/home`), disk read/write
+metrics select a block device, and network receive/transmit metrics select an
+interface. The automatic selection continues to work with existing saved
+layouts. If a selected device is removed, the display shows an unavailable
+reading instead of silently switching to a different source.

@@ -13,6 +13,9 @@
   const removeArtworkButton = document.getElementById('deck-remove-image');
   const artworkStatus = document.getElementById('deck-icon-status');
   const metricInput = document.getElementById('deck-key-metric');
+  const metricSourceSelect = document.getElementById('deck-metric-source');
+  const metricSourceProperty = document.getElementById('deck-metric-source-property');
+  let metricSources = {};
   const metricInterval = document.getElementById('deck-metric-interval');
   const metricStyle = document.getElementById('deck-metric-style');
   const metricColor = document.getElementById('deck-metric-color');
@@ -164,8 +167,10 @@
       delete key.showGraph;
       delete key.metricStyle;
       delete key.metricColor;
+      delete key.metricSource;
     }
     if (!key.metricColor) delete key.metricColor;
+    if (!key.metricSource) delete key.metricSource;
     if (key.label || key.action || key.icon || key.metric) page.keys.push(key);
     page.keys.sort((a, b) => a.index - b.index);
     setDirty();
@@ -206,7 +211,8 @@
       if (configured?.metric) {
         const live = document.createElement('span');
         live.className = 'deck-live-value';
-        live.textContent = formatMetricPreview(configured.metric);
+        live.textContent = formatMetricPreview(
+          configured.metricSource ? configured.metric + '|' + configured.metricSource : configured.metric);
         live.style.color = safeMetricColor(configured.metricColor);
         button.appendChild(live);
         button.dataset.hasMetric = 'true';
@@ -258,6 +264,28 @@
     const hasMetric = valid && !!key?.metric;
     metricInput.disabled = !valid;
     metricInput.value = key?.metric || '';
+    const sourceChoices = metricSources[key?.metric] || [];
+    const selectedSource = key?.metricSource || '';
+    metricSourceProperty.hidden = !hasMetric || (sourceChoices.length === 0 && !selectedSource);
+    metricSourceSelect.disabled = !hasMetric;
+    metricSourceSelect.replaceChildren();
+    const autoSource = document.createElement('option');
+    autoSource.value = '';
+    autoSource.textContent = 'Automatic / default';
+    metricSourceSelect.appendChild(autoSource);
+    for (const source of sourceChoices) {
+      const option = document.createElement('option');
+      option.value = source.id;
+      option.textContent = source.label;
+      metricSourceSelect.appendChild(option);
+    }
+    if (selectedSource && !sourceChoices.some(source => source.id === selectedSource)) {
+      const unavailable = document.createElement('option');
+      unavailable.value = selectedSource;
+      unavailable.textContent = selectedSource + ' (unavailable)';
+      metricSourceSelect.appendChild(unavailable);
+    }
+    metricSourceSelect.value = selectedSource;
     metricInterval.disabled = !hasMetric;
     metricInterval.value = String(key?.refreshSeconds || 5);
     metricStyle.disabled = !hasMetric;
@@ -266,7 +294,7 @@
     metricColor.value = safeMetricColor(key?.metricColor) || defaultMetricColor;
     metricColorReset.disabled = !hasMetric || !safeMetricColor(key?.metricColor);
     metricStatus.textContent = hasMetric
-      ? (Number.isFinite(metricLive[key.metric])
+      ? (Number.isFinite(metricLive[key.metricSource ? key.metric + '|' + key.metricSource : key.metric])
         ? 'Live reading available from this computer.'
         : 'No current reading. Unavailable sensors display —.')
       : '';
@@ -344,9 +372,13 @@
   });
   metricInput.addEventListener('change', () => {
     const metric = metricInput.value;
-    setKeyProperties(metric ? { metric, refreshSeconds: 5, metricStyle: 'value', showGraph: false } :
-      { metric: '', refreshSeconds: 0, metricStyle: '', showGraph: false });
+    setKeyProperties(metric ? { metric, metricSource: '', refreshSeconds: 5, metricStyle: 'value', showGraph: false } :
+      { metric: '', metricSource: '', refreshSeconds: 0, metricStyle: '', showGraph: false });
     renderInspector();
+  });
+  metricSourceSelect.addEventListener('change', () => {
+    if (!metricInput.value) return;
+    setKeyProperties({ metricSource: metricSourceSelect.value });
   });
   metricInterval.addEventListener('change', () => {
     if (!metricInput.value) return;
@@ -565,6 +597,16 @@
     }
   });
 
+  async function loadMetricSources() {
+    try {
+      const response = await fetch('/api/telemetry/sources', { cache: 'no-store' });
+      if (response.ok) {
+        const result = await response.json();
+        metricSources = result?.sources || {};
+        renderInspector();
+      }
+    } catch (_error) { /* Previously saved sources stay visible as unavailable. */ }
+  }
   async function refreshStatus() {
     try {
       const status = await api('status');
@@ -612,6 +654,7 @@
       setMessage(`Cannot load Deck layout: ${error.message}`, 'error');
     }
     refreshStatus();
+    loadMetricSources();
     setInterval(refreshStatus, 3000);
   }
 

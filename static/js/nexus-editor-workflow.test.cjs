@@ -42,6 +42,13 @@ function makeEditor(){
   prompt(){return 'demo-nexus'},
   confirm(){return true},
   fetch:async(url,options={})=>{
+   if(url.startsWith('/api/telemetry/sources'))return {
+    ok:true,json:async()=>({sources:{
+     'disk.free_gb':[{id:'mount:/',label:'/'},{id:'mount:/home',label:'/home'}],
+     'disk.read_rate':[{id:'disk:sda',label:'/dev/sda'}],
+     'network.rx_rate':[{id:'net:eth0',label:'eth0'}],
+    }})
+   };
    if(url.startsWith('/static/nexus/templates/')){
     const id=url.split('/').pop();
     const file=path.join(__dirname,'..','nexus','templates',id);
@@ -858,6 +865,31 @@ test('Nexus media preview uses LCD pixel-shape masks and default captions with c
  const input=find(node('properties'),el=>el.type==='text'&&el.placeholder==='Previous');
  assert.ok(input,'default media caption is visible as inspector placeholder');
  assert.equal(screen.widgets[0].settings.label,'','default caption must not be stored as custom label');
+});
+
+test('Nexus metrics expose disk and network sources and retain selections',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'disk_metric',type:'metric',metric:'disk.free_gb',
+  x:0,y:0,width:145,height:48,settings:{}});
+ vm.runInContext("selected='disk_metric';render()",context);
+ const find=(el,pred)=>pred(el)?el:(el.children||[]).map(child=>find(child,pred)).find(Boolean);
+ let picker=find(node('properties'),el=>el.attributes?.['aria-label']==='Metric source');
+ assert.ok(picker,'disk metric needs a source selector');
+ assert.equal(picker.options.some(o=>o.value==='mount:/home'),true);
+ picker.value='mount:/home';
+ picker.listeners.change();
+ assert.equal(screen.widgets[0].settings.metricSource,'mount:/home');
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].widgets[0].settings.metricSource,'mount:/home');
+ const metricChoice=find(node('properties'),el=>el.options?.some(option=>option.value==='cpu.temperature'));
+ assert.ok(metricChoice,'metric dropdown missing');
+ metricChoice.value='cpu.temperature';
+ metricChoice.listeners.change();
+ assert.equal(screen.widgets[0].settings.metricSource,undefined,'changing metrics clears previous source');
+ picker=find(node('properties'),el=>el.attributes?.['aria-label']==='Metric source');
+ assert.equal(picker,undefined,'single-source CPU metrics should not display the selector');
 });
 
 test('all six media keys retain absolute positioning and their saved preview slots',async()=>{

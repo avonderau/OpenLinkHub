@@ -25,6 +25,7 @@ type KeyConfig struct {
  Target string `json:"target,omitempty"`
  Icon string `json:"icon,omitempty"`
  Metric string `json:"metric,omitempty"`
+ MetricSource string `json:"metricSource,omitempty"`
  RefreshSeconds int `json:"refreshSeconds,omitempty"`
  ShowGraph bool `json:"showGraph,omitempty"` // Kept for older saved layouts.
  MetricStyle string `json:"metricStyle,omitempty"`
@@ -64,6 +65,9 @@ func (l Layout)Validate(m Model)error{
     return fmt.Errorf("key %d: invalid image reference",key.Index)
    }
    if key.Metric!="" {
+    if key.MetricSource!="" && !nexus.ValidMetricSource(key.Metric,key.MetricSource) {
+     return fmt.Errorf("key %d: invalid metric source",key.Index)
+    }
     if key.MetricColor!="" && !deckMetricColorPattern.MatchString(key.MetricColor) {
      return fmt.Errorf("key %d: invalid metric visualization color",key.Index)
     }
@@ -76,7 +80,7 @@ func (l Layout)Validate(m Model)error{
     if key.RefreshSeconds!=0 && (key.RefreshSeconds<2||key.RefreshSeconds>60) {
      return fmt.Errorf("key %d: refresh interval must be 2-60 seconds",key.Index)
     }
-   } else if key.RefreshSeconds!=0||key.ShowGraph||key.MetricStyle!=""||key.MetricColor!="" {
+   } else if key.RefreshSeconds!=0||key.ShowGraph||key.MetricStyle!=""||key.MetricColor!=""||key.MetricSource!="" {
     return fmt.Errorf("key %d: metric settings without metric",key.Index)
    }
    for _,char:=range key.Label{

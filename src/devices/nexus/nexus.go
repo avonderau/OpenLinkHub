@@ -162,6 +162,7 @@ type Device struct {
 	// Fork-owned programmable screen state, kept separate from upstream profiles.
 	customScreens ScreenConfiguration
 	customSampler CounterSampler
+	customSourceSampler SourceRateSampler
 	lastCycle time.Time
 	macroRunning bool
 	activeNexusApps []string

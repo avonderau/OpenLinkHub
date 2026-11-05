@@ -54,6 +54,7 @@ type Device struct {
  metricUpdated map[string]time.Time
  metricSampleAt time.Time
  counterSampler nexus.CounterSampler
+ sourceSampler nexus.SourceRateSampler
  metricReader func() nexus.MetricSnapshot
  // Used only by tests; nil uses the real shared Nexus input backend.
  inputActionRunner func(string,string)error
@@ -227,8 +228,9 @@ func(d *Device)drawKeyLocked(index int,key KeyConfig)error{
  }
  var frame image.Image
  if key.Metric!="" {
-  value,available:=d.metricValues[key.Metric]
-  frame=renderDeckMetric(size,key,value,available,d.metricHistory[key.Metric],artwork)
+  qualified:=nexus.QualifiedMetricKey(key.Metric,key.MetricSource)
+  value,available:=d.metricValues[qualified]
+  frame=renderDeckMetric(size,key,value,available,d.metricHistory[qualified],artwork)
  }else if artwork!=nil {
   frame=renderDeckArtwork(size,artwork,keyDisplayLabel(key))
  }else if key.Action=="media" {
