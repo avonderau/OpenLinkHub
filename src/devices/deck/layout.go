@@ -25,7 +25,8 @@ type KeyConfig struct {
  Icon string `json:"icon,omitempty"`
  Metric string `json:"metric,omitempty"`
  RefreshSeconds int `json:"refreshSeconds,omitempty"`
- ShowGraph bool `json:"showGraph,omitempty"`
+ ShowGraph bool `json:"showGraph,omitempty"` // Kept for older saved layouts.
+ MetricStyle string `json:"metricStyle,omitempty"`
 }
 type Page struct {
  ID string `json:"id"`
@@ -61,13 +62,16 @@ func (l Layout)Validate(m Model)error{
     return fmt.Errorf("key %d: invalid image reference",key.Index)
    }
    if key.Metric!="" {
+    if key.MetricStyle!="" && key.MetricStyle!="value" && key.MetricStyle!="line" && key.MetricStyle!="bars" && key.MetricStyle!="fuel" && key.MetricStyle!="ring" {
+     return fmt.Errorf("key %d: unsupported metric visualization %q",key.Index,key.MetricStyle)
+    }
     if !nexus.IsSupportedMetric(key.Metric) {
      return fmt.Errorf("key %d: unsupported metric",key.Index)
     }
     if key.RefreshSeconds!=0 && (key.RefreshSeconds<2||key.RefreshSeconds>60) {
      return fmt.Errorf("key %d: refresh interval must be 2-60 seconds",key.Index)
     }
-   } else if key.RefreshSeconds!=0||key.ShowGraph {
+   } else if key.RefreshSeconds!=0||key.ShowGraph||key.MetricStyle!="" {
     return fmt.Errorf("key %d: metric settings without metric",key.Index)
    }
    for _,char:=range key.Label{

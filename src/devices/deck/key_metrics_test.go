@@ -23,6 +23,8 @@ func TestDeckMetricLayoutValidation(t *testing.T) {
 		{Index: 0, Metric: "cpu.temperature", RefreshSeconds: 61},
 		{Index: 0, RefreshSeconds: 5},
 		{Index: 0, ShowGraph: true},
+		{Index: 0, MetricStyle: "ring"},
+		{Index: 0, Metric: "cpu.utilization", MetricStyle: "unexpected"},
 	} {
 		layout := DefaultLayout(d.Model)
 		layout.Pages[0].Keys = []KeyConfig{bad}
@@ -118,6 +120,9 @@ func TestDeckMetricRenderAndFormatting(t *testing.T) {
 		}
 	}
 	key := KeyConfig{Metric: "cpu.utilization", ShowGraph: true, Label: "CPU"}
+	if deckMetricVisualizationStyle(key) != "line" {
+		t.Fatal("legacy showGraph layout must remain a line graph")
+	}
 	frame := renderDeckMetric(85, key, 48.5, true, []float64{10, 50, 90, 45}, nil)
 	if frame.Bounds() != image.Rect(0, 0, 85, 85) {
 		t.Fatal("live metric frame is not native key dimensions")
@@ -145,5 +150,31 @@ func TestMetricDueKeysHonorsPageAndTime(t *testing.T) {
 	due := metricDueKeys(page, last, now.Add(3*time.Second))
 	if len(due) != 1 || due[0].Index != 1 {
 		t.Fatalf("incorrect due keys: %+v", due)
+	}
+}
+
+func TestDeckMetricVisualizationStylesAndUnavailableReadings(t *testing.T) {
+	for _, style := range []string{"value", "line", "bars", "fuel", "ring"} {
+		key := KeyConfig{Metric: "cpu.utilization", MetricStyle: style, Label: "CPU"}
+		available := renderDeckMetric(85, key, 54, true, []float64{10, 35, math.NaN(), 54, 90}, nil)
+		if available.Bounds() != image.Rect(0, 0, 85, 85) {
+			t.Fatalf("%s: wrong LCD dimensions: %v", style, available.Bounds())
+		}
+		unavailable := renderDeckMetric(85, key, 0, false, []float64{math.NaN()}, nil)
+		if unavailable.Bounds() != available.Bounds() {
+			t.Fatalf("%s: unavailable metric changed LCD dimensions", style)
+		}
+	}
+	if got := deckMetricVisualizationStyle(KeyConfig{MetricStyle: "value", ShowGraph: true}); got != "value" {
+		t.Fatalf("explicit choice must override legacy flag: %q", got)
+	}
+	if got := deckMetricGaugeFraction("cpu.utilization", 50, nil); math.Abs(got-0.5) > 0.001 {
+		t.Fatalf("percentage gauge is not half full: %f", got)
+	}
+	if got := deckMetricGaugeFraction("cpu.temperature", 1000, nil); got != 1 {
+		t.Fatalf("temperature gauge must clamp to full scale: %f", got)
+	}
+	if got := deckMetricGaugeFraction("fan.rpm", math.NaN(), nil); got != 0 {
+		t.Fatalf("non-finite reading filled gauge: %f", got)
 	}
 }

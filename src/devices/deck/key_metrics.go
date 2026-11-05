@@ -107,9 +107,7 @@ func renderDeckMetric(size int, key KeyConfig, value float64, available bool, hi
 		text = deckMetricNumber(key.Metric, value)
 	}
 	drawCenteredDeckString(canvas, text, size/2+6, color.White)
-	if key.ShowGraph {
-		drawDeckSparkline(canvas, history, key.Metric)
-	}
+	renderDeckMetricVisualization(canvas, key, value, available, history)
 	return canvas
 }
 
