@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+{{ template "head" . }}
+<link rel="stylesheet" href="/static/css/deck-editor.css">
+<body>
+<div class="container-fluid">
+ <div class="row">
+  {{ template "sidebar" . }}
+  <main class="main-content p-4">
+   {{ if .Dashboard.TemperatureBar }}
+   {{ template "temperature-bar" . }}
+   {{ end }}
+   <input id="deck-device-id" type="hidden" value="{{ .Device.Serial }}">
+   <section class="deck-workspace" aria-label="Deck device editor">
+    <header class="deck-hero">
+     <div>
+      <p class="deck-eyebrow">OPENLINKHUB NEXUS / DECK DEVICES</p>
+      <h1>{{ .Device.Product }}</h1>
+      <p>Manage the physical key layout separately from the Corsair Nexus touchscreen editor.</p>
+     </div>
+     <div class="deck-connection">
+      <span id="deck-connection-state">Checking connection...</span>
+      <small>{{ .Device.Model.Family }} · {{ .Device.Model.Keys }} keys</small>
+     </div>
+    </header>
+    <div class="deck-columns">
+     <section class="deck-panel deck-preview-panel" aria-label="Key preview">
+      <div class="deck-panel-header">
+       <div><h2>Device Preview</h2><p>Click a key to configure its label</p></div>
+       <div class="deck-page-picker">
+        <label for="deck-page">Page</label>
+        <select id="deck-page" class="form-select" aria-label="Select page"></select>
+       </div>
+      </div>
+      <div class="deck-display">
+       <div id="deck-key-grid" class="deck-grid" data-columns="{{ .Device.Model.Columns }}" data-keys="{{ .Device.Model.Keys }}" style="--deck-columns:{{ .Device.Model.Columns }}"></div>
+      </div>
+      <div class="deck-preview-footer">
+       <div class="deck-page-actions">
+        <button id="deck-add-page" class="deck-secondary" type="button">Add Page</button>
+        <button id="deck-remove-page" class="deck-secondary" type="button">Remove Page</button>
+       </div>
+       <small id="deck-key-count">No key selected</small>
+      </div>
+     </section>
+     <aside class="deck-panel deck-inspector" aria-label="Key inspector">
+      <div class="deck-panel-header"><div><h2>Selected Key</h2><p id="deck-selected-key">Select a key to edit</p></div></div>
+      <div class="deck-property">
+       <label for="deck-key-label">Display label</label>
+       <input class="form-control" id="deck-key-label" maxlength="48" placeholder="e.g. CPU Temp" disabled>
+       <small>Mirabox static LCD images update when the layout is saved. Elgato image output is not implemented in this first stage.</small>
+      </div>
+      <div class="deck-incomplete">
+       <strong>Action plugins — next milestone</strong>
+       <p>OpenAction and Stream Deck action-plugin hosting are not active yet. This first editor builds the validated device-layout foundation.</p>
+      </div>
+      <div class="deck-inspector-footer">
+       <button id="deck-save" class="deck-primary" type="button" disabled>Save Layout</button>
+       <p id="deck-message" role="status" aria-live="polite"></p>
+      </div>
+     </aside>
+    </div>
+   </section>
+  </main>
+ </div>
+</div>
+<script src="/static/js/deck-editor.js"></script>
+<script src="/static/js/sidebar.js"></script>
+{{ if .Dashboard.TemperatureBar }}
+<script src="/static/js/temperature-bar.js"></script>
+{{ end }}
+</body>
+</html>
