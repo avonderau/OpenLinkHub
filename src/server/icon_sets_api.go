@@ -121,8 +121,8 @@ func importIconSet(root,name string,data []byte)(iconSetManifest,error){
   base:=path.Base(filename)
   if strings.HasPrefix(base,".")||strings.HasPrefix(filename,"__MACOSX/"){continue}
   extension:=strings.ToLower(path.Ext(base))
-  if extension!=".png"&&extension!=".jpg"&&extension!=".jpeg"{
-   return empty,fmt.Errorf("unsupported icon file %q: only PNG/JPEG is supported",base)
+  if extension!=".png"&&extension!=".jpg"&&extension!=".jpeg"&&extension!=".svg"{
+   return empty,fmt.Errorf("unsupported icon file %q: use PNG, JPEG or SVG",base)
   }
   if len(pending)>=maxIconSetImages{return empty,errors.New("icon set limited to 48 icons")}
   if file.UncompressedSize64>deck.MaxDeckIconBytes||countBytes>maxIconSetTotalImageBytes {
@@ -136,9 +136,14 @@ func importIconSet(root,name string,data []byte)(iconSetManifest,error){
   if len(contents)==0||len(contents)>deck.MaxDeckIconBytes{return empty,errors.New("icon exceeds 512 KiB")}
   countBytes+=len(contents)
   if countBytes>maxIconSetTotalImageBytes{return empty,errors.New("icon set extracted files exceed quota")}
-  info,format,err:=image.DecodeConfig(bytes.NewReader(contents))
-  if err!=nil||!((extension==".png"&&format=="png")||(extension!=".png"&&format=="jpeg"))||info.Width<1||info.Height<1||info.Width>512||info.Height>512{
-   return empty,fmt.Errorf("invalid icon image %q",base)
+  if extension==".svg"{
+   contents,err=rasterizeIconSVG(contents)
+   if err!=nil{return empty,fmt.Errorf("invalid SVG %q: %w",base,err)}
+  }else{
+   info,format,err:=image.DecodeConfig(bytes.NewReader(contents))
+   if err!=nil||!((extension==".png"&&format=="png")||(extension!=".png"&&format=="jpeg"))||info.Width<1||info.Height<1||info.Width>512||info.Height>512{
+    return empty,fmt.Errorf("invalid icon image %q",base)
+   }
   }
   title:=strings.TrimSpace(strings.TrimSuffix(base,path.Ext(base)))
   if title==""||utf8.RuneCountInString(title)>50||!utf8.ValidString(title){return empty,errors.New("invalid icon title")}
@@ -188,7 +193,7 @@ func iconSetsAPI(w http.ResponseWriter,r *http.Request){
   sets,err:=listIconSets(root)
   if err!=nil{http.Error(w,"icon sets unavailable",500);return}
   w.Header().Set("Content-Type","application/json")
-  _=json.NewEncoder(w).Encode(map[string]any{"sets":sets})
+  _=json.NewEncoder(w).Encode(map[string]any{"sets":sets,"svgAvailable":svgConverterAvailable()})
  case http.MethodPost:
   if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
   mediaType,_,err:=mime.ParseMediaType(r.Header.Get("Content-Type"))
