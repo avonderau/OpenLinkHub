@@ -72,12 +72,12 @@ func TestDeckDesktopLaunchRequiresConnectedAgent(t *testing.T) {
 
 func TestDesktopLaunchDoesNotUseInheritedServiceDisplay(t *testing.T) {
 	cases := []struct {
-		name        string
-		service     bool
-		uid         int
-		display     string
-		wayland     string
-		allowed     bool
+		name    string
+		service bool
+		uid     int
+		display string
+		wayland string
+		allowed bool
 	}{
 		{name: "service with inherited X11 display", service: true, uid: 997, display: ":0"},
 		{name: "service with inherited Wayland display", service: true, uid: 997, wayland: "wayland-0"},
