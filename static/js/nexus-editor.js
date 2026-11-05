@@ -2,6 +2,18 @@
 const nexusElementById=id=>document.getElementById(id);
 let cfg=null,selected=null,serial='',drag=null,copiedWidget=null;
 let nexusPreviewTelemetry=null,nexusTelemetryRequestInFlight=false;
+let nexusMetricSourceOptions={};
+const nexusMetricLookupKey=widget=>widget?.settings?.metricSource?
+  widget.metric+'|'+widget.settings.metricSource:widget?.metric;
+async function loadNexusMetricSources(){
+ try{
+  const response=await fetch('/api/telemetry/sources',{cache:'no-store'});
+  if(response.ok){
+   const data=await response.json();
+   nexusMetricSourceOptions=data?.sources||{};
+  }
+ }catch(_err){nexusMetricSourceOptions={}}
+}
 // Bitmap masks are the same per-pixel artwork used by the physical LCD.
 const mediaGlyphs={'previous-track':true,'play-pause':true,'next-track':true,'stop':true,
  'volume-down':true,'volume-up':true,'volume-mute':true,'next':true,'previous':true};
@@ -228,7 +240,33 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
    }
   });
  }
- input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=Math.max(1,Math.min(640,Math.round(v)));if(key==='height')w.height=Math.max(1,Math.min(48,Math.round(v)));if(key==='x')w.x=clamp(Math.round(v),640-w.width);if(key==='y')w.y=clamp(Math.round(v),48-w.height);w.x=clamp(w.x,640-w.width);w.y=clamp(w.y,48-w.height)}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);(['x','y','width','height'].includes(key)?dimensionsRow:styleRow).append(label)}
+ input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=Math.max(1,Math.min(640,Math.round(v)));if(key==='height')w.height=Math.max(1,Math.min(48,Math.round(v)));if(key==='x')w.x=clamp(Math.round(v),640-w.width);if(key==='y')w.y=clamp(Math.round(v),48-w.height);w.x=clamp(w.x,640-w.width);w.y=clamp(w.y,48-w.height)}else if(key==='metric'){
+   w.metric=v;w.settings??={};delete w.settings.metricSource;
+  }else{w.settings??={};w.settings[key]=v}render()});label.append(input);(['x','y','width','height'].includes(key)?dimensionsRow:styleRow).append(label)}
+ if(['metric','bar','graph'].includes(w.type)){
+   const sources=nexusMetricSourceOptions[w.metric]||[];
+   const saved=w.settings?.metricSource||'';
+   if(sources.length||saved){
+    const label=document.createElement('label');
+    label.textContent='Source ';
+    const picker=document.createElement('select');
+    picker.setAttribute('aria-label','Metric source');
+    picker.add(new Option('Automatic / default',''));
+    for(const source of sources)picker.add(new Option(source.label,source.id));
+    if(saved&&!sources.some(source=>source.id===saved)){
+     picker.add(new Option(saved+' (unavailable)',saved));
+    }
+    picker.value=saved;
+    picker.addEventListener('change',()=>{
+     w.settings??={};
+     if(picker.value)w.settings.metricSource=picker.value;
+     else delete w.settings.metricSource;
+     render();
+    });
+    label.append(picker);
+    styleRow.append(label);
+   }
+  }
  renderWidgetColors(w,colorsRow);
  if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){
   // Opacity is an independent percentage, not a preset background style.
@@ -361,7 +399,7 @@ nexusElementById('screen').addEventListener('keydown',event=>{
 });
 
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);nexusElementById('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){nexusElementById('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!nexusElementById('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=nexusElementById('deviceId')?.value||nexusElementById('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await Promise.all([loadSharedMacroProfiles(),loadNexusIconSets()]);selected=null;const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
+async function load(){serial=nexusElementById('deviceId')?.value||nexusElementById('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await Promise.all([loadSharedMacroProfiles(),loadNexusMetricSources(),loadNexusIconSets()]);selected=null;const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
 if(nexusElementById('load'))nexusElementById('load').onclick=()=>load().catch(e=>message(e.message));
 nexusElementById('screens').onchange=()=>{cfg.activeScreenId=nexusElementById('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
@@ -825,7 +863,7 @@ if (nexusElementById('deviceId')) {
 function paintNexusGraph(element,widget){
  const plot=element.querySelector?.('canvas.nexus-graph-plot');
  const context=plot?.getContext?.('2d');if(!context)return;
- const points=nexusPreviewTelemetry?.history?.[widget.metric];
+ const points=nexusPreviewTelemetry?.history?.[nexusMetricLookupKey(widget)];
  const width=plot.width,height=plot.height;
  context.clearRect(0,0,width,height);
  if(!Array.isArray(points)||points.length<2)return;
