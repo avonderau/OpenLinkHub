@@ -23,6 +23,13 @@ import (
 // Device is the first native Deck implementation. Mirabox gets HID input and
 // static key-image output; Elgato is discovery-only until its protocol driver
 // is implemented. No third-party code executes inside the system daemon.
+// hidSession isolates the HID handle from reconnect and protocol tests.
+type hidSession interface {
+ Write([]byte)(int,error)
+ ReadWithTimeout([]byte,time.Duration)(int,error)
+ Close()error
+}
+
 type Device struct {
  Product string
  Serial string
@@ -32,7 +39,7 @@ type Device struct {
  Template string
 
  mu sync.RWMutex
- hidDevice *hid.Device
+ hidDevice hidSession
  root string
  layout Layout
  status string
@@ -87,16 +94,12 @@ func Init(info *hid.DeviceInfo)*common.Device {
   // The vendor protocol requires initialization before any button
   // reports are read. Mirajazz also sets brightness before attaching its
   // input reader; opening the handle alone is not a ready device session.
-  if err:=initializeMiraboxSession(handle,m);err!=nil{
+  if err:=d.attachSession(handle);err!=nil{
    _=handle.Close()
    logger.Log(logger.Fields{"error":err,"model":m.Name,"path":info.Path}).Warn("Unable to initialize Deck HID session")
    return nil
   }
-  d.hidDevice=handle
-  d.initialized=true
   d.readerDone=make(chan struct{})
-  d.connected=true
-  d.status="Connected; static images and key presses available"
   go d.listen()
  }
  return &common.Device{
@@ -147,11 +150,16 @@ func(d *Device)SetLayout(layout Layout)error{
  defer d.mu.Unlock()
  if err:=SaveLayout(d.root,d.Serial,d.Model,layout);err!=nil{return err}
  d.layout=cloneLayout(layout)
- if d.Model.Family=="mirabox" && d.hidDevice!=nil {
+ if d.Model.Family=="mirabox" {
+  if d.hidDevice==nil || !d.connected {
+   d.status="Disconnected; layout saved and queued for reconnect"
+   return nil
+  }
   if err:=d.drawActivePageLocked();err!=nil{
-   d.status="HID image transfer failed: "+err.Error()
+   d.status="Connected; display update failed: "+err.Error()
    return err
   }
+  d.status="Connected; layout applied to display"
  }
  return nil
 }
@@ -172,9 +180,9 @@ func(d *Device)drawActivePageLocked()error{
   frame:=renderKeyLabel(size,labels[i])
   jpegData,err:=MiraboxKeyImage(d.Model,i,frame)
   if err!=nil{return err}
-  if err:=MiraboxSetKeyJPEG(d.hidDevice,d.Model,i,jpegData);err!=nil{return err}
+  if err:=MiraboxWriteKeyJPEG(d.hidDevice,d.Model,i,jpegData);err!=nil{return err}
  }
- return nil
+ return MiraboxFlush(d.hidDevice,d.Model)
 }
 func renderKeyLabel(size int,label string)image.Image{
  img:=image.NewRGBA(image.Rect(0,0,size,size))
@@ -192,6 +200,58 @@ func renderKeyLabel(size int,label string)image.Image{
  drawer.DrawString(string(text))
  return img
 }
+// attachSession initializes a new handle and replays the saved layout.
+// A display-write failure must not make a healthy HID input connection disappear.
+func(d *Device)attachSession(handle hidSession)error{
+ if err:=initializeMiraboxSession(handle,d.Model);err!=nil{return err}
+ d.mu.Lock()
+ defer d.mu.Unlock()
+ select {case <-d.done:return errors.New("Deck driver stopping");default:}
+ d.hidDevice=handle
+ d.connected=true
+ d.initialized=true
+ if err:=d.drawActivePageLocked();err!=nil{
+  d.status="Connected; display update failed: "+err.Error()
+  logger.Log(logger.Fields{"error":err,"model":d.Model.Name}).Warn("Deck display image transfer failed")
+ }else{
+  d.status="Connected; layout applied to display"
+ }
+ return nil
+}
+
+// findReconnectCandidate deliberately matches the full USB identity, usage
+// page and usage. A stale /dev/hidraw path must never be reopened by name.
+func(d *Device)findReconnectCandidate()(*hid.DeviceInfo,error){
+ var found *hid.DeviceInfo
+ err:=hid.Enumerate(d.Model.VendorID,d.Model.ProductID,hid.EnumFunc(func(info *hid.DeviceInfo)error{
+  if info==nil || info.Path=="" || info.UsagePage!=0xffa0 || info.Usage!=1{return nil}
+  if deviceID(info,d.Model)!=d.Serial{return nil}
+  candidate:=*info
+  found=&candidate
+  return nil
+ }))
+ return found,err
+}
+
+func(d *Device)tryReconnect(){
+ info,err:=d.findReconnectCandidate()
+ if err!=nil{
+  logger.Log(logger.Fields{"error":err,"serial":d.Serial}).Warn("Unable to enumerate Deck HID")
+  return
+ }
+ if info==nil{return}
+ handle,err:=hid.OpenPath(info.Path)
+ if err!=nil{return} // A competing application may own the device.
+ if err:=d.attachSession(handle);err!=nil{
+  _=handle.Close()
+  d.mu.Lock()
+  d.status="Disconnected; reconnect initialization failed: "+err.Error()
+  d.mu.Unlock()
+ }
+}
+
+// A single reader owns all reconnect attempts, avoiding multiple readers and
+// ensuring that a removed device's handle is closed before opening the new one.
 func(d *Device)listen(){
  defer close(d.readerDone)
  buffer:=make([]byte,512)
@@ -200,16 +260,30 @@ func(d *Device)listen(){
   d.mu.RLock()
   handle:=d.hidDevice
   d.mu.RUnlock()
-  if handle==nil{return}
+  if handle==nil{
+   select{
+   case <-d.done:return
+   case <-time.After(1500*time.Millisecond):
+   }
+   d.tryReconnect()
+   continue
+  }
   n,err:=handle.ReadWithTimeout(buffer,250*time.Millisecond)
   if errors.Is(err,hid.ErrTimeout){continue}
   if err!=nil{
    d.mu.Lock()
-   d.connected=false
-   d.status="Disconnected: "+err.Error()
+   if d.hidDevice==handle{
+    d.hidDevice=nil
+    d.connected=false
+    d.initialized=false
+    d.status="Disconnected; waiting for Mirabox to reconnect"
+   }
    d.mu.Unlock()
-   return
+   _=handle.Close()
+   logger.Log(logger.Fields{"error":err,"serial":d.Serial}).Warn("Deck HID disconnected; retrying")
+   continue
   }
+  if n<=0{continue}
   key,pressed,ok:=MiraboxKeyEvent(d.Model,buffer[:n])
   if !ok||!pressed{continue}
   d.mu.Lock()
