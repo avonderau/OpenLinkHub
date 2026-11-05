@@ -103,6 +103,12 @@ func writeNexusWidgetLibrary(root string,entries []nexusLibraryEntry) error {
 }
 
 func nexusWidgetLibraryAPI(w http.ResponseWriter,r *http.Request){
+ serveNexusWidgetLibrary(w,r,config.GetConfig().ConfigPath)
+}
+
+// Extract the storage root so tests can exercise the actual HTTP handler
+// without modifying user configuration or requiring a physical Nexus.
+func serveNexusWidgetLibrary(w http.ResponseWriter,r *http.Request,root string){
  if r.Method!=http.MethodGet&&r.Method!=http.MethodPost&&r.Method!=http.MethodDelete{
   w.Header().Set("Allow","GET, POST, DELETE")
   http.Error(w,"method not allowed",http.StatusMethodNotAllowed)
@@ -114,7 +120,6 @@ func nexusWidgetLibraryAPI(w http.ResponseWriter,r *http.Request){
  }
  w.Header().Set("Cache-Control","private, no-store")
  w.Header().Set("X-Content-Type-Options","nosniff")
- root:=config.GetConfig().ConfigPath
  widgetLibraryMutex.Lock()
  defer widgetLibraryMutex.Unlock()
  entries,err:=readNexusWidgetLibrary(root)
