@@ -191,11 +191,17 @@ func(d *Device)drawActivePageLocked()error{
  var page *Page
  for i:=range d.layout.Pages {if d.layout.Pages[i].ID==d.layout.ActivePage{page=&d.layout.Pages[i];break}}
  if page==nil{return errors.New("no active page")}
- labels:=make(map[int]string,len(page.Keys))
- for _,key:=range page.Keys{labels[key.Index]=keyDisplayLabel(key)}
+ keys:=make(map[int]KeyConfig,len(page.Keys))
+ for _,key:=range page.Keys{keys[key.Index]=key}
  for i:=0;i<d.Model.Keys();i++ {
   size:=d.Model.NativeImagePixels(i)
-  frame:=renderKeyLabel(size,labels[i])
+  key:=keys[i]
+  frame:=renderKeyLabel(size,keyDisplayLabel(key))
+  if key.Icon!="" {
+   artwork,err:=LoadDeckIcon(d.root,key.Icon)
+   if err!=nil{return fmt.Errorf("key %d artwork: %w",i,err)}
+   frame=renderDeckArtwork(size,artwork,keyDisplayLabel(key))
+  }
   jpegData,err:=MiraboxKeyImage(d.Model,i,frame)
   if err!=nil{return err}
   if err:=MiraboxWriteKeyJPEG(d.hidDevice,d.Model,i,jpegData);err!=nil{return err}
