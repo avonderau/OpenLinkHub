@@ -1,0 +1,40 @@
+.deck-workspace{--deck-border:rgba(117,163,198,.20);--deck-ink:#e3eaf2;--deck-muted:#a3b6c9;color:var(--deck-ink);max-width:1550px;margin:auto}
+.deck-hero{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.25rem;padding:1.5rem 1.7rem;border:1px solid var(--deck-border);border-radius:14px;background:linear-gradient(110deg,#162e45,#1b3446 55%,#152330)}
+.deck-eyebrow{color:#7ac3e5;letter-spacing:.14em;font-size:.73rem;font-weight:650;margin:0 0 .45rem}
+.deck-hero h1{font-size:1.65rem;color:var(--deck-ink);margin:0 0 .25rem}
+.deck-hero p{color:var(--deck-muted);margin:0}
+.deck-connection{display:grid;gap:.3rem;text-align:right;color:#b5d7ed}
+.deck-connection small{color:var(--deck-muted);text-transform:capitalize}
+.deck-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(295px,350px);gap:1.25rem;align-items:start}
+.deck-panel{background:linear-gradient(150deg,#142638,#182a3b);border:1px solid var(--deck-border);border-radius:14px;overflow:hidden;min-width:0}
+.deck-panel-header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid var(--deck-border);background:linear-gradient(90deg,#21435f,#1b3045)}
+.deck-panel-header h2{font-size:1.06rem;margin:0;color:#f0f6fb}
+.deck-panel-header p{font-size:.82rem;color:var(--deck-muted);margin:.25rem 0 0}
+.deck-page-picker{display:flex;align-items:center;gap:.5rem}
+.deck-page-picker label{color:var(--deck-muted);font-size:.8rem}
+.deck-page-picker select{min-width:145px;background:#152535;color:var(--deck-ink);border:1px solid #4b6981}
+.deck-display{padding:clamp(1rem,4vw,3rem);display:flex;justify-content:center;align-items:center;min-height:330px;background:radial-gradient(ellipse at center,#1b3448,#101a28)}
+.deck-grid{display:grid;grid-template-columns:repeat(var(--deck-columns),minmax(0,1fr));gap:clamp(6px,1.2vw,12px);padding:clamp(12px,2vw,21px);width:min(100%,660px);border:1px solid #415469;border-radius:20px;background:linear-gradient(130deg,#101823,#1b2838);box-shadow:0 22px 45px rgba(0,0,0,.34)}
+.deck-key{aspect-ratio:1;min-width:0;cursor:pointer;border-radius:8px;border:2px solid #374d64;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.22rem;color:#e4effa;background:linear-gradient(145deg,#1a3d57,#22314c);box-shadow:inset 0 0 14px #143044,0 2px 5px #101a2a;font:inherit}
+.deck-key span{font-size:clamp(.6rem,1vw,.81rem);max-width:95%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.deck-key small{font-size:.65rem;color:#a8cce5}
+.deck-key:hover{border-color:#91cde9}
+.deck-key:focus-visible{outline:2px solid #bde2ff;outline-offset:2px}
+.deck-key[aria-pressed="true"]{border-color:#7bc2f0;background:linear-gradient(145deg,#215b80,#284e74);box-shadow:0 0 0 2px rgba(123,194,240,.24)}
+.deck-preview-footer{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;padding:1rem 1.25rem;border-top:1px solid var(--deck-border);color:var(--deck-muted)}
+.deck-page-actions{display:flex;gap:.55rem}
+.deck-secondary,.deck-primary{border-radius:7px;padding:.5rem .75rem;font-size:.84rem;cursor:pointer}
+.deck-secondary{background:#243c50;color:#dee7ef;border:1px solid #45637c}
+.deck-primary{background:linear-gradient(110deg,#27688b,#2c789d);color:white;border:1px solid #55acd0;font-weight:600}
+.deck-secondary:disabled,.deck-primary:disabled{opacity:.45;cursor:not-allowed}
+.deck-property{padding:1.25rem;display:grid;gap:.55rem}
+.deck-property label{font-weight:600;font-size:.9rem}
+.deck-property input{background:#0f2130;color:#e7f1fb;border:1px solid #4b6981}
+.deck-property small{color:var(--deck-muted)}
+.deck-incomplete{margin:0 1.25rem;padding:1rem;border:1px dashed #55718a;border-radius:9px;color:var(--deck-muted);font-size:.84rem}
+.deck-incomplete strong{color:#e0eaf2}
+.deck-incomplete p{margin:.3rem 0 0}
+.deck-inspector-footer{padding:1.25rem}
+#deck-message{font-size:.84rem;margin:.65rem 0 0;min-height:1.4rem;color:#abd9ee}
+@media(max-width:1050px){.deck-columns{grid-template-columns:1fr}.deck-display{min-height:260px}}
+@media(max-width:550px){.deck-hero{padding:1rem}.deck-panel-header{flex-wrap:wrap}.deck-connection{text-align:left}.deck-key small{display:none}}
