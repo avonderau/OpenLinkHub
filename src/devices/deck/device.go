@@ -233,13 +233,21 @@ func(d *Device)attachSession(handle hidSession)error{
  return nil
 }
 
-// findReconnectCandidate deliberately matches the full USB identity, usage
-// page and usage. A stale /dev/hidraw path must never be reopened by name.
+// matchesReconnectCandidate filters interface and model identity. Stable
+// Mirabox v1 IDs intentionally cannot distinguish two identical legacy units.
+func(d *Device)matchesReconnectCandidate(info *hid.DeviceInfo)bool{
+ return info!=nil && info.Path!="" &&
+  info.VendorID==d.Model.VendorID && info.ProductID==d.Model.ProductID &&
+  info.UsagePage==0xffa0 && info.Usage==1 &&
+  deviceID(info,d.Model)==d.Serial
+}
+
+// findReconnectCandidate deliberately matches VID, PID, interface usage and
+// logical device identity; the old /dev/hidraw path may no longer exist.
 func(d *Device)findReconnectCandidate()(*hid.DeviceInfo,error){
  var found *hid.DeviceInfo
  err:=hid.Enumerate(d.Model.VendorID,d.Model.ProductID,hid.EnumFunc(func(info *hid.DeviceInfo)error{
-  if info==nil || info.Path=="" || info.UsagePage!=0xffa0 || info.Usage!=1{return nil}
-  if deviceID(info,d.Model)!=d.Serial{return nil}
+  if !d.matchesReconnectCandidate(info){return nil}
   candidate:=*info
   found=&candidate
   return nil
