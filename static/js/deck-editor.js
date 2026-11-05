@@ -229,7 +229,7 @@
       ? (Number.isFinite(metricLive[key.metric])
         ? 'Live reading available from this computer.'
         : 'No current reading. Unavailable sensors display —.')
-      : 'Choose a metric to show live sensor data on the LCD.';
+      : '';
     actionInput.disabled = !valid;
     actionInput.value = key?.action || '';
     targetPageInput.replaceChildren();
