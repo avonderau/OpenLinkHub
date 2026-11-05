@@ -1,0 +1,41 @@
+name: Vanguard packet safety
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/devices/vanguard99airWU/**'
+      - '.github/workflows/vanguard-packet-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/devices/vanguard99airWU/**'
+      - '.github/workflows/vanguard-packet-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  packet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install HID and display development libraries
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+      - name: Check driver Go formatting
+        run: |
+          files=(src/devices/vanguard99airWU/vanguard99airWU.go src/devices/vanguard99airWU/vanguard99airWU_packet_test.go)
+          if [ -n "$(gofmt -l "${files[@]}")" ]; then
+            gofmt -l "${files[@]}"
+            exit 1
+          fi
+      - name: Validate bounded packet writes
+        env:
+          CGO_CFLAGS_ALLOW: -fno-strict-overflow
+        run: go test ./src/devices/vanguard99airWU -count=1 -v
