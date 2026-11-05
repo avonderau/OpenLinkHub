@@ -432,6 +432,7 @@
 }
 .deck-workspace .deck-empty-state strong{font-size:.86rem;color:var(--deck-ink)}
 .deck-workspace .deck-empty-state small{font-size:.77rem;line-height:1.55;color:var(--deck-muted)}
+.deck-workspace #deck-selected-hero[hidden],
 .deck-workspace #deck-empty-state[hidden],
 .deck-workspace #deck-key-settings[hidden],
 .deck-workspace #deck-metric-details[hidden]{display:none!important}
