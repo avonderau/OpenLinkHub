@@ -144,24 +144,38 @@ func(d *Device)GetLayout()Layout{
  defer d.mu.RUnlock()
  return cloneLayout(d.layout)
 }
-func(d *Device)SetLayout(layout Layout)error{
- if err:=layout.Validate(d.Model);err!=nil{return err}
+// LayoutResult distinguishes saving configuration from actually applying it
+// to hardware. A failed output report must never be reported as Save failed.
+type LayoutResult struct {
+ Saved bool `json:"saved"`
+ Applied bool `json:"applied"`
+ Message string `json:"message"`
+}
+func(d *Device)UpdateLayout(layout Layout)(LayoutResult,error){
+ if err:=layout.Validate(d.Model);err!=nil{return LayoutResult{},err}
  d.mu.Lock()
  defer d.mu.Unlock()
- if err:=SaveLayout(d.root,d.Serial,d.Model,layout);err!=nil{return err}
+ if err:=SaveLayout(d.root,d.Serial,d.Model,layout);err!=nil{return LayoutResult{},err}
  d.layout=cloneLayout(layout)
- if d.Model.Family=="mirabox" {
-  if d.hidDevice==nil || !d.connected {
-   d.status="Disconnected; layout saved and queued for reconnect"
-   return nil
-  }
-  if err:=d.drawActivePageLocked();err!=nil{
-   d.status="Connected; display update failed: "+err.Error()
-   return err
-  }
-  d.status="Connected; layout applied to display"
+ result:=LayoutResult{Saved:true}
+ if d.Model.Family!="mirabox"{
+  result.Message="Saved. Elgato image output is not available yet."
+  return result,nil
  }
- return nil
+ if d.hidDevice==nil || !d.connected {
+  d.status="Disconnected; layout saved and queued for reconnect"
+  result.Message="Saved locally; display will sync after reconnect."
+  return result,nil
+ }
+ if err:=d.drawActivePageLocked();err!=nil{
+  d.status="Connected; display update failed: "+err.Error()
+  result.Message="Saved locally, but device display update failed: "+err.Error()
+  return result,nil
+ }
+ d.status="Connected; layout applied to display"
+ result.Applied=true
+ result.Message="Saved and applied to Mirabox display."
+ return result,nil
 }
 
 func(d *Device)drawActivePageLocked()error{
