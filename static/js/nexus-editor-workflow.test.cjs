@@ -265,8 +265,8 @@ test('selected widget settings group opacity percentage and preserve it on save'
  };
  const properties=node('properties');
  const sections=properties.children.filter(child=>child.className?.includes('nexus-property-section'));
- assert.equal(sections.length,4);
- assert.deepEqual(sections.map(item=>item.children[0].textContent),['Position & size','Appearance','Content & data','Actions & icons']);
+ assert.equal(sections.length,5);
+ assert.deepEqual(sections.map(item=>item.children[0].textContent),['Position & size','Appearance','Content & data','Icon','Actions']);
  assert.equal(sections[0].open,true);
  assert.equal(sections[1].open,true);
  assert.equal(sections[2].open,true);
@@ -286,7 +286,7 @@ test('selected widget settings group opacity percentage and preserve it on save'
  opacityNumber.listeners.change();
  assert.equal(screen.widgets[0].settings.opacity,'62');
  assert.equal(opacitySlider.value,'62');
- const noFill=walk(sections[3],item=>item.options?.some(option=>option.label==='No fill'));
+ const noFill=walk(sections[4],item=>item.options?.some(option=>option.label==='No fill'));
  assert.ok(noFill,'style label should distinguish no fill from opacity');
  assert.equal(noFill.options.some(option=>option.label==='Transparent'),false);
  await node('save').onclick();
@@ -574,7 +574,8 @@ test('compact inspector renders widget identity, button label editing, and only 
  vm.runInContext("selected='button_test';render()",context);
  assert.equal(node('nexusSelectedName').textContent,'Launch');
  const actions=node('properties').children.filter(c=>c.className?.includes('nexus-property-section'));
- assert.equal(actions.at(-1).children[0].textContent,'Actions & icons');
+ assert.equal(actions.at(-1).children[0].textContent,'Actions');
+  assert.equal(actions.at(-2).children[0].textContent,'Icon');
  const walk=(root,predicate)=>{
   if(predicate(root))return root;
   for(const child of root.children||[]){if(child&&typeof child==='object'){const found=walk(child,predicate);if(found)return found}}
