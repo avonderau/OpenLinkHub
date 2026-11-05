@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=launch-macro-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=launch-macro-2">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -125,6 +125,7 @@
                          autocomplete="off" spellcheck="false" disabled
                          placeholder="https://example.com">
                   <small id="deck-launch-help">HTTPS/HTTP URLs or safe installed desktop-entry IDs only. Actions run on the local graphical desktop.</small>
+                  <p id="deck-launcher-status" role="status" aria-live="polite" data-ready="false">Checking local desktop agent...</p>
                 </div>
                 <div class="deck-property" id="deck-macro-property" hidden>
                   <label for="deck-key-macro">Saved OpenLinkHub macro</label>
@@ -169,7 +170,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=launch-macro-1"></script>
+<script src="/static/js/deck-editor.js?v=launch-macro-2"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
