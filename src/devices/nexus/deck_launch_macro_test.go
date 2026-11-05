@@ -41,7 +41,7 @@ func TestDeckSavedMacroValidationUsesNexusBounds(t *testing.T){
    t.Errorf("invalid macro should fail: %s",id)
   }
  }
- if DeckMacroMaxDuration().Seconds()>15{t.Fatal("macro limit exceeded")}
+ if nexusSharedMacroMaxDuration.Seconds()>15{t.Fatal("macro limit exceeded")}
 }
 
 func TestDeckDesktopLaunchRequiresConnectedAgent(t *testing.T) {
