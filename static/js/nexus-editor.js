@@ -211,13 +211,16 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
  const appearanceSection=section('Appearance',true,'appearance','palette');
  const contentSection=section('Content & data',true,'data','type');
  const isActionWidget=['button','macro','image'].includes(w.type);
- const touchSection=isActionWidget?section('Actions & icons',false,'actions','cursor'):null;
+ const iconSection=isActionWidget?section('Icon',true,'icons','image'):null;
+ const touchSection=isActionWidget?section('Actions',false,'actions','cursor'):null;
  geometrySection.append(dimensionsRow);
  appearanceSection.append(colorsRow);
  const appearanceRow=document.createElement('div');
  appearanceRow.className='nexus-properties-row nexus-appearance-row';
  appearanceSection.append(appearanceRow);
  contentSection.append(styleRow);
+ const iconRow=document.createElement('div');iconRow.className='nexus-properties-row nexus-icon-row';
+ if(iconSection)iconSection.append(iconRow);
  const touchRow=document.createElement('div');touchRow.className='nexus-properties-row nexus-touch-row';
  if(touchSection)touchSection.append(touchRow);
  const fields=(w.type==='button'||w.type==='macro')?[['x','number'],['y','number'],['width','number'],['height','number'],['label','text']]:[['x','number'],['y','number'],['width','number'],['height','number'],['label','text'],['text','text'],['metric','select']];
@@ -351,7 +354,10 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   input.addEventListener('change',()=>{w.settings??={};w.settings.clockFormat=input.value;render()});
   label.append(input);styleRow.append(label);
  }
- if(w.type==='button'||w.type==='macro'||w.type==='image')renderTouchProperties(w,touchRow);
+ if(isActionWidget){
+  renderNexusIconProperties(w,iconRow);
+  renderTouchProperties(w,touchRow);
+ }
 }
 nexusElementById('screen').addEventListener('pointerdown',e=>{const el=e.target.closest('.widget');if(!el)return;selected=el.dataset.id;selectNexusEditorTab('widget');const w=current().widgets.find(w=>w.id===selected);drag={x:e.clientX,y:e.clientY,startX:w.x,startY:w.y,id:e.pointerId};nexusElementById('screen').setPointerCapture(e.pointerId);render()});
 nexusElementById('screen').addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const w=current().widgets.find(w=>w.id===selected);if(!w)return;w.x=snapPosition(drag.startX+e.clientX-drag.x,640-w.width);w.y=snapPosition(drag.startY+e.clientY-drag.y,48-w.height);const el=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);if(el){el.style.left=w.x+'px';el.style.top=w.y+'px'}});
@@ -530,6 +536,128 @@ function renderWidgetColors(w,panel){
   label.append(input);panel.append(label);
  }
 }
+// Icons belong to the selected widget inspector. Pack management stays in Settings.
+function renderNexusIconProperties(w,panel){
+ const sourceLabel=document.createElement('label');
+ sourceLabel.className='nexus-icon-source';
+ sourceLabel.textContent=w.type==='image'?'Image':'Built-in icon';
+ const source=document.createElement('select');
+ source.setAttribute('aria-label',w.type==='image'?'Image source':'Built-in icon');
+ source.add(new Option('None','none'));
+ if(w.type!=='image'){
+  for(const glyph of Object.keys(mediaGlyphs)){
+   source.add(new Option(mediaDefaultLabels[glyph]||glyph,glyph));
+  }
+ }
+ source.add(new Option('Custom artwork','custom'));
+ source.value=w.settings?.customIcon?'custom':(w.settings?.icon||'none');
+ source.addEventListener('change',()=>{
+  w.settings??={};
+  if(source.value==='none'){
+   delete w.settings.icon;
+   delete w.settings.customIcon;
+  }else if(source.value==='custom'){
+   w.settings.icon='custom';
+  }else{
+   delete w.settings.customIcon;
+   w.settings.icon=source.value;
+  }
+  render();
+ });
+ sourceLabel.append(source);
+ panel.append(sourceLabel);
+
+ const installed=nexusIconSets.find(pack=>(pack.icons||[]).some(icon=>icon.nexusId===w.settings?.customIcon));
+ const chosenIcon=installed?.icons.find(icon=>icon.nexusId===w.settings?.customIcon);
+ const library=document.createElement('div');
+ library.className='nexus-icon-library';
+ const label=document.createElement('label');
+ label.className='nexus-icon-pack-label';
+ label.textContent='Installed icon pack';
+ const packSelect=document.createElement('select');
+ packSelect.setAttribute('aria-label','Icon set');
+ packSelect.add(new Option('Choose an installed pack',''));
+ for(const pack of nexusIconSets)packSelect.add(new Option(pack.name,pack.id));
+ packSelect.value=installed?.id||'';
+ label.append(packSelect);
+ library.append(label);
+ const gallery=document.createElement('div');
+ gallery.className='nexus-icon-gallery';
+ gallery.setAttribute('role','group');
+ gallery.setAttribute('aria-label','Icons in selected pack');
+ const fillGallery=()=>{
+  gallery.replaceChildren();
+  const pack=nexusIconSets.find(item=>item.id===packSelect.value);
+  if(!pack){
+   const note=document.createElement('small');
+   note.textContent=nexusIconSets.length?'Choose a pack to preview and select its icons.':'No icon packs installed. Add one in Settings.';
+   gallery.append(note);
+   return;
+  }
+  for(const [index,icon] of (pack.icons||[]).entries()){
+   const tile=document.createElement('button');
+   tile.type='button';
+   tile.className='nexus-icon-tile';
+   tile.setAttribute('aria-label','Use '+icon.name+' icon');
+   tile.setAttribute('aria-pressed',String(icon.nexusId===w.settings?.customIcon));
+   const preview=document.createElement('img');
+   preview.alt='';
+   preview.loading='lazy';
+   preview.src='/api/icon-sets/preview?id='+encodeURIComponent(pack.id)+'&index='+index;
+   const title=document.createElement('span');
+   title.textContent=icon.name;
+   tile.append(preview,title);
+   tile.addEventListener('click',()=>{
+    w.settings??={};
+    w.settings.customIcon=icon.nexusId;
+    delete w.settings.icon;
+    render();
+    message('Pack icon assigned. Save Layout to apply.');
+   });
+   gallery.append(tile);
+  }
+ };
+ packSelect.addEventListener('change',fillGallery);
+ fillGallery();
+ library.append(gallery);
+ if(w.settings?.customIcon){
+  const current=document.createElement('small');
+  current.className='nexus-icon-current';
+  current.textContent=chosenIcon?'Selected: '+chosenIcon.name+' ('+installed.name+')':'Selected: custom artwork (not in an installed pack)';
+  library.append(current);
+ }
+ const settingsLink=document.createElement('a');
+ settingsLink.className='nexus-icon-settings-link';
+ settingsLink.href='/settings#olh-settings-devices';
+ settingsLink.textContent='Manage icon packs in Settings';
+ library.append(settingsLink);
+ panel.append(library);
+
+ // Preserve the existing one-off artwork workflow separately from reusable packs.
+ if(w.settings?.customIcon || w.settings?.icon==='custom'){
+  const wrapper=document.createElement('label');wrapper.className='nexus-custom-icon-upload';
+  wrapper.textContent='Upload one-off icon (PNG/JPEG/GIF) ';
+  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/gif';
+  file.setAttribute('aria-label','Upload custom icon');
+  wrapper.append(file);
+  const upload=document.createElement('button');upload.type='button';upload.textContent='Upload icon';
+  upload.onclick=async()=>{
+   const image=file.files?.[0];
+   if(!image)return message('Choose a PNG, JPEG or GIF icon first');
+   if(image.size>512*1024)return message('Icon exceeds 512 KiB');
+   if(!['image/png','image/jpeg','image/gif'].includes(image.type))return message('Select a PNG, JPEG or GIF image');
+   upload.disabled=true;
+   try{
+    const id='icon_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+    const res=await fetch('/api/nexus/icon?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(id),{method:'POST',headers:{'Content-Type':image.type},body:image});
+    if(!res.ok)throw Error(await res.text());
+    w.settings??={};w.settings.customIcon=id;delete w.settings.icon;
+    render();message('Custom icon uploaded. Save Layout to apply it.');
+   }catch(e){message(e.message);upload.disabled=false}
+  };
+  panel.append(wrapper,upload);
+ }
+}
 function renderTouchProperties(w,panel){
  const field=(name,value,choices,change)=>{
   const label=document.createElement('label');label.textContent=name+' ';
@@ -561,76 +689,6 @@ function renderTouchProperties(w,panel){
  };
  if(w.type==='button'||w.type==='macro'||w.type==='image'){
   field('Style',w.settings?.style||'solid',[['solid','Solid fill'],['outline','Outline only'],['flat','No fill']],v=>{w.settings??={};w.settings.style=v});
- }
- if(w.type==='image'){
-  field('Image',w.settings?.customIcon?'custom':'none',[['none','No image'],['custom','Upload image']],v=>{
-   w.settings??={};if(v==='none'){delete w.settings.customIcon;delete w.settings.icon}else{w.settings.icon='custom'}
-  });
- }else{
- field('Icon',w.settings?.customIcon?'custom':w.settings?.icon||'none',[['none','No icon'],...Object.keys(mediaGlyphs).map(id=>[id,id]),['custom','Custom image']],v=>{
-  w.settings??={};
-  if(v!=='custom')delete w.settings.customIcon;
-  if(v==='none')delete w.settings.icon;else w.settings.icon=v;
- });
- }
- if(w.type==='button'||w.type==='macro'||w.type==='image'){
-   const group=document.createElement('details');
-   group.className='nexus-icon-set-picker';
-   const heading=document.createElement('summary');
-   heading.textContent='Reusable icon sets';
-   const packSelect=document.createElement('select');
-   packSelect.setAttribute('aria-label','Icon set');
-   packSelect.add(new Option('Select icon set',''));
-   for(const pack of nexusIconSets)packSelect.add(new Option(pack.name,pack.id));
-   const iconSelect=document.createElement('select');
-   iconSelect.setAttribute('aria-label','Icon in set');
-   const refresh=()=>{
-    const pack=nexusIconSets.find(p=>p.id===packSelect.value);
-    iconSelect.replaceChildren();
-    iconSelect.add(new Option('Select icon',''));
-    for(const icon of pack?.icons||[])iconSelect.add(new Option(icon.name,icon.nexusId));
-   };
-   packSelect.addEventListener('change',refresh);
-   const useIcon=document.createElement('button');
-   useIcon.type='button';useIcon.textContent='Use set icon';
-   useIcon.onclick=()=>{
-    if(!iconSelect.value)return;
-    w.settings??={};
-    w.settings.customIcon=iconSelect.value;
-    delete w.settings.icon;
-    render();
-    message('Icon from shared set assigned. Save Layout to apply.');
-   };
-   const help=document.createElement('small');
-   help.textContent='Import and manage icon packs in Settings.';
-   const link=document.createElement('a');
-   link.href='/settings#olh-settings-devices';
-   link.textContent='Open Settings';
-   group.append(heading,packSelect,iconSelect,useIcon,help,link);
-   panel.append(group);
-  }
- if(w.settings?.customIcon || w.settings?.icon==='custom'){
-  const wrapper=document.createElement('label');wrapper.className='nexus-custom-icon-upload';
-  wrapper.textContent='Custom icon (PNG/JPEG/GIF) ';
-  const file=document.createElement('input');file.type='file';file.accept='image/png,image/jpeg,image/gif';
-  file.setAttribute('aria-label','Upload custom icon');
-  wrapper.append(file);
-  const upload=document.createElement('button');upload.type='button';upload.textContent='Upload icon';
-  upload.onclick=async()=>{
-   const source=file.files?.[0];
-   if(!source)return message('Choose a PNG, JPEG or GIF icon first');
-   if(source.size>512*1024)return message('Icon exceeds 512 KiB');
-   if(!['image/png','image/jpeg','image/gif'].includes(source.type))return message('Select a PNG, JPEG or GIF image');
-   upload.disabled=true;
-   try{
-    const id='icon_'+Date.now()+'_'+Math.floor(Math.random()*1000000);
-    const res=await fetch('/api/nexus/icon?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(id),{method:'POST',headers:{'Content-Type':source.type},body:source});
-    if(!res.ok)throw Error(await res.text());
-    w.settings??={};w.settings.customIcon=id;delete w.settings.icon;
-    render();message('Custom icon uploaded. Save Layout to apply it.');
-   }catch(e){message(e.message);upload.disabled=false}
-  };
-  panel.append(wrapper,upload);
  }
  if(w.type==='button'){
   field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='device'?'rgb-on':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro')w.target=Object.keys(nexusSharedMacros)[0]||'1'});
