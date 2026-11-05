@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=macro-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=visuals-3">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -123,18 +123,32 @@
                     <option value="gpu.vram.total_mb">VRAM total</option>
                   </select>
                   <div class="deck-metric-options">
-                    <label for="deck-metric-interval">Refresh</label>
-                    <select class="form-select" id="deck-metric-interval" disabled>
-                      <option value="2">2 seconds</option>
-                      <option value="5">5 seconds</option>
-                      <option value="10">10 seconds</option>
-                      <option value="15">15 seconds</option>
-                      <option value="30">30 seconds</option>
-                      <option value="60">60 seconds</option>
-                    </select>
-                    <label class="deck-metric-graph-label" for="deck-metric-graph">
-                      <input type="checkbox" id="deck-metric-graph" disabled> Mini graph
-                    </label>
+                    <div class="deck-metric-option">
+                      <label for="deck-metric-interval">Refresh</label>
+                      <select class="form-select" id="deck-metric-interval" disabled>
+                        <option value="2">2 seconds</option>
+                        <option value="5">5 seconds</option>
+                        <option value="10">10 seconds</option>
+                        <option value="15">15 seconds</option>
+                        <option value="30">30 seconds</option>
+                        <option value="60">60 seconds</option>
+                      </select>
+                    </div>
+                    <div class="deck-metric-option">
+                      <label for="deck-metric-style">Visualization</label>
+                      <select class="form-select" id="deck-metric-style" disabled>
+                        <option value="value">Value only</option>
+                        <option value="line">Line graph</option>
+                        <option value="bars">Bar graph</option>
+                        <option value="fuel">Fuel gauge</option>
+                        <option value="ring">Ring gauge</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="deck-metric-color-row">
+                    <label for="deck-metric-color">Visualization color</label>
+                    <input id="deck-metric-color" type="color" value="#d5a65a" disabled>
+                    <button type="button" class="deck-secondary" id="deck-metric-color-reset" disabled>Default</button>
                   </div>
                   <small id="deck-metric-status" role="status">Only sensors available on your computer will show values.</small>
                 </div>
@@ -208,7 +222,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=macro-1"></script>
+<script src="/static/js/deck-editor.js?v=visuals-3"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

@@ -8,10 +8,19 @@ For any key:
 1. Select a **Live metric**, e.g. CPU temperature, GPU utilization, memory,
    fan RPM, network transfer or disk utilization.
 2. Choose the **Refresh** interval (2, 5, 10, 15, 30 or 60 seconds).
-3. Optionally enable **Mini graph** to show up to 24 recent samples.
-4. Optionally upload artwork or set a custom display label. Existing
+3. Choose a **Visualization**: Value only, Line graph, Bar graph,
+   Fuel gauge, or Ring gauge. Line and bar graphs use up to 24 recent
+   samples, with gaps for missing readings. Fuel and ring gauges use an
+   absolute 0–100% range for utilization metrics, 0–100 C for temperatures,
+   and a relative 120% of the recent maximum for other sensor readings.
+   The numeric reading remains visible with each visualization.
+4. Use **Visualization color** to choose a custom accent (the graph line,
+   history bars, fuel segments, ring arc and ring unit). **Default** restores
+   the original gold without writing a custom color to the saved layout.
+   Value-only metrics also use the chosen accent for their numeric reading.
+5. Optionally upload artwork or set a custom display label. Existing
    button actions still run if assigned to a metric key.
-5. Save & Apply. The first sampling interval updates the LCD; the editor
+6. Save & Apply. The first sampling interval updates the LCD; the editor
    receives the current values through the existing Deck status API.
 
 Metrics not present on a host display `--` rather than invented readings.
@@ -26,7 +35,10 @@ and copied before being included in the JSON status API.
   only while applying the measured values to the correct active page.
 - Only updated metric keys are uploaded, followed by one LCD flush.
   Static icons, navigation and action keys are not continuously retransmitted.
-- Graph buffers retain at most 24 samples per metric. No untrusted URLs,
+- Colors are saved per key as validated `#RRGGBB`; blank values retain the
+  original gold. Missing metric keys cannot carry visualization colors.
+- Graph buffers retain at most 24 samples per metric. Previous layouts with
+  `showGraph: true` continue to render a Line graph without migration. No untrusted URLs,
   filesystem paths or commands are accepted as metric names.
 - CPU/GPU/temp/memory/hwmon/sysfs and optional NVIDIA values are provided by
   the same code as the existing Nexus display. Linux network/disk rates use
@@ -38,7 +50,7 @@ and copied before being included in the JSON status API.
 ## Manual test
 
 Configure CPU temperature and memory utilization keys with 2-second updates.
-Optionally choose GPU temperature and a fan metric. Enable a mini graph,
+Optionally choose GPU temperature and a fan metric. Test each visualization,
 confirm the physical numbers refresh and that unplug/replug restores the
 layout. Confirm a static custom icon and a page-navigation or media button
 continue to work. A missing sensor should display `--`.

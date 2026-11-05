@@ -23,6 +23,12 @@ func TestDeckMetricLayoutValidation(t *testing.T) {
 		{Index: 0, Metric: "cpu.temperature", RefreshSeconds: 61},
 		{Index: 0, RefreshSeconds: 5},
 		{Index: 0, ShowGraph: true},
+		{Index: 0, MetricStyle: "ring"},
+		{Index: 0, Metric: "cpu.utilization", MetricStyle: "unexpected"},
+		{Index: 0, MetricColor: "#ff0000"},
+		{Index: 0, Metric: "cpu.temperature", MetricColor: "red"},
+		{Index: 0, Metric: "cpu.temperature", MetricColor: "#f00"},
+		{Index: 0, Metric: "cpu.temperature", MetricColor: "#1234567"},
 	} {
 		layout := DefaultLayout(d.Model)
 		layout.Pages[0].Keys = []KeyConfig{bad}
@@ -118,6 +124,9 @@ func TestDeckMetricRenderAndFormatting(t *testing.T) {
 		}
 	}
 	key := KeyConfig{Metric: "cpu.utilization", ShowGraph: true, Label: "CPU"}
+	if deckMetricVisualizationStyle(key) != "line" {
+		t.Fatal("legacy showGraph layout must remain a line graph")
+	}
 	frame := renderDeckMetric(85, key, 48.5, true, []float64{10, 50, 90, 45}, nil)
 	if frame.Bounds() != image.Rect(0, 0, 85, 85) {
 		t.Fatal("live metric frame is not native key dimensions")
@@ -145,5 +154,100 @@ func TestMetricDueKeysHonorsPageAndTime(t *testing.T) {
 	due := metricDueKeys(page, last, now.Add(3*time.Second))
 	if len(due) != 1 || due[0].Index != 1 {
 		t.Fatalf("incorrect due keys: %+v", due)
+	}
+}
+
+func TestDeckMetricVisualizationStylesAndUnavailableReadings(t *testing.T) {
+	for _, style := range []string{"value", "line", "bars", "fuel", "ring"} {
+		key := KeyConfig{Metric: "cpu.utilization", MetricStyle: style, Label: "CPU"}
+		available := renderDeckMetric(85, key, 54, true, []float64{10, 35, math.NaN(), 54, 90}, nil)
+		if available.Bounds() != image.Rect(0, 0, 85, 85) {
+			t.Fatalf("%s: wrong LCD dimensions: %v", style, available.Bounds())
+		}
+		unavailable := renderDeckMetric(85, key, 0, false, []float64{math.NaN()}, nil)
+		if unavailable.Bounds() != available.Bounds() {
+			t.Fatalf("%s: unavailable metric changed LCD dimensions", style)
+		}
+	}
+	if got := deckMetricVisualizationStyle(KeyConfig{MetricStyle: "value", ShowGraph: true}); got != "value" {
+		t.Fatalf("explicit choice must override legacy flag: %q", got)
+	}
+	if got := deckMetricGaugeFraction("cpu.utilization", 50, nil); math.Abs(got-0.5) > 0.001 {
+		t.Fatalf("percentage gauge is not half full: %f", got)
+	}
+	if got := deckMetricGaugeFraction("cpu.temperature", 1000, nil); got != 1 {
+		t.Fatalf("temperature gauge must clamp to full scale: %f", got)
+	}
+	if got := deckMetricGaugeFraction("fan.rpm", math.NaN(), nil); got != 0 {
+		t.Fatalf("non-finite reading filled gauge: %f", got)
+	}
+}
+
+func TestDeckRingGaugeDisplaysValueInsideArc(t *testing.T) {
+	key := KeyConfig{Metric: "cpu.utilization", MetricStyle: "ring", Label: "CPU"}
+	withValue := renderDeckMetric(85, key, 50, true, []float64{50}, nil)
+	withoutValue := renderKeyLabel(85, "").(*image.RGBA)
+	drawDeckRingGauge(withoutValue, 0.5, true, defaultDeckMetricAccent)
+	cx, cy, radius := deckRingGeometry(85)
+	if radius < 20 || cy-radius < 17 || cy+radius >= 85 {
+		t.Fatalf("ring geometry too small or overlaps label: (%d,%d) radius %d", cx, cy, radius)
+	}
+	changedCenter := false
+	for y := cy - 12; y < cy+12; y++ {
+		for x := cx - 18; x < cx+18; x++ {
+			if withValue.At(x, y) != withoutValue.At(x, y) {
+				changedCenter = true
+			}
+		}
+	}
+	if !changedCenter {
+		t.Fatal("ring value was not drawn inside the arc")
+	}
+	// Unit text stays inside the circle for readings such as GPU power.
+	power := KeyConfig{Metric: "gpu.power_w", MetricStyle: "ring", Label: "GPU Power"}
+	if got := renderDeckMetric(85, power, 110, true, nil, nil); got.Bounds().Dx() != 85 {
+		t.Fatal("ring with unit was not rendered")
+	}
+	// Unavailable sensors must retain the -- placeholder inside the ring.
+	unknown := renderDeckMetric(85, key, 0, false, nil, nil)
+	if unknown.Bounds() != withValue.Bounds() {
+		t.Fatal("unavailable ring changed pixel bounds")
+	}
+}
+
+func TestDeckMetricColorValidationAndRendering(t *testing.T) {
+	device := testDevice(t)
+	for _, candidate := range []string{"#FF0000", "#00ff99", "#000000", "#abcdef"} {
+		layout := DefaultLayout(device.Model)
+		layout.Pages[0].Keys = []KeyConfig{{Index: 0, Metric: "cpu.utilization", MetricColor: candidate, MetricStyle: "ring"}}
+		if err := layout.Validate(device.Model); err != nil {
+			t.Fatalf("valid color %q rejected: %v", candidate, err)
+		}
+	}
+	for _, style := range []string{"line", "bars", "fuel", "ring", "value"} {
+		key := KeyConfig{Metric: "cpu.utilization", MetricStyle: style, MetricColor: "#ff0000", Label: "CPU"}
+		picture := renderDeckMetric(85, key, 100, true, []float64{100, 100, 100, 100}, nil)
+		red := false
+		for y := 17; y < 85; y++ {
+			for x := 0; x < 85; x++ {
+				pixel := picture.(*image.RGBA).RGBAAt(x, y)
+				if pixel.R == 255 && pixel.G == 0 && pixel.B == 0 {
+					red = true
+				}
+			}
+		}
+		if !red {
+			t.Errorf("%s: custom accent not painted", style)
+		}
+	}
+	for _, input := range []string{"", "not-a-color", "#123"} {
+		ink := deckMetricAccent(KeyConfig{MetricColor: input})
+		if ink != defaultDeckMetricAccent {
+			t.Errorf("invalid color %q should use original gold: %v", input, ink)
+		}
+	}
+	ink := deckMetricAccent(KeyConfig{MetricColor: "#1234ff"})
+	if ink.R != 0x12 || ink.G != 0x34 || ink.B != 0xff {
+		t.Errorf("color parser changed channel order: %v", ink)
 	}
 }

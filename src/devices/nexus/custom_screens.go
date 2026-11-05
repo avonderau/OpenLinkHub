@@ -108,7 +108,7 @@ func (d *Device) renderCustomScreen() []byte {
    filepath.Join(pwd,"database","nexus","icons"),history,pressed)
   if err!=nil{return nil}
   applyNexusSoftwareBrightness(frame,c.Brightness)
-  return renderImageToBytes(frame)
+  return encodeCustomNexusLCDFrame(frame)
  }
  return nil
 }

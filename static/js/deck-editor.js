@@ -14,7 +14,11 @@
   const artworkStatus = document.getElementById('deck-icon-status');
   const metricInput = document.getElementById('deck-key-metric');
   const metricInterval = document.getElementById('deck-metric-interval');
-  const metricGraph = document.getElementById('deck-metric-graph');
+  const metricStyle = document.getElementById('deck-metric-style');
+  const metricColor = document.getElementById('deck-metric-color');
+  const metricColorReset = document.getElementById('deck-metric-color-reset');
+  const defaultMetricColor = '#d5a65a';
+  const safeMetricColor = value => /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : '';
   const metricStatus = document.getElementById('deck-metric-status');
   const actionInput = document.getElementById('deck-key-action');
   const shortcutInput = document.getElementById('deck-key-shortcut');
@@ -143,7 +147,10 @@
       delete key.metric;
       delete key.refreshSeconds;
       delete key.showGraph;
+      delete key.metricStyle;
+      delete key.metricColor;
     }
+    if (!key.metricColor) delete key.metricColor;
     if (key.label || key.action || key.icon || key.metric) page.keys.push(key);
     page.keys.sort((a, b) => a.index - b.index);
     setDirty();
@@ -172,6 +179,7 @@
         const live = document.createElement('span');
         live.className = 'deck-live-value';
         live.textContent = formatMetricPreview(configured.metric);
+        live.style.color = safeMetricColor(configured.metricColor);
         button.appendChild(live);
         button.dataset.hasMetric = 'true';
       }
@@ -223,8 +231,11 @@
     metricInput.value = key?.metric || '';
     metricInterval.disabled = !hasMetric;
     metricInterval.value = String(key?.refreshSeconds || 5);
-    metricGraph.disabled = !hasMetric;
-    metricGraph.checked = !!key?.showGraph;
+    metricStyle.disabled = !hasMetric;
+    metricStyle.value = key?.metricStyle || (key?.showGraph ? 'line' : 'value');
+    metricColor.disabled = !hasMetric;
+    metricColor.value = safeMetricColor(key?.metricColor) || defaultMetricColor;
+    metricColorReset.disabled = !hasMetric || !safeMetricColor(key?.metricColor);
     metricStatus.textContent = hasMetric
       ? (Number.isFinite(metricLive[key.metric])
         ? 'Live reading available from this computer.'
@@ -304,17 +315,29 @@
   });
   metricInput.addEventListener('change', () => {
     const metric = metricInput.value;
-    setKeyProperties(metric ? { metric, refreshSeconds: 5, showGraph: false } :
-      { metric: '', refreshSeconds: 0, showGraph: false });
+    setKeyProperties(metric ? { metric, refreshSeconds: 5, metricStyle: 'value', showGraph: false } :
+      { metric: '', refreshSeconds: 0, metricStyle: '', showGraph: false });
     renderInspector();
   });
   metricInterval.addEventListener('change', () => {
     if (!metricInput.value) return;
     setKeyProperties({ refreshSeconds: Number(metricInterval.value) });
   });
-  metricGraph.addEventListener('change', () => {
+  metricStyle.addEventListener('change', () => {
     if (!metricInput.value) return;
-    setKeyProperties({ showGraph: metricGraph.checked });
+    setKeyProperties({ metricStyle: metricStyle.value, showGraph: false });
+  });
+  metricColor.addEventListener('input', () => {
+    if (!metricInput.value) return;
+    const value = safeMetricColor(metricColor.value);
+    if (!value) return;
+    setKeyProperties({ metricColor: value.toLowerCase() === defaultMetricColor ? '' : value });
+    renderInspector();
+  });
+  metricColorReset.addEventListener('click', () => {
+    if (!metricInput.value) return;
+    setKeyProperties({ metricColor: '' });
+    renderInspector();
   });
 
   uploadArtworkButton.addEventListener('click', async () => {

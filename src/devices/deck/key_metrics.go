@@ -106,9 +106,17 @@ func renderDeckMetric(size int, key KeyConfig, value float64, available bool, hi
 	if available && !math.IsNaN(value) && !math.IsInf(value, 0) {
 		text = deckMetricNumber(key.Metric, value)
 	}
-	drawCenteredDeckString(canvas, text, size/2+6, color.White)
-	if key.ShowGraph {
-		drawDeckSparkline(canvas, history, key.Metric)
+	ink := deckMetricAccent(key)
+	if deckMetricVisualizationStyle(key) == "ring" {
+		drawDeckRingGauge(canvas, deckMetricGaugeFraction(key.Metric, value, history), available && deckFinite(value), ink)
+		drawDeckRingValue(canvas, text, ink)
+	} else {
+		textInk := color.Color(color.White)
+		if deckMetricVisualizationStyle(key) == "value" && key.MetricColor != "" {
+			textInk = ink
+		}
+		drawCenteredDeckString(canvas, text, size/2+6, textInk)
+		renderDeckMetricVisualization(canvas, key, value, available, history)
 	}
 	return canvas
 }
@@ -128,7 +136,7 @@ func drawCenteredDeckString(dst *image.RGBA, label string, baseline int, ink col
 	drawer.DrawString(string(text))
 }
 
-func drawDeckSparkline(dst *image.RGBA, samples []float64, metric string) {
+func drawDeckSparkline(dst *image.RGBA, samples []float64, metric string, ink color.RGBA) {
 	if len(samples) < 2 {
 		return
 	}
@@ -173,7 +181,7 @@ func drawDeckSparkline(dst *image.RGBA, samples []float64, metric string) {
 		y := yStart + height - 1 - int(fraction*float64(height-1))
 		point := image.Pt(x, y)
 		if hasPrevious {
-			drawDeckLine(dst, previous, point, color.RGBA{R: 213, G: 166, B: 90, A: 255})
+			drawDeckLine(dst, previous, point, ink)
 		}
 		previous, hasPrevious = point, true
 	}
