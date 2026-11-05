@@ -40,7 +40,7 @@ async function run() {
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
     'deck-key-shortcut', 'deck-hotkey-property', 'deck-key-media', 'deck-media-property',
-    'deck-launch-property', 'deck-launch-label', 'deck-key-launch-target', 'deck-launch-help',
+    'deck-launch-property', 'deck-launch-label', 'deck-key-launch-target', 'deck-launch-help', 'deck-launcher-status',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
     'deck-remove-page', 'deck-message', 'deck-key-count', 'deck-page-count',
@@ -75,7 +75,8 @@ async function run() {
       };
     }
     const data = type === '/api/deck/status'
-      ? { connected: true, status: 'Connected; layout applied to display' }
+      ? { connected: true, status: 'Connected; layout applied to display',
+          desktopLauncherReady: false, desktopLauncherStatus: 'Desktop agent disconnected' }
       : { version: 1, activePage: 'home', pages: [{ id: 'home', name: 'Home', keys: null }] };
     return { ok: true, status: 200, json: async () => structuredClone(data) };
   };
@@ -94,6 +95,8 @@ async function run() {
   assert.equal(grid.children.length, 18, 'all LCD keys should be previewed');
   assert.equal(nodes['deck-save'].disabled, false, 'Save & Apply must work even without edits');
   assert.equal(nodes['deck-connection-state'].dataset.connected, 'true');
+  assert.equal(nodes['deck-launcher-status'].dataset.ready, 'false');
+  assert.match(nodes['deck-launcher-status'].textContent, /Desktop agent disconnected/);
 
   grid.children[0].dispatch('click');
   const label = nodes['deck-key-label'];
