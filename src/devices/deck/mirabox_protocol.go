@@ -20,6 +20,8 @@ var (
  errInvalidKey=errors.New("key out of range")
 )
 var miraboxMapping=[18]int{4,10,16,3,9,15,2,8,14,1,7,13,0,6,12,5,11,17}
+// Convert the editor's row-major key index back to the device's wire index.
+var miraboxLogicalToDevice=[18]int{12,9,6,3,0,15,13,10,7,4,1,16,14,11,8,5,2,17}
 
 func writeMiraboxReport(writer outputReporter, m Model, payload []byte)error{
  if m.Family!="mirabox" || (m.Protocol!=1 && m.Protocol!=3){return errUnsupportedModel}
@@ -72,7 +74,7 @@ func MiraboxSetKeyJPEG(writer outputReporter,m Model,key int,jpg []byte)error{
  if len(jpg)==0 || len(jpg)>65535 || !bytes.HasPrefix(jpg,[]byte{0xff,0xd8}) {
   return errors.New("invalid JPEG data")
  }
- header:=miraboxCommand("BAT",0,0,byte(len(jpg)>>8),byte(len(jpg)),byte(key+1))
+ header:=miraboxCommand("BAT",0,0,byte(len(jpg)>>8),byte(len(jpg)),byte(miraboxLogicalToDevice[key]+1))
  if err:=writeMiraboxReport(writer,m,header);err!=nil{return fmt.Errorf("image header: %w",err)}
  chunk:=512
  if m.Protocol==3 {chunk=1024}
