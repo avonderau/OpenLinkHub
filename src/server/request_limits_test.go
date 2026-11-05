@@ -73,6 +73,33 @@ func TestLegacyChunkedRequestBodyIsBounded(t *testing.T) {
 	}
 }
 
+// Existing LCD and backup forms permit a 5 MiB file. The shared guard
+// must not silently reduce those endpoints to the JSON control quota.
+func TestLegacyUploadRoutesKeepFiveMiBCapacity(t *testing.T) {
+	for _, route := range []string{"/api/lcd/upload", "/api/restore"} {
+		t.Run(route, func(t *testing.T) {
+			mux := http.NewServeMux()
+			var consumed int64
+			handleFunc(mux, route, http.MethodPost, func(w http.ResponseWriter, r *http.Request) {
+				var err error
+				consumed, err = io.Copy(io.Discard, r.Body)
+				if err != nil {
+					t.Errorf("valid upload unexpectedly truncated: %v", err)
+				}
+				w.WriteHeader(http.StatusNoContent)
+			})
+			request := httptest.NewRequest(http.MethodPost,
+				"http://localhost:27003"+route,
+				strings.NewReader(strings.Repeat("x", 5<<20)))
+			response := httptest.NewRecorder()
+			mux.ServeHTTP(response, request)
+			if response.Code != http.StatusNoContent || consumed != 5<<20 {
+				t.Fatalf("upload body truncated: HTTP %d, bytes %d", response.Code, consumed)
+			}
+		})
+	}
+}
+
 func TestLegacyRequestBodyUnderLimitStillAvailable(t *testing.T) {
 	mux := http.NewServeMux()
 	handleFunc(mux, "/api/speed", http.MethodPost, func(w http.ResponseWriter, r *http.Request) {
