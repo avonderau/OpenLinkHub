@@ -405,7 +405,7 @@ nexusElementById('screen').addEventListener('keydown',event=>{
 });
 
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);nexusElementById('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){nexusElementById('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!nexusElementById('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=nexusElementById('deviceId')?.value||nexusElementById('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await Promise.all([loadSharedMacroProfiles(),loadNexusMetricSources(),loadNexusIconSets()]);selected=null;const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
+async function load(){serial=nexusElementById('deviceId')?.value||nexusElementById('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await Promise.all([loadSharedMacroProfiles(),loadNexusMetricSources(),loadNexusIconSets()]);selected=null;const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);refreshScreens();await loadWidgetLibrary().catch(e=>message('Widget library unavailable: '+e.message))}
 if(nexusElementById('load'))nexusElementById('load').onclick=()=>load().catch(e=>message(e.message));
 nexusElementById('screens').onchange=()=>{cfg.activeScreenId=nexusElementById('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
@@ -848,47 +848,79 @@ nexusElementById('importLayout')?.addEventListener('click',async()=>{
 });
 
 
-function widgetLibraryStorage(){
- if(typeof localStorage==='undefined')throw Error('This browser does not provide persistent widget storage');
- return localStorage;
+// Reusable widgets live in OpenLinkHub's database/nexus/widget-library.json,
+// not in a particular browser's localStorage.
+let nexusSavedWidgetEntries=[];
+const widgetLibraryEndpoint='/api/nexus/widget-library';
+async function widgetLibraryRequest(options={}){
+ const response=await fetch(widgetLibraryEndpoint,{cache:'no-store',...options});
+ if(!response.ok)throw Error((await response.text()).trim()||'Widget library HTTP '+response.status);
+ return response.status===204?null:response.json();
 }
 function refreshWidgetLibrary(){
  const select=nexusElementById('widgetLibrarySelect');if(!select)return;
  const previouslySelected=select.value;
  select.replaceChildren();
- try{
-  const entries=NexusWidgetLibrary.list(widgetLibraryStorage());
-  for(const entry of entries)select.add(new Option(entry.name,entry.id));
-  if(entries.some(entry=>entry.id===previouslySelected))select.value=previouslySelected;
-  if(nexusElementById('addWidgetPreset'))nexusElementById('addWidgetPreset').disabled=!entries.length||!current()||current().widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
-  if(nexusElementById('deleteWidgetPreset'))nexusElementById('deleteWidgetPreset').disabled=!entries.length;
- }catch(e){
-  if(nexusElementById('addWidgetPreset'))nexusElementById('addWidgetPreset').disabled=true;
-  if(nexusElementById('deleteWidgetPreset'))nexusElementById('deleteWidgetPreset').disabled=true;
-  message(e.message);
- }
+ for(const entry of nexusSavedWidgetEntries)select.add(new Option(entry.name,entry.id));
+ if(nexusSavedWidgetEntries.some(entry=>entry.id===previouslySelected))select.value=previouslySelected;
+ const selectedEntry=nexusSavedWidgetEntries.find(entry=>entry.id===select.value);
+ if(nexusElementById('addWidgetPreset'))nexusElementById('addWidgetPreset').disabled=!selectedEntry||!current()||current().widgets.length>=64||totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS;
+ if(nexusElementById('deleteWidgetPreset'))nexusElementById('deleteWidgetPreset').disabled=!selectedEntry;
 }
-nexusElementById('saveWidgetPreset')?.addEventListener('click',()=>{
+async function migrateLegacyBrowserWidgets(){
+ // Only read the former browser-local library once, to preserve existing
+ // personal presets. All subsequent create/delete/list operations use the API.
+ if(typeof localStorage==='undefined')return;
+ let legacy;
+ try{legacy=NexusWidgetLibrary.list(localStorage)}catch(e){
+  message('Previous browser widget library could not be migrated: '+e.message);
+  return;
+ }
+ if(!legacy.length)return;
+ let imported=0;
+ for(const entry of legacy){
+  if(nexusSavedWidgetEntries.some(saved=>saved.id===entry.id))continue;
+  try{
+   await widgetLibraryRequest({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});
+   nexusSavedWidgetEntries.push(entry);
+   imported++;
+  }catch(e){
+   message('Could not migrate all browser widgets: '+e.message);
+   return; // Keep the browser copy intact to prevent data loss.
+  }
+ }
+ localStorage.removeItem?.('openlinkhub:nexus:widgets:v1');
+ if(imported)message('Migrated '+imported+' browser widget(s) into the OpenLinkHub library.');
+}
+async function loadWidgetLibrary(){
+ const result=await widgetLibraryRequest();
+ if(!Array.isArray(result?.entries))throw Error('Invalid server widget library');
+ nexusSavedWidgetEntries=result.entries;
+ await migrateLegacyBrowserWidgets();
+ refreshWidgetLibrary();
+}
+nexusElementById('saveWidgetPreset')?.addEventListener('click',async()=>{
  try{
   const widget=current()?.widgets.find(w=>w.id===selected);
   if(!widget)return message('Select a widget to save.');
   const name=prompt('Name for the reusable widget',widget.settings?.label||widget.type)?.trim();
   if(!name)return;
   if(name.length>80)return message('Widget library name must be 80 characters or fewer.');
-  const storage=widgetLibraryStorage();
-  const entry={id:uniqueID('preset',new Set(NexusWidgetLibrary.list(storage).map(x=>x.id))),name,widget:JSON.parse(JSON.stringify(widget))};
-  NexusWidgetLibrary.add(storage,entry);
+  const entry={id:uniqueID('preset',new Set(nexusSavedWidgetEntries.map(x=>x.id))),name,widget:JSON.parse(JSON.stringify(widget))};
+  // Server revalidates the complete widget and performs an atomic disk write.
+  await widgetLibraryRequest({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});
+  await loadWidgetLibrary();
+  nexusElementById('widgetLibrarySelect').value=entry.id;
   refreshWidgetLibrary();
-  nexusElementById('widgetLibrarySelect').value=entry.id;message('Widget saved in this browser.');
- }catch(e){message(e.message)}
+  message('Widget saved in OpenLinkHub. Available across browsers and restarts.');
+ }catch(e){message('Unable to save widget: '+e.message)}
 });
 nexusElementById('addWidgetPreset')?.addEventListener('click',()=>{
  try{
   const screen=current();if(!screen)return;
   if(screen.widgets.length>=64)return message('Maximum 64 widgets');
   if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');
-  const storage=widgetLibraryStorage();
-  const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===nexusElementById('widgetLibrarySelect').value);
+  const entry=nexusSavedWidgetEntries.find(x=>x.id===nexusElementById('widgetLibrarySelect').value);
   if(!entry)return;
   const widget=NexusWidgetLibrary.instantiate(entry,uniqueID('widget',new Set(screen.widgets.map(w=>w.id))),screen.id,cfg.screens.map(s=>s.id));
   screen.widgets.push(widget);selected=widget.id;render();
@@ -896,14 +928,16 @@ nexusElementById('addWidgetPreset')?.addEventListener('click',()=>{
   message('Widget added from library. Save Layout to apply.');
  }catch(e){message(e.message)}
 });
-nexusElementById('deleteWidgetPreset')?.addEventListener('click',()=>{
+nexusElementById('deleteWidgetPreset')?.addEventListener('click',async()=>{
  try{
-  const storage=widgetLibraryStorage(),id=nexusElementById('widgetLibrarySelect').value;
-  const entry=NexusWidgetLibrary.list(storage).find(x=>x.id===id);if(!entry)return;
-  if(!confirm('Delete saved widget "'+entry.name+'" from this browser?'))return;
-  NexusWidgetLibrary.remove(storage,id);refreshWidgetLibrary();
-  message('Saved widget removed from the browser library.');
- }catch(e){message(e.message)}
+  const id=nexusElementById('widgetLibrarySelect').value;
+  const entry=nexusSavedWidgetEntries.find(x=>x.id===id);if(!entry)return;
+  if(!confirm('Delete saved widget "'+entry.name+'" from OpenLinkHub?'))return;
+  const response=await fetch(widgetLibraryEndpoint+'?id='+encodeURIComponent(id),{method:'DELETE',cache:'no-store'});
+  if(!response.ok)throw Error((await response.text()).trim()||'Delete failed');
+  await loadWidgetLibrary();
+  message('Saved widget removed from the OpenLinkHub library.');
+ }catch(e){message('Unable to delete widget: '+e.message)}
 });
 nexusElementById('widgetLibrarySelect')?.addEventListener('change',refreshWidgetLibrary);
 
