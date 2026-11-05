@@ -1,10 +1,6 @@
 package deck
 
-import (
- "fmt"
-
- "OpenLinkHub/src/logger"
-)
+import "fmt"
 
 // keyDisplayLabel supplies readable default LCD text for navigation actions.
 func keyDisplayLabel(key KeyConfig)string{
@@ -62,14 +58,14 @@ func(d *Device)handleKeyPress(index int){
  updated.ActivePage=updated.Pages[next].ID
  if err:=SaveLayout(d.root,d.Serial,d.Model,updated);err!=nil{
   d.status=fmt.Sprintf("Page navigation save failed: %v",err)
-  logger.Log(logger.Fields{"serial":d.Serial,"error":err}).Warn("Deck page navigation persistence failed")
+
   return
  }
  d.layout=updated
  if d.hidDevice!=nil && d.connected && d.Model.Family=="mirabox"{
   if err:=d.drawActivePageLocked();err!=nil{
    d.status=fmt.Sprintf("Page changed; LCD refresh failed: %v",err)
-   logger.Log(logger.Fields{"serial":d.Serial,"error":err}).Warn("Deck page navigation LCD update failed")
+
   }else{
    d.status="Connected; page "+updated.Pages[next].Name+" displayed"
   }
