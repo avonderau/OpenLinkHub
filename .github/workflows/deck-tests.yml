@@ -25,11 +25,16 @@ jobs:
           cache: true
       - name: Install HID dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
-      - name: Enforce formatting on new Deck artwork and telemetry files
+      - name: Check new Deck artwork Go formatting
+        run: |
+          files=(src/devices/deck/key_icons.go src/devices/deck/key_icons_test.go)
+          if [ -n "$(gofmt -l "${files[@]}")" ]; then
+            gofmt -l "${files[@]}"
+            exit 1
+          fi
+      - name: Check new Deck metric Go formatting
         run: |
           files=(
-            src/devices/deck/key_icons.go
-            src/devices/deck/key_icons_test.go
             src/devices/deck/key_metrics.go
             src/devices/deck/key_metrics_test.go
             src/devices/deck/metric_refresh.go
