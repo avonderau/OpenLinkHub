@@ -30,7 +30,7 @@ var metricShortName = map[string]string{
 	"disk.free_gb": "Free Disk", "network.rx_rate": "Net RX",
 	"network.tx_rate": "Net TX", "disk.read_rate": "Disk Read",
 	"disk.write_rate": "Disk Write",
-	"cpu.load_1m": "Load 1m", "cpu.load_5m": "Load 5m",
+	"cpu.load_1m":     "Load 1m", "cpu.load_5m": "Load 5m",
 	"cpu.load_15m": "Load 15m", "gpu.vram.total_mb": "Total VRAM",
 }
 
@@ -90,7 +90,7 @@ func renderDeckMetric(size int, key KeyConfig, value float64, available bool, hi
 	if artwork != nil {
 		canvas = renderDeckArtwork(size, artwork, "").(*image.RGBA)
 		draw.DrawMask(canvas, canvas.Bounds(), image.NewUniform(color.Black), image.Point{},
-			image.NewUniform(color.Alpha{A:160}), image.Point{}, draw.Over)
+			image.NewUniform(color.Alpha{A: 160}), image.Point{}, draw.Over)
 	} else {
 		canvas = renderKeyLabel(size, "").(*image.RGBA)
 	}
@@ -101,7 +101,7 @@ func renderDeckMetric(size int, key KeyConfig, value float64, available bool, hi
 	if label == "" {
 		label = key.Metric
 	}
-	drawCenteredDeckString(canvas, label, 14, color.RGBA{R:244,G:210,B:151,A:255})
+	drawCenteredDeckString(canvas, label, 14, color.RGBA{R: 244, G: 210, B: 151, A: 255})
 	text := "--"
 	if available && !math.IsNaN(value) && !math.IsInf(value, 0) {
 		text = deckMetricNumber(key.Metric, value)
@@ -123,8 +123,8 @@ func drawCenteredDeckString(dst *image.RGBA, label string, baseline int, ink col
 		return
 	}
 	textWidth := font.MeasureString(basicfont.Face7x13, string(text)).Ceil()
-	drawer := font.Drawer{Dst:dst, Src:image.NewUniform(ink), Face:basicfont.Face7x13,
-		Dot:fixed.P((width-textWidth)/2,baseline)}
+	drawer := font.Drawer{Dst: dst, Src: image.NewUniform(ink), Face: basicfont.Face7x13,
+		Dot: fixed.P((width-textWidth)/2, baseline)}
 	drawer.DrawString(string(text))
 }
 
@@ -143,10 +143,16 @@ func drawDeckSparkline(dst *image.RGBA, samples []float64, metric string) {
 		if math.IsNaN(sample) || math.IsInf(sample, 0) {
 			continue
 		}
-		if sample < minimum { minimum=sample }
-		if sample > maximum { maximum=sample }
+		if sample < minimum {
+			minimum = sample
+		}
+		if sample > maximum {
+			maximum = sample
+		}
 	}
-	if math.IsInf(minimum, 1) { return }
+	if math.IsInf(minimum, 1) {
+		return
+	}
 	if strings.HasSuffix(metric, ".utilization") {
 		minimum, maximum = 0, 100
 	}
@@ -161,39 +167,53 @@ func drawDeckSparkline(dst *image.RGBA, samples []float64, metric string) {
 			hasPrevious = false
 			continue
 		}
-		x := xStart+int(float64(i)*float64(width-1)/float64(len(samples)-1))
-		fraction := (sample-minimum)/(maximum-minimum)
-		fraction = math.Max(0,math.Min(1,fraction))
-		y := yStart+height-1-int(fraction*float64(height-1))
-		point := image.Pt(x,y)
+		x := xStart + int(float64(i)*float64(width-1)/float64(len(samples)-1))
+		fraction := (sample - minimum) / (maximum - minimum)
+		fraction = math.Max(0, math.Min(1, fraction))
+		y := yStart + height - 1 - int(fraction*float64(height-1))
+		point := image.Pt(x, y)
 		if hasPrevious {
-			drawDeckLine(dst,previous,point,color.RGBA{R:213,G:166,B:90,A:255})
+			drawDeckLine(dst, previous, point, color.RGBA{R: 213, G: 166, B: 90, A: 255})
 		}
-		previous,hasPrevious=point,true
+		previous, hasPrevious = point, true
 	}
 }
 
-func drawDeckLine(dst *image.RGBA,a,b image.Point,ink color.RGBA) {
-	dx := int(math.Abs(float64(b.X-a.X)))
-	dy := -int(math.Abs(float64(b.Y-a.Y)))
-	sx,sy := -1,-1
-	if a.X<b.X { sx=1 }
-	if a.Y<b.Y { sy=1 }
-	e := dx+dy
+func drawDeckLine(dst *image.RGBA, a, b image.Point, ink color.RGBA) {
+	dx := int(math.Abs(float64(b.X - a.X)))
+	dy := -int(math.Abs(float64(b.Y - a.Y)))
+	sx, sy := -1, -1
+	if a.X < b.X {
+		sx = 1
+	}
+	if a.Y < b.Y {
+		sy = 1
+	}
+	e := dx + dy
 	for {
-		if a.In(dst.Bounds()) { dst.SetRGBA(a.X,a.Y,ink) }
-		if a==b { return }
-		twice:=2*e
-		if twice>=dy { e+=dy;a.X+=sx }
-		if twice<=dx { e+=dx;a.Y+=sy }
+		if a.In(dst.Bounds()) {
+			dst.SetRGBA(a.X, a.Y, ink)
+		}
+		if a == b {
+			return
+		}
+		twice := 2 * e
+		if twice >= dy {
+			e += dy
+			a.X += sx
+		}
+		if twice <= dx {
+			e += dx
+			a.Y += sy
+		}
 	}
 }
 
 func copyDeckMetrics(values nexus.MetricSnapshot) map[string]float64 {
-	copyOf := make(map[string]float64,len(values))
-	for name,value := range values {
-		if nexus.IsSupportedMetric(name) && !math.IsNaN(value) && !math.IsInf(value,0) {
-			copyOf[name]=value
+	copyOf := make(map[string]float64, len(values))
+	for name, value := range values {
+		if nexus.IsSupportedMetric(name) && !math.IsNaN(value) && !math.IsInf(value, 0) {
+			copyOf[name] = value
 		}
 	}
 	return copyOf
