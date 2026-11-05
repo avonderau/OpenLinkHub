@@ -59,3 +59,27 @@ func TestDeckDesktopLaunchRequiresConnectedAgent(t *testing.T) {
   t.Fatal("application was queued without a connected graphical agent")
  }
 }
+
+func TestDesktopLaunchDoesNotUseInheritedServiceDisplay(t *testing.T) {
+ cases:=[]struct{
+  name string
+  service bool
+  uid int
+  display,wayland string
+  allowed bool
+ }{
+  {name:"service with inherited X11 display",service:true,uid:997,display:":0",allowed:false},
+  {name:"service with inherited Wayland display",service:true,uid:997,wayland:"wayland-0",allowed:false},
+  {name:"real graphical user",service:false,uid:1000,display:":0",allowed:true},
+  {name:"real Wayland desktop",service:false,uid:1000,wayland:"wayland-0",allowed:true},
+  {name:"user without desktop",service:false,uid:1000,allowed:false},
+  {name:"root graphical process",service:false,uid:0,display:":0",allowed:false},
+ }
+ for _,tc:=range cases{
+  t.Run(tc.name,func(t *testing.T){
+   if got:=nexusDirectDesktopAllowed(tc.service,tc.uid,tc.display,tc.wayland);got!=tc.allowed{
+    t.Fatalf("allowed=%v, want %v",got,tc.allowed)
+   }
+  })
+ }
+}
