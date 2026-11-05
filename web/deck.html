@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=visuals-2">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=visuals-3">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -145,6 +145,11 @@
                       </select>
                     </div>
                   </div>
+                  <div class="deck-metric-color-row">
+                    <label for="deck-metric-color">Visualization color</label>
+                    <input id="deck-metric-color" type="color" value="#d5a65a" disabled>
+                    <button type="button" class="deck-secondary" id="deck-metric-color-reset" disabled>Default</button>
+                  </div>
                   <small id="deck-metric-status" role="status">Only sensors available on your computer will show values.</small>
                 </div>
                 <div class="deck-property">
@@ -217,7 +222,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=visuals-2"></script>
+<script src="/static/js/deck-editor.js?v=visuals-3"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

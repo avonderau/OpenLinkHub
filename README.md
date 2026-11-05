@@ -6,12 +6,14 @@
 
 ## What is different in this fork?
 
-- **Corsair iCUE NEXUS:** a custom 640 × 48 screen engine, configurable metric/text/bar widgets, multiple layouts, and touch-edge navigation.
-- **Live telemetry:** CPU/GPU readings, RAM utilization, and Linux network/disk throughput.
-- **LCD backgrounds:** per-screen PNG/JPEG background loading and bounded image storage.
-- **Automated tests:** a dedicated Nexus Go CI workflow.
+- **Corsair iCUE NEXUS:** editable 640 × 48 custom screens with metrics, text, bars, graphs, clocks, images, buttons, per-widget colors and gradients, and touch/swipe navigation. Uploaded background images can be static or animated GIFs.
+- **Mirabox Deck LCD keys:** editable key pages, custom PNG/JPEG artwork, keyboard shortcuts, saved macros and media actions. Per-key live metrics support **Value only, Line graph, Bar graph, Fuel gauge, and Ring gauge**, including a per-key visualization color picker. Existing graph layouts are preserved.
+- **Live telemetry:** CPU/GPU temperatures and utilization, fan/pump readings, memory, network and disk throughput (subject to host sensor availability).
+- **Automated checks:** Go and Deck tests, Nexus editor UI tests, security checks and upstream compatibility tests.
 
-**Development status:** Nexus customization is under active development; physical-device actions and distribution-specific desktop integration should be tested on real hardware. For **Open URL** and **Launch Application** buttons when OpenLinkHub runs as a background service, see the [local Nexus desktop agent setup](docs/nexus-desktop-launch.md). These buttons open on the computer hosting OpenLinkHub, not on a separate WebUI client. Do not assume all upstream installation packages include these features.
+For setup and feature details, see the [Nexus development notes](docs/nexus-fork.md), [Deck metric guide](docs/deck-live-metrics.md), and [Deck action guide](docs/deck-actions.md).
+
+**Development status:** The features described here refer to the repository's development code; published release assets may lag behind `main`. Nexus and Deck customization remains under active development, and physical-device actions and desktop integration should be tested on real hardware. For **Open URL** and **Launch Application** buttons when OpenLinkHub runs as a background service, see the [local Nexus desktop agent setup](docs/nexus-desktop-launch.md). These buttons open on the computer hosting OpenLinkHub, not on a separate WebUI client. Do not assume all upstream installation packages include these features.
 
 See [Nexus development notes](docs/nexus-fork.md) for details and limitations.
 
@@ -21,8 +23,8 @@ To build **this fork** from source, follow the manual dependency instructions be
 
 ```bash
 git clone https://github.com/avonderau/OpenLinkHub-Nexus.git
-cd OpenLinkHub
-CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
+cd OpenLinkHub-Nexus
+CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build -o OpenLinkHub .
 ```
 
 For the official fork build, use the **[OpenLinkHub Nexus releases](https://github.com/avonderau/OpenLinkHub-Nexus/releases)**. The first tagged fork release is `0.9.4N` (upstream `0.9.4` plus the Nexus fork's `N` suffix).
@@ -165,8 +167,8 @@ Or use the provided devcontainer in VScode. This is useful for immutable distrib
 ### 2. Build & install
 ```bash
 $ git clone https://github.com/avonderau/OpenLinkHub-Nexus.git
-$ cd OpenLinkHub/
-$ CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build .
+$ cd OpenLinkHub-Nexus/
+$ CGO_CFLAGS_ALLOW='-fno-strict-overflow' go build -o OpenLinkHub .
 $ chmod +x install.sh
 $ sudo ./install.sh
 ```

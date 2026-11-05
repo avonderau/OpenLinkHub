@@ -315,6 +315,33 @@
   font-size:.78rem;
   height:37px;
 }
+/* Compact native color picker beneath the two side-by-side metric selects. */
+.deck-workspace .deck-metric-color-row{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  column-gap:10px;
+  row-gap:7px;
+}
+.deck-workspace .deck-metric-color-row label{
+  margin-right:auto;
+  font-size:.75rem;
+  color:var(--deck-muted);
+}
+.deck-workspace .deck-property #deck-metric-color{
+  flex:0 0 40px;
+  width:40px;
+  min-width:40px;
+  height:33px;
+  padding:3px;
+  border-radius:7px;
+  cursor:pointer;
+}
+.deck-workspace .deck-metric-color-row button{
+  padding:7px 9px;
+  font-size:.76rem;
+  border-radius:7px;
+}
 .deck-workspace .deck-key[data-has-metric="true"]{
   gap:3px;
   background-color:#182734;

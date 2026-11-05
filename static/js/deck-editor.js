@@ -15,6 +15,10 @@
   const metricInput = document.getElementById('deck-key-metric');
   const metricInterval = document.getElementById('deck-metric-interval');
   const metricStyle = document.getElementById('deck-metric-style');
+  const metricColor = document.getElementById('deck-metric-color');
+  const metricColorReset = document.getElementById('deck-metric-color-reset');
+  const defaultMetricColor = '#d5a65a';
+  const safeMetricColor = value => /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : '';
   const metricStatus = document.getElementById('deck-metric-status');
   const actionInput = document.getElementById('deck-key-action');
   const shortcutInput = document.getElementById('deck-key-shortcut');
@@ -144,6 +148,7 @@
       delete key.refreshSeconds;
       delete key.showGraph;
       delete key.metricStyle;
+      delete key.metricColor;
     }
     if (key.label || key.action || key.icon || key.metric) page.keys.push(key);
     page.keys.sort((a, b) => a.index - b.index);
@@ -173,6 +178,7 @@
         const live = document.createElement('span');
         live.className = 'deck-live-value';
         live.textContent = formatMetricPreview(configured.metric);
+        live.style.color = safeMetricColor(configured.metricColor);
         button.appendChild(live);
         button.dataset.hasMetric = 'true';
       }
@@ -226,6 +232,9 @@
     metricInterval.value = String(key?.refreshSeconds || 5);
     metricStyle.disabled = !hasMetric;
     metricStyle.value = key?.metricStyle || (key?.showGraph ? 'line' : 'value');
+    metricColor.disabled = !hasMetric;
+    metricColor.value = safeMetricColor(key?.metricColor) || defaultMetricColor;
+    metricColorReset.disabled = !hasMetric || !safeMetricColor(key?.metricColor);
     metricStatus.textContent = hasMetric
       ? (Number.isFinite(metricLive[key.metric])
         ? 'Live reading available from this computer.'
@@ -316,6 +325,18 @@
   metricStyle.addEventListener('change', () => {
     if (!metricInput.value) return;
     setKeyProperties({ metricStyle: metricStyle.value, showGraph: false });
+  });
+  metricColor.addEventListener('input', () => {
+    if (!metricInput.value) return;
+    const value = safeMetricColor(metricColor.value);
+    if (!value) return;
+    setKeyProperties({ metricColor: value.toLowerCase() === defaultMetricColor ? '' : value });
+    renderInspector();
+  });
+  metricColorReset.addEventListener('click', () => {
+    if (!metricInput.value) return;
+    setKeyProperties({ metricColor: '' });
+    renderInspector();
   });
 
   uploadArtworkButton.addEventListener('click', async () => {

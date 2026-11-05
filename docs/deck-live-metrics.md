@@ -14,9 +14,13 @@ For any key:
    absolute 0–100% range for utilization metrics, 0–100 C for temperatures,
    and a relative 120% of the recent maximum for other sensor readings.
    The numeric reading remains visible with each visualization.
-4. Optionally upload artwork or set a custom display label. Existing
+4. Use **Visualization color** to choose a custom accent (the graph line,
+   history bars, fuel segments, ring arc and ring unit). **Default** restores
+   the original gold without writing a custom color to the saved layout.
+   Value-only metrics also use the chosen accent for their numeric reading.
+5. Optionally upload artwork or set a custom display label. Existing
    button actions still run if assigned to a metric key.
-5. Save & Apply. The first sampling interval updates the LCD; the editor
+6. Save & Apply. The first sampling interval updates the LCD; the editor
    receives the current values through the existing Deck status API.
 
 Metrics not present on a host display `--` rather than invented readings.
@@ -31,6 +35,8 @@ and copied before being included in the JSON status API.
   only while applying the measured values to the correct active page.
 - Only updated metric keys are uploaded, followed by one LCD flush.
   Static icons, navigation and action keys are not continuously retransmitted.
+- Colors are saved per key as validated `#RRGGBB`; blank values retain the
+  original gold. Missing metric keys cannot carry visualization colors.
 - Graph buffers retain at most 24 samples per metric. Previous layouts with
   `showGraph: true` continue to render a Line graph without migration. No untrusted URLs,
   filesystem paths or commands are accepted as metric names.
