@@ -2908,13 +2908,21 @@ func getDeviceID(uri string, r *http.Request) (string, bool) {
 	return value, true
 }
 
+// handleFunc protects the inherited device-control endpoints as well as
+// fork-owned APIs. Browser cross-site writes must never reach hardware actions,
+// even when dashboard authentication is disabled for the local-only WebUI.
 func handleFunc(mux *http.ServeMux, path, method string, handler func(w http.ResponseWriter, r *http.Request)) {
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == method {
-			handler(w, r)
-		} else {
+		if r.Method != method {
+			w.Header().Set("Allow", method)
 			http.Error(w, language.GetValue("txtMethodNotAllowed"), http.StatusMethodNotAllowed)
+			return
 		}
+		if method != http.MethodGet && method != http.MethodHead && !nexusWriteAllowed(r) {
+			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
+			return
+		}
+		handler(w, r)
 	})
 }
 
@@ -3145,7 +3153,16 @@ func setRoutes() http.Handler {
 		handleFunc(r, "/xeneon", http.MethodGet, uiXeneon)
 		handleFunc(r, "/apps", http.MethodGet, uiAppsOverview)
 	}
-	return r
+	// Protect all UI and API reads against DNS rebinding when the WebUI
+	// listens on loopback. Authenticated HTTPS reverse proxies remain allowed
+	// through the configured dashboard AuthOrigin.
+	return http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		if !nexusRequestHostAllowed(request) {
+			http.Error(w, "host not allowed", http.StatusForbidden)
+			return
+		}
+		r.ServeHTTP(w, request)
+	})
 }
 
 // Init will start a new web server used for metrics and fan control
