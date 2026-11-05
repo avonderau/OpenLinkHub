@@ -41,24 +41,9 @@ func (d *Device) refreshCustomLCD() {
  if frame:=d.renderCustomScreen();frame!=nil {d.transfer(frame)}
 }
 
-// For touchscreen areas without interactive buttons, delay tap dispatch
-// until release so the gesture can be distinguished from a left/right swipe.
-// Button and macro taps still execute immediately on touch-down.
-func (d *Device) customTouchHasAction(position uint16)bool{
- d.mutex.Lock()
- defer d.mutex.Unlock()
- for _,screen:=range d.customScreens.Screens{
-  if screen.ID!=d.customScreens.ActiveScreenID{continue}
-  for i:=len(screen.Widgets)-1;i>=0;i--{
-   w:=screen.Widgets[i]
-   if int(position)>=w.X&&int(position)<w.X+w.Width{
-    if w.Type=="button"||w.Type=="macro"{return true}
-   }
-  }
-  break
- }
- return false
-}
+// All touchscreen actions are dispatched after release. Executing buttons
+// immediately on touch-down prevents swiping across crowded control panels
+// (especially media, macro, and shortcut screens).
 
 // HID provides a single horizontal position and active flag; move reports
 // update a per-listener gesture state without spawning goroutines.
@@ -81,9 +66,7 @@ func (d *Device) processCustomTouchReport(data []byte,state *touchGestureState){
  position:=binary.LittleEndian.Uint16(data[6:8])
  if position>=ScreenWidth{return}
  if !state.pressed{
-  hasAction:=d.customTouchHasAction(position)
-  state.begin(position,time.Now(),hasAction)
-  if hasAction{d.handleCustomTouch(position)}
+  state.begin(position,time.Now())
   return
  }
  state.update(position)

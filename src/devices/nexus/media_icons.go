@@ -40,20 +40,34 @@ func drawMediaIcon(dst *image.RGBA, bounds image.Rectangle, icon string, inkColo
  case "next-track":
   rect(cx+13,cy-8,cx+16,cy+9)
   triangle(cx-15,cy,1);triangle(cx-2,cy,1)
- case "volume-up","volume-down":
+ case "volume-up","volume-down","volume-mute":
   rect(cx-15,cy-4,cx-9,cy+5)
   for i:=0;i<7;i++ {
    span:=3+i/2
    for yy:=cy-span;yy<=cy+span;yy++{dot(cx-9+i,yy)}
   }
-  for yy:=cy-6;yy<=cy+6;yy++{
-   dx:=6-absMedia(yy-cy)/2
-   dot(cx+3+dx,yy)
-   if icon=="volume-up" {
-    dx=12-absMedia(yy-cy)
+  if icon=="volume-mute" {
+   // Crossed speaker: distinct from volume down.
+   for i:=-6;i<=6;i++{
+    dot(cx+10+i,cy+i)
+    dot(cx+10+i,cy-i)
+   }
+  }else{
+   for yy:=cy-6;yy<=cy+6;yy++{
+    dx:=6-absMedia(yy-cy)/2
     dot(cx+3+dx,yy)
+    if icon=="volume-up" {
+     dx=12-absMedia(yy-cy)
+     dot(cx+3+dx,yy)
+    }
    }
   }
  }
 }
 func absMedia(v int)int{if v<0{return -v};return v}
+
+// DrawDeckMediaGlyph exposes the same bounded, built-in vector media icons
+// to the Mirabox renderer. Only the fixed supported media-action set calls it.
+func DrawDeckMediaGlyph(dst *image.RGBA,bounds image.Rectangle,command string,ink color.RGBA){
+ drawMediaIcon(dst,bounds,command,ink)
+}

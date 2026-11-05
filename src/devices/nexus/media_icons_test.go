@@ -7,7 +7,7 @@ import (
 )
 
 func TestMediaIconsDrawWithinButton(t *testing.T) {
- icons:=[]string{"previous-track","play-pause","next-track","stop","volume-down","volume-up","next","previous"}
+ icons:=[]string{"previous-track","play-pause","next-track","stop","volume-down","volume-up","volume-mute","next","previous"}
  for _,name:=range icons {
   t.Run(name,func(t *testing.T){
    frame:=image.NewRGBA(image.Rect(0,0,ScreenWidth,ScreenHeight))
