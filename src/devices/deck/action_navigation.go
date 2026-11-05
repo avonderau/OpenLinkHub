@@ -16,16 +16,7 @@ func keyDisplayLabel(key KeyConfig) string {
  case "page-go":return "Go to Page"
  case "hotkey":return "Hotkey"
  case "macro":return "Run Macro"
- case "media":
-  switch key.Target {
-  case "play-pause":return "Play / Pause"
-  case "previous-track":return "Previous"
-  case "next-track":return "Next Track"
-  case "volume-up":return "Volume +"
-  case "volume-down":return "Volume -"
-  case "volume-mute":return "Mute"
-  case "stop":return "Stop"
-  }
+ case "media":return nexus.DefaultMediaLabel(key.Target)
  }
  return ""
 }

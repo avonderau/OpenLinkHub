@@ -831,3 +831,31 @@ test('Settings categorization preserves all original API handlers and section-sp
  assert.match(css,/@media\(max-width:560px\)/);
  assert.match(sec,/\.columns\.adjust\(\)/,'table column sizing updated on reveal');
 });
+
+test('Nexus media preview uses LCD pixel-shape masks and default captions with custom overrides',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({
+  id:'media_prev',type:'button',x:0,y:0,width:120,height:48,
+  action:'media',target:'previous-track',
+  settings:{icon:'previous-track',style:'solid'}
+ });
+ vm.runInContext('render()',context);
+ const preview=node('screen').children[0];
+ const glyph=preview.children.find(el=>el.className==='nexus-icon nexus-media-glyph');
+ const caption=preview.children.find(el=>el.className==='nexus-media-caption');
+ assert.ok(glyph,'hardware-matched preview glyph missing');
+ assert.equal(glyph.style.maskImage,'url("/static/media-glyphs/previous-track.svg")');
+ assert.equal(caption.textContent,'Previous');
+ screen.widgets[0].settings.label='Rewind';
+ vm.runInContext('render()',context);
+ assert.equal(node('screen').children[0].children.find(el=>el.className==='nexus-media-caption').textContent,
+   'Rewind','custom label must replace media default');
+ screen.widgets[0].settings.label='';
+ vm.runInContext("selected='media_prev';render()",context);
+ const find=(el,pred)=>pred(el)?el:(el.children||[]).map(c=>find(c,pred)).find(Boolean);
+ const input=find(node('properties'),el=>el.type==='text'&&el.placeholder==='Previous');
+ assert.ok(input,'default media caption is visible as inspector placeholder');
+ assert.equal(screen.widgets[0].settings.label,'','default caption must not be stored as custom label');
+});

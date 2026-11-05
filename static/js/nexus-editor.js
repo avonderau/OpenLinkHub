@@ -2,7 +2,21 @@
 const nexusElementById=id=>document.getElementById(id);
 let cfg=null,selected=null,serial='',drag=null,copiedWidget=null;
 let nexusPreviewTelemetry=null,nexusTelemetryRequestInFlight=false;
-const mediaGlyphs={'previous-track':'⏮','play-pause':'⏯','next-track':'⏭','stop':'■','volume-down':'◖−','volume-up':'◖+','next':'▶','previous':'◀'};
+// Bitmap masks are the same per-pixel artwork used by the physical LCD.
+const mediaGlyphs={'previous-track':true,'play-pause':true,'next-track':true,'stop':true,
+ 'volume-down':true,'volume-up':true,'volume-mute':true,'next':true,'previous':true};
+const mediaDefaultLabels={'play-pause':'Play/Pause','previous-track':'Previous',
+ 'next-track':'Next Track',stop:'Stop','volume-up':'Volume +',
+ 'volume-down':'Volume -','volume-mute':'Mute'};
+function nexusActionDefaultLabel(w){
+ if(w?.type==='macro')return 'Run Macro';
+ if(w?.type!=='button')return '';
+ return {media:mediaDefaultLabels[w.target]||'Media',next:'Next Screen',
+  previous:'Previous Screen',screen:'Go to Screen',macro:'Run Macro',
+  hotkey:'Shortcut',mouse:'Mouse',text:'Type Text',url:'Open URL',
+  application:'Launch App',device:'Device'}[w.action]||'Touch';
+}
+const nexusDisplayLabel=w=>w?.settings?.label||nexusActionDefaultLabel(w);
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","cpu.load_1m","cpu.load_5m","cpu.load_15m","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"];
 const GRID=8;
 let nexusSharedMacros={};
@@ -70,7 +84,7 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
  if(typeMount)typeMount.replaceChildren();
  const name=nexusElementById('nexusSelectedName'),subtitle=nexusElementById('nexusSelectedSubtitle');
  const symbol=nexusElementById('nexusSelectedIcon'),headActions=nexusElementById('nexusInspectorActions');
- if(name)name.textContent=widget?(widget.settings?.label||widget.settings?.text||widget.metric||widget.type):'Select a widget';
+ if(name)name.textContent=widget?(nexusDisplayLabel(widget)||widget.settings?.text||widget.metric||widget.type):'Select a widget';
  if(subtitle)subtitle.textContent=widget?(
   ['metric','bar','graph'].includes(widget.type)?'Metric widget · '+({metric:'Value',bar:'Bar',graph:'Graph'}[widget.type]):
   ['text','image','clock'].includes(widget.type)?'Content widget · '+widget.type:
@@ -104,7 +118,7 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
  display.style.filter='brightness('+(cfg.brightness||100)+'%)';
  for(const w of s.widgets){const el=document.createElement('div');el.className='widget'+(selected===w.id?' selected':'');el.style.cssText=`left:${w.x}px;top:${w.y}px;width:${w.width}px;height:${w.height}px`;if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){const st=w.settings||{};if(w.type==='button'||w.type==='macro')el.classList.add('nexus-button-style');else el.classList.add('nexus-colored-widget');el.classList.add('nexus-style-'+(st.style||'solid'));el.style.setProperty('--button-bg',st.backgroundColor||'#1b2935');if((st.style||'solid')==='solid'&&['horizontal','vertical'].includes(st.gradientDirection))el.style.backgroundImage='linear-gradient('+(st.gradientDirection==='horizontal'?'90deg':'180deg')+','+(st.backgroundColor||'#1b2935')+','+(st.gradientColor||'#1b2935')+')';el.style.borderRadius=Math.min(Number(st.cornerRadius)||0,Math.floor(Math.min(w.width,w.height)/2))+'px';el.style.opacity=String((st.opacity===undefined?100:Number(st.opacity))/100);el.style.setProperty('--button-ink',st.textColor||'#ebf5fc');el.style.setProperty('--button-border',st.borderColor||'#80bdd9');el.style.setProperty('--button-border-visibility',st.borderColor?'solid':'solid');el.style.fontSize=st.fontSize==='small'?'10px':st.fontSize==='large'?'17px':'11px';el.style.textAlign=st.textAlign||'left';el.style.textShadow=st.textShadow==='soft'?'1px 1px 1px rgba(0,0,0,.7)':st.textShadow==='strong'?'2px 2px 2px rgba(0,0,0,.85)':'none';if((w.type==='text'||((w.type==='button'||w.type==='macro')&&!st.icon&&!st.customIcon))&&st.verticalAlign&&st.verticalAlign!=='top'){
  el.style.display='flex';el.style.alignItems=st.verticalAlign==='middle'?'center':'flex-end';el.style.justifyContent=st.textAlign==='right'?'flex-end':st.textAlign==='center'?'center':'flex-start'
- }}if(w.type==='graph')el.classList.add('nexus-graph-widget');el.textContent=w.type==='image'?'':w.type==='graph'?(w.settings?.label||'History: '+w.metric):w.type==='clock'?formatNexusClock(w.settings):w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?(w.settings?.label||''):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro'||w.type==='image')&&w.settings?.customIcon){
+ }}if(w.type==='graph')el.classList.add('nexus-graph-widget');el.textContent=w.type==='image'?'':w.type==='graph'?(w.settings?.label||'History: '+w.metric):w.type==='clock'?formatNexusClock(w.settings):w.type==='text'?(w.settings?.text||'Text'):((w.type==='button'||w.type==='macro')?nexusDisplayLabel(w):(w.settings?.label||w.metric));if((w.type==='button'||w.type==='macro'||w.type==='image')&&w.settings?.customIcon){
   el.classList.add('nexus-icon-widget');
   const picture=document.createElement('img');
   picture.className='nexus-custom-icon';
@@ -112,9 +126,20 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   picture.src='/api/nexus/icon?serial='+encodeURIComponent(serial)+'&id='+encodeURIComponent(w.settings.customIcon);
   picture.draggable=false;if(w.type==='image'){picture.style.width='100%';picture.style.height='100%';picture.style.objectFit='contain'}el.prepend(picture);
  }else if((w.type==='button'||w.type==='macro')&&mediaGlyphs[w.settings?.icon]){
-  el.classList.add('nexus-icon-widget');
-  const glyph=document.createElement('span');glyph.className='nexus-icon';
-  glyph.textContent=mediaGlyphs[w.settings.icon];el.prepend(glyph)
+  // Position the same 48-pixel glyph and bottom caption as the LCD renderer.
+  el.classList.add('nexus-icon-widget','nexus-media-preview-widget');
+  const caption=el.textContent;
+  el.textContent='';
+  const glyph=document.createElement('span');
+  glyph.className='nexus-icon nexus-media-glyph';
+  glyph.style.maskImage='url("/static/media-glyphs/'+w.settings.icon+'.svg")';
+  glyph.style.webkitMaskImage=glyph.style.maskImage;
+  glyph.setAttribute('aria-hidden','true');
+  el.append(glyph);
+  if(caption){
+   const text=document.createElement('span');text.className='nexus-media-caption';
+   text.textContent=caption;el.append(text)
+  }
  }if(w.type==='graph'){
   const plot=document.createElement('canvas');plot.className='nexus-graph-plot';
   plot.width=Math.max(8,w.width-8);plot.height=Math.max(8,w.height-27);
@@ -178,11 +203,19 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
  const label=document.createElement('label');label.textContent=key+' ';
  let input;if(type==='select'){input=document.createElement('select');for(const m of metrics)input.add(new Option(m,m));input.value=w.metric}else{input=document.createElement('input');input.type=type;input.value=(key in w?w[key]:(w.settings||{})[key])??''}
  if(key==='label'){
+  // The default is shown as a placeholder, never persisted as custom text.
+  if(w.type==='button'||w.type==='macro')input.placeholder=nexusActionDefaultLabel(w);
   input.addEventListener('input',()=>{
    w.settings??={};w.settings.label=input.value;
-   if(name)name.textContent=input.value||w.type;
+   const caption=nexusDisplayLabel(w);
+   if(name)name.textContent=caption||w.type;
    const el=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);
-   if(el){const icon=el.querySelector('.nexus-icon, .nexus-custom-icon');el.textContent=input.value;if(icon)el.prepend(icon)}
+   if(el){
+    const icon=el.querySelector('.nexus-icon, .nexus-custom-icon');
+    const captionNode=el.querySelector('.nexus-media-caption');
+    if(captionNode){captionNode.textContent=caption}
+    else{el.textContent=caption;if(icon)el.prepend(icon)}
+   }
   });
  }
  input.addEventListener('change',()=>{let v=type==='number'?Number(input.value):input.value;if(['x','y','width','height'].includes(key)){if(!Number.isFinite(v))return message('Enter a valid number');if(key==='width')w.width=Math.max(1,Math.min(640,Math.round(v)));if(key==='height')w.height=Math.max(1,Math.min(48,Math.round(v)));if(key==='x')w.x=clamp(Math.round(v),640-w.width);if(key==='y')w.y=clamp(Math.round(v),48-w.height);w.x=clamp(w.x,640-w.width);w.y=clamp(w.y,48-w.height)}else if(key==='metric')w.metric=v;else{w.settings??={};w.settings[key]=v}render()});label.append(input);(['x','y','width','height'].includes(key)?dimensionsRow:styleRow).append(label)}
@@ -582,7 +615,7 @@ function renderTouchProperties(w,panel){
 
 
 }
-function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:(type==='button'?'Button':type==='macro'?'Macro':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;selectNexusEditorTab('widget');render()}
+function addWidget(type){const s=current();if(!s)return;if(s.widgets.length>=64)return message('Maximum 64 widgets');if(totalNexusWidgets()>=NEXUS_MAX_TOTAL_WIDGETS)return message('Maximum 4096 widgets across all screens');const id=uniqueID('widget',new Set(s.widgets.map(w=>w.id)));const w={id,type,metric:(type==='text'||type==='image'||type==='clock'||type==='button'||type==='macro')?'':'cpu.temperature',x:0,y:0,width:152,height:48,settings:type==='image'?{icon:'custom',style:'flat'}:type==='text'?{text:'New text'}:type==='clock'?{clockFormat:'24h',label:''}:{label:((type==='button'||type==='macro')?'':'CPU')},...(type==='button'?{action:'next'}:{}),};s.widgets.push(w);selected=id;selectNexusEditorTab('widget');render()}
 nexusElementById('addMetric').onclick=()=>addWidget('metric');
 nexusElementById('addContent')?.addEventListener('click',()=>addWidget('text'));
 nexusElementById('addButton')?.addEventListener('click',()=>addWidget('button'));

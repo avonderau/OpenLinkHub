@@ -129,6 +129,21 @@
   font-weight:600;
 }
 .deck-key small{font-size:.65rem;color:var(--deck-muted);font-variant-numeric:tabular-nums}
+.deck-key .deck-media-glyph{
+  display:block;
+  flex:0 0 auto;
+  width:min(60%,54px);
+  aspect-ratio:1;
+  background-color:#f2cf93;
+  mask-repeat:no-repeat;
+  mask-position:center;
+  mask-size:contain;
+  -webkit-mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  -webkit-mask-size:contain;
+  pointer-events:none;
+}
+.deck-key[data-has-media-icon="true"] span{font-size:clamp(.56rem,.7vw,.68rem)}
 .deck-key:hover{border-color:rgba(213,166,90,.6);background:linear-gradient(145deg,#393633,#242326)}
 .deck-key[aria-pressed="true"]{
   border-color:#e2b86f;

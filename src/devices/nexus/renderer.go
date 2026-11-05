@@ -94,7 +94,9 @@ func renderNexusScreen(screen Screen,values MetricSnapshot,iconDir string,backgr
    drawStyledNexusText(canvas,w,w.Y+27,formatNexusClock(w.Settings,time.Now()),ink)
    return
   }
-  if w.Type=="button" || w.Type=="macro" {if label=="" && w.Settings["icon"]=="" && w.Settings["customIcon"]=="" {label="Touch"} }
+  if w.Type=="button" || w.Type=="macro" {
+   if label=="" {label=defaultNexusButtonLabel(w)}
+  }
   if (w.Type=="button" || w.Type=="macro") && w.Settings["customIcon"]!="" && iconDir!="" {
    icon,err:=ReadCustomIcon(iconDir,w.Settings["customIcon"])
    if err==nil {
@@ -234,5 +236,26 @@ func drawNexusRoundedGradient(dst *image.RGBA,r image.Rectangle,start,end color.
    mix:=func(a,b uint8)uint8{return uint8((int(a)*(steps-index)+int(b)*index+steps/2)/steps)}
    dst.SetRGBA(x,y,color.RGBA{R:mix(start.R,end.R),G:mix(start.G,end.G),B:mix(start.B,end.B),A:255})
   }
+ }
+}
+
+// Explicit labels always win. Defaults are calculated only for display,
+// without persisting a synthetic label into a saved widget.
+func defaultNexusButtonLabel(w Widget) string {
+ if w.Type=="macro" {return "Run Macro"}
+ if w.Type!="button" {return ""}
+ switch w.Action {
+ case "media": return DefaultMediaLabel(w.Target)
+ case "next": return "Next Screen"
+ case "previous": return "Previous Screen"
+ case "screen": return "Go to Screen"
+ case "macro": return "Run Macro"
+ case "hotkey": return "Shortcut"
+ case "mouse": return "Mouse"
+ case "text": return "Type Text"
+ case "url": return "Open URL"
+ case "application": return "Launch App"
+ case "device": return "Device"
+ default: return "Touch"
  }
 }

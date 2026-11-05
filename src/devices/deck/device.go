@@ -231,6 +231,8 @@ func(d *Device)drawKeyLocked(index int,key KeyConfig)error{
   frame=renderDeckMetric(size,key,value,available,d.metricHistory[key.Metric],artwork)
  }else if artwork!=nil {
   frame=renderDeckArtwork(size,artwork,keyDisplayLabel(key))
+ }else if key.Action=="media" {
+  frame=renderDeckMediaKey(size,key)
  }else {
   frame=renderKeyLabel(size,keyDisplayLabel(key))
  }

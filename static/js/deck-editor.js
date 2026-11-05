@@ -122,6 +122,21 @@
     }
   }
 
+  // These preview masks use the physical device's pixel-level icon shapes.
+  const mediaGlyphs = Object.freeze({
+    'play-pause': true, 'previous-track': true, 'next-track': true,
+    stop: true, 'volume-up': true, 'volume-down': true, 'volume-mute': true,
+  });
+  const mediaKeyLabels = Object.freeze({
+    'play-pause': 'Play/Pause',
+    'previous-track': 'Previous',
+    'next-track': 'Next Track',
+    stop: 'Stop',
+    'volume-up': 'Volume +',
+    'volume-down': 'Volume -',
+    'volume-mute': 'Mute',
+  });
+
   function actionName(action) {
     return {
       'page-next': 'Next Page',
@@ -168,13 +183,26 @@
       button.type = 'button';
       button.className = 'deck-key';
       button.setAttribute('aria-pressed', i === selected ? 'true' : 'false');
-      button.setAttribute('aria-label', `Key ${i + 1}: ${configured?.label || actionName(configured?.action) || 'Unassigned'}`);
+      const mediaLabel = configured?.action === 'media' ? mediaKeyLabels[configured?.target] : '';
+      const displayName = configured?.label || mediaLabel || actionName(configured?.action) || '—';
+      button.setAttribute('aria-label', `Key ${i + 1}: ${displayName}`);
 
       const number = document.createElement('small');
       number.textContent = String(i + 1).padStart(2, '0');
       const label = document.createElement('span');
-      label.textContent = configured?.label || actionName(configured?.action) || '—';
-      button.append(number, label);
+      label.textContent = displayName;
+      button.append(number);
+      if (configured?.action === 'media' && !configured?.metric &&
+          !validIconID(configured?.icon) && mediaGlyphs[configured?.target]) {
+        const glyph = document.createElement('span');
+        glyph.className = 'deck-media-glyph';
+        glyph.style.maskImage = `url("/static/media-glyphs/${configured.target}.svg")`;
+        glyph.style.webkitMaskImage = glyph.style.maskImage;
+        glyph.setAttribute('aria-hidden', 'true');
+        button.appendChild(glyph);
+        button.dataset.hasMediaIcon = 'true';
+      }
+      button.append(label);
       if (configured?.metric) {
         const live = document.createElement('span');
         live.className = 'deck-live-value';
@@ -220,6 +248,7 @@
     const key = valid ? assignment(selected) : null;
     labelInput.disabled = !valid;
     labelInput.value = key?.label || '';
+    labelInput.placeholder = key?.action === 'media' ? (mediaKeyLabels[key.target] || '') : '';
     artworkInput.disabled = !valid;
     uploadArtworkButton.disabled = !valid;
     removeArtworkButton.disabled = !valid || !validIconID(key?.icon);
@@ -417,6 +446,7 @@
   mediaInput.addEventListener('change', () => {
     if (actionInput.value !== 'media') return;
     setKeyProperties({ target: mediaInput.value });
+    renderInspector(); // Update the default label placeholder for this command.
   });
 
   async function loadSavedMacros() {
