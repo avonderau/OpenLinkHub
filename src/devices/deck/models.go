@@ -1,5 +1,7 @@
 package deck
 
+import "fmt"
+
 // Model definitions for the first Deck Editor hardware families. The model
 // registry is intentionally keyed by BOTH USB vendor and product ID so that
 // third-party controllers cannot collide with Corsair's PID-only registry.
@@ -41,6 +43,11 @@ func LookupModel(vendorID, productID uint16) (Model, bool) {
   if m.VendorID == vendorID && m.ProductID == productID { return m,true }
  }
  return Model{},false
+}
+
+// DeviceKey is a stable, vendor-qualified identifier for Settings.
+func DeviceKey(vendorID, productID uint16) string {
+ return fmt.Sprintf("%04x:%04x", vendorID, productID)
 }
 
 func SupportedVendors() []uint16 { return []uint16{0x5548,0x6603,0x0fd9} }
