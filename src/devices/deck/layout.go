@@ -8,6 +8,8 @@ import (
  "os"
  "path/filepath"
  "regexp"
+
+ "OpenLinkHub/src/devices/nexus"
 )
 
 const MaxDeckPages=16
@@ -19,6 +21,7 @@ type KeyConfig struct {
  Label string `json:"label"`
  Action string `json:"action,omitempty"`
  TargetPage string `json:"targetPage,omitempty"`
+ Target string `json:"target,omitempty"`
 }
 type Page struct {
  ID string `json:"id"`
@@ -55,9 +58,16 @@ func (l Layout)Validate(m Model)error{
    }
    switch key.Action {
    case "", "none", "page-next", "page-previous":
-    if key.TargetPage!="" {return fmt.Errorf("key %d: targetPage not permitted for action %q",key.Index,key.Action)}
+    if key.TargetPage!="" || key.Target!="" {return fmt.Errorf("key %d: unexpected action target for %q",key.Index,key.Action)}
    case "page-go":
-    if !safePageID.MatchString(key.TargetPage) {return fmt.Errorf("key %d: invalid target page",key.Index)}
+    if !safePageID.MatchString(key.TargetPage) || key.Target!="" {return fmt.Errorf("key %d: invalid page navigation target",key.Index)}
+   case "media":
+    if key.TargetPage!="" || !nexus.ValidDeckMediaAction(key.Target){
+     return fmt.Errorf("key %d: invalid media action",key.Index)
+    }
+   case "hotkey":
+    if key.TargetPage!="" {return fmt.Errorf("key %d: unexpected hotkey page",key.Index)}
+    if err:=nexus.ValidateDeckShortcut(key.Target);err!=nil{return fmt.Errorf("key %d: %w",key.Index,err)}
    default:
     return fmt.Errorf("key %d: unsupported action %q",key.Index,key.Action)
    }
