@@ -38,6 +38,7 @@ class FakeElement {
 async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
+    'deck-key-action', 'deck-key-target-page', 'deck-target-property',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
     'deck-remove-page', 'deck-message', 'deck-key-count', 'deck-page-count',
     'deck-connection-state', 'deck-tab-key', 'deck-tab-pages',
@@ -92,10 +93,15 @@ async function run() {
   label.value = 'test';
   label.dispatch('input');
   assert.equal(grid.children[0].children[1].textContent, 'test', 'live preview should show typed labels');
+  const action = nodes['deck-key-action'];
+  action.value = 'page-next';
+  action.dispatch('change');
+  assert.equal(nodes['deck-target-property'].hidden, true, 'next-page action does not need a destination');
   assert.match(nodes['deck-message'].textContent, /Unsaved changes/);
   await nodes['deck-save'].dispatch('click');
   assert.equal(received.length, 1, 'saving sends a PUT request');
   assert.equal(received[0].pages[0].keys[0].label, 'test');
+  assert.equal(received[0].pages[0].keys[0].action, 'page-next', 'physical action must be saved with label');
   assert.match(nodes['deck-message'].textContent, /applied to Mirabox/);
   assert.equal(nodes['deck-save'].disabled, false);
 
@@ -105,8 +111,18 @@ async function run() {
   nodes['deck-add-page'].dispatch('click');
   assert.equal(nodes['deck-page'].value, 'page-2');
   assert.equal(nodes['deck-key-grid'].children.length, 18);
+  grid.children[0].dispatch('click');
+  action.value = 'page-go';
+  action.dispatch('change');
+  assert.equal(nodes['deck-target-property'].hidden, false, 'go-to-page shows destination picker');
+  const target = nodes['deck-key-target-page'];
+  assert.equal(target.children.length, 2, 'all destinations available');
+  target.value = 'home';
+  target.dispatch('change');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[1].pages.length, 2, 'new pages must persist');
+  assert.equal(received[1].pages[1].keys[0].action, 'page-go');
+  assert.equal(received[1].pages[1].keys[0].targetPage, 'home');
   console.log('Deck Editor interaction test passed');
 }
 
