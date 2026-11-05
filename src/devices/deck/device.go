@@ -62,6 +62,8 @@ type Status struct {
  LastPressedKey int `json:"lastPressedKey"`
  ButtonEvents uint64 `json:"buttonEvents"`
  ActivePage string `json:"activePage"`
+ DesktopLauncherReady bool `json:"desktopLauncherReady"`
+ DesktopLauncherStatus string `json:"desktopLauncherStatus"`
  KeyOutputSupported bool `json:"keyOutputSupported"`
 }
 
@@ -139,10 +141,12 @@ func(d *Device)Stop(){
 func(d *Device)StopDirty()uint8{d.Stop();return 2}
 
 func(d *Device)GetStatus()Status{
+ ready,desktopStatus:=nexus.DeckDesktopLauncherStatus()
  d.mu.RLock()
  defer d.mu.RUnlock()
  return Status{Connected:d.connected,Status:d.status,LastPressedKey:d.pressedKey,
   ButtonEvents:d.eventCount,ActivePage:d.layout.ActivePage,
+  DesktopLauncherReady:ready,DesktopLauncherStatus:desktopStatus,
   KeyOutputSupported:d.hidDevice!=nil && d.Model.Family=="mirabox"}
 }
 
