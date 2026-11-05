@@ -52,6 +52,38 @@
 /* Touchscreen media icons and compact preset toolbar. */
 #nexus-editor .nexus-icon-widget{display:flex;align-items:center;justify-content:center;gap:4px;padding:2px;color:#eaf6ff}
 #nexus-editor .nexus-icon{font-family:system-ui,sans-serif;font-size:20px;line-height:1;color:#d8f3ff;flex-shrink:0}
+/* Nexus and Deck previews use the same pixel shapes as the device renderer. */
+#nexus-editor .widget.nexus-media-preview-widget{position:relative;overflow:hidden}
+#nexus-editor .widget .nexus-media-glyph{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:48px;
+  height:48px;
+  max-width:100%;
+  max-height:100%;
+  background-color:var(--button-ink,#ebf5fc);
+  mask-repeat:no-repeat;
+  mask-position:center;
+  mask-size:contain;
+  -webkit-mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  -webkit-mask-size:contain;
+  pointer-events:none;
+}
+#nexus-editor .widget .nexus-media-caption{
+  position:absolute;
+  left:3px;
+  right:3px;
+  bottom:0;
+  overflow:hidden;
+  white-space:nowrap;
+  font:11px/13px monospace;
+  color:var(--button-ink,#ebf5fc);
+  text-align:left;
+  pointer-events:none;
+}
 #nexus-editor #mediaPreset{min-width:128px}
 
 /* Eight-pixel placement guides match snapping in nexus-editor.js. */
