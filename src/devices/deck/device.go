@@ -57,6 +57,7 @@ type Status struct {
  Status string `json:"status"`
  LastPressedKey int `json:"lastPressedKey"`
  ButtonEvents uint64 `json:"buttonEvents"`
+ ActivePage string `json:"activePage"`
  KeyOutputSupported bool `json:"keyOutputSupported"`
 }
 
@@ -130,7 +131,8 @@ func(d *Device)GetStatus()Status{
  d.mu.RLock()
  defer d.mu.RUnlock()
  return Status{Connected:d.connected,Status:d.status,LastPressedKey:d.pressedKey,
-  ButtonEvents:d.eventCount,KeyOutputSupported:d.hidDevice!=nil && d.Model.Family=="mirabox"}
+  ButtonEvents:d.eventCount,ActivePage:d.layout.ActivePage,
+  KeyOutputSupported:d.hidDevice!=nil && d.Model.Family=="mirabox"}
 }
 
 func cloneLayout(l Layout)Layout{
@@ -188,7 +190,7 @@ func(d *Device)drawActivePageLocked()error{
  for i:=range d.layout.Pages {if d.layout.Pages[i].ID==d.layout.ActivePage{page=&d.layout.Pages[i];break}}
  if page==nil{return errors.New("no active page")}
  labels:=make(map[int]string,len(page.Keys))
- for _,key:=range page.Keys{labels[key.Index]=key.Label}
+ for _,key:=range page.Keys{labels[key.Index]=keyDisplayLabel(key)}
  for i:=0;i<d.Model.Keys();i++ {
   size:=d.Model.NativeImagePixels(i)
   frame:=renderKeyLabel(size,labels[i])
@@ -308,9 +310,6 @@ func(d *Device)listen(){
   if n<=0{continue}
   key,pressed,ok:=MiraboxKeyEvent(d.Model,buffer[:n])
   if !ok||!pressed{continue}
-  d.mu.Lock()
-  d.eventCount++
-  d.pressedKey=key
-  d.mu.Unlock()
+  d.handleKeyPress(key)
  }
 }

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=nav-actions-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -82,10 +82,24 @@
                          placeholder="e.g. CPU Temp" disabled>
                   <small>Changes appear in the preview immediately. Save &amp; Apply sends LCD images to Mirabox hardware.</small>
                 </div>
+                <div class="deck-property">
+                  <label for="deck-key-action"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Button action</label>
+                  <select class="form-select" id="deck-key-action" disabled>
+                    <option value="">No action</option>
+                    <option value="page-next">Next page</option>
+                    <option value="page-previous">Previous page</option>
+                    <option value="page-go">Go to page</option>
+                  </select>
+                  <small>Actions trigger when you press the physical Mirabox key.</small>
+                </div>
+                <div class="deck-property" id="deck-target-property" hidden>
+                  <label for="deck-key-target-page">Destination page</label>
+                  <select class="form-select" id="deck-key-target-page" disabled></select>
+                </div>
                 <div class="deck-planned-feature">
                   <i class="bi bi-puzzle" aria-hidden="true"></i>
-                  <div><strong>Action plugins are next</strong>
-                    <p>OpenAction and Stream Deck action compatibility will be added in a later milestone.</p>
+                  <div><strong>More button actions are coming</strong>
+                    <p>Hotkeys, media controls, macros and OpenAction plugins will build on these native navigation actions.</p>
                   </div>
                 </div>
               </section>
@@ -116,7 +130,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js"></script>
+<script src="/static/js/deck-editor.js?v=nav-actions-1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

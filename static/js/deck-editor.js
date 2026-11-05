@@ -8,6 +8,9 @@
   const keyCount = Number.parseInt(grid.dataset.keys || '0', 10);
   const pageSelect = document.getElementById('deck-page');
   const labelInput = document.getElementById('deck-key-label');
+  const actionInput = document.getElementById('deck-key-action');
+  const targetPageInput = document.getElementById('deck-key-target-page');
+  const targetProperty = document.getElementById('deck-target-property');
   const pageNameInput = document.getElementById('deck-page-name');
   const selectedText = document.getElementById('deck-selected-key');
   const saveButton = document.getElementById('deck-save');
@@ -69,6 +72,27 @@
     return currentPage()?.keys.find(key => key.index === index);
   }
 
+  function actionName(action) {
+    return {
+      'page-next': 'Next Page',
+      'page-previous': 'Previous Page',
+      'page-go': 'Go to Page',
+    }[action] || '';
+  }
+
+  function setKeyProperties(patch) {
+    const page = currentPage();
+    if (!page || selected < 0) return;
+    const key = { index: selected, ...assignment(selected), ...patch };
+    if (!key.action || key.action === 'none') delete key.action;
+    if (key.action !== 'page-go') delete key.targetPage;
+    page.keys = page.keys.filter(item => item.index !== selected);
+    if (key.label || key.action) page.keys.push(key);
+    page.keys.sort((a, b) => a.index - b.index);
+    setDirty();
+    renderGrid();
+  }
+
   function renderGrid() {
     grid.replaceChildren();
     const page = currentPage();
@@ -80,12 +104,12 @@
       button.type = 'button';
       button.className = 'deck-key';
       button.setAttribute('aria-pressed', i === selected ? 'true' : 'false');
-      button.setAttribute('aria-label', `Key ${i + 1}: ${configured?.label || 'Unassigned'}`);
+      button.setAttribute('aria-label', `Key ${i + 1}: ${configured?.label || actionName(configured?.action) || 'Unassigned'}`);
 
       const number = document.createElement('small');
       number.textContent = String(i + 1).padStart(2, '0');
       const label = document.createElement('span');
-      label.textContent = configured?.label || '—';
+      label.textContent = configured?.label || actionName(configured?.action) || '—';
       button.append(number, label);
       button.addEventListener('click', () => {
         selected = i;
@@ -117,8 +141,24 @@
 
   function renderInspector() {
     const valid = selected >= 0 && selected < keyCount;
+    const key = valid ? assignment(selected) : null;
     labelInput.disabled = !valid;
-    labelInput.value = valid ? assignment(selected)?.label || '' : '';
+    labelInput.value = key?.label || '';
+    actionInput.disabled = !valid;
+    actionInput.value = key?.action || '';
+    targetPageInput.replaceChildren();
+    if (layout) {
+      for (const page of layout.pages) {
+        const option = document.createElement('option');
+        option.value = page.id;
+        option.textContent = page.name;
+        targetPageInput.appendChild(option);
+      }
+    }
+    targetPageInput.value = key?.targetPage || layout?.activePage || '';
+    const hasTarget = valid && actionInput.value === 'page-go';
+    targetProperty.hidden = !hasTarget;
+    targetPageInput.disabled = !hasTarget;
     selectedText.textContent = valid ? `Key ${selected + 1}` : 'Select a key';
   }
 
@@ -144,15 +184,22 @@
   }
 
   labelInput.addEventListener('input', () => {
-    const page = currentPage();
-    if (!page || selected < 0) return;
-    if (!Array.isArray(page.keys)) page.keys = [];
-    const value = labelInput.value;
-    page.keys = page.keys.filter(key => key.index !== selected);
-    if (value) page.keys.push({ index: selected, label: value });
-    page.keys.sort((a, b) => a.index - b.index);
-    setDirty();
-    renderGrid();
+    setKeyProperties({ label: labelInput.value });
+  });
+
+  actionInput.addEventListener('change', () => {
+    setKeyProperties({
+      action: actionInput.value,
+      ...(actionInput.value === 'page-go'
+        ? { targetPage: assignment(selected)?.targetPage || layout.activePage }
+        : {}),
+    });
+    renderInspector();
+  });
+
+  targetPageInput.addEventListener('change', () => {
+    if (actionInput.value !== 'page-go') return;
+    setKeyProperties({ targetPage: targetPageInput.value });
   });
 
   pageNameInput.addEventListener('input', () => {
@@ -191,7 +238,17 @@
   removeButton.addEventListener('click', () => {
     if (!layout || layout.pages.length <= 1) return;
     if (!window.confirm('Delete the selected page and all its key labels?')) return;
-    layout.pages = layout.pages.filter(page => page.id !== layout.activePage);
+    const deletedPage = layout.activePage;
+    layout.pages = layout.pages.filter(page => page.id !== deletedPage);
+    for (const page of layout.pages) {
+      for (const key of page.keys) {
+        if (key.action === 'page-go' && key.targetPage === deletedPage) {
+          delete key.action;
+          delete key.targetPage;
+        }
+      }
+      page.keys = page.keys.filter(key => key.label || key.action);
+    }
     layout.activePage = layout.pages[0].id;
     selected = -1;
     renderPages();
@@ -246,6 +303,16 @@
       const status = await api('status');
       statusText.textContent = status.status;
       statusText.dataset.connected = status.connected ? 'true' : 'false';
+      // Physical key presses may change pages without involving the editor.
+      // Only adopt server changes when there are no unsaved browser edits.
+      if (layout && !dirty && !saving && status.activePage && layout.activePage !== status.activePage) {
+        layout = normalizeLayout(await api('layout'));
+        selected = -1;
+        renderPages();
+        renderGrid();
+        renderInspector();
+        setMessage(`Device switched to ${currentPage()?.name || 'another page'}.`, 'success');
+      }
     } catch {
       statusText.textContent = 'Connection status unavailable';
       statusText.dataset.connected = 'false';
