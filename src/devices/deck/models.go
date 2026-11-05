@@ -28,6 +28,14 @@ var models = []Model{
  {Name:"Elgato Stream Deck XL V2", Family:"elgato", VendorID:0x0fd9, ProductID:0x008f, Rows:4, Columns:8, KeyPixels:96},
 }
 
+// SupportedModels exposes the same authoritative registry used for HID
+// discovery so that the Settings list includes connected and disconnected models.
+func SupportedModels() []Model {
+ out:=make([]Model,len(models))
+ copy(out,models)
+ return out
+}
+
 func LookupModel(vendorID, productID uint16) (Model, bool) {
  for _, m := range models {
   if m.VendorID == vendorID && m.ProductID == productID { return m,true }
