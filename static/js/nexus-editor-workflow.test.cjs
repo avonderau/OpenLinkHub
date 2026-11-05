@@ -922,7 +922,7 @@ test('all six media keys retain absolute positioning and their saved preview slo
  }
 });
 
-test('Nexus reuses imported icon sets and stores only the selected image ID',async()=>{
+test('Nexus icon gallery lives in the selected widget inspector and saves the chosen image ID',async()=>{
  const {context,node,writes}=makeEditor();
  await vm.runInContext('load()',context);
  const screen=vm.runInContext('cfg.screens[0]',context);
@@ -930,18 +930,55 @@ test('Nexus reuses imported icon sets and stores only the selected image ID',asy
   x:0,y:0,width:90,height:40,settings:{}});
  vm.runInContext("selected='icon_btn';render()",context);
  const find=(root,pred)=>pred(root)?root:(root.children||[]).map(child=>find(child,pred)).find(Boolean);
- const pack=find(node('properties'),el=>el.attributes?.['aria-label']==='Icon set');
- assert.ok(pack,'pack selector missing');
+ const icons=find(node('properties'),el=>el.className==='nexus-property-section nexus-icons-section');
+ assert.ok(icons,'icon selection needs its own existing-style inspector section');
+ assert.equal(icons.open,true,'icon selection should be visible without nested disclosure menus');
+ assert.ok(find(node('properties'),el=>el.className==='nexus-property-section nexus-actions-section'),
+  'button actions should stay in their own inspector section');
+ assert.equal(find(node('properties'),el=>el.className==='nexus-icon-set-picker'),undefined,
+  'the separate nested pack picker must be removed');
+ const pack=find(icons,el=>el.attributes?.['aria-label']==='Icon set');
+ assert.ok(pack,'installed packs should be selectable in the icon inspector');
  pack.value='aaaaaaaaaaaaaaaaaaaaaaaa';
  pack.listeners.change();
- const icon=find(node('properties'),el=>el.attributes?.['aria-label']==='Icon in set');
- icon.value='set_aaaaaaaaaaaaaaaaaaaaaaaa';
- const button=find(node('properties'),el=>el.textContent==='Use set icon');
- assert.ok(button,'set apply action missing');
- button.onclick();
+ const gallery=find(icons,el=>el.className==='nexus-icon-gallery');
+ assert.ok(gallery,'pack icons must have an image gallery');
+ const tile=find(icons,el=>el.attributes?.['aria-label']==='Use Music icon');
+ assert.ok(tile,'pack icon must be selectable directly from its preview');
+ assert.ok(find(tile,el=>el.src?.includes('/api/icon-sets/preview?id=')),
+  'the gallery must render the exact Settings preview artwork');
+ assert.equal(tile.attributes['aria-pressed'],'false');
+ tile.listeners.click();
  assert.equal(screen.widgets[0].settings.customIcon,'set_aaaaaaaaaaaaaaaaaaaaaaaa');
+ const reselected=find(node('properties'),el=>el.attributes?.['aria-label']==='Icon set');
+ assert.equal(reselected.value,'aaaaaaaaaaaaaaaaaaaaaaaa','selected pack stays visible after apply');
+ const chosen=find(node('properties'),el=>el.attributes?.['aria-label']==='Use Music icon');
+ assert.equal(chosen.attributes['aria-pressed'],'true','selected icon must be visually identified');
  await node('save').onclick();
  assert.equal(writes.at(-1).screens[0].widgets[0].settings.customIcon,'set_aaaaaaaaaaaaaaaaaaaaaaaa');
+});
+
+test('Nexus can replace a library icon with built-in artwork and retain image widget selection',async()=>{
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'icon_button',type:'button',action:'media',target:'play-pause',
+  x:0,y:0,width:90,height:40,settings:{customIcon:'set_aaaaaaaaaaaaaaaaaaaaaaaa'}});
+ vm.runInContext("selected='icon_button';render()",context);
+ const find=(root,pred)=>pred(root)?root:(root.children||[]).map(child=>find(child,pred)).find(Boolean);
+ const iconSection=find(node('properties'),el=>el.className==='nexus-property-section nexus-icons-section');
+ const source=find(iconSection,el=>el.attributes?.['aria-label']==='Built-in icon');
+ assert.ok(source);
+ source.value='next-track';
+ source.listeners.change();
+ assert.equal(screen.widgets[0].settings.customIcon,undefined);
+ assert.equal(screen.widgets[0].settings.icon,'next-track');
+ screen.widgets.push({id:'image_card',type:'image',x:100,y:0,width:90,height:40,settings:{customIcon:'set_aaaaaaaaaaaaaaaaaaaaaaaa'}});
+ vm.runInContext("selected='image_card';render()",context);
+ const imageSection=find(node('properties'),el=>el.className==='nexus-property-section nexus-icons-section');
+ assert.ok(imageSection);
+ assert.equal(find(imageSection,el=>el.attributes?.['aria-label']==='Icon set').value,'aaaaaaaaaaaaaaaaaaaaaaaa');
+ assert.ok(find(imageSection,el=>el.attributes?.['aria-label']==='Use Music icon'));
 });
 
 test('icon set imports are managed in Settings, not device editors',()=>{
