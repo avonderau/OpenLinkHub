@@ -11,6 +11,8 @@ const page = fs.readFileSync(path.join(repo,'web','nexus.html'),'utf8');
 const css = fs.readFileSync(path.join(repo,'static','css','nexus-editor-unified.css'),'utf8');
 const shared = fs.readFileSync(path.join(repo,'static','css','openlinkhub-nexus-design.css'),'utf8');
 const deck = fs.readFileSync(path.join(repo,'static','css','deck-editor.css'),'utf8');
+const standalone = fs.readFileSync(path.join(repo,'static','nexus-editor.html'),'utf8');
+const standaloneCss = fs.readFileSync(path.join(repo,'static','css','nexus-standalone-theme.css'),'utf8');
 
 test('Nexus editor loads additive visual layer after original CSS and inspector, without losing controllers',()=>{
  const base=page.indexOf('/static/css/nexus-editor.css');
@@ -68,4 +70,18 @@ test('device settings and main touchscreen preview remain operational',()=>{
  assert.match(workspace,/id="nexus-keyboard-hint"/);
  assert.doesNotMatch(css, /#nexus-editor\s+#screen\s*\{[^}]*width\s*:/);
  assert.doesNotMatch(css, /#nexus-editor\s+#screen\s*\{[^}]*height\s*:/);
+});
+
+test('standalone editor uses matching chrome and preserves existing IDs',()=>{
+ assert.match(standalone, /class="nexus-standalone"/);
+ assert.match(standalone, /nexus-standalone-theme\.css\?v=1/);
+ assert.match(standalone, /bootstrap-icons\.min\.css/);
+ assert.match(standalone, /nexus-preview-stage/);
+ for(const id of ['device','save','load','screens','screen','preview','properties',
+   'addScreen','addMetric','addContent','addButton','nexus-tab-widget','nexus-tab-layout']){
+   assert.equal((standalone.match(new RegExp('id="'+id+'"','g'))||[]).length,1,'standalone missing '+id);
+ }
+ for(const token of ['#d5a65a','linear-gradient','nexus-editor-tablist','nexus-preview-stage']){
+   assert.ok(standaloneCss.includes(token),'standalone design token missing: '+token);
+ }
 });
