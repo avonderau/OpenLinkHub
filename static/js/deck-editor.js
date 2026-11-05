@@ -87,6 +87,31 @@
     return currentPage()?.keys.find(key => key.index === index);
   }
 
+  function formatMetricPreview(metric) {
+    const value = metricLive[metric];
+    if (!Number.isFinite(value)) return '—';
+    if (metric.endsWith('.temperature')) return `${value.toFixed(0)} C`;
+    if (metric.endsWith('.utilization')) return `${value.toFixed(0)}%`;
+    if (metric.endsWith('.rpm')) return `${value.toFixed(0)} rpm`;
+    if (metric === 'memory.used') return `${(value / (1024 ** 3)).toFixed(1)} GiB`;
+    if (metric.endsWith('_rate')) return Math.abs(value) >= 1e6
+      ? `${(value / 1e6).toFixed(1)} MB/s` : `${(value / 1e3).toFixed(0)} KB/s`;
+    if (metric.endsWith('_mb')) return `${value.toFixed(0)} MB`;
+    if (metric.endsWith('_mhz')) return `${value.toFixed(0)} MHz`;
+    if (metric.endsWith('_w')) return `${value.toFixed(0)} W`;
+    if (metric === 'disk.free_gb') return `${value.toFixed(0)} GB`;
+    return value.toFixed(1);
+  }
+
+  function updateMetricPreview() {
+    for (let i = 0; i < keyCount; i += 1) {
+      const metric = assignment(i)?.metric;
+      if (!metric) continue;
+      const valueNode = grid.children[i]?.querySelector?.('.deck-live-value');
+      if (valueNode) valueNode.textContent = formatMetricPreview(metric);
+    }
+  }
+
   function actionName(action) {
     return {
       'page-next': 'Next Page',
@@ -139,11 +164,7 @@
       if (configured?.metric) {
         const live = document.createElement('span');
         live.className = 'deck-live-value';
-        const value = metricLive[configured.metric];
-        live.textContent = Number.isFinite(value)
-          ? (configured.metric.endsWith('.utilization') ? `${value.toFixed(0)}%`
-            : configured.metric.endsWith('.temperature') ? `${value.toFixed(0)} C`
-            : value.toFixed(1)) : '—';
+        live.textContent = formatMetricPreview(configured.metric);
         button.appendChild(live);
         button.dataset.hasMetric = 'true';
       }
@@ -442,7 +463,9 @@
       const nextMetrics = status.metrics || {};
       if (JSON.stringify(nextMetrics) !== JSON.stringify(metricLive)) {
         metricLive = nextMetrics;
-        if (currentPage()?.keys.some(key => key.metric)) renderGrid();
+        // Update value labels in place: keep keyboard focus, and avoid
+        // reloading uploaded artwork from the local server on each poll.
+        updateMetricPreview();
         const selectedMetric = assignment(selected)?.metric;
         if (selectedMetric) {
           metricStatus.textContent = Number.isFinite(metricLive[selectedMetric])
