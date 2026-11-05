@@ -162,6 +162,9 @@
       'page-next': 'Next Page',
       'page-previous': 'Previous Page',
       'page-go': 'Go to Page',
+      'brightness-up': 'Brightness +',
+      'brightness-down': 'Brightness -',
+      'brightness-set': 'Set Brightness',
       hotkey: 'Shortcut',
       macro: 'Run Macro',
       media: 'Media',
@@ -206,7 +209,8 @@
       button.className = 'deck-key';
       button.setAttribute('aria-pressed', i === selected ? 'true' : 'false');
       const mediaLabel = configured?.action === 'media' ? mediaKeyLabels[configured?.target] : '';
-      const displayName = configured?.label || mediaLabel || actionName(configured?.action) || '—';
+      const brightnessLabel = configured?.action === 'brightness-set' ? 'Brightness '+configured.target+'%' : '';
+      const displayName = configured?.label || mediaLabel || brightnessLabel || actionName(configured?.action) || '—';
       button.setAttribute('aria-label', `Key ${i + 1}: ${displayName}`);
 
       const number = document.createElement('small');
@@ -540,9 +544,6 @@
   actionInput.addEventListener('change', () => {
     setKeyProperties({
       action: actionInput.value,
-      ...(actionInput.value === 'page-go'
-        ? { targetPage: assignment(selected)?.targetPage || layout.activePage }
-        : {}),
       ...(actionInput.value === 'media'
         ? { target: assignment(selected)?.action === 'media' ? assignment(selected)?.target || 'play-pause' : 'play-pause' }
         : {}),
