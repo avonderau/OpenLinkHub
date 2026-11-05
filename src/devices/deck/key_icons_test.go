@@ -2,6 +2,8 @@ package deck
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -95,6 +97,62 @@ func TestDeckIconValidationAndFilesystemIsolation(t *testing.T) {
 	}
 	if _, err := SaveDeckIcon(root, buf.Bytes()); err == nil {
 		t.Fatal("oversized image dimensions accepted")
+	}
+}
+
+// The 256-image limit must hold even when separate HTTP requests upload
+// different images concurrently. Existing (deduplicated) icons still work.
+func TestDeckIconConcurrentUploadsRespectLibraryLimit(t *testing.T) {
+	root := t.TempDir()
+	dir := deckIconDir(root)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < maxDeckIconFiles-1; i++ {
+		name := filepath.Join(dir, fmt.Sprintf("%032x.png", i))
+		if err := os.WriteFile(name, []byte("existing"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	uploads := [][]byte{sampleDeckIcon(t, "png"), sampleDeckIcon(t, "jpeg")}
+	start := make(chan struct{})
+	results := make(chan error, len(uploads))
+	for _, data := range uploads {
+		data := data
+		go func() {
+			<-start
+			_, err := SaveDeckIcon(root, data)
+			results <- err
+		}()
+	}
+	close(start)
+
+	succeeded := 0
+	for range uploads {
+		if err := <-results; err == nil {
+			succeeded++
+		}
+	}
+	if succeeded != 1 {
+		t.Fatalf("expected exactly one upload within remaining quota; got %d", succeeded)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != maxDeckIconFiles {
+		t.Fatalf("concurrent upload bypassed library limit: %d files", len(entries))
+	}
+	// A repeated image is a no-op and should not consume another slot.
+	for _, data := range uploads {
+		sha := sha256.Sum256(data)
+		id := fmt.Sprintf("%x", sha[:16])
+		if _, err := os.Stat(filepath.Join(dir, id+".png")); err == nil {
+			if _, err := SaveDeckIcon(root, data); err != nil {
+				t.Fatalf("deduplicated upload rejected at capacity: %v", err)
+			}
+		}
 	}
 }
 
