@@ -12,6 +12,10 @@
   const uploadArtworkButton = document.getElementById('deck-upload-image');
   const removeArtworkButton = document.getElementById('deck-remove-image');
   const artworkStatus = document.getElementById('deck-icon-status');
+  const artworkPreview = document.getElementById('deck-artwork-preview');
+  const inspectorFields = document.getElementById('deck-key-settings');
+  const emptySelection = document.getElementById('deck-empty-state');
+  const selectedSummary = document.getElementById('deck-selected-summary');
   const iconSetSelect = document.getElementById('deck-icon-set');
   const iconSetItem = document.getElementById('deck-icon-set-item');
   const iconSetApply = document.getElementById('deck-apply-icon-set');
@@ -27,6 +31,9 @@
   const defaultMetricColor = '#d5a65a';
   const safeMetricColor = value => /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : '';
   const metricStatus = document.getElementById('deck-metric-status');
+  const metricDetails = document.getElementById('deck-metric-details');
+  const metricIndicator = document.getElementById('deck-metric-indicator');
+  const actionIndicator = document.getElementById('deck-action-indicator');
   const actionInput = document.getElementById('deck-key-action');
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
@@ -256,6 +263,14 @@
   function renderInspector() {
     const valid = selected >= 0 && selected < keyCount;
     const key = valid ? assignment(selected) : null;
+    inspectorFields.hidden = !valid;
+    emptySelection.hidden = valid;
+    const summary = !valid ? 'Choose a key in the device preview' :
+      [key?.label || 'Unlabeled key', key?.metric ? 'Live data' : '', key?.action ? 'Button action' : '']
+        .filter(Boolean).join(' · ');
+    selectedSummary.textContent = summary;
+    artworkPreview.dataset.hasArtwork = String(validIconID(key?.icon));
+    artworkPreview.style.backgroundImage = validIconID(key?.icon) ? `url("${iconURL(key.icon)}")` : '';
     labelInput.disabled = !valid;
     labelInput.value = key?.label || '';
     labelInput.placeholder = key?.action === 'media' ? (mediaKeyLabels[key.target] || '') : '';
@@ -267,6 +282,9 @@
       ? 'Artwork assigned. Save & Apply to send it to the physical LCD.'
       : 'PNG/JPEG · up to 512 KiB · maximum 512 × 512 pixels.';
     const hasMetric = valid && !!key?.metric;
+    metricDetails.hidden = !hasMetric;
+    metricIndicator.textContent = hasMetric ? 'Active' : 'Off';
+    metricIndicator.dataset.active = String(hasMetric);
     metricInput.disabled = !valid;
     metricInput.value = key?.metric || '';
     const sourceChoices = metricSources[key?.metric] || [];
@@ -305,6 +323,8 @@
       : '';
     actionInput.disabled = !valid;
     actionInput.value = key?.action || '';
+    actionIndicator.textContent = actionInput.value ? 'Assigned' : 'None';
+    actionIndicator.dataset.active = String(!!actionInput.value);
     targetPageInput.replaceChildren();
     if (layout) {
       for (const page of layout.pages) {
