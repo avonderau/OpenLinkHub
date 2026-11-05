@@ -174,6 +174,8 @@ func(d *Device)UpdateLayout(layout Layout)(LayoutResult,error){
  defer d.mu.Unlock()
  if err:=SaveLayout(d.root,d.Serial,d.Model,layout);err!=nil{return LayoutResult{},err}
  d.layout=cloneLayout(layout)
+ // A new metric or refresh interval must become due immediately after save.
+ d.metricUpdated=nil
  result:=LayoutResult{Saved:true}
  if d.Model.Family!="mirabox"{
   result.Message="Saved. Elgato image output is not available yet."
