@@ -164,7 +164,7 @@
   border:1px solid var(--deck-border);
   border-bottom-color:var(--deck-border);
   border-radius:9px 9px 0 0;
-  font:600 .81rem/1.2 inherit;
+  font-family:inherit;font-size:.81rem;font-weight:600;line-height:1.2;
   cursor:pointer;
 }
 .deck-tablist [role=tab][aria-selected="true"]{
