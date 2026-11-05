@@ -8,6 +8,10 @@
   const keyCount = Number.parseInt(grid.dataset.keys || '0', 10);
   const pageSelect = document.getElementById('deck-page');
   const labelInput = document.getElementById('deck-key-label');
+  const artworkInput = document.getElementById('deck-key-image');
+  const uploadArtworkButton = document.getElementById('deck-upload-image');
+  const removeArtworkButton = document.getElementById('deck-remove-image');
+  const artworkStatus = document.getElementById('deck-icon-status');
   const actionInput = document.getElementById('deck-key-action');
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
@@ -40,6 +44,8 @@
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
+  const validIconID = id => typeof id === 'string' && /^[a-f0-9]{32}$/.test(id);
+  const iconURL = id => `${endpoint('icon')}&id=${encodeURIComponent(id)}`;
 
   async function api(resource, options) {
     const response = await fetch(endpoint(resource), { cache: 'no-store', ...options });
@@ -96,7 +102,7 @@
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
-    if (key.label || key.action) page.keys.push(key);
+    if (key.label || key.action || key.icon) page.keys.push(key);
     page.keys.sort((a, b) => a.index - b.index);
     setDirty();
     renderGrid();
@@ -120,6 +126,10 @@
       const label = document.createElement('span');
       label.textContent = configured?.label || actionName(configured?.action) || '—';
       button.append(number, label);
+      if (validIconID(configured?.icon)) {
+        button.style.backgroundImage = `linear-gradient(180deg, transparent 45%, rgba(0,0,0,.65)), url("${iconURL(configured.icon)}")`;
+        button.dataset.hasImage = 'true';
+      }
       button.addEventListener('click', () => {
         selected = i;
         renderGrid();
@@ -153,6 +163,12 @@
     const key = valid ? assignment(selected) : null;
     labelInput.disabled = !valid;
     labelInput.value = key?.label || '';
+    artworkInput.disabled = !valid;
+    uploadArtworkButton.disabled = !valid;
+    removeArtworkButton.disabled = !valid || !validIconID(key?.icon);
+    artworkStatus.textContent = validIconID(key?.icon)
+      ? 'Artwork assigned. Save & Apply to send it to the physical LCD.'
+      : 'PNG/JPEG · up to 512 KiB · maximum 512 × 512 pixels.';
     actionInput.disabled = !valid;
     actionInput.value = key?.action || '';
     targetPageInput.replaceChildren();
@@ -202,6 +218,48 @@
 
   labelInput.addEventListener('input', () => {
     setKeyProperties({ label: labelInput.value });
+  });
+
+  uploadArtworkButton.addEventListener('click', async () => {
+    const file = artworkInput.files?.[0];
+    if (!layout || selected < 0 || !file) {
+      setMessage('Choose a PNG or JPEG file and select a key.', 'error');
+      return;
+    }
+    if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > 512 * 1024 || file.size < 1) {
+      setMessage('Artwork must be PNG/JPEG and no larger than 512 KiB.', 'error');
+      return;
+    }
+    const pageID = layout.activePage;
+    const keyIndex = selected;
+    uploadArtworkButton.disabled = true;
+    artworkStatus.textContent = 'Uploading image...';
+    try {
+      const result = await api('icon', {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!validIconID(result?.id)) throw new Error('Invalid image identifier returned');
+      if (layout.activePage !== pageID || selected !== keyIndex) {
+        setMessage('Artwork uploaded, but selection changed. Select the key and upload again.', 'error');
+        return;
+      }
+      setKeyProperties({ icon: result.id });
+      renderInspector();
+      setMessage('Artwork uploaded. Save & Apply to update the Mirabox LCD.', 'success');
+    } catch (error) {
+      artworkStatus.textContent = 'Upload failed: ' + error.message;
+      setMessage('Unable to upload artwork: ' + error.message, 'error');
+    } finally {
+      if (layout && selected >= 0) uploadArtworkButton.disabled = false;
+    }
+  });
+
+  removeArtworkButton.addEventListener('click', () => {
+    setKeyProperties({ icon: '' });
+    artworkInput.value = '';
+    renderInspector();
   });
 
   actionInput.addEventListener('change', () => {
@@ -278,7 +336,7 @@
           delete key.targetPage;
         }
       }
-      page.keys = page.keys.filter(key => key.label || key.action);
+      page.keys = page.keys.filter(key => key.label || key.action || key.icon);
     }
     layout.activePage = layout.pages[0].id;
     selected = -1;
