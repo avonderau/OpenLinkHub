@@ -40,7 +40,7 @@ body.nexus-standalone{
   background:#222326;
   border:1px solid rgba(225,225,235,.24);
   border-radius:8px;
-  font:500 .82rem/1.35 inherit;
+  font-family:inherit;font-size:.82rem;font-weight:500;line-height:1.35;
   margin:3px;
 }
 .nexus-standalone button{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
