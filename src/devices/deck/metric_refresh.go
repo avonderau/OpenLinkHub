@@ -53,6 +53,11 @@ func (d *Device) refreshMetricKeys(now time.Time) {
 
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	select {
+	case <-d.done:
+		return
+	default:
+	}
 	if d.hidDevice == nil || !d.connected || d.layout.ActivePage != page.ID {
 		return
 	}
@@ -100,6 +105,8 @@ func (d *Device) refreshMetricKeys(now time.Time) {
 	if updatedCount > 0 {
 		if err := MiraboxFlush(d.hidDevice, d.Model); err != nil {
 			d.status = "Metric LCD refresh failed: " + err.Error()
+		} else {
+			d.status = "Connected; live metrics refreshed"
 		}
 	}
 }
