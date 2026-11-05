@@ -875,7 +875,7 @@ test('all six media keys retain absolute positioning and their saved preview slo
  assert.equal(visible.length,6,'the preview must render every media control');
  assert.equal(visible.filter(el=>el.classList?.add && el.children.some(c=>c.className==='nexus-icon nexus-media-glyph')).length,6,
   'all six media buttons should have hardware-matched glyph previews');
- const positions=screen.widgets.map(w=>w.x);
+ const positions=Array.from(screen.widgets,w=>Number(w.x));
  assert.deepEqual(positions,[0,104,208,312,416,520]);
  for(let i=0;i<screen.widgets.length;i++){
   assert.ok(visible[i].style.cssText.includes('left:'+positions[i]+'px;'),
