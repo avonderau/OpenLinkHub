@@ -17,6 +17,8 @@ var safePageID=regexp.MustCompile(`^[a-zA-Z0-9_-]{1,48}$`)
 type KeyConfig struct {
  Index int `json:"index"`
  Label string `json:"label"`
+ Action string `json:"action,omitempty"`
+ TargetPage string `json:"targetPage,omitempty"`
 }
 type Page struct {
  ID string `json:"id"`
@@ -50,6 +52,21 @@ func (l Layout)Validate(m Model)error{
    if len(key.Label)>48 {return fmt.Errorf("key %d label too long",key.Index)}
    for _,char:=range key.Label{
     if char<32||char==127{return errors.New("key labels cannot contain control characters")}
+   }
+   switch key.Action {
+   case "", "none", "page-next", "page-previous":
+    if key.TargetPage!="" {return fmt.Errorf("key %d: targetPage not permitted for action %q",key.Index,key.Action)}
+   case "page-go":
+    if !safePageID.MatchString(key.TargetPage) {return fmt.Errorf("key %d: invalid target page",key.Index)}
+   default:
+    return fmt.Errorf("key %d: unsupported action %q",key.Index,key.Action)
+   }
+  }
+ }
+ for _,page:=range l.Pages{
+  for _,key:=range page.Keys{
+   if key.Action=="page-go" && !ids[key.TargetPage] {
+    return fmt.Errorf("key %d: target page %q does not exist",key.Index,key.TargetPage)
    }
   }
  }
