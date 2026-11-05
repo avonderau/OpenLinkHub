@@ -3148,6 +3148,20 @@ func setRoutes() http.Handler {
 	return r
 }
 
+// newWebServer bounds slow or idle client connections. This matters most when
+// operators enable listening beyond the default loopback address.
+func newWebServer(addr string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              addr,
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      120 * time.Second,
+		IdleTimeout:       90 * time.Second,
+		MaxHeaderBytes:    64 << 10,
+	}
+}
+
 // Init will start a new web server used for metrics and fan control
 func Init() {
 	headers = []Header{
@@ -3167,14 +3181,11 @@ func Init() {
 
 	if config.GetConfig().ListenPort > 0 {
 		templates.Init()
-		server = &http.Server{
-			Addr: fmt.Sprintf(
-				"%s:%v",
-				config.GetConfig().ListenAddress,
-				config.GetConfig().ListenPort,
-			),
-			Handler: setRoutes(),
-		}
+		server = newWebServer(fmt.Sprintf(
+			"%s:%v",
+			config.GetConfig().ListenAddress,
+			config.GetConfig().ListenPort,
+		), setRoutes())
 		scheme := "http"
 
 		if dashboard.GetDashboard().AuthEnabled {
