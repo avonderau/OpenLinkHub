@@ -122,6 +122,25 @@
     }
   }
 
+  const mediaGlyphClasses = Object.freeze({
+    'play-pause': 'bi-play-circle-fill',
+    'previous-track': 'bi-skip-backward-fill',
+    'next-track': 'bi-skip-forward-fill',
+    stop: 'bi-stop-fill',
+    'volume-up': 'bi-volume-up-fill',
+    'volume-down': 'bi-volume-down-fill',
+    'volume-mute': 'bi-volume-mute-fill',
+  });
+  const mediaKeyLabels = Object.freeze({
+    'play-pause': 'Play / Pause',
+    'previous-track': 'Previous',
+    'next-track': 'Next',
+    stop: 'Stop',
+    'volume-up': 'Volume +',
+    'volume-down': 'Volume -',
+    'volume-mute': 'Mute',
+  });
+
   function actionName(action) {
     return {
       'page-next': 'Next Page',
@@ -168,13 +187,24 @@
       button.type = 'button';
       button.className = 'deck-key';
       button.setAttribute('aria-pressed', i === selected ? 'true' : 'false');
-      button.setAttribute('aria-label', `Key ${i + 1}: ${configured?.label || actionName(configured?.action) || 'Unassigned'}`);
+      const mediaLabel = configured?.action === 'media' ? mediaKeyLabels[configured?.target] : '';
+      const displayName = configured?.label || mediaLabel || actionName(configured?.action) || '—';
+      button.setAttribute('aria-label', `Key ${i + 1}: ${displayName}`);
 
       const number = document.createElement('small');
       number.textContent = String(i + 1).padStart(2, '0');
       const label = document.createElement('span');
-      label.textContent = configured?.label || actionName(configured?.action) || '—';
-      button.append(number, label);
+      label.textContent = displayName;
+      button.append(number);
+      if (configured?.action === 'media' && !configured?.metric &&
+          !validIconID(configured?.icon) && mediaGlyphClasses[configured?.target]) {
+        const glyph = document.createElement('i');
+        glyph.className = `bi ${mediaGlyphClasses[configured.target]} deck-media-glyph`;
+        glyph.setAttribute('aria-hidden', 'true');
+        button.appendChild(glyph);
+        button.dataset.hasMediaIcon = 'true';
+      }
+      button.append(label);
       if (configured?.metric) {
         const live = document.createElement('span');
         live.className = 'deck-live-value';

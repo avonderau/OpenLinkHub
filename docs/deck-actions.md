@@ -36,7 +36,9 @@ open-website actions are not part of this Deck increment.
 
 **Keyboard shortcut** remains available for a validated combination such as
 `Ctrl+Alt+T` or `Super+D`. **Media control** provides Play/Pause, Previous/Next,
-Stop and Volume Up/Down/Mute. **Run saved macro** assigns a reusable macro from
+Stop and Volume Up/Down/Mute. Media keys display built-in playback and
+volume icons on their physical LCDs and in the Deck preview; uploaded custom
+key artwork takes precedence over those built-in icons. **Run saved macro** assigns a reusable macro from
 the existing OpenLinkHub Macros page. The macro picker includes a Refresh
 button and a link to Manage macros.
 

@@ -81,7 +81,8 @@ func TestNexusButtonTapsAreDeferredAndSwipesTakePrecedence(t *testing.T){
  if d.customScreens.ActiveScreenID!="one"{t.Fatal("movement executed the button before release")}
  release:=make([]byte,6)
  d.processCustomTouchReport(release,&state)
- if d.customScreens.ActiveScreenID!="one"{t.Fatal("rightward button swipe failed to navigate to previous screen")}
+ if d.customScreens.ActiveScreenID!="three"{t.Fatal("rightward button swipe failed to navigate to previous screen")}
+ d.customScreens.ActiveScreenID="one"
  // A regular short tap on that same button executes once on release.
  d.processCustomTouchReport(press,&state)
  if d.customScreens.ActiveScreenID!="one"{t.Fatal("tap fired before release")}
