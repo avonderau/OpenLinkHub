@@ -42,6 +42,7 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
+    'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
     'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
     'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
@@ -77,6 +78,9 @@ async function run() {
           'disk.read_rate': [{ id: 'disk:sda', label: '/dev/sda' }],
         },
       }) };
+    }
+    if (type === '/api/icon-sets') {
+      return { ok: true, status: 200, json: async () => ({ sets: [] }) };
     }
     if (type === '/api/macro/') {
       return { ok: true, status: 200, json: async () => ({
@@ -114,6 +118,12 @@ async function run() {
   }, { filename: 'deck-editor.js' });
 
   assert.match(fs.readFileSync(path.join(__dirname,'deck-editor.js'),'utf8'), /metricSource/);
+  const iconSetMarkup = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
+  assert.match(iconSetMarkup, /id="deck-icon-set"/);
+  assert.match(iconSetMarkup, /id="deck-icon-set-item"/);
+  assert.doesNotMatch(iconSetMarkup, /id="deck-import-icon-set"|id="deck-icon-set-import"/);
+  assert.ok(iconSetMarkup.includes('/settings#olh-settings-devices'));
+  assert.match(fs.readFileSync(path.join(__dirname, 'deck-editor.js'), 'utf8'), /\/api\/icon-sets/);
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
   for (const hiddenCopy of [

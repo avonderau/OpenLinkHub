@@ -49,6 +49,11 @@ function makeEditor(){
      'network.rx_rate':[{id:'net:eth0',label:'eth0'}],
     }})
    };
+   if(url.startsWith('/api/icon-sets'))return {ok:true,json:async()=>({
+    sets:[{id:'aaaaaaaaaaaaaaaaaaaaaaaa',name:'Desktop Pack',icons:[
+     {name:'Music',nexusId:'set_aaaaaaaaaaaaaaaaaaaaaaaa',deckId:'a'.repeat(32)}
+    ]}]
+   })};
    if(url.startsWith('/static/nexus/templates/')){
     const id=url.split('/').pop();
     const file=path.join(__dirname,'..','nexus','templates',id);
@@ -741,7 +746,7 @@ test('Nexus design system loads after upstream and keeps Settings styles scoped'
  assert.doesNotMatch(settingsCss,/^\s*(?:body|html|\.main-content|\.card|\.card-header)\s*[{,]/m,'Settings-only CSS must be scoped, not rewrite other pages');
 });
 
-test('Settings pilot preserves actions, localization and all seven section icons',()=>{
+test('Settings pilot preserves actions, localization and all eight section icons',()=>{
  const root=path.join(__dirname,'..','..');
  const page=fs.readFileSync(path.join(root,'web','settings.html'),'utf8');
  const expectedIds=['deviceId','checkbox-celsius','checkbox-temperatureBar','checkbox-deviceLabels',
@@ -755,11 +760,12 @@ test('Settings pilot preserves actions, localization and all seven section icons
  }
  const sectionIds=['txtDashboard','txtBackupRestore','txtRgbScheduler','txtVirtualAudio','txtDisplay','txtDashboardAuth','txtSupportedDevices'];
  const headers=[...page.matchAll(/<div class="card-header olh-section-header">([\s\S]*?)<\/div>/g)];
- assert.equal(headers.length,sectionIds.length,'all Settings panels have redesigned, accessible headers');
+ assert.equal(headers.length,sectionIds.length+1,'all Settings panels have redesigned, accessible headers');
+  assert.ok(headers.some(([markup])=>markup.includes('Icon Pack Library')),'pack manager has matching card header');
  for(const key of sectionIds){
   assert.ok(headers.some(([markup])=>markup.includes('{{ .Lang "'+key+'" }}')),'localized header preserved: '+key);
  }
- assert.equal((page.match(/class="olh-section-icon"/g)||[]).length,7,'one icon per section');
+ assert.equal((page.match(/class="olh-section-icon"/g)||[]).length,8,'one icon per section');
  assert.match(page,/class="main-content p-4 olh-settings-page"/);
  assert.equal((page.match(/class="olh-settings-subheading"/g)||[]).length,3,'Dashboard options are grouped by purpose');
  assert.match(page,/for="keyboardLayout"/,'keyboard layout label targets correct field');
@@ -914,4 +920,31 @@ test('all six media keys retain absolute positioning and their saved preview slo
    'button '+i+' must retain its original LCD X coordinate');
   assert.equal(visible[i].dataset.id,screen.widgets[i].id);
  }
+});
+
+test('Nexus reuses imported icon sets and stores only the selected image ID',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'icon_btn',type:'button',action:'next',target:'',
+  x:0,y:0,width:90,height:40,settings:{}});
+ vm.runInContext("selected='icon_btn';render()",context);
+ const find=(root,pred)=>pred(root)?root:(root.children||[]).map(child=>find(child,pred)).find(Boolean);
+ const pack=find(node('properties'),el=>el.attributes?.['aria-label']==='Icon set');
+ assert.ok(pack,'pack selector missing');
+ pack.value='aaaaaaaaaaaaaaaaaaaaaaaa';
+ pack.listeners.change();
+ const icon=find(node('properties'),el=>el.attributes?.['aria-label']==='Icon in set');
+ icon.value='set_aaaaaaaaaaaaaaaaaaaaaaaa';
+ const button=find(node('properties'),el=>el.textContent==='Use set icon');
+ assert.ok(button,'set apply action missing');
+ button.onclick();
+ assert.equal(screen.widgets[0].settings.customIcon,'set_aaaaaaaaaaaaaaaaaaaaaaaa');
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].widgets[0].settings.customIcon,'set_aaaaaaaaaaaaaaaaaaaaaaaa');
+});
+
+test('icon set imports are managed in Settings, not device editors',()=>{
+ assert.doesNotMatch(editorSource,/fetch\('\/api\/icon-sets\?name=/);
+ assert.match(editorSource,/href='\/settings#olh-settings-devices'/);
 });

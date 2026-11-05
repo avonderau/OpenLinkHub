@@ -2908,13 +2908,15 @@ func setRoutes() http.Handler {
 	// OpenLinkHub Nexus custom-layout endpoints.
 	r.HandleFunc("/api/nexus/screens", nexusScreensAPI)
 	r.HandleFunc("/api/nexus/telemetry", nexusTelemetryAPI)
-	r.HandleFunc("/api/telemetry/sources", hostMetricSourcesAPI)
 	r.HandleFunc("/api/nexus/background", nexusBackgroundAPI)
 	r.HandleFunc("/api/nexus/icon", nexusCustomIconAPI)
 	// Fork-owned Deck Editor endpoints.
 	r.HandleFunc("/api/deck/layout", deckLayoutAPI)
 	r.HandleFunc("/api/deck/status", deckStatusAPI)
 	r.HandleFunc("/api/deck/icon", deckIconAPI)
+	r.HandleFunc("/api/telemetry/sources", hostMetricSourcesAPI)
+	r.HandleFunc("/api/icon-sets", iconSetsAPI)
+	r.HandleFunc("/api/icon-sets/preview", iconSetPreviewAPI)
 
 	// GET
 	handleFunc(r, "/api/", http.MethodGet, homePage)

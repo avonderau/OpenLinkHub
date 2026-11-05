@@ -5,6 +5,9 @@ on:
     paths:
       - 'src/devices/deck/**'
       - 'src/server/deck_api.go'
+      - 'src/server/icon_sets_api.go'
+      - 'src/server/svg_icon_import.go'
+      - 'static/js/icon-pack-settings.js'
       - 'src/devices/devices.go'
       - 'src/common/common.go'
       - 'static/js/deck-editor.js'
@@ -24,7 +27,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Install HID dependencies
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config librsvg2-bin
       - name: Check new Deck artwork Go formatting
         run: |
           files=(src/devices/deck/key_icons.go src/devices/deck/key_icons_test.go)

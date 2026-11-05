@@ -161,6 +161,17 @@ preserved; no conversion or migration is required.
 Deck's macro execution reuses the bounded Nexus macro runner. Page navigation,
 media controls, artwork and live metrics remain available.
 
+### Shared custom icon sets
+
+Manage reusable packs from **Settings → Devices & Displays → Icon Pack
+Library**. Import, rename, preview, and remove them there; only select
+installed icons inside the Nexus and Deck editors. ZIP imports support
+PNG, JPEG and static SVG icons (up to 48 images, 512 KiB each, 8 MiB ZIP).
+SVG files are safely rasterized into PNG using `rsvg-convert` (install
+`librsvg2-bin` on Linux); SVG markup is never stored for direct display.
+Existing single-image uploads remain supported, and saved layouts store
+stable icon IDs rather than archive paths.
+
 ### Selecting individual telemetry sources
 
 For a metric that has multiple host sources, use the **Source** control in

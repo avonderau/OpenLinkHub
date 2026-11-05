@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=sources-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=sources-iconsets-3">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -93,6 +93,17 @@
                     </button>
                   </div>
                   <small id="deck-icon-status" role="status">PNG or JPEG, maximum 512 KiB and 512 × 512 px. Artwork is stored privately on this computer.</small>
+                  <details class="deck-icon-set-library">
+                    <summary>Reusable icon sets</summary>
+                    <div class="deck-icon-set-controls">
+                    <label for="deck-icon-set">Icon set</label>
+                    <select id="deck-icon-set" class="form-select"><option value="">Select icon set</option></select>
+                    <label for="deck-icon-set-item">Icon</label>
+                    <select id="deck-icon-set-item" class="form-select" disabled><option value="">Select icon</option></select>
+                    <button type="button" id="deck-apply-icon-set" class="deck-secondary" disabled>Use selected icon</button>
+                    <small>Import and manage icon packs in <a href="/settings#olh-settings-devices">Settings</a>.</small>
+                    </div>
+                  </details>
                 </div>
                 <div class="deck-property">
                   <label for="deck-key-metric"><i class="bi bi-activity" aria-hidden="true"></i> Live metric</label>
@@ -228,7 +239,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=sources-1"></script>
+<script src="/static/js/deck-editor.js?v=sources-iconsets-3"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

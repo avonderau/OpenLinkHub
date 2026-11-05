@@ -32,3 +32,26 @@ node --test static/js/deck-editor.test.cjs
 Manual smoke test on HSV293S: upload a PNG and JPEG, verify previews and
 labels, Save & Apply, confirm the physical key shows the image, reconnect
 the device, and verify the saved page and image restore correctly.
+
+### Reusable icon sets
+
+Manage packs under **Settings → Devices & Displays → Icon Pack Library**.
+Import a ZIP containing up to 48 PNG, JPEG or static SVG icons (up to 512 KiB
+per image and 8 MiB ZIP limit). Settings supports renaming and removing
+packs and viewing each icon. Deleting a pack keeps previously used artwork
+in saved layouts. In the Deck editor, choose a pack and icon in
+**Reusable icon sets**, then Save & Apply.
+The same set appears in the Nexus editor and can be reused on multiple keys
+or widgets. Uploaded icons are normalized and saved privately, not served from
+the original ZIP or extracted as arbitrary filesystem paths. Deleting a set
+manifest does not remove icons referenced by saved layouts.
+
+To enable SVG icon import on Debian/Ubuntu/Linux Mint, install:
+
+```sh
+sudo apt install librsvg2-bin
+```
+
+The backend validates imported SVG markup and renders it into a bounded PNG
+before device storage. SVG with scripts, DTDs, embedded images or external
+resources is rejected. PNG/JPEG archives do not require SVG utilities.
