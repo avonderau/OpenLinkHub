@@ -563,31 +563,12 @@ function renderTouchProperties(w,panel){
     render();
     message('Icon from shared set assigned. Save Layout to apply.');
    };
-   const file=document.createElement('input');
-   file.type='file';file.accept='.zip,application/zip';
-   file.setAttribute('aria-label','Import icon set ZIP');
-   const name=document.createElement('input');
-   name.type='text';name.maxLength=60;name.placeholder='Set name (optional)';
-   const importButton=document.createElement('button');
-   importButton.type='button';importButton.textContent='Import icon set';
-   importButton.onclick=async()=>{
-    const uploaded=file.files?.[0];
-    if(!uploaded||uploaded.size<1||uploaded.size>8*1024*1024)return message('Choose a ZIP under 8 MiB.');
-    const baseName=uploaded.name.toLowerCase().endsWith('.zip')?uploaded.name.slice(0,-4):uploaded.name;
-    const title=(name.value||baseName).trim();
-    importButton.disabled=true;
-    try{
-     const res=await fetch('/api/icon-sets?name='+encodeURIComponent(title),
-      {method:'POST',headers:{'Content-Type':'application/zip'},body:uploaded});
-     if(!res.ok)throw Error(await res.text());
-     const data=await res.json();
-     await loadNexusIconSets();
-     render();
-     message('Icon set '+(data?.set?.name||title)+' imported. Choose an icon.');
-    }catch(err){message('Icon set import failed: '+err.message)}
-    finally{importButton.disabled=false}
-   };
-   group.append(heading,packSelect,iconSelect,useIcon,file,name,importButton);
+   const help=document.createElement('small');
+   help.textContent='Import and manage icon packs in Settings.';
+   const link=document.createElement('a');
+   link.href='/settings#olh-settings-devices';
+   link.textContent='Open Settings';
+   group.append(heading,packSelect,iconSelect,useIcon,help,link);
    panel.append(group);
   }
  if(w.settings?.customIcon || w.settings?.icon==='custom'){

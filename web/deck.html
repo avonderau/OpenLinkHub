@@ -101,11 +101,7 @@
                     <label for="deck-icon-set-item">Icon</label>
                     <select id="deck-icon-set-item" class="form-select" disabled><option value="">Select icon</option></select>
                     <button type="button" id="deck-apply-icon-set" class="deck-secondary" disabled>Use selected icon</button>
-                    <label for="deck-icon-set-import">Import icon set ZIP (PNG/JPEG)</label>
-                    <input type="file" id="deck-icon-set-import" accept=".zip,application/zip">
-                    <input type="text" id="deck-icon-set-name" class="form-control" maxlength="60" placeholder="Set name (optional)">
-                    <button type="button" id="deck-import-icon-set" class="deck-secondary">Import icon set</button>
-                    <small id="deck-icon-set-status" role="status"></small>
+                    <small>Import and manage icon packs in <a href="/settings#olh-settings-devices">Settings</a>.</small>
                     </div>
                   </details>
                 </div>
@@ -237,7 +233,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=iconsets-1"></script>
+<script src="/static/js/deck-editor.js?v=iconsets-settings-2"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

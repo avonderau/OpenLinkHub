@@ -15,10 +15,6 @@
   const iconSetSelect = document.getElementById('deck-icon-set');
   const iconSetItem = document.getElementById('deck-icon-set-item');
   const iconSetApply = document.getElementById('deck-apply-icon-set');
-  const iconSetImport = document.getElementById('deck-icon-set-import');
-  const iconSetImportName = document.getElementById('deck-icon-set-name');
-  const iconSetImportButton = document.getElementById('deck-import-icon-set');
-  const iconSetStatus = document.getElementById('deck-icon-set-status');
   let iconSets = [];
   const metricInput = document.getElementById('deck-key-metric');
   const metricInterval = document.getElementById('deck-metric-interval');
@@ -451,7 +447,7 @@
       iconSets = Array.isArray(payload?.sets) ? payload.sets : [];
       refreshIconSetPicker();
     } catch (_error) {
-      iconSetStatus.textContent = 'Icon sets are currently unavailable.';
+      setMessage('Icon packs are unavailable. Check Settings.', 'error');
     }
   }
   iconSetSelect.addEventListener('change', refreshIconSetPicker);
@@ -462,30 +458,6 @@
     renderInspector();
     setMessage('Icon set artwork assigned. Save & Apply to update the LCD.', 'success');
   });
-  iconSetImportButton.addEventListener('click', async () => {
-    const file = iconSetImport.files?.[0];
-    if (!file || file.size < 1 || file.size > 8 * 1024 * 1024) {
-      iconSetStatus.textContent = 'Choose a ZIP smaller than 8 MiB.';
-      return;
-    }
-    const baseName = file.name.toLowerCase().endsWith('.zip') ? file.name.slice(0, -4) : file.name;
-    const name = (iconSetImportName.value || baseName).trim();
-    iconSetImportButton.disabled = true;
-    try {
-      const response = await fetch('/api/icon-sets?name=' + encodeURIComponent(name), {
-        method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: file,
-      });
-      if (!response.ok) throw new Error((await response.text()).trim() || 'Import failed');
-      const result = await response.json();
-      await loadIconSets();
-      iconSetSelect.value = result?.set?.id || '';
-      refreshIconSetPicker();
-      iconSetStatus.textContent = 'Icon set imported. Select an icon to use.';
-    } catch (error) {
-      iconSetStatus.textContent = 'Import failed: ' + error.message;
-    } finally { iconSetImportButton.disabled = false; }
-  });
-
   removeArtworkButton.addEventListener('click', () => {
     setKeyProperties({ icon: '' });
     artworkInput.value = '';

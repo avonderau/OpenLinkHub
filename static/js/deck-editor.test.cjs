@@ -43,8 +43,6 @@ async function run() {
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
-    'deck-icon-set-import', 'deck-icon-set-name', 'deck-import-icon-set',
-    'deck-icon-set-status',
     'deck-key-metric', 'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
@@ -111,6 +109,8 @@ async function run() {
   const iconSetMarkup = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
   assert.match(iconSetMarkup, /id="deck-icon-set"/);
   assert.match(iconSetMarkup, /id="deck-icon-set-item"/);
+  assert.doesNotMatch(iconSetMarkup, /id="deck-import-icon-set"|id="deck-icon-set-import"/);
+  assert.ok(iconSetMarkup.includes('/settings#olh-settings-devices'));
   assert.match(fs.readFileSync(path.join(__dirname, 'deck-editor.js'), 'utf8'), /\/api\/icon-sets/);
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');

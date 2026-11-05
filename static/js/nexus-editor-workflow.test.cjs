@@ -886,3 +886,8 @@ test('Nexus reuses imported icon sets and stores only the selected image ID',asy
  await node('save').onclick();
  assert.equal(writes.at(-1).screens[0].widgets[0].settings.customIcon,'set_aaaaaaaaaaaaaaaaaaaaaaaa');
 });
+
+test('icon set imports are managed in Settings, not device editors',()=>{
+ assert.doesNotMatch(editorSource,/fetch\('\/api\/icon-sets\?name=/);
+ assert.match(editorSource,/href='\/settings#olh-settings-devices'/);
+});
