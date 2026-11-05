@@ -22,7 +22,31 @@ type MetricSourceRequest struct {
  Source string
 }
 var metricSourceDeviceName = regexp.MustCompile(`^[a-zA-Z0-9_.-]{1,64}$`)
-var metricSourceMountPath = regexp.MustCompile(`^/[a-zA-Z0-9_./-]{0,160}$`)
+var metricSourceMountPath = regexp.MustCompile(`^/[a-zA-Z0-9_./ -]{0,160}package nexus
+
+import (
+ "math"
+ "os"
+ "regexp"
+ "sort"
+ "strings"
+ "sync"
+ "syscall"
+ "time"
+)
+
+// Each source is an opaque, validated identifier, not an arbitrary file path.
+// The empty ID continues to select the existing automatic/default metric.
+type MetricSourceOption struct {
+ ID string `json:"id"`
+ Label string `json:"label"`
+}
+type MetricSourceRequest struct {
+ Metric string
+ Source string
+}
+var metricSourceDeviceName = regexp.MustCompile(`^[a-zA-Z0-9_.-]{1,64}$`)
+)
 
 func metricSourceKind(metric string) string {
  switch metric {
@@ -88,9 +112,11 @@ func DiscoverMetricSources() map[string][]MetricSourceOption {
   for _,line:=range strings.Split(string(data),"\n") {
    fields:=strings.Fields(line)
    if len(fields)<7 {continue}
-   mount:=fields[4]
+   // mountinfo encodes whitespace in mount paths.
+   mount:=strings.ReplaceAll(fields[4],"\\040"," ")
    if !ValidMetricSource("disk.utilization","mount:"+mount)||seen[mount] {continue}
-   if strings.HasPrefix(mount,"/proc")||strings.HasPrefix(mount,"/sys")||strings.HasPrefix(mount,"/dev")||strings.HasPrefix(mount,"/run") {continue}
+   if strings.HasPrefix(mount,"/proc")||strings.HasPrefix(mount,"/sys")||strings.HasPrefix(mount,"/dev")||
+      (strings.HasPrefix(mount,"/run")&&!strings.HasPrefix(mount,"/run/media/")) {continue}
    seen[mount]=true
    option:=MetricSourceOption{ID:"mount:"+mount,Label:mount}
    for _,metric:=range []string{"disk.utilization","disk.free_gb"} {result[metric]=append(result[metric],option)}

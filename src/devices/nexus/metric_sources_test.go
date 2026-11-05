@@ -9,6 +9,8 @@ import (
 func TestMetricSourceValidation(t *testing.T){
  accepted:=[]MetricSourceRequest{
   {"disk.free_gb","mount:/"},{"disk.utilization","mount:/home"},
+  {"disk.utilization","mount:/media/External Drive"},
+  {"disk.utilization","mount:/run/media/user/USB SSD"},
   {"disk.read_rate","disk:nvme0n1"},{"disk.write_rate","disk:sda"},
   {"network.rx_rate","net:eth0"},{"network.tx_rate","net:wlp2s0"},
  }
@@ -18,7 +20,7 @@ func TestMetricSourceValidation(t *testing.T){
   {"network.tx_rate","disk:sda"},{"disk.utilization","mount:/../etc"},
   {"disk.free_gb","mount:/home/../../tmp"},{"disk.free_gb","disk:sda"},
   {"disk.read_rate","disk:../../sda"},{"network.rx_rate","net:lo"},
-  {"disk.utilization","mount:/media/space mount"},
+  {"disk.utilization","mount:/media/tab\\tentry"},
  }
  for _,tc:=range rejected {if ValidMetricSource(tc.Metric,tc.Source){t.Errorf("source %s for %s accepted",tc.Source,tc.Metric)}}
  if QualifiedMetricKey("disk.read_rate","")!="disk.read_rate"{t.Fatal("old layout metric key was changed")}
