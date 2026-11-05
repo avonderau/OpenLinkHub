@@ -13,7 +13,7 @@ const template = fs.readFileSync(path.join(root, 'web/settings.html'), 'utf8');
 test('Supported Devices settings retain Corsair switches and send vendor-specific Deck switches', () => {
   const initStart = script.indexOf("    const dt = $('#dataTable').DataTable(");
   const initEnd = script.indexOf("    $('.allDevicesRgb').on(", initStart);
-  const loadStart = script.indexOf("    $.ajax({\n        url: '/api/getSupportedDevices'", initEnd);
+  const loadStart = script.indexOf("    // The Devices tab is initially hidden.", initEnd);
   const loadEnd = script.indexOf("    $('.enableVirtualAudio').on(", loadStart);
   assert.ok(initStart >= 0 && initEnd > initStart && loadStart > initEnd && loadEnd > loadStart);
 
