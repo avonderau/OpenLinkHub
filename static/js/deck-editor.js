@@ -36,6 +36,11 @@
   const metricIndicator = document.getElementById('deck-metric-indicator');
   const actionIndicator = document.getElementById('deck-action-indicator');
   const actionInput = document.getElementById('deck-key-action');
+  const deckControlInput = document.getElementById('deck-key-control');
+  const deckControlIndicator = document.getElementById('deck-control-indicator');
+  const brightnessProperty = document.getElementById('deck-brightness-property');
+  const brightnessInput = document.getElementById('deck-key-brightness');
+  const deckControls = new Set(['page-next','page-previous','page-go','brightness-up','brightness-down','brightness-set']);
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
   const macroProperty = document.getElementById('deck-macro-property');
@@ -169,7 +174,7 @@
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
     if (key.action !== 'page-go') delete key.targetPage;
-    if (key.action !== 'macro' && key.action !== 'media' && key.action !== 'hotkey') delete key.target;
+    if (key.action !== 'macro' && key.action !== 'media' && key.action !== 'hotkey' && key.action !== 'brightness-set') delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -329,8 +334,15 @@
         ? 'Live reading available from this computer.'
         : 'No current reading. Unavailable sensors display —.')
       : '';
+    deckControlInput.disabled = !valid;
+    deckControlInput.value = deckControls.has(key?.action) ? key.action : '';
+    deckControlIndicator.textContent = deckControlInput.value ? 'Assigned' : 'None';
+    deckControlIndicator.dataset.active = String(!!deckControlInput.value);
+    brightnessProperty.hidden = !valid || deckControlInput.value !== 'brightness-set';
+    brightnessInput.disabled = brightnessProperty.hidden;
+    brightnessInput.value = deckControlInput.value === 'brightness-set' ? key.target || '50' : '50';
     actionInput.disabled = !valid;
-    actionInput.value = key?.action || '';
+    actionInput.value = deckControls.has(key?.action) ? '' : key?.action || '';
     actionIndicator.textContent = actionInput.value ? 'Assigned' : 'None';
     actionIndicator.dataset.active = String(!!actionInput.value);
     targetPageInput.replaceChildren();
@@ -343,7 +355,7 @@
       }
     }
     targetPageInput.value = key?.targetPage || layout?.activePage || '';
-    const hasTarget = valid && actionInput.value === 'page-go';
+    const hasTarget = valid && deckControlInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
     const hasShortcut = valid && actionInput.value === 'hotkey';
@@ -545,8 +557,21 @@
     renderInspector();
   });
 
+  deckControlInput.addEventListener('change', () => {
+    const value = deckControlInput.value;
+    setKeyProperties({
+      action: value,
+      targetPage: value === 'page-go' ? assignment(selected)?.targetPage || layout.activePage : '',
+      target: value === 'brightness-set' ? '50' : '',
+    });
+    renderInspector();
+  });
+  brightnessInput.addEventListener('change', () => {
+    if (deckControlInput.value !== 'brightness-set') return;
+    setKeyProperties({ target: brightnessInput.value });
+  });
   targetPageInput.addEventListener('change', () => {
-    if (actionInput.value !== 'page-go') return;
+    if (deckControlInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
   });
   shortcutInput.addEventListener('input', () => {
