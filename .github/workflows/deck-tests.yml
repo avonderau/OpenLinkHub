@@ -26,7 +26,9 @@ jobs:
       - name: Install HID dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
       - name: Validate Deck editor JavaScript
-        run: node --check static/js/deck-editor.js
+        run: |
+          node --check static/js/deck-editor.js
+          node --test static/js/deck-editor.test.cjs
       - name: Test Deck protocol, layouts, and server integration
         env:
           CGO_CFLAGS_ALLOW: -fno-strict-overflow
