@@ -17,6 +17,7 @@
   const launchLabel = document.getElementById('deck-launch-label');
   const launchInput = document.getElementById('deck-key-launch-target');
   const launchHelp = document.getElementById('deck-launch-help');
+  const launcherStatus = document.getElementById('deck-launcher-status');
   const macroProperty = document.getElementById('deck-macro-property');
   const macroInput = document.getElementById('deck-key-macro');
   const macroStatus = document.getElementById('deck-macro-status');
@@ -417,6 +418,8 @@
       const status = await api('status');
       statusText.textContent = status.status;
       statusText.dataset.connected = status.connected ? 'true' : 'false';
+      launcherStatus.textContent = status.desktopLauncherStatus || 'Local desktop launcher status unavailable';
+      launcherStatus.dataset.ready = status.desktopLauncherReady ? 'true' : 'false';
       // Physical key presses may change pages without involving the editor.
       // Only adopt server changes when there are no unsaved browser edits.
       if (layout && !dirty && !saving && status.activePage && layout.activePage !== status.activePage) {
@@ -430,6 +433,8 @@
     } catch {
       statusText.textContent = 'Connection status unavailable';
       statusText.dataset.connected = 'false';
+      launcherStatus.textContent = 'Desktop launcher status unavailable';
+      launcherStatus.dataset.ready = 'false';
     }
   }
 
