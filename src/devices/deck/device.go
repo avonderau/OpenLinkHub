@@ -13,6 +13,7 @@ import (
 
  "OpenLinkHub/src/common"
  "OpenLinkHub/src/config"
+ "OpenLinkHub/src/devices/nexus"
  "OpenLinkHub/src/logger"
  "github.com/sstallion/go-hid"
  "golang.org/x/image/font"
@@ -47,6 +48,7 @@ type Device struct {
  pressedKey int
  eventCount uint64
  initialized bool
+ macroRunning bool
  // Used only by tests; nil uses the real shared Nexus input backend.
  inputActionRunner func(string,string)error
  done chan struct{}
@@ -88,6 +90,13 @@ func Init(info *hid.DeviceInfo)*common.Device {
   l=DefaultLayout(m)
  }
  d.layout=l
+ if m.Family=="mirabox" {
+  // The desktop launch agent is needed even when no Corsair Nexus
+  // touchscreen is connected. A failed agent setup must never stop HID.
+  if err:=nexus.InitializeDeckDesktopLauncher(d.root);err!=nil{
+   logger.Log(logger.Fields{"error":err.Error()}).Warn("Deck desktop launcher unavailable")
+  }
+ }
  if m.Family=="mirabox" {
   handle,err:=hid.OpenPath(info.Path)
   if err!=nil{
