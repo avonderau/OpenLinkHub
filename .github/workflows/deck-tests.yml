@@ -29,10 +29,11 @@ jobs:
         run: |
           node --check static/js/deck-editor.js
           node --test static/js/deck-editor.test.cjs
+          node --test static/js/deck-settings.test.cjs
       - name: Test Deck protocol, layouts, and server integration
         env:
           CGO_CFLAGS_ALLOW: -fno-strict-overflow
-        run: go test ./src/devices/deck ./src/server -count=1 -v
+        run: go test ./src/config ./src/devices ./src/devices/deck ./src/server -count=1 -v
       - name: Compile device manager
         env:
           CGO_CFLAGS_ALLOW: -fno-strict-overflow
