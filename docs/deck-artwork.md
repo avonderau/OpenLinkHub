@@ -14,7 +14,8 @@ alone does not apply an unsaved layout.
 - The image preview is loaded through a same-origin API that validates the
   device ID and icon ID, not an arbitrary filesystem path.
 - Files are private to `database/deck/icons/` with restrictive permissions,
-  deduplicated by SHA-256, and limited to 256 stored images.
+  deduplicated by SHA-256, and limited to 256 stored images even when
+  multiple uploads arrive simultaneously; repeated images do not consume slots.
 - Images are bounded and decoded once before normalization. SVG, GIF and
   animated output are not included in this first milestone.
 - Disconnected devices can save layouts and restore icon assignments on
