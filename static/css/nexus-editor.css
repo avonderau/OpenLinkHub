@@ -53,7 +53,8 @@
 #nexus-editor .nexus-icon-widget{display:flex;align-items:center;justify-content:center;gap:4px;padding:2px;color:#eaf6ff}
 #nexus-editor .nexus-icon{font-family:system-ui,sans-serif;font-size:20px;line-height:1;color:#d8f3ff;flex-shrink:0}
 /* Nexus and Deck previews use the same pixel shapes as the device renderer. */
-#nexus-editor .widget.nexus-media-preview-widget{position:relative;overflow:hidden}
+/* Media keys must retain .widget's absolute positioning so all screen slots render. */
+#nexus-editor .widget.nexus-media-preview-widget{overflow:hidden}
 #nexus-editor .widget .nexus-media-glyph{
   position:absolute;
   left:50%;
