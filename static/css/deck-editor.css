@@ -294,15 +294,8 @@
   display:flex;flex-wrap:wrap;align-items:center;gap:9px;
 }
 .deck-workspace .deck-metric-options label{font-size:.75rem;color:var(--deck-muted)}
-.deck-workspace .deck-metric-options select{max-width:148px;min-width:120px}
-.deck-workspace .deck-metric-graph-label{
-  display:inline-flex;align-items:center;gap:7px;
-  padding:6px 9px;border:1px solid var(--deck-border);
-  border-radius:8px;color:var(--deck-ink);
-}
-.deck-workspace .deck-metric-graph-label input{
-  width:auto;min-height:0;margin:0;padding:0;accent-color:#d5a65a;
-}
+.deck-workspace .deck-metric-options select{max-width:170px;min-width:120px}
+.deck-workspace #deck-metric-style{min-width:145px}
 .deck-workspace .deck-key[data-has-metric="true"]{
   gap:3px;
   background-color:#182734;

@@ -42,7 +42,7 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
-    'deck-key-metric', 'deck-metric-interval', 'deck-metric-graph', 'deck-metric-status',
+    'deck-key-metric', 'deck-metric-interval', 'deck-metric-style', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
     'deck-key-shortcut', 'deck-hotkey-property',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
@@ -104,6 +104,7 @@ async function run() {
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
   for (const hiddenCopy of [
+    'Choose a metric to show live sensor data on the LCD.',
     'Changes appear in the preview immediately',
     'Actions trigger when you press the physical Mirabox key',
     'Uses the same validated virtual-keyboard backend',
@@ -112,6 +113,9 @@ async function run() {
   ]) {
     assert.ok(!html.includes(hiddenCopy), `obsolete Deck helper copy: ${hiddenCopy}`);
   }
+
+  assert.match(html, /<select class="form-select" id="deck-metric-style"/);
+  assert.ok(!html.includes("Mini graph"), "metric UI must use visualization names");
 
   // load() fetches data asynchronously and builds the preview.
   await new Promise(resolve => setImmediate(resolve));
@@ -205,19 +209,19 @@ async function run() {
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[5].pages[1].keys.some(key => key.index === 3), false);
   // Metric-only keys retain configuration, update the browser preview from
-  // the device's live metric snapshot, and save refresh + sparkline options.
+  // the device's live metric snapshot, and save refresh + visualization options.
   grid.children[4].dispatch('click');
   const metric = nodes['deck-key-metric'];
   metric.value = 'cpu.temperature';
   metric.dispatch('change');
   assert.equal(nodes['deck-metric-interval'].disabled, false);
-  assert.equal(nodes['deck-metric-graph'].disabled, false);
+  assert.equal(nodes['deck-metric-style'].disabled, false);
   const interval = nodes['deck-metric-interval'];
   interval.value = '10';
   interval.dispatch('change');
-  const graph = nodes['deck-metric-graph'];
-  graph.checked = true;
-  graph.dispatch('change');
+  const visual = nodes['deck-metric-style'];
+  visual.value = 'line';
+  visual.dispatch('change');
   assert.equal(grid.children[4].dataset.hasMetric, 'true');
   assert.equal(grid.children[4].children[2].textContent, '56 C');
   const existingMetricKey = grid.children[4];
@@ -229,13 +233,29 @@ async function run() {
   const metricKey = received[6].pages[1].keys.find(key => key.index === 4);
   assert.equal(metricKey.metric, 'cpu.temperature');
   assert.equal(metricKey.refreshSeconds, 10);
-  assert.equal(metricKey.showGraph, true);
+  assert.equal(metricKey.metricStyle, 'line');
+  assert.equal(metricKey.showGraph, false);
   metric.value = '';
   metric.dispatch('change');
   assert.equal(grid.children[4].dataset.hasMetric, undefined);
   assert.equal(nodes['deck-metric-status'].textContent, '', 'clearing metric hides generic copy');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[7].pages[1].keys.some(key => key.index === 4), false);
+  // Every visualization is saved independently, without replacing the metric.
+  metric.value = 'memory.utilization';
+  metric.dispatch('change');
+  for (const style of ['value', 'line', 'bars', 'fuel', 'ring']) {
+    visual.value = style;
+    visual.dispatch('change');
+    assert.equal(nodes['deck-metric-style'].value, style);
+    await nodes['deck-save'].dispatch('click');
+    const saved = received.at(-1).pages[1].keys.find(key => key.index === 4);
+    assert.equal(saved.metric, 'memory.utilization');
+    assert.equal(saved.metricStyle, style);
+  }
+  metric.value = '';
+  metric.dispatch('change');
+  assert.equal(nodes['deck-metric-style'].disabled, true);
   // Standalone shortcuts remain supported alongside saved macros.
   grid.children[1].dispatch('click');
   action.value = 'hotkey';
