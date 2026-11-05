@@ -38,7 +38,7 @@ func validateIconSVG(data []byte)error{
    depth++;count++
    if depth>24||count>2048||(depth==1&&t.Name.Local!="svg"){return errors.New("invalid or overly complex SVG")}
    switch t.Name.Local{
-   case "svg","g","path","circle","ellipse","rect","line","polyline","polygon","defs","linearGradient","radialGradient","stop","clipPath":
+   case "svg","g","path","circle","ellipse","rect","line","polyline","polygon","defs","linearGradient","radialGradient","stop","clipPath","title","desc":
    default:return fmt.Errorf("unsupported SVG element %q",t.Name.Local)
    }
    if len(t.Attr)>64{return errors.New("too many SVG attributes")}
