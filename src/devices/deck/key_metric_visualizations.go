@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"strconv"
 	"strings"
 
 	"golang.org/x/image/font"
@@ -23,16 +24,31 @@ func deckMetricVisualizationStyle(key KeyConfig) string {
 	return "value"
 }
 
+var defaultDeckMetricAccent = color.RGBA{R: 213, G: 166, B: 90, A: 255}
+
+// Only #RRGGBB colors are allowed. Missing values preserve existing layouts.
+func deckMetricAccent(key KeyConfig) color.RGBA {
+	if !deckMetricColorPattern.MatchString(key.MetricColor) {
+		return defaultDeckMetricAccent
+	}
+	rgb, err := strconv.ParseUint(key.MetricColor[1:], 16, 24)
+	if err != nil {
+		return defaultDeckMetricAccent
+	}
+	return color.RGBA{R: uint8(rgb >> 16), G: uint8(rgb >> 8), B: uint8(rgb), A: 255}
+}
+
 func renderDeckMetricVisualization(dst *image.RGBA, key KeyConfig, value float64, available bool, history []float64) {
+	ink := deckMetricAccent(key)
 	switch deckMetricVisualizationStyle(key) {
 	case "line":
-		drawDeckSparkline(dst, history, key.Metric)
+		drawDeckSparkline(dst, history, key.Metric, ink)
 	case "bars":
-		drawDeckHistoryBars(dst, history, key.Metric)
+		drawDeckHistoryBars(dst, history, key.Metric, ink)
 	case "fuel":
-		drawDeckFuelGauge(dst, deckMetricGaugeFraction(key.Metric, value, history), available && deckFinite(value))
+		drawDeckFuelGauge(dst, deckMetricGaugeFraction(key.Metric, value, history), available && deckFinite(value), ink)
 	case "ring":
-		drawDeckRingGauge(dst, deckMetricGaugeFraction(key.Metric, value, history), available && deckFinite(value))
+		drawDeckRingGauge(dst, deckMetricGaugeFraction(key.Metric, value, history), available && deckFinite(value), ink)
 	}
 }
 
@@ -70,7 +86,7 @@ func deckMetricGaugeFraction(metric string, value float64, history []float64) fl
 
 // The bar graph plots the history (not just the current value); missing
 // samples leave gaps instead of producing artificial zero spikes.
-func drawDeckHistoryBars(dst *image.RGBA, history []float64, metric string) {
+func drawDeckHistoryBars(dst *image.RGBA, history []float64, metric string, ink color.RGBA) {
 	if len(history) == 0 {
 		return
 	}
@@ -114,7 +130,7 @@ func drawDeckHistoryBars(dst *image.RGBA, history []float64, metric string) {
 		}
 		for y := bottom-height; y < bottom; y++ {
 			for x := x0; x <= x1; x++ {
-				dst.SetRGBA(x, y, color.RGBA{R: 213, G: 166, B: 90, A: 255})
+				dst.SetRGBA(x, y, ink)
 			}
 		}
 	}
@@ -122,7 +138,7 @@ func drawDeckHistoryBars(dst *image.RGBA, history []float64, metric string) {
 
 // A segmented horizontal fuel gauge leaves enough room for the actual
 // reading; only finite, currently available values fill segments.
-func drawDeckFuelGauge(dst *image.RGBA, fraction float64, available bool) {
+func drawDeckFuelGauge(dst *image.RGBA, fraction float64, available bool, accent color.RGBA) {
 	size := dst.Bounds().Dx()
 	if size < 32 {
 		return
@@ -135,7 +151,7 @@ func drawDeckFuelGauge(dst *image.RGBA, fraction float64, available bool) {
 		x1 := left + (i+1)*width/segments - 2
 		ink := color.RGBA{R: 52, G: 64, B: 76, A: 255}
 		if available && i < filled {
-			ink = color.RGBA{R: 213, G: 166, B: 90, A: 255}
+			ink = accent
 		}
 		for y := size-20; y < size-7; y++ {
 			for x := x0; x <= x1; x++ {
@@ -152,7 +168,7 @@ func deckRingGeometry(size int) (cx, cy, radius int) {
 	return size / 2, size - radius - 5, radius
 }
 
-func drawDeckRingGauge(dst *image.RGBA, fraction float64, available bool) {
+func drawDeckRingGauge(dst *image.RGBA, fraction float64, available bool, accent color.RGBA) {
 	size := dst.Bounds().Dx()
 	if size < 52 {
 		return
@@ -170,7 +186,7 @@ func drawDeckRingGauge(dst *image.RGBA, fraction float64, available bool) {
 			}
 			ink := color.RGBA{R: 52, G: 64, B: 76, A: 255}
 			if available && theta <= 2*math.Pi*fraction {
-				ink = color.RGBA{R: 213, G: 166, B: 90, A: 255}
+				ink = accent
 			}
 			dst.SetRGBA(x, y, ink)
 		}
@@ -180,7 +196,7 @@ func drawDeckRingGauge(dst *image.RGBA, fraction float64, available bool) {
 // Draw the live reading in the center of the ring, not above it.
 // Long readouts are split into a numeric line and a unit line, keeping
 // both inside the narrow 85x85 LCD key without spilling into the ring.
-func drawDeckRingValue(dst *image.RGBA, value string) {
+func drawDeckRingValue(dst *image.RGBA, value string, accent color.RGBA) {
 	size := dst.Bounds().Dx()
 	if size < 52 {
 		return
@@ -190,7 +206,7 @@ func drawDeckRingValue(dst *image.RGBA, value string) {
 	parts := strings.SplitN(value, " ", 2)
 	if len(parts) == 2 && parts[1] != "" {
 		drawDeckRingText(dst, parts[0], cx, cy-1, innerWidth, color.White)
-		drawDeckRingText(dst, parts[1], cx, cy+12, innerWidth, color.RGBA{R: 244, G: 210, B: 151, A: 255})
+		drawDeckRingText(dst, parts[1], cx, cy+12, innerWidth, accent)
 		return
 	}
 	drawDeckRingText(dst, value, cx, cy+5, innerWidth, color.White)

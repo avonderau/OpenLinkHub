@@ -25,6 +25,10 @@ func TestDeckMetricLayoutValidation(t *testing.T) {
 		{Index: 0, ShowGraph: true},
 		{Index: 0, MetricStyle: "ring"},
 		{Index: 0, Metric: "cpu.utilization", MetricStyle: "unexpected"},
+		{Index: 0, MetricColor: "#ff0000"},
+		{Index: 0, Metric: "cpu.temperature", MetricColor: "red"},
+		{Index: 0, Metric: "cpu.temperature", MetricColor: "#f00"},
+		{Index: 0, Metric: "cpu.temperature", MetricColor: "#1234567"},
 	} {
 		layout := DefaultLayout(d.Model)
 		layout.Pages[0].Keys = []KeyConfig{bad}
@@ -183,7 +187,7 @@ func TestDeckRingGaugeDisplaysValueInsideArc(t *testing.T) {
 	key := KeyConfig{Metric: "cpu.utilization", MetricStyle: "ring", Label: "CPU"}
 	withValue := renderDeckMetric(85, key, 50, true, []float64{50}, nil)
 	withoutValue := renderKeyLabel(85, "").(*image.RGBA)
-	drawDeckRingGauge(withoutValue, 0.5, true)
+	drawDeckRingGauge(withoutValue, 0.5, true, defaultDeckMetricAccent)
 	cx, cy, radius := deckRingGeometry(85)
 	if radius < 20 || cy-radius < 17 || cy+radius >= 85 {
 		t.Fatalf("ring geometry too small or overlaps label: (%d,%d) radius %d", cx, cy, radius)
@@ -208,5 +212,42 @@ func TestDeckRingGaugeDisplaysValueInsideArc(t *testing.T) {
 	unknown := renderDeckMetric(85, key, 0, false, nil, nil)
 	if unknown.Bounds() != withValue.Bounds() {
 		t.Fatal("unavailable ring changed pixel bounds")
+	}
+}
+
+func TestDeckMetricColorValidationAndRendering(t *testing.T) {
+	device := testDevice(t)
+	for _, candidate := range []string{"#FF0000", "#00ff99", "#000000", "#abcdef"} {
+		layout := DefaultLayout(device.Model)
+		layout.Pages[0].Keys = []KeyConfig{{Index: 0, Metric: "cpu.utilization", MetricColor: candidate, MetricStyle: "ring"}}
+		if err := layout.Validate(device.Model); err != nil {
+			t.Fatalf("valid color %q rejected: %v", candidate, err)
+		}
+	}
+	for _, style := range []string{"line", "bars", "fuel", "ring", "value"} {
+		key := KeyConfig{Metric: "cpu.utilization", MetricStyle: style, MetricColor: "#ff0000", Label: "CPU"}
+		picture := renderDeckMetric(85, key, 100, true, []float64{100, 100, 100, 100}, nil)
+		red := false
+		for y := 17; y < 85; y++ {
+			for x := 0; x < 85; x++ {
+				pixel := picture.(*image.RGBA).RGBAAt(x, y)
+				if pixel.R == 255 && pixel.G == 0 && pixel.B == 0 {
+					red = true
+				}
+			}
+		}
+		if !red {
+			t.Errorf("%s: custom accent not painted", style)
+		}
+	}
+	for _, input := range []string{"", "not-a-color", "#123"} {
+		ink := deckMetricAccent(KeyConfig{MetricColor: input})
+		if ink != defaultDeckMetricAccent {
+			t.Errorf("invalid color %q should use original gold: %v", input, ink)
+		}
+	}
+	ink := deckMetricAccent(KeyConfig{MetricColor: "#1234ff"})
+	if ink.R != 0x12 || ink.G != 0x34 || ink.B != 0xff {
+		t.Errorf("color parser changed channel order: %v", ink)
 	}
 }

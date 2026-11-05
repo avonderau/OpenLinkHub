@@ -14,7 +14,40 @@ import (
 
 const MaxDeckPages=16
 const MaxDeckLayoutBytes=256*1024
-var safePageID=regexp.MustCompile(`^[a-zA-Z0-9_-]{1,48}$`)
+var safePageID=regexp.MustCompile(`^[a-zA-Z0-9_-]{1,48}package deck
+
+import (
+ "crypto/sha256"
+ "encoding/json"
+ "errors"
+ "fmt"
+ "os"
+ "path/filepath"
+ "regexp"
+
+ "OpenLinkHub/src/devices/nexus"
+)
+
+const MaxDeckPages=16
+const MaxDeckLayoutBytes=256*1024
+)
+var deckMetricColorPattern=regexp.MustCompile(`^#[0-9a-fA-F]{6}package deck
+
+import (
+ "crypto/sha256"
+ "encoding/json"
+ "errors"
+ "fmt"
+ "os"
+ "path/filepath"
+ "regexp"
+
+ "OpenLinkHub/src/devices/nexus"
+)
+
+const MaxDeckPages=16
+const MaxDeckLayoutBytes=256*1024
+)
 
 type KeyConfig struct {
  Index int `json:"index"`
@@ -27,6 +60,7 @@ type KeyConfig struct {
  RefreshSeconds int `json:"refreshSeconds,omitempty"`
  ShowGraph bool `json:"showGraph,omitempty"` // Kept for older saved layouts.
  MetricStyle string `json:"metricStyle,omitempty"`
+ MetricColor string `json:"metricColor,omitempty"`
 }
 type Page struct {
  ID string `json:"id"`
@@ -62,6 +96,9 @@ func (l Layout)Validate(m Model)error{
     return fmt.Errorf("key %d: invalid image reference",key.Index)
    }
    if key.Metric!="" {
+    if key.MetricColor!="" && !deckMetricColorPattern.MatchString(key.MetricColor) {
+     return fmt.Errorf("key %d: invalid metric visualization color",key.Index)
+    }
     if key.MetricStyle!="" && key.MetricStyle!="value" && key.MetricStyle!="line" && key.MetricStyle!="bars" && key.MetricStyle!="fuel" && key.MetricStyle!="ring" {
      return fmt.Errorf("key %d: unsupported metric visualization %q",key.Index,key.MetricStyle)
     }
@@ -71,7 +108,7 @@ func (l Layout)Validate(m Model)error{
     if key.RefreshSeconds!=0 && (key.RefreshSeconds<2||key.RefreshSeconds>60) {
      return fmt.Errorf("key %d: refresh interval must be 2-60 seconds",key.Index)
     }
-   } else if key.RefreshSeconds!=0||key.ShowGraph||key.MetricStyle!="" {
+   } else if key.RefreshSeconds!=0||key.ShowGraph||key.MetricStyle!=""||key.MetricColor!="" {
     return fmt.Errorf("key %d: metric settings without metric",key.Index)
    }
    for _,char:=range key.Label{
