@@ -883,8 +883,11 @@ test('Nexus metrics expose disk and network sources and retain selections',async
  assert.equal(screen.widgets[0].settings.metricSource,'mount:/home');
  await node('save').onclick();
  assert.equal(writes.at(-1).screens[0].widgets[0].settings.metricSource,'mount:/home');
- screen.widgets[0].metric='cpu.temperature';
- vm.runInContext("selected='disk_metric';render()",context);
+ const metricChoice=find(node('properties'),el=>el.options?.some(option=>option.value==='cpu.temperature'));
+ assert.ok(metricChoice,'metric dropdown missing');
+ metricChoice.value='cpu.temperature';
+ metricChoice.listeners.change();
+ assert.equal(screen.widgets[0].settings.metricSource,undefined,'changing metrics clears previous source');
  picker=find(node('properties'),el=>el.attributes?.['aria-label']==='Metric source');
  assert.equal(picker,undefined,'single-source CPU metrics should not display the selector');
 });

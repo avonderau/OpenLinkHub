@@ -48,15 +48,15 @@ func (d *Device) refreshMetricKeys(now time.Time) {
 		for name, reading := range nexus.ReadHostCounterRates(&d.counterSampler, now) {
 			snapshot[name] = reading
 		}
-        requests:=[]nexus.MetricSourceRequest{}
-        for _,key:=range page.Keys{
-         if key.Metric!="" && key.MetricSource!="" {
-          requests=append(requests,nexus.MetricSourceRequest{Metric:key.Metric,Source:key.MetricSource})
-         }
-        }
-        for name,reading:=range nexus.ReadSourcedMetrics(&d.sourceSampler,requests,now) {
-         snapshot[name]=reading
-        }
+		requests := []nexus.MetricSourceRequest{}
+		for _, key := range page.Keys {
+			if key.Metric != "" && key.MetricSource != "" {
+				requests = append(requests, nexus.MetricSourceRequest{Metric: key.Metric, Source: key.MetricSource})
+			}
+		}
+		for name, reading := range nexus.ReadSourcedMetrics(&d.sourceSampler, requests, now) {
+			snapshot[name] = reading
+		}
 	}
 	safe := copyDeckMetrics(snapshot)
 
@@ -85,7 +85,7 @@ func (d *Device) refreshMetricKeys(now time.Time) {
 	}
 	seen := make(map[string]bool)
 	for _, key := range due {
-        qualified:=nexus.QualifiedMetricKey(key.Metric,key.MetricSource)
+		qualified := nexus.QualifiedMetricKey(key.Metric, key.MetricSource)
 		if seen[qualified] {
 			continue
 		}
