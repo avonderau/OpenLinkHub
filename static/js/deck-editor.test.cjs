@@ -164,7 +164,7 @@ async function run() {
   await nodes['deck-upload-image'].dispatch('click');
   assert.equal(nodes['deck-remove-image'].disabled, false);
   assert.equal(grid.children[3].dataset.hasImage, 'true');
-  assert.match(grid.children[3].style.backgroundImage, /api\\/deck\\/icon/);
+  assert.ok(grid.children[3].style.backgroundImage.includes('/api/deck/icon'));
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[4].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
 
