@@ -1218,34 +1218,34 @@ $(document).ready(function () {
                             }
 
                             $(".actuationPoint").each(function () {
-                                $("#actuationValue").html(this.value / 10 + " mm");
+                                $("#actuationValue").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             }).on("input", function () {
-                                $("#actuationValue").html(this.value / 10 + " mm");
+                                $("#actuationValue").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             });
 
                             $(".actuationResetPoint").each(function () {
-                                $("#actuationValueReset").html(this.value / 10 + " mm");
+                                $("#actuationValueReset").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             }).on("input", function () {
-                                $("#actuationValueReset").html(this.value / 10 + " mm");
+                                $("#actuationValueReset").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             });
 
                             $(".secondaryActuationPoint").each(function () {
-                                $("#secondaryActuationValue").html(this.value / 10 + " mm");
+                                $("#secondaryActuationValue").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             }).on("input", function () {
-                                $("#secondaryActuationValue").html(this.value / 10 + " mm");
+                                $("#secondaryActuationValue").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             });
 
                             $(".secondaryActuationResetPoint").each(function () {
-                                $("#secondaryActuationValueReset").html(this.value / 10 + " mm");
+                                $("#secondaryActuationValueReset").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             }).on("input", function () {
-                                $("#secondaryActuationValueReset").html(this.value / 10 + " mm");
+                                $("#secondaryActuationValueReset").text(this.value / 10 + " mm");
                                 updateActuationSlider(this);
                             });
 
@@ -2491,7 +2491,8 @@ $(document).ready(function () {
                 const label = keyElement.find('span');
                 if (label.length > 0) {
                     if (typeof key.SubKeyName === "string" && key.SubKeyName.length > 0) {
-                        label.html((key.KeyName || "") + "<br />" + key.SubKeyName);
+                        label.text(key.KeyName || "");
+                        label.append($('<br>'), document.createTextNode(key.SubKeyName));
                     } else {
                         label.text(key.KeyName || "");
                     }
@@ -2632,7 +2633,7 @@ $(document).ready(function () {
                     if (result.device.devices == null) {
                         // Single device, e.g CPU block
                         const elementTemperatureId = "#temperature-0";
-                        $(elementTemperatureId).html(result.device.TemperatureString);
+                        $(elementTemperatureId).text(result.device.TemperatureString);
                     } else {
                         const length = Object.keys(result.device.devices).length;
                         if (length > 0) {
@@ -2641,41 +2642,41 @@ $(document).ready(function () {
                                 const elementGpuSpeedId = "#gpuSpeed-" + value.deviceId;
                                 const elementTemperatureId = "#temperature-" + value.deviceId;
                                 const elementGpuTemperatureId = "#gpuTemperature-" + value.deviceId;
-                                $(elementSpeedId).html(value.rpm + " RPM");
-                                $(elementTemperatureId).html(value.temperatureString);
+                                $(elementSpeedId).text(value.rpm + " RPM");
+                                $(elementTemperatureId).text(value.temperatureString);
 
                                 if (elementGpuSpeedId !== null) {
-                                    $(elementGpuSpeedId).html(value.gpuRpm + " RPM");
+                                    $(elementGpuSpeedId).text(value.gpuRpm + " RPM");
                                 }
 
                                 if (elementGpuTemperatureId !== null) {
-                                    $(elementGpuTemperatureId).html(value.gpuTemperatureString);
+                                    $(elementGpuTemperatureId).text(value.gpuTemperatureString);
                                 }
 
                                 if (value.IsPSU) {
                                     const elementPowerOut = "#powerOut-" + value.channelId;
                                     if (elementPowerOut != null) {
-                                        $(elementPowerOut).html(value.powerOutString + " W");
+                                        $(elementPowerOut).text(value.powerOutString + " W");
                                     }
 
                                     $.each(value.volts, function( index, value ) {
                                         const elementVolts = "#volts-" + index;
                                         if (elementVolts != null) {
-                                            $(elementVolts).html(value.ValueString + " V");
+                                            $(elementVolts).text(value.ValueString + " V");
                                         }
                                     });
 
                                     $.each(value.amps, function( index, value ) {
                                         const elementAmps = "#amps-" + index;
                                         if (elementAmps != null) {
-                                            $(elementAmps).html(value.ValueString + " A");
+                                            $(elementAmps).text(value.ValueString + " A");
                                         }
                                     });
 
                                     $.each(value.watts, function( index, value ) {
                                         const elementWatts = "#watts-" + index;
                                         if (elementWatts != null) {
-                                            $(elementWatts).html(value.ValueString + " W");
+                                            $(elementWatts).text(value.ValueString + " W");
                                         }
                                     });
                                 }
@@ -2687,7 +2688,7 @@ $(document).ready(function () {
                     if (result.device.hasOwnProperty("RailVoltages")) {
                         $.each(result.device.RailVoltages, function( index, value ) {
                             const elementRailVoltageId = "#railVoltage-" + result.device.serial + "-" + index;
-                            $(elementRailVoltageId).html(value.Value + " V");
+                            $(elementRailVoltageId).text(value.Value + " V");
                         })
                     }
                 }
@@ -2722,7 +2723,7 @@ $(document).ready(function () {
                 try {
                     if (response.status === 1) {
                         toast.success(response.message);
-                        $("#selectedProfile_" + parseInt(profile[0])).html(profile[1]);
+                        $("#selectedProfile_" + parseInt(profile[0])).text(profile[1]);
                     } else {
                         toast.warning(response.message);
                     }
@@ -2756,7 +2757,7 @@ $(document).ready(function () {
                 try {
                     if (response.status === 1) {
                         toast.success(response.message);
-                        $("#selectedProfile_" + parseInt(profile[0])).html(profile[1]);
+                        $("#selectedProfile_" + parseInt(profile[0])).text(profile[1]);
                     } else {
                         toast.warning(response.message);
                     }
@@ -2931,7 +2932,7 @@ $(document).ready(function () {
                 try {
                     if (response.status === 1) {
                         toast.success(response.message);
-                        $("#selectedRgb_" + parseInt(profile[0])).html(profile[1]);
+                        $("#selectedRgb_" + parseInt(profile[0])).text(profile[1]);
                     } else {
                         toast.warning(response.message);
                     }
@@ -2963,7 +2964,7 @@ $(document).ready(function () {
                 try {
                     if (response.status === 1) {
                         toast.success(response.message);
-                        $("#selectedRgb_" + parseInt(profile[0])).html(profile[1]);
+                        $("#selectedRgb_" + parseInt(profile[0])).text(profile[1]);
                     } else {
                         toast.warning(response.message);
                     }
@@ -2999,7 +3000,7 @@ $(document).ready(function () {
                 try {
                     if (response.status === 1) {
                         toast.success(response.message);
-                        $("#selectedRgb_" + parseInt(profile[0])).html(profile[1]);
+                        $("#selectedRgb_" + parseInt(profile[0])).text(profile[1]);
                     } else {
                         toast.warning(response.message);
                     }
@@ -4193,13 +4194,11 @@ $(document).ready(function () {
 
     function generateLedDataPerDevice(ledAmount, subDevice, device, data) {
         const wrapperDiv = document.createElement('div');
-        let result = [];
 
         let frontOuter = [];
         let frontInner = [];
         let backOuter = [];
         let backInner = [];
-        let containerHtml = '';
 
         switch (device) {
             case "lsh": {
@@ -4379,8 +4378,8 @@ $(document).ready(function () {
                 }
             } break;
         }
-        result = wrapperDiv.innerHTML
-        return result
+        // Return the constructed DOM: no device values are reparsed as HTML.
+        return wrapperDiv
     }
 
     $('.rgbPerLed').on('click', function () {
@@ -4392,7 +4391,7 @@ $(document).ready(function () {
         const subDeviceId = parseInt(channelData[3]);
         const subDevice = parseInt(channelData[4]) === 1;
         const deviceType = channelData[5];
-        let containerHtml = '';
+        let ledContainer;
 
         const pf = {};
         pf["deviceId"] = deviceId;
@@ -4409,28 +4408,30 @@ $(document).ready(function () {
                     if (response.status === 1) {
                         const data = response.data;
                         const count = Object.keys(data).length;
-                        containerHtml = generateLedDataPerDevice(ledAmount, subDevice, deviceType, data)
+                        ledContainer = generateLedDataPerDevice(ledAmount, subDevice, deviceType, data);
 
-                        let modalElement = `
+                        const modal = $(`
                           <div class="modal fade text-start" id="rgbPerLedModel" tabindex="-1" aria-labelledby="rgbPerLedModel">
                             <div class="modal-dialog modal-dialog-800">
                               <div class="modal-content" style="width: 800px;">
                                 <div class="modal-header">
-                                  <h5 class="modal-title" id="rgbPerLedModel">${channelName}</h5>
+                                  <h5 class="modal-title" id="rgbPerLedModel"></h5>
                                   <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
-                                <div class="modal-body" style="display: flex;margin: 0 auto;">
-                                  ${containerHtml}
-                                </div>
+                                <div class="modal-body" style="display: flex;margin: 0 auto;"></div>
                                 <div class="modal-footer">
-                                  <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">${i18n.t('txtClose')}</button>
-                                  <button class="btn btn-primary" type="button" id="btnSaveLedData">${i18n.t('txtSave')}</button>
+                                  <button class="btn btn-secondary" type="button" data-bs-dismiss="modal"></button>
+                                  <button class="btn btn-primary" type="button" id="btnSaveLedData"></button>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        `;
-                        const modal = $(modalElement).modal('toggle');
+                        `);
+                        modal.find('.modal-title').text(channelName);
+                        modal.find('.modal-body').append($(ledContainer).contents());
+                        modal.find('.modal-footer .btn-secondary').text(i18n.t('txtClose'));
+                        modal.find('#btnSaveLedData').text(i18n.t('txtSave'));
+                        modal.modal('toggle');
 
                         modal.on('hidden.bs.modal', function () {
                             modal.data('bs.modal', null);

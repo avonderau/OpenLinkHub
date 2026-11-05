@@ -608,6 +608,13 @@ test('Open URL shows a safe browser test link but does not execute via preview',
  input.listeners.change();
  assert.equal(link.hidden,true,'unsafe schemes cannot be opened in browser');
  assert.equal(screen.widgets[0].target,'javascript:alert(1)');
+ input.value='https://user:password@example.com/';
+ input.listeners.change();
+ assert.equal(link.hidden,true,'embedded credentials cannot become a clickable URL');
+ input.value='HTTPS://EXAMPLE.COM:443/new';
+ input.listeners.change();
+ assert.equal(link.hidden,false);
+ assert.equal(link.href,'https://example.com/new','link uses the canonical validated URL, not raw input');
  input.value='https://example.com/new';
  input.listeners.change();
  assert.equal(link.hidden,false);
