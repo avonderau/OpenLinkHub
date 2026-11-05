@@ -18,6 +18,31 @@ func TestSVGIconsAllowStaticPathsAndBlockActiveContent(t *testing.T){
  }{
   if err:=validateIconSVG([]byte(bad));err==nil{t.Errorf("accepted unsafe SVG: %s",bad)}
  }
+
+ // These variants previously bypassed the literal "url(" check in
+ // presentation attributes. CSS processors can decode escaped identifiers.
+ for name,markup:=range map[string]string{
+  "escaped inline resource":`<svg><path d="M0 0" style="fill:\75rl(https://example.org/secret)"/></svg>`,
+  "escaped presentation resource":`<svg><path d="M0 0" fill="\75rl(file:///etc/passwd)"/></svg>`,
+  "unrecognized stylesheet property":`<svg><rect width="20" height="20" style="background-image:url(#paint)"/></svg>`,
+  "CSS comments":`<svg><rect width="20" height="20" style="fill:/*comment*/red"/></svg>`,
+  "foreign SVG namespace":`<svg xmlns="https://example.org/not-svg"><path d="M0 0"/></svg>`,
+  "unapproved resource attribute":`<svg><path d="M0 0" filter="https://example.org/paint"/></svg>`,
+ }{
+  t.Run(name,func(t *testing.T){
+   if err:=validateIconSVG([]byte(markup));err==nil{t.Errorf("unsafe SVG accepted: %s",markup)}
+  })
+ }
+ for name,markup:=range map[string]string{
+  "common presentation style":`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M1 1 L12 12" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round"/></svg>`,
+  "internal gradient":`<svg xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="tone"><stop offset="0" stop-color="#ff0000"/></linearGradient></defs><rect width="24" height="24" fill="url(#tone)"/></svg>`,
+  "internal styled gradient":`<svg xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="tone"><stop offset="0" stop-color="#ff0000"/></linearGradient></defs><rect width="24" height="24" style="fill:url(#tone);opacity:.8"/></svg>`,
+ }{
+  t.Run(name,func(t *testing.T){
+   if err:=validateIconSVG([]byte(markup));err!=nil{t.Errorf("safe SVG rejected: %v",err)}
+  })
+ }
+
  if _,err:=rasterizeIconSVG([]byte("<svg><script/></svg>"));err==nil{t.Fatal("unsafe file reached renderer")}
  if _,err:=exec.LookPath("rsvg-convert");err==nil{
   png,err:=rasterizeIconSVG(valid)
