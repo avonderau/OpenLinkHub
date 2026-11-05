@@ -190,7 +190,7 @@ func(d *Device)drawActivePageLocked()error{
  for i:=range d.layout.Pages {if d.layout.Pages[i].ID==d.layout.ActivePage{page=&d.layout.Pages[i];break}}
  if page==nil{return errors.New("no active page")}
  labels:=make(map[int]string,len(page.Keys))
- for _,key:=range page.Keys{labels[key.Index]=key.Label}
+ for _,key:=range page.Keys{labels[key.Index]=keyDisplayLabel(key)}
  for i:=0;i<d.Model.Keys();i++ {
   size:=d.Model.NativeImagePixels(i)
   frame:=renderKeyLabel(size,labels[i])
