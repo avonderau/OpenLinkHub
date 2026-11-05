@@ -14,40 +14,8 @@ import (
 
 const MaxDeckPages=16
 const MaxDeckLayoutBytes=256*1024
-var safePageID=regexp.MustCompile(`^[a-zA-Z0-9_-]{1,48}package deck
-
-import (
- "crypto/sha256"
- "encoding/json"
- "errors"
- "fmt"
- "os"
- "path/filepath"
- "regexp"
-
- "OpenLinkHub/src/devices/nexus"
-)
-
-const MaxDeckPages=16
-const MaxDeckLayoutBytes=256*1024
-)
-var deckMetricColorPattern=regexp.MustCompile(`^#[0-9a-fA-F]{6}package deck
-
-import (
- "crypto/sha256"
- "encoding/json"
- "errors"
- "fmt"
- "os"
- "path/filepath"
- "regexp"
-
- "OpenLinkHub/src/devices/nexus"
-)
-
-const MaxDeckPages=16
-const MaxDeckLayoutBytes=256*1024
-)
+var safePageID=regexp.MustCompile(`^[a-zA-Z0-9_-]{1,48}$`)
+var deckMetricColorPattern=regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
 type KeyConfig struct {
  Index int `json:"index"`
