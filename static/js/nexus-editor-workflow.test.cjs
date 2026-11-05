@@ -964,11 +964,11 @@ test('Widget library saves to OpenLinkHub and survives a fresh editor/browser co
 
 test('Nexus Icon and Actions inspector cards are adjacent columns with responsive stacking',()=>{
  const css=fs.readFileSync(path.join(__dirname,'..','css','nexus-compact-inspector.css'),'utf8');
- assert.match(css,/#nexus-panel-widget #properties>\\.nexus-icons-section\\{grid-column:1;grid-row:3\\}/);
- assert.match(css,/#nexus-panel-widget #properties>\\.nexus-actions-section\\{grid-column:2;grid-row:3\\}/);
- assert.match(css,/@container\\(max-width:610px\\)/);
- assert.match(editorSource,/section\\('Actions',true,'actions','cursor'\\)/);
- assert.doesNotMatch(editorSource,/storage\\.setItem\\(/);
+ assert.match(css,/#nexus-panel-widget #properties>\.nexus-icons-section\{grid-column:1;grid-row:3\}/);
+ assert.match(css,/#nexus-panel-widget #properties>\.nexus-actions-section\{grid-column:2;grid-row:3\}/);
+ assert.match(css,/@container\(max-width:610px\)/);
+ assert.match(editorSource,/section\('Actions',true,'actions','cursor'\)/);
+ assert.doesNotMatch(editorSource,/storage\.setItem\(/);
 });
 
 test('Nexus icon gallery lives in the selected widget inspector and saves the chosen image ID',async()=>{
