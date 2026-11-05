@@ -106,8 +106,13 @@ func renderDeckMetric(size int, key KeyConfig, value float64, available bool, hi
 	if available && !math.IsNaN(value) && !math.IsInf(value, 0) {
 		text = deckMetricNumber(key.Metric, value)
 	}
-	drawCenteredDeckString(canvas, text, size/2+6, color.White)
-	renderDeckMetricVisualization(canvas, key, value, available, history)
+	if deckMetricVisualizationStyle(key) == "ring" {
+		drawDeckRingGauge(canvas, deckMetricGaugeFraction(key.Metric, value, history), available && deckFinite(value))
+		drawDeckRingValue(canvas, text)
+	} else {
+		drawCenteredDeckString(canvas, text, size/2+6, color.White)
+		renderDeckMetricVisualization(canvas, key, value, available, history)
+	}
 	return canvas
 }
 

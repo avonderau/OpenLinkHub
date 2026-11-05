@@ -178,3 +178,35 @@ func TestDeckMetricVisualizationStylesAndUnavailableReadings(t *testing.T) {
 		t.Fatalf("non-finite reading filled gauge: %f", got)
 	}
 }
+
+func TestDeckRingGaugeDisplaysValueInsideArc(t *testing.T) {
+	key := KeyConfig{Metric: "cpu.utilization", MetricStyle: "ring", Label: "CPU"}
+	withValue := renderDeckMetric(85, key, 50, true, []float64{50}, nil)
+	withoutValue := renderKeyLabel(85, "").(*image.RGBA)
+	drawDeckRingGauge(withoutValue, 0.5, true)
+	cx, cy, radius := deckRingGeometry(85)
+	if radius < 20 || cy-radius < 17 || cy+radius >= 85 {
+		t.Fatalf("ring geometry too small or overlaps label: (%d,%d) radius %d", cx, cy, radius)
+	}
+	changedCenter := false
+	for y := cy-12; y < cy+12; y++ {
+		for x := cx-18; x < cx+18; x++ {
+			if withValue.At(x, y) != withoutValue.At(x, y) {
+				changedCenter = true
+			}
+		}
+	}
+	if !changedCenter {
+		t.Fatal("ring value was not drawn inside the arc")
+	}
+	// Unit text stays inside the circle for readings such as GPU power.
+	power := KeyConfig{Metric: "gpu.power_w", MetricStyle: "ring", Label: "GPU Power"}
+	if got := renderDeckMetric(85, power, 110, true, nil, nil); got.Bounds().Dx() != 85 {
+		t.Fatal("ring with unit was not rendered")
+	}
+	// Unavailable sensors must retain the -- placeholder inside the ring.
+	unknown := renderDeckMetric(85, key, 0, false, nil, nil)
+	if unknown.Bounds() != withValue.Bounds() {
+		t.Fatal("unavailable ring changed pixel bounds")
+	}
+}

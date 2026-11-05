@@ -115,6 +115,12 @@ async function run() {
   }
 
   assert.match(html, /<select class="form-select" id="deck-metric-style"/);
+  assert.match(html, /class="deck-metric-options">\s*<div class="deck-metric-option">/);
+  assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 2,
+    'Refresh and Visualization use two aligned columns');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'css', 'deck-editor.css'), 'utf8');
+  assert.match(css, /\.deck-metric-options\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\) minmax\(0,1\.15fr\)/,
+    'metric options remain on the same row in the narrow inspector');
   assert.ok(!html.includes("Mini graph"), "metric UI must use visualization names");
 
   // load() fetches data asynchronously and builds the preview.

@@ -291,11 +291,30 @@
 
 /* Live LCD metric configuration shares the artwork inspector's controls. */
 .deck-workspace .deck-metric-options{
-  display:flex;flex-wrap:wrap;align-items:center;gap:9px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  column-gap:10px;
+  align-items:end;
 }
-.deck-workspace .deck-metric-options label{font-size:.75rem;color:var(--deck-muted)}
-.deck-workspace .deck-metric-options select{max-width:170px;min-width:120px}
-.deck-workspace #deck-metric-style{min-width:145px}
+.deck-workspace .deck-metric-option{
+  display:grid;
+  gap:5px;
+  min-width:0;
+}
+.deck-workspace .deck-metric-option label{
+  font-size:.75rem;
+  color:var(--deck-muted);
+}
+.deck-workspace .deck-property .deck-metric-option select{
+  box-sizing:border-box;
+  display:block;
+  min-width:0;
+  max-width:none;
+  width:100%;
+  padding:7px 23px 7px 9px;
+  font-size:.78rem;
+  height:37px;
+}
 .deck-workspace .deck-key[data-has-metric="true"]{
   gap:3px;
   background-color:#182734;

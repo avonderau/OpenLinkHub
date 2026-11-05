@@ -5,6 +5,10 @@ import (
 	"image/color"
 	"math"
 	"strings"
+
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 )
 
 // The style field is additive: existing saved layouts with showGraph=true
@@ -141,17 +145,23 @@ func drawDeckFuelGauge(dst *image.RGBA, fraction float64, available bool) {
 	}
 }
 
+// Place the ring below the metric label. Unlike the previous small
+// bottom-only indicator, it has a clear center for the numeric reading.
+func deckRingGeometry(size int) (cx, cy, radius int) {
+	radius = (size - 28) / 2
+	return size / 2, size - radius - 5, radius
+}
+
 func drawDeckRingGauge(dst *image.RGBA, fraction float64, available bool) {
 	size := dst.Bounds().Dx()
-	if size < 44 {
+	if size < 52 {
 		return
 	}
-	cx, cy := size/2, size-16
-	radius := 12
+	cx, cy, radius := deckRingGeometry(size)
 	for y := cy-radius; y <= cy+radius; y++ {
 		for x := cx-radius; x <= cx+radius; x++ {
 			distance := math.Hypot(float64(x-cx), float64(y-cy))
-			if distance < float64(radius-3) || distance > float64(radius) {
+			if distance < float64(radius-4) || distance > float64(radius) {
 				continue
 			}
 			theta := math.Atan2(float64(y-cy), float64(x-cx)) + math.Pi/2
@@ -165,4 +175,42 @@ func drawDeckRingGauge(dst *image.RGBA, fraction float64, available bool) {
 			dst.SetRGBA(x, y, ink)
 		}
 	}
+}
+
+// Draw the live reading in the center of the ring, not above it.
+// Long readouts are split into a numeric line and a unit line, keeping
+// both inside the narrow 85x85 LCD key without spilling into the ring.
+func drawDeckRingValue(dst *image.RGBA, value string) {
+	size := dst.Bounds().Dx()
+	if size < 52 {
+		return
+	}
+	cx, cy, radius := deckRingGeometry(size)
+	innerWidth := 2*(radius-5)
+	parts := strings.SplitN(value, " ", 2)
+	if len(parts) == 2 && parts[1] != "" {
+		drawDeckRingText(dst, parts[0], cx, cy-1, innerWidth, color.White)
+		drawDeckRingText(dst, parts[1], cx, cy+12, innerWidth, color.RGBA{R: 244, G: 210, B: 151, A: 255})
+		return
+	}
+	drawDeckRingText(dst, value, cx, cy+5, innerWidth, color.White)
+}
+
+// Center text within the inner diameter. Truncate exceptionally long
+// sensor values (e.g. unbounded RPM) rather than painting over the arc.
+func drawDeckRingText(dst *image.RGBA, text string, cx, baseline, maxWidth int, ink color.Color) {
+	runes := []rune(strings.TrimSpace(text))
+	for len(runes) > 0 && font.MeasureString(basicfont.Face7x13, string(runes)).Ceil() > maxWidth {
+		runes = runes[:len(runes)-1]
+	}
+	if len(runes) == 0 {
+		return
+	}
+	label := string(runes)
+	width := font.MeasureString(basicfont.Face7x13, label).Ceil()
+	font.Drawer{
+		Dst: dst, Src: image.NewUniform(ink),
+		Face: basicfont.Face7x13,
+		Dot: fixed.P(cx-width/2, baseline),
+	}.DrawString(label)
 }
