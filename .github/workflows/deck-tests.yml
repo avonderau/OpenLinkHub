@@ -25,6 +25,18 @@ jobs:
           cache: true
       - name: Install HID dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+      - name: Check new Deck actions Go formatting
+        run: |
+          files=(
+            src/devices/deck/launch_macro_test.go
+            src/devices/nexus/deck_launch_actions.go
+            src/devices/nexus/deck_macro_actions.go
+            src/devices/nexus/deck_launch_macro_test.go
+          )
+          if [ -n "$(gofmt -l "${files[@]}")" ]; then
+            gofmt -l "${files[@]}"
+            exit 1
+          fi
       - name: Validate Deck editor JavaScript
         run: |
           node --check static/js/deck-editor.js
