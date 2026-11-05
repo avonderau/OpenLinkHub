@@ -2913,6 +2913,7 @@ func setRoutes() http.Handler {
 	// Fork-owned Deck Editor endpoints.
 	r.HandleFunc("/api/deck/layout", deckLayoutAPI)
 	r.HandleFunc("/api/deck/status", deckStatusAPI)
+	r.HandleFunc("/api/deck/icon", deckIconAPI)
 
 	// GET
 	handleFunc(r, "/api/", http.MethodGet, homePage)
