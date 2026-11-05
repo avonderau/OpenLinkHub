@@ -6,6 +6,17 @@ import (
  "OpenLinkHub/src/logger"
 )
 
+// keyDisplayLabel supplies readable default LCD text for navigation actions.
+func keyDisplayLabel(key KeyConfig)string{
+ if key.Label!="" {return key.Label}
+ switch key.Action {
+ case "page-next":return "Next Page"
+ case "page-previous":return "Prev Page"
+ case "page-go":return "Go to Page"
+ default:return ""
+ }
+}
+
 // handleKeyPress dispatches the first safe, native Deck actions. Page actions
 // run inside the device process and never start user programs as the
 // privileged OpenLinkHub system service. Caller must not hold d.mu.
