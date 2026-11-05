@@ -12,6 +12,7 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"strings"
+	"sync"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
@@ -30,7 +31,43 @@ const (
 	deckIconPixels       = 128
 )
 
-var deckIconID = regexp.MustCompile(`^[a-f0-9]{32}$`)
+var deckIconID = regexp.MustCompile(`^[a-f0-9]{32}package deck
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	_ "image/jpeg"
+	"image/png"
+	"strings"
+	"sync"
+
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
+	"os"
+	"path/filepath"
+	"regexp"
+
+	xdraw "golang.org/x/image/draw"
+)
+
+const (
+	MaxDeckIconBytes     = 512 * 1024
+	maxDeckIconDimension = 512
+	maxDeckIconFiles     = 256
+	deckIconPixels       = 128
+)
+
+)
+
+// Serialize icon-library writes so concurrent uploads cannot bypass the file cap.
+var deckIconSaveMu sync.Mutex
 
 // Icon IDs are derived from file contents. A key stores an ID rather than a
 // browser-supplied path; all images stay under a dedicated private directory.
@@ -69,6 +106,9 @@ func SaveDeckIcon(root string, data []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// Guard the existence check, quota check and atomic rename as one operation.
+	deckIconSaveMu.Lock()
+	defer deckIconSaveMu.Unlock()
 	if _, err := os.Stat(path); err == nil {
 		return id, nil
 	} else if !os.IsNotExist(err) {
