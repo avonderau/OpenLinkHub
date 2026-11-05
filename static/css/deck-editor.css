@@ -254,3 +254,18 @@
  .deck-tablist [role=tab]{flex:1 1 auto;padding:9px 10px}
 }
 @media(prefers-reduced-motion:reduce){.deck-workspace :is(button,.deck-key){transition:none}}
+
+/* Key action selection shares the Nexus inspector control treatment. */
+.deck-workspace .deck-property select {
+  display:block;
+  max-width:100%;
+  width:100%;
+  padding:10px 12px;
+  color:var(--deck-ink);
+  background:var(--olh-control,#1b1d20);
+  border:1px solid var(--deck-border);
+  border-radius:9px;
+  font-family:inherit;
+  font-size:.84rem;
+}
+#deck-target-property[hidden]{display:none!important}
