@@ -4,6 +4,7 @@ import (
  "errors"
  "os"
 
+ "OpenLinkHub/src/config"
  "OpenLinkHub/src/logger"
 )
 
@@ -24,7 +25,8 @@ func InitializeDeckDesktopLauncher(root string)error{
 // actions to its local user session. A separate agent is required for a
 // headless or service-account daemon; the web browser cannot substitute.
 func DeckDesktopLauncherStatus()(bool,string){
- if launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"))==nil{
+ if !config.IsSystemService() &&
+  launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"))==nil{
   return true,"Direct local graphical session available"
  }
  broker:=nexusLaunchBrokerGlobal.broker
