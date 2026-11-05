@@ -57,6 +57,10 @@ func deckLayoutAPI(w http.ResponseWriter,r *http.Request){
  dec.DisallowUnknownFields()
  if err:=dec.Decode(&layout);err!=nil{http.Error(w,"invalid layout: "+err.Error(),http.StatusBadRequest);return}
  if err:=dec.Decode(new(any));err!=io.EOF{http.Error(w,"unexpected trailing JSON",http.StatusBadRequest);return}
- if err:=d.SetLayout(layout);err!=nil{http.Error(w,err.Error(),http.StatusBadRequest);return}
- w.WriteHeader(http.StatusNoContent)
+ result,err:=d.UpdateLayout(layout)
+ if err!=nil{http.Error(w,err.Error(),http.StatusBadRequest);return}
+ w.Header().Set("Content-Type","application/json")
+ w.Header().Set("Cache-Control","private, no-store")
+ w.Header().Set("X-Content-Type-Options","nosniff")
+ _=json.NewEncoder(w).Encode(result)
 }
