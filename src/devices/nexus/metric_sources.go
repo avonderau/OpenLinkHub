@@ -1,7 +1,6 @@
 package nexus
 
 import (
- "bufio"
  "math"
  "os"
  "regexp"

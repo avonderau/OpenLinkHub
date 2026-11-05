@@ -35,7 +35,7 @@ func TestSourceRateSamplerTracksEachDeviceIndependently(t *testing.T){
  read,write,ok=sampler.rate("disk:b",1004,2008,t0.Add(2*time.Second),512)
  if !ok||read!=1024||write!=2048{t.Fatalf("unexpected disk B rates %f %f",read,write)}
  if _,_,ok=sampler.rate("disk:a",0,0,t0.Add(3*time.Second),512);ok{t.Fatal("counter reset produced spike")}
- if _,_,ok=sampler.rate("disk:a",math.MaxUint64,0,t0.Add(4*time.Second),512);ok{t.Fatal("negative counter on write should not produce a rate")}
+ if _,_,ok=sampler.rate("disk:a",^uint64(0),0,t0.Add(4*time.Second),512);ok{t.Fatal("negative counter on write should not produce a rate")}
 }
 
 func TestDiscoveredMetricSourcesAreValidAndFinite(t *testing.T){
