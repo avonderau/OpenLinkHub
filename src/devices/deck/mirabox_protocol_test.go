@@ -60,3 +60,17 @@ func TestMiraboxShortWritesAndPressMapping(t *testing.T){
  _,pressed,ok=MiraboxKeyEvent(next,data)
  if !ok||!pressed{t.Fatal("v3 press not recognized")}
 }
+
+func TestMiraboxStartupHandshake(t *testing.T){
+ m,_:=LookupModel(0x5548,0x6670)
+ out:=new(reportRecorder)
+ if err:=initializeMiraboxSession(out,m);err!=nil{t.Fatal(err)}
+ if len(out.reports)!=3 {t.Fatalf("want DIS, LIG initialization, LIG brightness; got %d reports",len(out.reports))}
+ if !bytes.Equal(out.reports[0][6:9],[]byte("DIS")){t.Fatal("missing DIS initialization")}
+ if !bytes.Equal(out.reports[1][6:9],[]byte("LIG")){t.Fatal("missing display initialization")}
+ if !bytes.Equal(out.reports[2][6:9],[]byte("LIG")) || out.reports[2][11]!=50 {
+  t.Fatalf("missing 50 percent startup brightness, report prefix=%v",out.reports[2][:12])
+ }
+ bad:=&reportRecorder{fail:true}
+ if err:=initializeMiraboxSession(bad,m);err==nil{t.Fatal("initialization failure must propagate")}
+}
