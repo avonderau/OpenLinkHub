@@ -29,6 +29,9 @@ class FakeElement {
   append(...elements) { this.children.push(...elements); }
   appendChild(element) { this.children.push(element); }
   replaceChildren(...elements) { this.children = elements; }
+  querySelector(selector) {
+    return this.children.find(child => selector === '.deck-live-value' && child.className === 'deck-live-value') || null;
+  }
   focus() { this.focused = true; }
   get selectedOptions() {
     return this.children.filter(child => child.value === this.value);
@@ -51,6 +54,8 @@ async function run() {
   nodes['deck-device-id'].value = 'deck-test';
   nodes['deck-key-grid'].dataset.keys = '18';
   const received = [];
+  const intervals = [];
+  let cpuReading = 55.6;
   const documentListeners = {};
   const document = {
     getElementById: id => nodes[id],
@@ -75,7 +80,7 @@ async function run() {
     }
     const data = type === '/api/deck/status'
       ? { connected: true, status: 'Connected; layout applied to display',
-          metrics: { 'cpu.temperature': 55.6, 'memory.utilization': 48.2 } }
+          metrics: { 'cpu.temperature': cpuReading, 'memory.utilization': 48.2 } }
       : { version: 1, activePage: 'home', pages: [{ id: 'home', name: 'Home', keys: null }] };
     return { ok: true, status: 200, json: async () => structuredClone(data) };
   };
@@ -84,7 +89,7 @@ async function run() {
   vm.runInNewContext(code, {
     document, fetch,
     window: { confirm: () => true },
-    setInterval: () => 1,
+    setInterval: handler => { intervals.push(handler); return intervals.length; },
     console,
   }, { filename: 'deck-editor.js' });
 
@@ -191,6 +196,11 @@ async function run() {
   graph.dispatch('change');
   assert.equal(grid.children[4].dataset.hasMetric, 'true');
   assert.equal(grid.children[4].children[2].textContent, '56 C');
+  const existingMetricKey = grid.children[4];
+  cpuReading = 62.4;
+  await intervals[0]();
+  assert.equal(grid.children[4], existingMetricKey, 'status poll should preserve physical preview DOM');
+  assert.equal(grid.children[4].children[2].textContent, '62 C');
   await nodes['deck-save'].dispatch('click');
   const metricKey = received[6].pages[1].keys.find(key => key.index === 4);
   assert.equal(metricKey.metric, 'cpu.temperature');
