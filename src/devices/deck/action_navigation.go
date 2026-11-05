@@ -3,6 +3,7 @@ package deck
 import (
  "context"
  "fmt"
+ "strconv"
 
  "OpenLinkHub/src/devices/nexus"
 )
@@ -14,6 +15,9 @@ func keyDisplayLabel(key KeyConfig) string {
  case "page-next":return "Next Page"
  case "page-previous":return "Prev Page"
  case "page-go":return "Go to Page"
+ case "brightness-up":return "Brightness +"
+ case "brightness-down":return "Brightness -"
+ case "brightness-set":return "Brightness "+key.Target+"%"
  case "hotkey":return "Hotkey"
  case "macro":return "Run Macro"
  case "media":return nexus.DefaultMediaLabel(key.Target)
@@ -108,6 +112,39 @@ func(d *Device)selectKeyAction(index int)(string,string,func(string,string)error
   }
  }
  if chosen==nil{return "","",nil}
+ if chosen.Action=="brightness-up"||chosen.Action=="brightness-down"||chosen.Action=="brightness-set" {
+  if d.Model.Family!="mirabox" || d.hidDevice==nil || !d.connected {return "","",nil}
+  if chosen.TargetPage!="" {return "","",nil}
+  level:=d.layout.Brightness
+  if level==0 {level=50}
+  switch chosen.Action {
+  case "brightness-up":
+   if chosen.Target!=""{return "","",nil}
+   level+=10
+  case "brightness-down":
+   if chosen.Target!=""{return "","",nil}
+   level-=10
+  case "brightness-set":
+   requested,err:=strconv.Atoi(chosen.Target)
+   if err!=nil || requested<10 || requested>100 {return "","",nil}
+   level=requested
+  }
+  if level<10{level=10}
+  if level>100{level=100}
+  if err:=MiraboxBrightness(d.hidDevice,d.Model,uint8(level));err!=nil {
+   d.status=fmt.Sprintf("Deck brightness failed: %v",err)
+   return "","",nil
+  }
+  updated:=cloneLayout(d.layout)
+  updated.Brightness=level
+  if err:=SaveLayout(d.root,d.Serial,d.Model,updated);err!=nil{
+   d.status=fmt.Sprintf("Brightness updated but save failed: %v",err)
+   return "","",nil
+  }
+  d.layout=updated
+  d.status=fmt.Sprintf("Deck brightness %d%%",level)
+  return "","",nil
+ }
  if chosen.Action=="hotkey"||chosen.Action=="media"||chosen.Action=="macro" {
   // Layouts are validated when loaded/saved. Revalidate the HID action
   // before dispatch, so malformed memory or stale settings cannot run.
