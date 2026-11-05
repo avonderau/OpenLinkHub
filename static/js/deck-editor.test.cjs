@@ -40,6 +40,8 @@ async function run() {
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
     'deck-key-shortcut', 'deck-hotkey-property', 'deck-key-media', 'deck-media-property',
+    'deck-launch-property', 'deck-launch-label', 'deck-key-launch-target', 'deck-launch-help',
+    'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
     'deck-remove-page', 'deck-message', 'deck-key-count', 'deck-page-count',
     'deck-connection-state', 'deck-tab-key', 'deck-tab-pages',
@@ -57,6 +59,11 @@ async function run() {
   };
   const fetch = async (url, options = {}) => {
     const type = url.split('?')[0];
+    if (type === '/api/macro/') {
+      return { ok: true, status: 200, json: async () => ({
+        status: 1, data: { '7': { id: 7, name: 'Window Manager' }, '12': { id: 12, name: 'Editor Macro' } }
+      }) };
+    }
     if (type === '/api/deck/layout' && options.method === 'PUT') {
       received.push(JSON.parse(options.body));
       return {
@@ -150,6 +157,45 @@ async function run() {
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[3].pages[1].keys.find(key => key.index === 1).action, 'media');
   assert.equal(received[3].pages[1].keys.find(key => key.index === 1).target, 'volume-mute');
+
+  // Desktop launcher is a URL or safe desktop ID, never an arbitrary shell.
+  grid.children[2].dispatch('click');
+  action.value = 'url';
+  action.dispatch('change');
+  assert.equal(nodes['deck-launch-property'].hidden, false);
+  assert.equal(nodes['deck-key-launch-target'].maxLength, 256);
+  const launch = nodes['deck-key-launch-target'];
+  launch.value = 'https://example.com/test';
+  launch.dispatch('input');
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received[4].pages[1].keys.find(key => key.index === 2).action, 'url');
+  assert.equal(received[4].pages[1].keys.find(key => key.index === 2).target, 'https://example.com/test');
+
+  action.value = 'application';
+  action.dispatch('change');
+  assert.equal(launch.value, '', 'changing action type must discard stale URL');
+  assert.equal(launch.maxLength, 128);
+  launch.value = 'org.gnome.Terminal.desktop';
+  launch.dispatch('input');
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received[5].pages[1].keys.find(key => key.index === 2).action, 'application');
+  assert.equal(received[5].pages[1].keys.find(key => key.index === 2).target, 'org.gnome.Terminal.desktop');
+
+  // Saved macro options come from existing OpenLinkHub /api/macro/ profiles.
+  grid.children[3].dispatch('click');
+  action.value = 'macro';
+  action.dispatch('change');
+  assert.equal(nodes['deck-macro-property'].hidden, false);
+  const macros = nodes['deck-key-macro'];
+  assert.equal(macros.disabled, false);
+  assert.equal(macros.children.length, 2);
+  assert.equal(macros.value, '7');
+  macros.value = '12';
+  macros.dispatch('change');
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received[6].pages[1].keys.find(key => key.index === 3).action, 'macro');
+  assert.equal(received[6].pages[1].keys.find(key => key.index === 3).target, '12');
+
   console.log('Deck Editor interaction test passed');
 }
 
