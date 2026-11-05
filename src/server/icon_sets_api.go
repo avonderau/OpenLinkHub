@@ -1,0 +1,220 @@
+package server
+
+import (
+ "archive/zip"
+ "bytes"
+ "crypto/sha256"
+ "encoding/hex"
+ "encoding/json"
+ "errors"
+ "fmt"
+ "image"
+ _ "image/jpeg"
+ _ "image/png"
+ "io"
+ "mime"
+ "net/http"
+ "os"
+ "path"
+ "path/filepath"
+ "regexp"
+ "sort"
+ "strings"
+ "sync"
+ "unicode"
+ "unicode/utf8"
+
+ "OpenLinkHub/src/config"
+ "OpenLinkHub/src/devices/deck"
+ "OpenLinkHub/src/devices/nexus"
+)
+
+const (
+ maxIconSetZipBytes = 8 << 20
+ maxIconSetTotalImageBytes = 8 << 20
+ maxIconSetImages = 48
+ maxIconSets = 24
+)
+var iconSetIDPattern=regexp.MustCompile(`^[a-f0-9]{24}$`)
+var iconSetImportMu sync.Mutex
+
+type iconSetEntry struct {
+ Name string `json:"name"`
+ DeckID string `json:"deckId"`
+ NexusID string `json:"nexusId"`
+}
+type iconSetManifest struct {
+ ID string `json:"id"`
+ Name string `json:"name"`
+ Icons []iconSetEntry `json:"icons"`
+}
+
+func iconSetsDir(root string)string{return filepath.Join(root,"database","icon-sets")}
+func iconSetManifestPath(root,id string)(string,error){
+ if !iconSetIDPattern.MatchString(id){return "",errors.New("invalid icon set ID")}
+ return filepath.Join(iconSetsDir(root),id+".json"),nil
+}
+func readIconSetManifest(root,id string)(iconSetManifest,error){
+ file,err:=iconSetManifestPath(root,id);if err!=nil{return iconSetManifest{},err}
+ data,err:=os.ReadFile(file);if err!=nil{return iconSetManifest{},err}
+ if len(data)>128*1024{return iconSetManifest{},errors.New("icon set manifest too large")}
+ var result iconSetManifest
+ if err:=json.Unmarshal(data,&result);err!=nil{return result,err}
+ if result.ID!=id||len(result.Icons)>maxIconSetImages{return iconSetManifest{},errors.New("invalid icon set manifest")}
+ return result,nil
+}
+func listIconSets(root string)([]iconSetManifest,error){
+ entries,err:=os.ReadDir(iconSetsDir(root))
+ if os.IsNotExist(err){return []iconSetManifest{},nil}
+ if err!=nil{return nil,err}
+ if len(entries)>maxIconSets+8{return nil,errors.New("icon set library directory too large")}
+ sets:=[]iconSetManifest{}
+ for _,entry:=range entries{
+  if entry.IsDir()||!strings.HasSuffix(entry.Name(),".json"){continue}
+  id:=strings.TrimSuffix(entry.Name(),".json")
+  if !iconSetIDPattern.MatchString(id){continue}
+  manifest,err:=readIconSetManifest(root,id)
+  if err!=nil{continue}
+  sets=append(sets,manifest)
+ }
+ sort.Slice(sets,func(i,j int)bool{return sets[i].Name<sets[j].Name})
+ return sets,nil
+}
+func cleanIconSetName(name string) (string,error){
+ name=strings.TrimSpace(name)
+ if name==""||!utf8.ValidString(name)||utf8.RuneCountInString(name)>60{
+  return "",errors.New("set name must be 1-60 characters")
+ }
+ for _,char:=range name{if unicode.IsControl(char){return "",errors.New("invalid icon set name")}}
+ return name,nil
+}
+type pendingIcon struct{Name string; Data []byte}
+// A ZIP is never unpacked to paths. All member names are validated and the
+// decoded raster images go through the existing per-device storage pipelines.
+func importIconSet(root,name string,data []byte)(iconSetManifest,error){
+ iconSetImportMu.Lock()
+ defer iconSetImportMu.Unlock()
+ var empty iconSetManifest
+ var err error
+ name,err=cleanIconSetName(name)
+ if err!=nil{return empty,err}
+ if len(data)==0||len(data)>maxIconSetZipBytes{return empty,errors.New("ZIP must be 1-8 MiB")}
+ digest:=sha256.Sum256(data)
+ id:=hex.EncodeToString(digest[:12])
+ if existing,err:=readIconSetManifest(root,id);err==nil{return existing,nil}
+ archive,err:=zip.NewReader(bytes.NewReader(data),int64(len(data)))
+ if err!=nil{return empty,fmt.Errorf("invalid ZIP: %w",err)}
+ if len(archive.File)>128{return empty,errors.New("too many files in icon set archive")}
+ pending:=[]pendingIcon{}
+ countBytes:=0
+ names:=map[string]bool{}
+ for _,file:=range archive.File{
+  if file.FileInfo().IsDir(){continue}
+  filename:=file.Name
+  if strings.Contains(filename,"\\")||strings.HasPrefix(filename,"/") {
+   return empty,errors.New("invalid ZIP path")
+  }
+  for _,segment:=range strings.Split(filename,"/"){
+   if segment==".."||segment=="." {return empty,errors.New("ZIP path traversal is not permitted")}
+  }
+  if !file.Mode().IsRegular(){return empty,errors.New("ZIP must contain regular files")}
+  base:=path.Base(filename)
+  if strings.HasPrefix(base,".")||strings.HasPrefix(filename,"__MACOSX/"){continue}
+  extension:=strings.ToLower(path.Ext(base))
+  if extension!=".png"&&extension!=".jpg"&&extension!=".jpeg"{
+   return empty,fmt.Errorf("unsupported icon file %q: only PNG/JPEG is supported",base)
+  }
+  if len(pending)>=maxIconSetImages{return empty,errors.New("icon set limited to 48 icons")}
+  if file.UncompressedSize64>deck.MaxDeckIconBytes||countBytes>maxIconSetTotalImageBytes {
+   return empty,errors.New("icon set images exceed quota")
+  }
+  reader,err:=file.Open();if err!=nil{return empty,err}
+  contents,readErr:=io.ReadAll(io.LimitReader(reader,deck.MaxDeckIconBytes+1))
+  closeErr:=reader.Close()
+  if readErr!=nil{return empty,readErr}
+  if closeErr!=nil{return empty,closeErr}
+  if len(contents)==0||len(contents)>deck.MaxDeckIconBytes{return empty,errors.New("icon exceeds 512 KiB")}
+  countBytes+=len(contents)
+  if countBytes>maxIconSetTotalImageBytes{return empty,errors.New("icon set extracted files exceed quota")}
+  info,format,err:=image.DecodeConfig(bytes.NewReader(contents))
+  if err!=nil||!((extension==".png"&&format=="png")||(extension!=".png"&&format=="jpeg"))||info.Width<1||info.Height<1||info.Width>512||info.Height>512{
+   return empty,fmt.Errorf("invalid icon image %q",base)
+  }
+  title:=strings.TrimSpace(strings.TrimSuffix(base,path.Ext(base)))
+  if title==""||utf8.RuneCountInString(title)>50||!utf8.ValidString(title){return empty,errors.New("invalid icon title")}
+  for _,char:=range title{if unicode.IsControl(char){return empty,errors.New("icon title contains control characters")}}
+  if names[title]{return empty,fmt.Errorf("duplicate icon title %q",title)}
+  names[title]=true
+  pending=append(pending,pendingIcon{Name:title,Data:contents})
+ }
+ if len(pending)==0{return empty,errors.New("ZIP has no valid icon images")}
+ dir:=iconSetsDir(root)
+ entries,err:=os.ReadDir(dir)
+ if err!=nil&&!os.IsNotExist(err){return empty,err}
+ count:=0
+ for _,entry:=range entries{if !entry.IsDir()&&strings.HasSuffix(entry.Name(),".json"){count++}}
+ if count>=maxIconSets{return empty,errors.New("icon set library limited to 24 sets")}
+ manifest:=iconSetManifest{ID:id,Name:name,Icons:[]iconSetEntry{}}
+ for _,icon:=range pending{
+  deckID,err:=deck.SaveDeckIcon(root,icon.Data)
+  if err!=nil{return empty,err}
+  hash:=sha256.Sum256(icon.Data)
+  nexusID:="set_"+hex.EncodeToString(hash[:12])
+  if _,err:=nexus.SaveCustomIcon(filepath.Join(root,"database","nexus","icons"),nexusID,icon.Data);err!=nil{return empty,err}
+  manifest.Icons=append(manifest.Icons,iconSetEntry{Name:icon.Name,DeckID:deckID,NexusID:nexusID})
+ }
+ if err:=os.MkdirAll(dir,0700);err!=nil{return empty,err}
+ blob,err:=json.MarshalIndent(manifest,"","  ");if err!=nil{return empty,err}
+ temporary,err:=os.CreateTemp(dir,".icon-set-*")
+ if err!=nil{return empty,err}
+ defer os.Remove(temporary.Name())
+ if err=temporary.Chmod(0600);err!=nil{temporary.Close();return empty,err}
+ if _,err=temporary.Write(blob);err!=nil{temporary.Close();return empty,err}
+ if err=temporary.Sync();err!=nil{temporary.Close();return empty,err}
+ if err=temporary.Close();err!=nil{return empty,err}
+ destination,_:=iconSetManifestPath(root,id)
+ if err=os.Rename(temporary.Name(),destination);err!=nil{return empty,err}
+ return manifest,nil
+}
+
+func iconSetsAPI(w http.ResponseWriter,r *http.Request){
+ if !nexusRequestHostAllowed(r){http.Error(w,"host not allowed",http.StatusForbidden);return}
+ root:=config.GetConfig().ConfigPath
+ if root==""{http.Error(w,"config unavailable",http.StatusServiceUnavailable);return}
+ w.Header().Set("Cache-Control","private, no-store")
+ w.Header().Set("X-Content-Type-Options","nosniff")
+ switch r.Method {
+ case http.MethodGet:
+  sets,err:=listIconSets(root)
+  if err!=nil{http.Error(w,"icon sets unavailable",500);return}
+  w.Header().Set("Content-Type","application/json")
+  _=json.NewEncoder(w).Encode(map[string]any{"sets":sets})
+ case http.MethodPost:
+  if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
+  mediaType,_,err:=mime.ParseMediaType(r.Header.Get("Content-Type"))
+  if err!=nil||mediaType!="application/zip"{http.Error(w,"ZIP required",415);return}
+  r.Body=http.MaxBytesReader(w,r.Body,maxIconSetZipBytes)
+  defer r.Body.Close()
+  contents,err:=io.ReadAll(r.Body)
+  if err!=nil{http.Error(w,"invalid or oversized ZIP",400);return}
+  set,err:=importIconSet(root,r.URL.Query().Get("name"),contents)
+  if err!=nil{http.Error(w,err.Error(),400);return}
+  w.Header().Set("Content-Type","application/json")
+  w.WriteHeader(http.StatusCreated)
+  _=json.NewEncoder(w).Encode(map[string]any{"set":set})
+ case http.MethodDelete:
+  if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
+  id:=r.URL.Query().Get("id")
+  dest,err:=iconSetManifestPath(root,id)
+  if err!=nil{http.Error(w,"invalid icon set ID",400);return}
+  iconSetImportMu.Lock()
+  err=os.Remove(dest)
+  iconSetImportMu.Unlock()
+  if err!=nil{http.Error(w,"icon set not found",404);return}
+  // Imported content-addressed images remain for existing saved layouts.
+  w.WriteHeader(http.StatusNoContent)
+ default:
+  w.Header().Set("Allow","GET, POST, DELETE")
+  http.Error(w,"method not allowed",405)
+ }
+}
