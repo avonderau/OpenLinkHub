@@ -32,6 +32,24 @@ The physical key placement, key orientation and any special positions must
 still be verified on real hardware. The old protocol cannot report true
 key-release events. There is no support for long-press detection on old units.
 
+## Enable or disable Deck support in Settings
+
+Use **Settings → Devices & displays → Supported Devices** to find
+**Mirabox HSV293S** (or another supported Deck model), change the Enabled
+toggle, and click **Save**. The service must be restarted before the
+change takes effect, consistent with the existing Corsair device switches.
+
+Deck exclusions are stored by vendor + product ID in `deckExclude` in
+`config.json` (for example, `"5548:6670"`). The legacy `exclude`
+setting remains PID-only for Corsair and is not modified by Deck toggles.
+All supported Deck models appear in the Settings list even when unplugged,
+so a disabled model can be re-enabled without connecting it first.
+
+Disabling a model stops OpenLinkHub from opening/controlling that device
+on the next startup. **It does not cut USB power or forcibly turn off
+its LCD**; behavior of a previously displayed image after disabling is
+hardware-dependent.
+
 ## Not yet implemented
 
 - Action execution, macros, folders, icon uploads, metrics and plugin hosting.
