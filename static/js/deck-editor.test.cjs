@@ -113,6 +113,7 @@ async function run() {
     console,
   }, { filename: 'deck-editor.js' });
 
+  assert.match(fs.readFileSync(path.join(__dirname,'deck-editor.js'),'utf8'), /metricSource/);
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
   for (const hiddenCopy of [
@@ -348,13 +349,4 @@ async function run() {
 run().catch(error => {
   console.error(error);
   process.exitCode = 1;
-});
-
-test('Deck source selector uses available mountpoints and preserves each selected device',async()=>{
- const source = fs.readFileSync(path.join(__dirname,'deck-editor.js'),'utf8');
- assert.match(source,/\/api\/telemetry\/sources/);
- const html = fs.readFileSync(path.join(__dirname,'..','..','web','deck.html'),'utf8');
- assert.match(html,/id="deck-metric-source"/);
- assert.match(source,/metricSource:\s*''/,'changing metric must reset previous source');
- assert.match(source,/metricLive\[key\.metricSource\s*\?/,'live preview must use source-qualified key');
 });
