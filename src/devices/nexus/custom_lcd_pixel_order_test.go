@@ -39,7 +39,7 @@ func TestCustomNexusLCDFramePreservesPreviewColorsAndSwapsHardwareChannels(t *te
 
 func TestCustomNexusLCDColorMatchesRenderedRedButton(t *testing.T) {
 	screen := Screen{ID: "red", Name: "Red", Widgets: []Widget{{
-		ID: "button", Type: "button", X: 0, Y: 0, Width: 80, Height: 48,
+		ID: "button", Type: "button", Action: "next", X: 0, Y: 0, Width: 80, Height: 48,
 		Settings: map[string]string{"backgroundColor": "#ff0000"},
 	}}}
 	frame, err := RenderScreen(screen, nil)
