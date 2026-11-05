@@ -32,9 +32,12 @@ import (
 	"OpenLinkHub/src/temperatures"
 	"OpenLinkHub/src/templates"
 	"OpenLinkHub/src/version"
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"mime"
 	"net/http"
 	"net/url"
@@ -2918,9 +2921,35 @@ func handleFunc(mux *http.ServeMux, path, method string, handler func(w http.Res
 			http.Error(w, language.GetValue("txtMethodNotAllowed"), http.StatusMethodNotAllowed)
 			return
 		}
-		if method != http.MethodGet && method != http.MethodHead && !nexusWriteAllowed(r) {
-			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
-			return
+		if method != http.MethodGet && method != http.MethodHead {
+			if !nexusWriteAllowed(r) {
+				http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
+				return
+			}
+			// Bound inherited handlers that decode JSON or form bodies without
+			// their own limits. File-import routes retain their larger quota.
+			limit := legacyRequestBodyLimit(path)
+			if r.ContentLength > limit {
+				http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+				return
+			}
+			// Validate the whole bounded body before invoking a handler.
+			// A parser that accepts one JSON value and ignores trailing bytes
+			// must not be able to apply hardware changes on an oversized upload.
+			limited := http.MaxBytesReader(w, r.Body, limit)
+			content, readErr := io.ReadAll(limited)
+			_ = limited.Close()
+			if readErr != nil {
+				var sizeErr *http.MaxBytesError
+				if errors.As(readErr, &sizeErr) {
+					http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+				} else {
+					http.Error(w, "unable to read request body", http.StatusBadRequest)
+				}
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewReader(content))
+			r.ContentLength = int64(len(content))
 		}
 		handler(w, r)
 	})
