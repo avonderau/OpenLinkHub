@@ -275,3 +275,33 @@
 #nexus-editor .nexus-selected-widget-type,.nexus-selected-widget-type{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.5rem;width:fit-content;max-width:100%;color:var(--text-muted,#a7bac7);margin:.4rem 0}
 #nexus-editor .nexus-selected-widget-type select,.nexus-selected-widget-type select{min-width:120px}
 @media(max-width:640px){#nexus-editor .nexus-editor-tablist [role=tab],.nexus-editor-tablist [role=tab]{flex:1 1 auto;padding:.5rem}.nexus-editor-tabcontent{padding:.6rem}}
+
+
+/* Pack artwork is selected in the existing Widget inspector, not a nested manager. */
+#nexus-editor .nexus-icon-row{display:flex;flex-direction:column;align-items:stretch;gap:.65rem}
+#nexus-editor .nexus-icon-row>.nexus-icon-source{display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin:0}
+#nexus-editor .nexus-icon-row>.nexus-icon-source select{flex:1;min-width:0}
+#nexus-editor .nexus-icon-library{display:flex;flex-direction:column;gap:.5rem;width:100%;min-width:0;padding-top:.6rem;border-top:1px solid var(--border-subtle,#49505a)}
+#nexus-editor .nexus-icon-pack-label{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin:0}
+#nexus-editor .nexus-icon-pack-label select{flex:1;min-width:0}
+#nexus-editor .nexus-icon-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:.45rem;min-width:0}
+#nexus-editor .nexus-icon-gallery small{grid-column:1/-1}
+#nexus-editor .nexus-icon-gallery .nexus-icon-tile{
+ display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+ gap:.25rem;min-width:0;width:100%;margin:0;padding:.45rem .3rem;
+ background:var(--bg-card,#202022);border:1px solid var(--border-subtle,#49505a);
+ border-radius:8px;color:var(--text-muted,#aaa);cursor:pointer;
+}
+#nexus-editor .nexus-icon-gallery .nexus-icon-tile:hover{border-color:var(--text-muted,#aaa)}
+#nexus-editor .nexus-icon-gallery .nexus-icon-tile[aria-pressed="true"]{
+ border-color:var(--text-main,#e8eff5);
+ background:var(--bg-hover,#293542);
+ box-shadow:inset 0 0 0 1px var(--text-main,#e8eff5);
+}
+#nexus-editor .nexus-icon-tile img{display:block;width:40px;height:40px;max-width:100%;object-fit:contain}
+#nexus-editor .nexus-icon-tile span{display:block;max-width:100%;overflow-wrap:anywhere;text-align:center;font-size:.72rem;line-height:1.2}
+#nexus-editor .nexus-icon-current{font-size:.77rem}
+#nexus-editor .nexus-icon-settings-link{align-self:flex-start;color:var(--text-muted,#a7bac7);font-size:.8rem}
+#nexus-editor .nexus-icon-settings-link:hover{color:var(--text-main,#e8eff5)}
+#nexus-editor .nexus-icon-row>.nexus-custom-icon-upload{margin:.25rem 0 0}
+#nexus-editor .nexus-icon-row>button{align-self:flex-start;margin:0}
