@@ -17,8 +17,10 @@
   const metricGraph = document.getElementById('deck-metric-graph');
   const metricStatus = document.getElementById('deck-metric-status');
   const actionInput = document.getElementById('deck-key-action');
-  const shortcutInput = document.getElementById('deck-key-shortcut');
-  const shortcutProperty = document.getElementById('deck-hotkey-property');
+  const macroProperty = document.getElementById('deck-macro-property');
+  const macroInput = document.getElementById('deck-key-macro');
+  const macroStatus = document.getElementById('deck-macro-status');
+  const macroRefreshButton = document.getElementById('deck-refresh-macros');
   const mediaInput = document.getElementById('deck-key-media');
   const mediaProperty = document.getElementById('deck-media-property');
   const targetPageInput = document.getElementById('deck-key-target-page');
@@ -46,6 +48,8 @@
   let dirty = false;
   let saving = false;
   let metricLive = {};
+  let savedMacros = {};
+  let macroLoadMessage = '';
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
@@ -117,7 +121,7 @@
       'page-next': 'Next Page',
       'page-previous': 'Previous Page',
       'page-go': 'Go to Page',
-      hotkey: 'Shortcut',
+      macro: 'Run Macro',
       media: 'Media',
     }[action] || '';
   }
@@ -128,7 +132,7 @@
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
     if (key.action !== 'page-go') delete key.targetPage;
-    if (key.action !== 'hotkey' && key.action !== 'media') delete key.target;
+    if (key.action !== 'macro' && key.action !== 'media') delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -238,14 +242,32 @@
     const hasTarget = valid && actionInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
-    const hasShortcut = valid && actionInput.value === 'hotkey';
-    shortcutProperty.hidden = !hasShortcut;
-    shortcutInput.disabled = !hasShortcut;
-    shortcutInput.value = hasShortcut ? key?.target || '' : '';
     const hasMedia = valid && actionInput.value === 'media';
     mediaProperty.hidden = !hasMedia;
     mediaInput.disabled = !hasMedia;
     mediaInput.value = hasMedia ? key?.target || 'play-pause' : 'play-pause';
+    const hasMacro = valid && actionInput.value === 'macro';
+    macroProperty.hidden = !hasMacro;
+    macroInput.disabled = !hasMacro || !Object.keys(savedMacros).length;
+    macroInput.replaceChildren();
+    const macroIDs = Object.keys(savedMacros).sort((a, b) => Number(a) - Number(b));
+    for (const macroID of macroIDs) {
+      const option = document.createElement('option');
+      option.value = macroID;
+      option.textContent = savedMacros[macroID]?.name || `Macro #${macroID}`;
+      macroInput.appendChild(option);
+    }
+    const selectedMacro = hasMacro ? key?.target || '' : '';
+    if (selectedMacro && !Object.hasOwn(savedMacros, selectedMacro)) {
+      const missing = document.createElement('option');
+      missing.value = selectedMacro;
+      missing.textContent = `Missing macro #${selectedMacro}`;
+      macroInput.appendChild(missing);
+    }
+    macroInput.value = selectedMacro || macroIDs[0] || '';
+    macroStatus.textContent = macroLoadMessage ||
+      (macroIDs.length ? 'Select an existing macro. It runs on this computer when pressed.' :
+        'No saved macros found. Create one in OpenLinkHub Macros, then Refresh.');
     selectedText.textContent = valid ? `Key ${selected + 1}` : 'Select a key';
   }
 
@@ -339,8 +361,9 @@
       ...(actionInput.value === 'media'
         ? { target: assignment(selected)?.action === 'media' ? assignment(selected)?.target || 'play-pause' : 'play-pause' }
         : {}),
-      ...(actionInput.value === 'hotkey'
-        ? { target: assignment(selected)?.action === 'hotkey' ? assignment(selected)?.target || '' : '' }
+      ...(actionInput.value === 'macro'
+        ? { target: assignment(selected)?.action === 'macro' ? assignment(selected)?.target || '' :
+            Object.keys(savedMacros).sort((a, b) => Number(a) - Number(b))[0] || '' }
         : {}),
     });
     renderInspector();
@@ -350,14 +373,34 @@
     if (actionInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
   });
-  shortcutInput.addEventListener('input', () => {
-    if (actionInput.value !== 'hotkey') return;
-    setKeyProperties({ target: shortcutInput.value });
+  macroInput.addEventListener('change', () => {
+    if (actionInput.value !== 'macro') return;
+    setKeyProperties({ target: macroInput.value });
   });
   mediaInput.addEventListener('change', () => {
     if (actionInput.value !== 'media') return;
     setKeyProperties({ target: mediaInput.value });
   });
+
+  async function loadSavedMacros() {
+    macroRefreshButton.disabled = true;
+    try {
+      const response = await fetch('/api/macro/', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (payload?.status !== 1 || !payload.data || typeof payload.data !== 'object' ||
+          Array.isArray(payload.data)) throw new Error('Invalid macro list');
+      savedMacros = Object.fromEntries(Object.entries(payload.data)
+        .filter(([id, value]) => /^[1-9][0-9]{0,8}$/.test(id) && value && typeof value === 'object'));
+      macroLoadMessage = '';
+    } catch (error) {
+      macroLoadMessage = `Could not load macros: ${error.message}`;
+    } finally {
+      macroRefreshButton.disabled = false;
+      if (layout) renderInspector();
+    }
+  }
+  macroRefreshButton.addEventListener('click', loadSavedMacros);
 
   pageNameInput.addEventListener('input', () => {
     const page = currentPage();
@@ -492,6 +535,7 @@
   async function load() {
     try {
       layout = normalizeLayout(await api('layout'));
+      await loadSavedMacros();
       renderPages();
       renderGrid();
       renderInspector();
