@@ -46,7 +46,7 @@
   background:#e5ab75;box-shadow:0 0 0 3px rgba(229,171,117,.13)
 }
 .deck-connection small{grid-column:2;color:var(--deck-muted);text-transform:capitalize;font-size:.74rem}
-.deck-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,350px);gap:17px;align-items:start}
+.deck-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,390px);gap:17px;align-items:start}
 .deck-panel{
   min-width:0;
   border:1px solid var(--deck-border);
@@ -404,3 +404,198 @@
 .deck-workspace .deck-icon-set-library select,
 .deck-workspace .deck-icon-set-library input{min-width:0;width:100%;box-sizing:border-box}
 .deck-workspace .deck-icon-set-library button{justify-self:start}
+
+/* Selected key inspector — compact structured cards, using the shared palette.
+ * Keep the two-column metric controls that fit the existing Deck workflow.
+ */
+.deck-workspace .deck-inspector .deck-tabcontent{
+  padding:12px;
+}
+.deck-workspace .deck-inspector .deck-selected-hero{
+  padding:10px 12px;
+  border-color:rgba(213,166,90,.24);
+  background:linear-gradient(115deg,rgba(213,166,90,.12),rgba(28,29,32,.84));
+}
+.deck-workspace .deck-empty-state{
+  display:grid;
+  justify-items:center;
+  text-align:center;
+  gap:9px;
+  margin-top:12px;
+  padding:28px 18px;
+  border:1px dashed rgba(213,166,90,.27);
+  border-radius:10px;
+  background:rgba(0,0,0,.09);
+}
+.deck-workspace .deck-empty-state>i{
+  font-size:26px;color:var(--deck-accent);
+}
+.deck-workspace .deck-empty-state strong{font-size:.86rem;color:var(--deck-ink)}
+.deck-workspace .deck-empty-state small{font-size:.77rem;line-height:1.55;color:var(--deck-muted)}
+.deck-workspace #deck-empty-state[hidden],
+.deck-workspace #deck-key-settings[hidden],
+.deck-workspace #deck-metric-details[hidden]{display:none!important}
+.deck-workspace #deck-key-settings{
+  display:grid;
+  gap:11px;
+  margin-top:12px;
+}
+.deck-workspace .deck-inspector-section{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid var(--deck-border);
+  border-radius:10px;
+  background:linear-gradient(155deg,rgba(30,32,35,.95),rgba(21,23,26,.97));
+}
+.deck-workspace .deck-inspector-section-header{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:10px 12px;
+  border-bottom:1px solid rgba(213,166,90,.14);
+  background:linear-gradient(110deg,rgba(213,166,90,.15),rgba(213,166,90,.035) 70%,transparent);
+}
+.deck-workspace .deck-inspector-section-symbol{
+  width:27px;height:27px;flex:0 0 27px;
+  display:grid;place-items:center;
+  border-radius:7px;
+  border:1px solid rgba(213,166,90,.28);
+  background:rgba(213,166,90,.11);
+  color:var(--deck-accent);
+  font-size:.83rem;
+}
+.deck-workspace .deck-inspector-section-header strong{
+  flex:1;min-width:0;font-size:.83rem;letter-spacing:.01em;
+  color:var(--deck-ink);
+}
+.deck-workspace .deck-section-status{
+  flex:0 0 auto;
+  font-size:.68rem;
+  font-weight:650;
+  padding:3px 8px;
+  border:1px solid rgba(225,225,235,.14);
+  border-radius:99px;
+  background:rgba(0,0,0,.15);
+  color:var(--deck-muted);
+}
+.deck-workspace .deck-section-status[data-active="true"]{
+  border-color:rgba(213,166,90,.3);
+  background:rgba(213,166,90,.12);
+  color:#f0c581;
+}
+.deck-workspace .deck-inspector-section-body{
+  padding:12px;
+  min-width:0;
+}
+.deck-workspace .deck-inspector-section-body .deck-property{
+  margin-top:0;
+  gap:7px;
+}
+.deck-workspace .deck-inspector-section-body .deck-property+.deck-property{
+  margin-top:14px;
+}
+.deck-workspace .deck-inspector-section-body .deck-property label{
+  font-size:.77rem;
+}
+.deck-workspace .deck-inspector-section-body input:not([type="color"]),
+.deck-workspace .deck-inspector-section-body select{
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
+}
+.deck-workspace .deck-inspector-section-body .deck-property>input:not([type="file"]){
+  min-height:39px;
+}
+.deck-workspace .deck-artwork-row{
+  display:grid;
+  grid-template-columns:56px minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+  min-width:0;
+}
+.deck-workspace .deck-artwork-preview{
+  width:56px;
+  height:56px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  flex:0 0 auto;
+  border-radius:9px;
+  border:1px solid rgba(213,166,90,.32);
+  background:linear-gradient(150deg,#303136,#181a1d);
+  background-position:center;
+  background-size:cover;
+  color:var(--deck-accent);
+  font-size:1.25rem;
+}
+.deck-workspace .deck-artwork-preview[data-has-artwork="true"]>i{opacity:0}
+.deck-workspace .deck-artwork-upload{
+  min-width:0;
+  display:grid;
+  gap:7px;
+}
+.deck-workspace #deck-key-image{
+  width:100%;
+  box-sizing:border-box;
+  padding:6px;
+  font-size:.7rem;
+  min-height:34px;
+}
+.deck-workspace #deck-key-image::file-selector-button{
+  padding:6px 8px;
+}
+.deck-workspace .deck-artwork-controls{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:6px;
+}
+.deck-workspace .deck-artwork-controls button{
+  min-width:0;
+  margin:0;
+  padding:6px 8px;
+  font-size:.72rem;
+  white-space:nowrap;
+}
+.deck-workspace .deck-artwork-controls button i{margin-right:2px}
+.deck-workspace .deck-icon-set-library{
+  margin-top:4px;
+  padding-top:9px;
+}
+.deck-workspace .deck-icon-set-library summary{
+  display:flex;
+  gap:7px;
+  align-items:center;
+  color:var(--deck-accent);
+  font-weight:600;
+  font-size:.76rem;
+}
+.deck-workspace .deck-icon-set-controls{gap:8px}
+.deck-workspace .deck-metric-option[hidden]{display:none!important}
+.deck-workspace #deck-metric-details{
+  display:grid;
+  gap:11px;
+  padding-top:12px;
+}
+.deck-workspace #deck-metric-source-property{
+  margin-top:0;
+}
+.deck-workspace .deck-inspector-section-body .deck-metric-options{
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  column-gap:9px;
+}
+.deck-workspace .deck-inspector-section-body .deck-metric-color-row{
+  margin-top:1px;
+}
+.deck-workspace .deck-inspector-section-body .deck-metric-color-row label{
+  font-size:.75rem;
+}
+.deck-workspace .deck-inspector-footer{
+  padding:12px;
+  background:linear-gradient(180deg,#222325,#191a1d);
+  border-top:1px solid rgba(213,166,90,.25);
+}
+@media(max-width:425px){
+  .deck-workspace .deck-artwork-row{grid-template-columns:48px minmax(0,1fr)}
+  .deck-workspace .deck-artwork-preview{width:48px;height:48px}
+  .deck-workspace .deck-artwork-controls{grid-template-columns:minmax(0,1fr)}
+}
