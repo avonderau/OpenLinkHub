@@ -16,6 +16,7 @@
   const inspectorFields = document.getElementById('deck-key-settings');
   const emptySelection = document.getElementById('deck-empty-state');
   const selectedSummary = document.getElementById('deck-selected-summary');
+  const selectedHero = document.getElementById('deck-selected-hero');
   const iconSetSelect = document.getElementById('deck-icon-set');
   const iconSetItem = document.getElementById('deck-icon-set-item');
   const iconSetApply = document.getElementById('deck-apply-icon-set');
@@ -260,15 +261,21 @@
     removeButton.disabled = layout.pages.length <= 1;
   }
 
+  function updateSelectedSummary(key) {
+    selectedSummary.textContent = [
+      key?.label || 'Unlabeled key',
+      key?.metric ? 'Live data' : '',
+      key?.action ? 'Button action' : '',
+    ].filter(Boolean).join(' · ');
+  }
+
   function renderInspector() {
     const valid = selected >= 0 && selected < keyCount;
     const key = valid ? assignment(selected) : null;
     inspectorFields.hidden = !valid;
     emptySelection.hidden = valid;
-    const summary = !valid ? 'Choose a key in the device preview' :
-      [key?.label || 'Unlabeled key', key?.metric ? 'Live data' : '', key?.action ? 'Button action' : '']
-        .filter(Boolean).join(' · ');
-    selectedSummary.textContent = summary;
+    selectedHero.hidden = !valid;
+    if (valid) updateSelectedSummary(key);
     artworkPreview.dataset.hasArtwork = String(validIconID(key?.icon));
     artworkPreview.style.backgroundImage = validIconID(key?.icon) ? `url("${iconURL(key.icon)}")` : '';
     labelInput.disabled = !valid;
@@ -277,6 +284,7 @@
     artworkInput.disabled = !valid;
     uploadArtworkButton.disabled = !valid;
     removeArtworkButton.disabled = !valid || !validIconID(key?.icon);
+    removeArtworkButton.hidden = !validIconID(key?.icon);
     iconSetApply.disabled = !valid || !validIconID(iconSetItem.value);
     artworkStatus.textContent = validIconID(key?.icon)
       ? 'Artwork assigned. Save & Apply to send it to the physical LCD.'
@@ -394,6 +402,7 @@
 
   labelInput.addEventListener('input', () => {
     setKeyProperties({ label: labelInput.value });
+    updateSelectedSummary(assignment(selected));
   });
   metricInput.addEventListener('change', () => {
     const metric = metricInput.value;
