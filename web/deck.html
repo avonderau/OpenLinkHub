@@ -4,65 +4,117 @@
 <link rel="stylesheet" href="/static/css/deck-editor.css">
 <body>
 <div class="container-fluid">
- <div class="row">
-  {{ template "sidebar" . }}
-  <main class="main-content p-4">
-   {{ if .Dashboard.TemperatureBar }}
-   {{ template "temperature-bar" . }}
-   {{ end }}
-   <input id="deck-device-id" type="hidden" value="{{ .Device.Serial }}">
-   <section class="deck-workspace" aria-label="Deck device editor">
-    <header class="deck-hero">
-     <div>
-      <p class="deck-eyebrow">OPENLINKHUB NEXUS / DECK DEVICES</p>
-      <h1>{{ .Device.Product }}</h1>
-      <p>Manage the physical key layout separately from the Corsair Nexus touchscreen editor.</p>
-     </div>
-     <div class="deck-connection">
-      <span id="deck-connection-state">Checking connection...</span>
-      <small>{{ .Device.Model.Family }} · {{ .Device.Model.Keys }} keys</small>
-     </div>
-    </header>
-    <div class="deck-columns">
-     <section class="deck-panel deck-preview-panel" aria-label="Key preview">
-      <div class="deck-panel-header">
-       <div><h2>Device Preview</h2><p>Click a key to configure its label</p></div>
-       <div class="deck-page-picker">
-        <label for="deck-page">Page</label>
-        <select id="deck-page" class="form-select" aria-label="Select page"></select>
-       </div>
-      </div>
-      <div class="deck-display">
-       <div id="deck-key-grid" class="deck-grid" data-columns="{{ .Device.Model.Columns }}" data-keys="{{ .Device.Model.Keys }}" style="--deck-columns:{{ .Device.Model.Columns }}"></div>
-      </div>
-      <div class="deck-preview-footer">
-       <div class="deck-page-actions">
-        <button id="deck-add-page" class="deck-secondary" type="button">Add Page</button>
-        <button id="deck-remove-page" class="deck-secondary" type="button">Remove Page</button>
-       </div>
-       <small id="deck-key-count">No key selected</small>
-      </div>
-     </section>
-     <aside class="deck-panel deck-inspector" aria-label="Key inspector">
-      <div class="deck-panel-header"><div><h2>Selected Key</h2><p id="deck-selected-key">Select a key to edit</p></div></div>
-      <div class="deck-property">
-       <label for="deck-key-label">Display label</label>
-       <input class="form-control" id="deck-key-label" maxlength="48" placeholder="e.g. CPU Temp" disabled>
-       <small>Mirabox static LCD images update when the layout is saved. Elgato image output is not implemented in this first stage.</small>
-      </div>
-      <div class="deck-incomplete">
-       <strong>Action plugins — next milestone</strong>
-       <p>OpenAction and Stream Deck action-plugin hosting are not active yet. This first editor builds the validated device-layout foundation.</p>
-      </div>
-      <div class="deck-inspector-footer">
-       <button id="deck-save" class="deck-primary" type="button" disabled>Save Layout</button>
-       <p id="deck-message" role="status" aria-live="polite"></p>
-      </div>
-     </aside>
-    </div>
-   </section>
-  </main>
- </div>
+  <div class="row">
+    {{ template "sidebar" . }}
+    <main class="main-content p-4">
+      {{ if .Dashboard.TemperatureBar }}
+      {{ template "temperature-bar" . }}
+      {{ end }}
+      <input id="deck-device-id" type="hidden" value="{{ .Device.Serial }}">
+      <section class="deck-workspace" aria-label="Deck device editor">
+        <header class="olh-page-intro deck-intro">
+          <span class="olh-page-emblem" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>
+          <div class="olh-page-copy">
+            <span class="olh-page-kicker">OpenLinkHub Nexus / Deck devices</span>
+            <h1>{{ .Device.Product }}</h1>
+            <p>Manage LCD keys and profiles in your Deck Editor.</p>
+          </div>
+          <div class="deck-connection" role="status" aria-live="polite">
+            <span class="deck-connection-indicator" aria-hidden="true"></span>
+            <span id="deck-connection-state">Checking connection...</span>
+            <small>{{ .Device.Model.Family }} · {{ .Device.Model.Keys }} keys</small>
+          </div>
+        </header>
+
+        <div class="deck-columns">
+          <section class="deck-panel deck-preview-panel" aria-label="Physical key layout preview">
+            <header class="deck-panel-header olh-section-header">
+              <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-grid"></i></span>
+              <span class="deck-heading">
+                <strong class="olh-section-title">Device Preview</strong>
+                <small>Choose a key to configure its display label</small>
+              </span>
+              <span class="deck-panel-tools">
+                <label for="deck-page">Page</label>
+                <select id="deck-page" class="form-select" aria-label="Select active page"></select>
+              </span>
+            </header>
+            <div class="deck-display">
+              <div id="deck-key-grid" class="deck-grid"
+                   data-columns="{{ .Device.Model.Columns }}"
+                   data-keys="{{ .Device.Model.Keys }}"
+                   style="--deck-columns:{{ .Device.Model.Columns }}"></div>
+            </div>
+            <footer class="deck-preview-footer">
+              <span id="deck-key-count">Loading keys...</span>
+              <span><i class="bi bi-info-circle" aria-hidden="true"></i> Preview updates immediately; Save &amp; Apply updates the device.</span>
+            </footer>
+          </section>
+
+          <aside class="deck-panel deck-inspector" aria-label="Deck configuration">
+            <header class="deck-panel-header olh-section-header">
+              <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-sliders2"></i></span>
+              <span class="deck-heading">
+                <strong class="olh-section-title">Deck Editor</strong>
+                <small>Selected key and page settings</small>
+              </span>
+            </header>
+            <div class="deck-tablist" role="tablist" aria-label="Deck editor sections">
+              <button type="button" id="deck-tab-key" role="tab" aria-selected="true"
+                      aria-controls="deck-panel-key" tabindex="0"><i class="bi bi-keyboard" aria-hidden="true"></i> Key</button>
+              <button type="button" id="deck-tab-pages" role="tab" aria-selected="false"
+                      aria-controls="deck-panel-pages" tabindex="-1"><i class="bi bi-files" aria-hidden="true"></i> Pages</button>
+              <button type="button" role="tab" disabled title="Third-party actions are not implemented in this build"
+                      aria-label="Action plugins (planned)"><i class="bi bi-puzzle" aria-hidden="true"></i> Plugins</button>
+            </div>
+            <div class="deck-tabcontent">
+              <section id="deck-panel-key" role="tabpanel" aria-labelledby="deck-tab-key">
+                <div class="deck-selected-hero">
+                  <span class="deck-selected-icon" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>
+                  <span>
+                    <strong id="deck-selected-key">Select a key</strong>
+                    <small>Choose a key in the preview to edit its properties</small>
+                  </span>
+                </div>
+                <div class="deck-property">
+                  <label for="deck-key-label">Display label</label>
+                  <input class="form-control" id="deck-key-label" type="text" maxlength="48" autocomplete="off"
+                         placeholder="e.g. CPU Temp" disabled>
+                  <small>Changes appear in the preview immediately. Save &amp; Apply sends LCD images to Mirabox hardware.</small>
+                </div>
+                <div class="deck-planned-feature">
+                  <i class="bi bi-puzzle" aria-hidden="true"></i>
+                  <div><strong>Action plugins are next</strong>
+                    <p>OpenAction and Stream Deck action compatibility will be added in a later milestone.</p>
+                  </div>
+                </div>
+              </section>
+              <section id="deck-panel-pages" role="tabpanel" aria-labelledby="deck-tab-pages" hidden>
+                <div class="deck-selected-hero">
+                  <span class="deck-selected-icon" aria-hidden="true"><i class="bi bi-files"></i></span>
+                  <span><strong>Pages</strong><small id="deck-page-count">Manage saved layouts</small></span>
+                </div>
+                <div class="deck-property">
+                  <label for="deck-page-name">Page name</label>
+                  <input type="text" class="form-control" id="deck-page-name" maxlength="64" autocomplete="off">
+                  <div class="deck-page-actions">
+                    <button id="deck-add-page" class="deck-secondary" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add Page</button>
+                    <button id="deck-remove-page" class="deck-secondary deck-danger" type="button"><i class="bi bi-trash3" aria-hidden="true"></i> Remove Page</button>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <footer class="deck-inspector-footer">
+              <button id="deck-save" class="deck-primary" type="button" disabled>
+                <i class="bi bi-floppy" aria-hidden="true"></i> Save &amp; Apply
+              </button>
+              <p id="deck-message" role="status" aria-live="polite">Loading saved layout...</p>
+            </footer>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
 </div>
 <script src="/static/js/deck-editor.js"></script>
 <script src="/static/js/sidebar.js"></script>
