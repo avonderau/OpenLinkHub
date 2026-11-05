@@ -35,9 +35,14 @@ test('Supported Devices settings retain Corsair switches and send vendor-specifi
     on(event, selector, fn) { handlers.set('table:' + event, fn); return this; },
     row() { throw Error('not needed to test save payload'); },
   };
+  let listStatus = '';
   const $ = selector => {
     if (selector === '#dataTable') return { DataTable(options) { columns = options.columns; return table; } };
     if (selector === '#btnSaveSupportedDevices') return { on(event, fn) { handlers.set('save:' + event, fn); } };
+    if (selector === '#olh-supported-devices-status') return {
+      text(value) { listStatus = value; return this; },
+      toggleClass() { return this; }
+    };
     throw Error('unexpected selector ' + String(selector));
   };
   $.ajax = options => {
@@ -57,7 +62,12 @@ test('Supported Devices settings retain Corsair switches and send vendor-specifi
     throw Error('unexpected request: ' + options.url);
   };
   const extracted = script.slice(initStart, initEnd) + '\n' + script.slice(loadStart, loadEnd);
-  vm.runInNewContext('(() => {\n' + extracted + '\n})()', { $, toast: {success(){},warning(){}}, console });
+  vm.runInNewContext('(() => {\n' + extracted + '\n})()', {
+    $, toast: {success(){},warning(){}}, console,
+    document: { getElementById(){ return { hidden:true }; } },
+    window: { requestAnimationFrame(fn){ fn(); } }
+  });
+  assert.match(listStatus, /supported device models available/);
   assert.equal(columns.length, 5, 'table must show vendor and product identifiers');
   assert.match(columns[4].render(true, null, rowsData[1]), /data-id="5548:6670"/);
 
