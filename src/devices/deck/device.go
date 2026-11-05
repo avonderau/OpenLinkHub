@@ -47,6 +47,8 @@ type Device struct {
  pressedKey int
  eventCount uint64
  initialized bool
+ // Used only by tests; nil uses the real shared Nexus input backend.
+ inputActionRunner func(string,string)error
  done chan struct{}
  readerDone chan struct{}
  once sync.Once

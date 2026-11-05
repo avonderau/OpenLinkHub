@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=nav-actions-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=desktop-actions-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -89,6 +89,8 @@
                     <option value="page-next">Next page</option>
                     <option value="page-previous">Previous page</option>
                     <option value="page-go">Go to page</option>
+                    <option value="hotkey">Keyboard shortcut</option>
+                    <option value="media">Media control</option>
                   </select>
                   <small>Actions trigger when you press the physical Mirabox key.</small>
                 </div>
@@ -96,10 +98,28 @@
                   <label for="deck-key-target-page">Destination page</label>
                   <select class="form-select" id="deck-key-target-page" disabled></select>
                 </div>
+                <div class="deck-property" id="deck-hotkey-property" hidden>
+                  <label for="deck-key-shortcut">Keyboard shortcut</label>
+                  <input class="form-control" id="deck-key-shortcut" type="text" maxlength="80"
+                         placeholder="Ctrl+Alt+T" autocomplete="off" spellcheck="false" disabled>
+                  <small>Uses the same validated virtual-keyboard backend as Nexus. For example: Ctrl+Alt+T or Super+D.</small>
+                </div>
+                <div class="deck-property" id="deck-media-property" hidden>
+                  <label for="deck-key-media">Media command</label>
+                  <select class="form-select" id="deck-key-media" disabled>
+                    <option value="play-pause">Play / Pause</option>
+                    <option value="previous-track">Previous track</option>
+                    <option value="next-track">Next track</option>
+                    <option value="stop">Stop</option>
+                    <option value="volume-up">Volume up</option>
+                    <option value="volume-down">Volume down</option>
+                    <option value="volume-mute">Mute</option>
+                  </select>
+                </div>
                 <div class="deck-planned-feature">
                   <i class="bi bi-puzzle" aria-hidden="true"></i>
                   <div><strong>More button actions are coming</strong>
-                    <p>Hotkeys, media controls, macros and OpenAction plugins will build on these native navigation actions.</p>
+                    <p>Saved macros, application launching and OpenAction plugins are next. Keyboard and media keys now share the native Nexus input backend.</p>
                   </div>
                 </div>
               </section>
@@ -130,7 +150,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=nav-actions-1"></script>
+<script src="/static/js/deck-editor.js?v=desktop-actions-1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

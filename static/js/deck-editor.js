@@ -9,6 +9,10 @@
   const pageSelect = document.getElementById('deck-page');
   const labelInput = document.getElementById('deck-key-label');
   const actionInput = document.getElementById('deck-key-action');
+  const shortcutInput = document.getElementById('deck-key-shortcut');
+  const shortcutProperty = document.getElementById('deck-hotkey-property');
+  const mediaInput = document.getElementById('deck-key-media');
+  const mediaProperty = document.getElementById('deck-media-property');
   const targetPageInput = document.getElementById('deck-key-target-page');
   const targetProperty = document.getElementById('deck-target-property');
   const pageNameInput = document.getElementById('deck-page-name');
@@ -77,6 +81,8 @@
       'page-next': 'Next Page',
       'page-previous': 'Previous Page',
       'page-go': 'Go to Page',
+      hotkey: 'Shortcut',
+      media: 'Media',
     }[action] || '';
   }
 
@@ -86,6 +92,9 @@
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
     if (key.action !== 'page-go') delete key.targetPage;
+    if (key.action !== 'hotkey' && key.action !== 'media') delete key.target;
+    // Selecting an input action does not invent a valid target; the save
+    // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
     if (key.label || key.action) page.keys.push(key);
     page.keys.sort((a, b) => a.index - b.index);
@@ -159,6 +168,14 @@
     const hasTarget = valid && actionInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
+    const hasShortcut = valid && actionInput.value === 'hotkey';
+    shortcutProperty.hidden = !hasShortcut;
+    shortcutInput.disabled = !hasShortcut;
+    shortcutInput.value = hasShortcut ? key?.target || '' : '';
+    const hasMedia = valid && actionInput.value === 'media';
+    mediaProperty.hidden = !hasMedia;
+    mediaInput.disabled = !hasMedia;
+    mediaInput.value = hasMedia ? key?.target || 'play-pause' : 'play-pause';
     selectedText.textContent = valid ? `Key ${selected + 1}` : 'Select a key';
   }
 
@@ -193,6 +210,12 @@
       ...(actionInput.value === 'page-go'
         ? { targetPage: assignment(selected)?.targetPage || layout.activePage }
         : {}),
+      ...(actionInput.value === 'media'
+        ? { target: assignment(selected)?.action === 'media' ? assignment(selected)?.target || 'play-pause' : 'play-pause' }
+        : {}),
+      ...(actionInput.value === 'hotkey'
+        ? { target: assignment(selected)?.action === 'hotkey' ? assignment(selected)?.target || '' : '' }
+        : {}),
     });
     renderInspector();
   });
@@ -200,6 +223,14 @@
   targetPageInput.addEventListener('change', () => {
     if (actionInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
+  });
+  shortcutInput.addEventListener('input', () => {
+    if (actionInput.value !== 'hotkey') return;
+    setKeyProperties({ target: shortcutInput.value });
+  });
+  mediaInput.addEventListener('change', () => {
+    if (actionInput.value !== 'media') return;
+    setKeyProperties({ target: mediaInput.value });
   });
 
   pageNameInput.addEventListener('input', () => {

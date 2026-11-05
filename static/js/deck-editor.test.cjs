@@ -39,6 +39,7 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
+    'deck-key-shortcut', 'deck-hotkey-property', 'deck-key-media', 'deck-media-property',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
     'deck-remove-page', 'deck-message', 'deck-key-count', 'deck-page-count',
     'deck-connection-state', 'deck-tab-key', 'deck-tab-pages',
@@ -123,6 +124,32 @@ async function run() {
   assert.equal(received[1].pages.length, 2, 'new pages must persist');
   assert.equal(received[1].pages[1].keys[0].action, 'page-go');
   assert.equal(received[1].pages[1].keys[0].targetPage, 'home');
+
+  // A keyboard shortcut uses a validated text target, never a command line.
+  grid.children[1].dispatch('click');
+  action.value = 'hotkey';
+  action.dispatch('change');
+  assert.equal(nodes['deck-hotkey-property'].hidden, false);
+  assert.equal(nodes['deck-media-property'].hidden, true);
+  const shortcut = nodes['deck-key-shortcut'];
+  shortcut.value = 'Ctrl+Alt+T';
+  shortcut.dispatch('input');
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).action, 'hotkey');
+  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).target, 'Ctrl+Alt+T');
+
+  // Switching from a shortcut to media must not leave a stale hotkey target.
+  action.value = 'media';
+  action.dispatch('change');
+  assert.equal(nodes['deck-hotkey-property'].hidden, true);
+  assert.equal(nodes['deck-media-property'].hidden, false);
+  const media = nodes['deck-key-media'];
+  assert.equal(media.value, 'play-pause');
+  media.value = 'volume-mute';
+  media.dispatch('change');
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received[3].pages[1].keys.find(key => key.index === 1).action, 'media');
+  assert.equal(received[3].pages[1].keys.find(key => key.index === 1).target, 'volume-mute');
   console.log('Deck Editor interaction test passed');
 }
 

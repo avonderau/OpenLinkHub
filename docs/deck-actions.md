@@ -31,3 +31,26 @@ not executed as the system service.
 - Mirabox HSV293S: assign key to Next, Previous, and Go to page; confirm
   physical LCD page updates and that reconnecting restores the selected page.
 - Verify an unsaved browser edit is not discarded by a hardware page change.
+
+## Keyboard shortcuts and media keys (PR #63)
+
+From **Deck Editor → Key → Button action**, choose either:
+
+- **Keyboard shortcut** and enter a bounded key chord such as `Ctrl+Alt+T`,
+  `Super+D` or `Ctrl+Shift+Esc`.
+- **Media control** and select Play/Pause, Previous/Next, Stop,
+  Volume Up/Down or Mute.
+
+Save & Apply, then press the *physical* Mirabox key. These actions use the
+existing Nexus Linux virtual keyboard via uinput. They affect the local active
+graphical desktop seat, not the browser session viewing OpenLinkHub remotely.
+
+Only validated key names and media actions are accepted. The Deck API never
+runs shell commands or arbitrary executables. A non-graphical/headless host
+cannot forward those keys to a separate remote desktop through this feature.
+
+For the initial physical test, assign Play/Pause to a key, then a keyboard
+shortcut you know the local desktop handles. Confirm the existing Next Page,
+Previous Page and Go to Page actions still work. If no keys are emitted,
+check whether the OpenLinkHub virtual keyboard is initialized and visible
+with `libinput list-devices` or `sudo evtest`.
