@@ -64,3 +64,52 @@ func deckLayoutAPI(w http.ResponseWriter,r *http.Request){
  w.Header().Set("X-Content-Type-Options","nosniff")
  _=json.NewEncoder(w).Encode(result)
 }
+
+func deckIconAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
+		w.Header().Set("Allow", "GET, POST")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	d, ok := deckDevice(r)
+	if !ok {
+		http.Error(w, "Deck device not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	if r.Method == http.MethodGet {
+		content, err := d.ReadIcon(r.URL.Query().Get("id"))
+		if err != nil {
+			http.Error(w, "Deck icon not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write(content)
+		return
+	}
+	if !nexusWriteAllowed(r) {
+		http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
+		return
+	}
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || (mediaType != "image/png" && mediaType != "image/jpeg") {
+		http.Error(w, "PNG or JPEG required", http.StatusUnsupportedMediaType)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, deck.MaxDeckIconBytes)
+	defer r.Body.Close()
+	content, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "invalid image upload", http.StatusBadRequest)
+		return
+	}
+	id, err := d.SaveIcon(content)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(map[string]string{"id": id})
+}
