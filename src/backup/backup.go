@@ -580,12 +580,9 @@ func unzipFile(src, dest string) error {
 		}
 
 		if f.FileInfo().IsDir() {
-			perm := f.Mode().Perm()
-			if perm == 0 {
-				perm = 0o755
-			}
-
-			if err := os.MkdirAll(targetAbs, perm); err != nil {
+			// The archive is untrusted input, including its file modes.
+			// Never recreate writable/traversable database paths for other users.
+			if err := os.MkdirAll(targetAbs, 0o700); err != nil {
 				return fmt.Errorf("unable to create directory %s: %w", cleanName, err)
 			}
 
@@ -596,16 +593,14 @@ func unzipFile(src, dest string) error {
 			return fmt.Errorf("backup exceeds maximum uncompressed size")
 		}
 
-		if err := os.MkdirAll(filepath.Dir(targetAbs), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(targetAbs), 0o700); err != nil {
 			return fmt.Errorf("unable to create directory for %s: %w", cleanName, err)
 		}
 
-		perm := f.Mode().Perm()
-		if perm == 0 {
-			perm = 0o600
-		}
-
-		outFile, err := os.OpenFile(targetAbs, os.O_WRONLY|os.O_CREATE|os.O_EXCL, perm)
+		// Database assets and config.json are data files, not executables.
+		// Ignore ZIP mode bits so a crafted backup cannot install them as
+		// world-readable or world-writable files.
+		outFile, err := os.OpenFile(targetAbs, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 		if err != nil {
 			return fmt.Errorf("unable to create %s: %w", cleanName, err)
 		}
