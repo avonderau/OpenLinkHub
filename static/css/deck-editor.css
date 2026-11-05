@@ -600,3 +600,7 @@
   .deck-workspace .deck-artwork-preview{width:48px;height:48px}
   .deck-workspace .deck-artwork-controls{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Deck-only page navigation and physical brightness controls. */
+.deck-workspace #deck-brightness-property[hidden]{display:none!important}
+.deck-workspace .deck-control-help{display:block;margin-top:10px;color:var(--deck-muted);font-size:.71rem;line-height:1.45}
