@@ -174,12 +174,10 @@ func(d *Device)UpdateLayout(layout Layout)(LayoutResult,error){
  if err:=layout.Validate(d.Model);err!=nil{return LayoutResult{},err}
  d.mu.Lock()
  defer d.mu.Unlock()
- // The editor doesn't change brightness directly; key presses do. If a
- // browser tab saved an older layout while the physical brightness key was
- // used, preserve the latest hardware level instead of reverting it to 50%.
- if layout.Brightness==0 && d.layout.Brightness!=0 {
-  layout.Brightness=d.layout.Brightness
- }
+ // Only physical Deck controls change brightness. Ignore stale browser
+ // brightness values during Save & Apply, even when the older browser
+ // snapshot has a nonzero setting from an earlier key press.
+ layout.Brightness=d.layout.Brightness
  if err:=SaveLayout(d.root,d.Serial,d.Model,layout);err!=nil{return LayoutResult{},err}
  d.layout=cloneLayout(layout)
  // A new metric or refresh interval must become due immediately after save.
