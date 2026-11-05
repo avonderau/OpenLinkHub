@@ -8,7 +8,7 @@ import (
 )
 
 type reportRecorder struct{ reports [][]byte; short bool; fail bool }
-func (r *reportRecorder)SendOutputReport(b []byte)(int,error){
+func (r *reportRecorder)Write(b []byte)(int,error){
  if r.fail{return 0,errors.New("write failed")}
  r.reports=append(r.reports,append([]byte(nil),b...))
  if r.short{return len(b)-1,nil}
