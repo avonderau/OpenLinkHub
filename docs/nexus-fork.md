@@ -171,3 +171,13 @@ SVG files are safely rasterized into PNG using `rsvg-convert` (install
 `librsvg2-bin` on Linux); SVG markup is never stored for direct display.
 Existing single-image uploads remain supported, and saved layouts store
 stable icon IDs rather than archive paths.
+
+### Selecting individual telemetry sources
+
+For a metric that has multiple host sources, use the **Source** control in
+the selected metric, bar, or graph widget. Disk usage and free-space metrics
+select a mounted filesystem (such as `/` or `/home`), disk read/write
+metrics select a block device, and network receive/transmit metrics select an
+interface. The automatic selection continues to work with existing saved
+layouts. If a selected device is removed, the display shows an unavailable
+reading instead of silently switching to a different source.
