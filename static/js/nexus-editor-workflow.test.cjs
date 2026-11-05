@@ -42,6 +42,13 @@ function makeEditor(){
   prompt(){return 'demo-nexus'},
   confirm(){return true},
   fetch:async(url,options={})=>{
+   if(url.startsWith('/api/telemetry/sources'))return {
+    ok:true,json:async()=>({sources:{
+     'disk.free_gb':[{id:'mount:/',label:'/'},{id:'mount:/home',label:'/home'}],
+     'disk.read_rate':[{id:'disk:sda',label:'/dev/sda'}],
+     'network.rx_rate':[{id:'net:eth0',label:'eth0'}],
+    }})
+   };
    if(url.startsWith('/api/icon-sets'))return {ok:true,json:async()=>({
     sets:[{id:'aaaaaaaaaaaaaaaaaaaaaaaa',name:'Desktop Pack',icons:[
      {name:'Music',nexusId:'set_aaaaaaaaaaaaaaaaaaaaaaaa',deckId:'a'.repeat(32)}
@@ -863,6 +870,55 @@ test('Nexus media preview uses LCD pixel-shape masks and default captions with c
  const input=find(node('properties'),el=>el.type==='text'&&el.placeholder==='Previous');
  assert.ok(input,'default media caption is visible as inspector placeholder');
  assert.equal(screen.widgets[0].settings.label,'','default caption must not be stored as custom label');
+});
+
+test('Nexus metrics expose disk and network sources and retain selections',async()=>{
+ const {context,node,writes}=makeEditor();
+ await vm.runInContext('load()',context);
+ const screen=vm.runInContext('cfg.screens[0]',context);
+ screen.widgets.push({id:'disk_metric',type:'metric',metric:'disk.free_gb',
+  x:0,y:0,width:145,height:48,settings:{}});
+ vm.runInContext("selected='disk_metric';render()",context);
+ const find=(el,pred)=>pred(el)?el:(el.children||[]).map(child=>find(child,pred)).find(Boolean);
+ let picker=find(node('properties'),el=>el.attributes?.['aria-label']==='Metric source');
+ assert.ok(picker,'disk metric needs a source selector');
+ assert.equal(picker.options.some(o=>o.value==='mount:/home'),true);
+ picker.value='mount:/home';
+ picker.listeners.change();
+ assert.equal(screen.widgets[0].settings.metricSource,'mount:/home');
+ await node('save').onclick();
+ assert.equal(writes.at(-1).screens[0].widgets[0].settings.metricSource,'mount:/home');
+ const metricChoice=find(node('properties'),el=>el.options?.some(option=>option.value==='cpu.temperature'));
+ assert.ok(metricChoice,'metric dropdown missing');
+ metricChoice.value='cpu.temperature';
+ metricChoice.listeners.change();
+ assert.equal(screen.widgets[0].settings.metricSource,undefined,'changing metrics clears previous source');
+ picker=find(node('properties'),el=>el.attributes?.['aria-label']==='Metric source');
+ assert.equal(picker,undefined,'single-source CPU metrics should not display the selector');
+});
+
+test('all six media keys retain absolute positioning and their saved preview slots',async()=>{
+ // Media icon wrappers must NEVER override .widget positioning. Relative
+ // positioning stacked the buttons and clipped most of them offscreen.
+ assert.match(style,/#nexus-editor \.widget\s*\{[^}]*position:\s*absolute/s);
+ assert.doesNotMatch(style,/#nexus-editor \.widget\.nexus-media-preview-widget\s*\{[^}]*position\s*:/s);
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ node('newScreenPreset').value='media-deck';
+ await node('addScreen').onclick();
+ const screen=vm.runInContext('cfg.screens.find(s=>s.name==="Media Controls")',context);
+ assert.equal(screen.widgets.length,6);
+ const visible=node('screen').children;
+ assert.equal(visible.length,6,'the preview must render every media control');
+ assert.equal(visible.filter(el=>el.classList?.add && el.children.some(c=>c.className==='nexus-icon nexus-media-glyph')).length,6,
+  'all six media buttons should have hardware-matched glyph previews');
+ const positions=Array.from(screen.widgets,w=>Number(w.x));
+ assert.deepEqual(positions,[0,104,208,312,416,520]);
+ for(let i=0;i<screen.widgets.length;i++){
+  assert.ok(visible[i].style.cssText.includes('left:'+positions[i]+'px;'),
+   'button '+i+' must retain its original LCD X coordinate');
+  assert.equal(visible[i].dataset.id,screen.widgets[i].id);
+ }
 });
 
 test('Nexus reuses imported icon sets and stores only the selected image ID',async()=>{

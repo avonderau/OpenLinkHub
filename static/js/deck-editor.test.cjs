@@ -43,7 +43,8 @@ async function run() {
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
-    'deck-key-metric', 'deck-metric-interval', 'deck-metric-style',
+    'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
+    'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
     'deck-key-shortcut', 'deck-hotkey-property',
@@ -68,6 +69,16 @@ async function run() {
   };
   const fetch = async (url, options = {}) => {
     const type = url.split('?')[0];
+    if (type === '/api/telemetry/sources') {
+      return { ok: true, status: 200, json: async () => ({
+        sources: {
+          'disk.utilization': [{ id: 'mount:/', label: '/' }, { id: 'mount:/home', label: '/home' }],
+          'disk.free_gb': [{ id: 'mount:/', label: '/' }],
+          'network.rx_rate': [{ id: 'net:eth0', label: 'eth0' }],
+          'disk.read_rate': [{ id: 'disk:sda', label: '/dev/sda' }],
+        },
+      }) };
+    }
     if (type === '/api/icon-sets') {
       return { ok: true, status: 200, json: async () => ({ sets: [] }) };
     }
@@ -106,6 +117,7 @@ async function run() {
     console,
   }, { filename: 'deck-editor.js' });
 
+  assert.match(fs.readFileSync(path.join(__dirname,'deck-editor.js'),'utf8'), /metricSource/);
   const iconSetMarkup = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
   assert.match(iconSetMarkup, /id="deck-icon-set"/);
   assert.match(iconSetMarkup, /id="deck-icon-set-item"/);
@@ -127,8 +139,8 @@ async function run() {
 
   assert.match(html, /<select class="form-select" id="deck-metric-style"/);
   assert.match(html, /class="deck-metric-options">\s*<div class="deck-metric-option">/);
-  assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 2,
-    'Refresh and Visualization use two aligned columns');
+  assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 3,
+    'Source is separate; Refresh and Visualization remain two aligned columns');
   const css = fs.readFileSync(path.join(__dirname, '..', 'css', 'deck-editor.css'), 'utf8');
   assert.match(css, /\.deck-metric-options\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\) minmax\(0,1\.15fr\)/,
     'metric options remain on the same row in the narrow inspector');
