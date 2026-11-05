@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=sources-iconsets-3">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=metric-inspector-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -139,7 +139,7 @@
                       <option value="">Automatic / default</option>
                     </select>
                   </div>
-                  <div class="deck-metric-options">
+                  <div class="deck-metric-options" role="group" aria-label="Metric display options">
                     <div class="deck-metric-option">
                       <label for="deck-metric-interval">Refresh</label>
                       <select class="form-select" id="deck-metric-interval" disabled>
