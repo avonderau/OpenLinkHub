@@ -281,3 +281,16 @@
   margin-top:4px;border-top:1px solid rgba(220,225,232,.11);
 }
 .olh-settings-page .olh-settings-subheading .bi{font-size:.9rem}
+
+/* Supported-device discovery feedback is visible even if DataTables cannot
+ * render (for example, when a stale JS asset mismatches the updated headers). */
+.olh-settings-page .olh-supported-devices-status {
+  color:var(--olh-muted,#a3a5ae);
+  font-size:.8rem;
+  padding:7px 3px;
+  margin:0 0 5px;
+  min-height:1.5em;
+}
+.olh-settings-page .olh-supported-devices-status.is-error {
+  color:#e7b4a4;
+}
