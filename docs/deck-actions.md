@@ -94,6 +94,39 @@ instructions in `docs/nexus-desktop-launch.md`. The agent is initialized
 for Deck devices even if no Corsair Nexus is connected. It forwards only
 the validated URL or desktop entry ID, never freeform commands.
 
+The selected-key inspector now shows **Local desktop agent connected** or
+**Desktop agent disconnected** when you choose Open URL or Launch Application.
+The Deck can still execute macros and emit virtual keyboard events even when
+the desktop agent is disconnected; those do not prove that launching works.
+
+If the launcher is unavailable, check from a regular terminal:
+
+```sh
+id -nG
+ls -ld /opt/OpenLinkHub/runtime /opt/OpenLinkHub/runtime/nexus-desktop
+ls -l /opt/OpenLinkHub/runtime/nexus-desktop/desktop-launch.sock
+```
+
+The runtime directory should be service-owned, group-accessible and not
+world-accessible. Native packages create it during post-installation. Do not
+make the directory/socket world writable or run the desktop agent with sudo.
+If the directory is missing on a manual installation, inspect the service
+log for a failed desktop bridge initialization rather than blindly changing
+the ownership of the entire application tree.
+
+Before assigning an application ID, test it in a graphical desktop terminal:
+
+```sh
+command -v gtk-launch xdg-open
+gtk-launch firefox.desktop
+xdg-open https://example.com/
+```
+
+`firefox.desktop` is an example, not a guaranteed installed ID. Actual IDs
+can be inspected in `/usr/share/applications` and
+`~/.local/share/applications`. A failing `gtk-launch` command cannot be
+repaired solely by changing the Deck key configuration.
+
 If the daemon already runs as a non-root account *inside* the graphical
 session, the direct local launcher can be used without the agent. A headless
 machine cannot open a browser on the remote WebUI visitor's desktop.
