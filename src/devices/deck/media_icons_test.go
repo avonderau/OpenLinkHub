@@ -26,7 +26,7 @@ func TestDeckMediaKeysHaveBuiltInLCDGlyphs(t *testing.T) {
 			if withLabel.Bounds() != frame.Bounds() {
 				t.Fatalf("%s: custom label altered LCD bounds", command)
 			}
-			if color := frame.RGBAAt(size/2, size/2); color == (color.RGBA{}) {
+			if pixel := frame.RGBAAt(size/2, size/2); pixel == (color.RGBA{}) {
 				t.Fatalf("%s: uninitialized icon center", command)
 			}
 		}
