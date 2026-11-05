@@ -561,7 +561,7 @@ test('compact inspector preserves file tabs and all existing widget action IDs',
   }
  }
  assert.ok(page.indexOf('/static/css/nexus-compact-inspector.css')>page.indexOf('/static/css/nexus-editor.css'));
- assert.match(standalone,/<link rel="stylesheet" href="\/static\/css\/nexus-compact-inspector.css">/);
+ assert.match(standalone,/<link rel="stylesheet" href="\/static\/css\/nexus-compact-inspector.css(?:\?[^"]+)?">/);
  assert.match(compact,/#nexus-panel-widget #properties>\.nexus-geometry-section\s*\{[^}]*grid-column:1\/-1/);
  assert.match(compact,/\.nexus-data-section\s*\{grid-column:1;grid-row:2\}/);
  assert.match(compact,/\.nexus-appearance-section\s*\{grid-column:2;grid-row:2\}/);
