@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=artwork-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=metrics-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -96,6 +96,50 @@
                   <small id="deck-icon-status" role="status">PNG or JPEG, maximum 512 KiB and 512 × 512 px. Artwork is stored privately on this computer.</small>
                 </div>
                 <div class="deck-property">
+                  <label for="deck-key-metric"><i class="bi bi-activity" aria-hidden="true"></i> Live metric</label>
+                  <select class="form-select" id="deck-key-metric" disabled>
+                    <option value="">No metric</option>
+                    <option value="cpu.temperature">CPU temperature</option>
+                    <option value="cpu.utilization">CPU usage</option>
+                    <option value="gpu.temperature">GPU temperature</option>
+                    <option value="gpu.utilization">GPU usage</option>
+                    <option value="memory.utilization">RAM usage</option>
+                    <option value="memory.used">RAM used</option>
+                    <option value="fan.rpm">Fan speed</option>
+                    <option value="pump.rpm">Pump speed</option>
+                    <option value="cpu.clock_mhz">CPU clock</option>
+                    <option value="gpu.clock_mhz">GPU clock</option>
+                    <option value="gpu.power_w">GPU power</option>
+                    <option value="gpu.vram.utilization">VRAM usage</option>
+                    <option value="gpu.vram.used_mb">VRAM used</option>
+                    <option value="network.rx_rate">Network receive</option>
+                    <option value="network.tx_rate">Network transmit</option>
+                    <option value="disk.read_rate">Disk read</option>
+                    <option value="disk.write_rate">Disk write</option>
+                    <option value="disk.utilization">Disk usage</option>
+                    <option value="disk.free_gb">Disk free</option>
+                    <option value="cpu.load_1m">CPU load (1m)</option>
+                    <option value="cpu.load_5m">CPU load (5m)</option>
+                    <option value="cpu.load_15m">CPU load (15m)</option>
+                    <option value="gpu.vram.total_mb">VRAM total</option>
+                  </select>
+                  <div class="deck-metric-options">
+                    <label for="deck-metric-interval">Refresh</label>
+                    <select class="form-select" id="deck-metric-interval" disabled>
+                      <option value="2">2 seconds</option>
+                      <option value="5">5 seconds</option>
+                      <option value="10">10 seconds</option>
+                      <option value="15">15 seconds</option>
+                      <option value="30">30 seconds</option>
+                      <option value="60">60 seconds</option>
+                    </select>
+                    <label class="deck-metric-graph-label" for="deck-metric-graph">
+                      <input type="checkbox" id="deck-metric-graph" disabled> Mini graph
+                    </label>
+                  </div>
+                  <small id="deck-metric-status" role="status">Only sensors available on your computer will show values.</small>
+                </div>
+                <div class="deck-property">
                   <label for="deck-key-action"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Button action</label>
                   <select class="form-select" id="deck-key-action" disabled>
                     <option value="">No action</option>
@@ -163,7 +207,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=artwork-1"></script>
+<script src="/static/js/deck-editor.js?v=metrics-1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
