@@ -13,6 +13,7 @@ import (
 
  "OpenLinkHub/src/common"
  "OpenLinkHub/src/config"
+ "OpenLinkHub/src/devices/nexus"
  "OpenLinkHub/src/logger"
  "github.com/sstallion/go-hid"
  "golang.org/x/image/font"
@@ -47,6 +48,12 @@ type Device struct {
  pressedKey int
  eventCount uint64
  initialized bool
+ metricValues map[string]float64
+ metricHistory map[string][]float64
+ metricUpdated map[string]time.Time
+ metricSampleAt time.Time
+ counterSampler nexus.CounterSampler
+ metricReader func() nexus.MetricSnapshot
  // Used only by tests; nil uses the real shared Nexus input backend.
  inputActionRunner func(string,string)error
  done chan struct{}
@@ -60,6 +67,8 @@ type Status struct {
  LastPressedKey int `json:"lastPressedKey"`
  ButtonEvents uint64 `json:"buttonEvents"`
  ActivePage string `json:"activePage"`
+ Metrics map[string]float64 `json:"metrics,omitempty"`
+ MetricSampledAt int64 `json:"metricSampledAt,omitempty"`
  KeyOutputSupported bool `json:"keyOutputSupported"`
 }
 
@@ -104,6 +113,7 @@ func Init(info *hid.DeviceInfo)*common.Device {
   }
   d.readerDone=make(chan struct{})
   go d.listen()
+  go d.metricLoop()
  }
  return &common.Device{
   ProductType:common.ProductTypeDeck,Product:m.Name,Serial:id,Firmware:"",
@@ -132,8 +142,11 @@ func(d *Device)StopDirty()uint8{d.Stop();return 2}
 func(d *Device)GetStatus()Status{
  d.mu.RLock()
  defer d.mu.RUnlock()
+ sampledAt:=int64(0)
+ if !d.metricSampleAt.IsZero(){sampledAt=d.metricSampleAt.Unix()}
  return Status{Connected:d.connected,Status:d.status,LastPressedKey:d.pressedKey,
   ButtonEvents:d.eventCount,ActivePage:d.layout.ActivePage,
+  Metrics:copyDeckMetrics(nexus.MetricSnapshot(d.metricValues)),MetricSampledAt:sampledAt,
   KeyOutputSupported:d.hidDevice!=nil && d.Model.Family=="mirabox"}
 }
 
@@ -161,6 +174,8 @@ func(d *Device)UpdateLayout(layout Layout)(LayoutResult,error){
  defer d.mu.Unlock()
  if err:=SaveLayout(d.root,d.Serial,d.Model,layout);err!=nil{return LayoutResult{},err}
  d.layout=cloneLayout(layout)
+ // A new metric or refresh interval must become due immediately after save.
+ d.metricUpdated=nil
  result:=LayoutResult{Saved:true}
  if d.Model.Family!="mirabox"{
   result.Message="Saved. Elgato image output is not available yet."
@@ -194,19 +209,33 @@ func(d *Device)drawActivePageLocked()error{
  keys:=make(map[int]KeyConfig,len(page.Keys))
  for _,key:=range page.Keys{keys[key.Index]=key}
  for i:=0;i<d.Model.Keys();i++ {
-  size:=d.Model.NativeImagePixels(i)
-  key:=keys[i]
-  frame:=renderKeyLabel(size,keyDisplayLabel(key))
-  if key.Icon!="" {
-   artwork,err:=LoadDeckIcon(d.root,key.Icon)
-   if err!=nil{return fmt.Errorf("key %d artwork: %w",i,err)}
-   frame=renderDeckArtwork(size,artwork,keyDisplayLabel(key))
-  }
-  jpegData,err:=MiraboxKeyImage(d.Model,i,frame)
-  if err!=nil{return err}
-  if err:=MiraboxWriteKeyJPEG(d.hidDevice,d.Model,i,jpegData);err!=nil{return err}
+  if err:=d.drawKeyLocked(i,keys[i]);err!=nil{return err}
  }
  return MiraboxFlush(d.hidDevice,d.Model)
+}
+
+// drawKeyLocked is shared by full-page transfers and selective metric refreshes.
+// Caller owns d.mu so physical page changes cannot interleave HID writes.
+func(d *Device)drawKeyLocked(index int,key KeyConfig)error{
+ size:=d.Model.NativeImagePixels(index)
+ var artwork image.Image
+ if key.Icon!="" {
+  var err error
+  artwork,err=LoadDeckIcon(d.root,key.Icon)
+  if err!=nil{return fmt.Errorf("key %d artwork: %w",index,err)}
+ }
+ var frame image.Image
+ if key.Metric!="" {
+  value,available:=d.metricValues[key.Metric]
+  frame=renderDeckMetric(size,key,value,available,d.metricHistory[key.Metric],artwork)
+ }else if artwork!=nil {
+  frame=renderDeckArtwork(size,artwork,keyDisplayLabel(key))
+ }else {
+  frame=renderKeyLabel(size,keyDisplayLabel(key))
+ }
+ jpegData,err:=MiraboxKeyImage(d.Model,index,frame)
+ if err!=nil{return err}
+ return MiraboxWriteKeyJPEG(d.hidDevice,d.Model,index,jpegData)
 }
 func renderKeyLabel(size int,label string)image.Image{
  img:=image.NewRGBA(image.Rect(0,0,size,size))

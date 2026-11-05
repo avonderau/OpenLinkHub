@@ -23,6 +23,9 @@ type KeyConfig struct {
  TargetPage string `json:"targetPage,omitempty"`
  Target string `json:"target,omitempty"`
  Icon string `json:"icon,omitempty"`
+ Metric string `json:"metric,omitempty"`
+ RefreshSeconds int `json:"refreshSeconds,omitempty"`
+ ShowGraph bool `json:"showGraph,omitempty"`
 }
 type Page struct {
  ID string `json:"id"`
@@ -56,6 +59,16 @@ func (l Layout)Validate(m Model)error{
    if len(key.Label)>48 {return fmt.Errorf("key %d label too long",key.Index)}
    if key.Icon!="" && !deckIconID.MatchString(key.Icon) {
     return fmt.Errorf("key %d: invalid image reference",key.Index)
+   }
+   if key.Metric!="" {
+    if !nexus.IsSupportedMetric(key.Metric) {
+     return fmt.Errorf("key %d: unsupported metric",key.Index)
+    }
+    if key.RefreshSeconds!=0 && (key.RefreshSeconds<2||key.RefreshSeconds>60) {
+     return fmt.Errorf("key %d: refresh interval must be 2-60 seconds",key.Index)
+    }
+   } else if key.RefreshSeconds!=0||key.ShowGraph {
+    return fmt.Errorf("key %d: metric settings without metric",key.Index)
    }
    for _,char:=range key.Label{
     if char<32||char==127{return errors.New("key labels cannot contain control characters")}

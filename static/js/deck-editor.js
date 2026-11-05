@@ -12,6 +12,10 @@
   const uploadArtworkButton = document.getElementById('deck-upload-image');
   const removeArtworkButton = document.getElementById('deck-remove-image');
   const artworkStatus = document.getElementById('deck-icon-status');
+  const metricInput = document.getElementById('deck-key-metric');
+  const metricInterval = document.getElementById('deck-metric-interval');
+  const metricGraph = document.getElementById('deck-metric-graph');
+  const metricStatus = document.getElementById('deck-metric-status');
   const actionInput = document.getElementById('deck-key-action');
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
@@ -41,6 +45,7 @@
   let selected = -1;
   let dirty = false;
   let saving = false;
+  let metricLive = {};
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
@@ -82,6 +87,31 @@
     return currentPage()?.keys.find(key => key.index === index);
   }
 
+  function formatMetricPreview(metric) {
+    const value = metricLive[metric];
+    if (!Number.isFinite(value)) return '—';
+    if (metric.endsWith('.temperature')) return `${value.toFixed(0)} C`;
+    if (metric.endsWith('.utilization')) return `${value.toFixed(0)}%`;
+    if (metric.endsWith('.rpm')) return `${value.toFixed(0)} rpm`;
+    if (metric === 'memory.used') return `${(value / (1024 ** 3)).toFixed(1)} GiB`;
+    if (metric.endsWith('_rate')) return Math.abs(value) >= 1e6
+      ? `${(value / 1e6).toFixed(1)} MB/s` : `${(value / 1e3).toFixed(0)} KB/s`;
+    if (metric.endsWith('_mb')) return `${value.toFixed(0)} MB`;
+    if (metric.endsWith('_mhz')) return `${value.toFixed(0)} MHz`;
+    if (metric.endsWith('_w')) return `${value.toFixed(0)} W`;
+    if (metric === 'disk.free_gb') return `${value.toFixed(0)} GB`;
+    return value.toFixed(1);
+  }
+
+  function updateMetricPreview() {
+    for (let i = 0; i < keyCount; i += 1) {
+      const metric = assignment(i)?.metric;
+      if (!metric) continue;
+      const valueNode = grid.children[i]?.querySelector?.('.deck-live-value');
+      if (valueNode) valueNode.textContent = formatMetricPreview(metric);
+    }
+  }
+
   function actionName(action) {
     return {
       'page-next': 'Next Page',
@@ -102,7 +132,12 @@
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
-    if (key.label || key.action || key.icon) page.keys.push(key);
+    if (!key.metric) {
+      delete key.metric;
+      delete key.refreshSeconds;
+      delete key.showGraph;
+    }
+    if (key.label || key.action || key.icon || key.metric) page.keys.push(key);
     page.keys.sort((a, b) => a.index - b.index);
     setDirty();
     renderGrid();
@@ -126,6 +161,13 @@
       const label = document.createElement('span');
       label.textContent = configured?.label || actionName(configured?.action) || '—';
       button.append(number, label);
+      if (configured?.metric) {
+        const live = document.createElement('span');
+        live.className = 'deck-live-value';
+        live.textContent = formatMetricPreview(configured.metric);
+        button.appendChild(live);
+        button.dataset.hasMetric = 'true';
+      }
       if (validIconID(configured?.icon)) {
         button.style.backgroundImage = `linear-gradient(180deg, transparent 45%, rgba(0,0,0,.65)), url("${iconURL(configured.icon)}")`;
         button.dataset.hasImage = 'true';
@@ -169,6 +211,18 @@
     artworkStatus.textContent = validIconID(key?.icon)
       ? 'Artwork assigned. Save & Apply to send it to the physical LCD.'
       : 'PNG/JPEG · up to 512 KiB · maximum 512 × 512 pixels.';
+    const hasMetric = valid && !!key?.metric;
+    metricInput.disabled = !valid;
+    metricInput.value = key?.metric || '';
+    metricInterval.disabled = !hasMetric;
+    metricInterval.value = String(key?.refreshSeconds || 5);
+    metricGraph.disabled = !hasMetric;
+    metricGraph.checked = !!key?.showGraph;
+    metricStatus.textContent = hasMetric
+      ? (Number.isFinite(metricLive[key.metric])
+        ? 'Live reading available from this computer.'
+        : 'No current reading. Unavailable sensors display —.')
+      : 'Choose a metric to show live sensor data on the LCD.';
     actionInput.disabled = !valid;
     actionInput.value = key?.action || '';
     targetPageInput.replaceChildren();
@@ -218,6 +272,20 @@
 
   labelInput.addEventListener('input', () => {
     setKeyProperties({ label: labelInput.value });
+  });
+  metricInput.addEventListener('change', () => {
+    const metric = metricInput.value;
+    setKeyProperties(metric ? { metric, refreshSeconds: 5, showGraph: false } :
+      { metric: '', refreshSeconds: 0, showGraph: false });
+    renderInspector();
+  });
+  metricInterval.addEventListener('change', () => {
+    if (!metricInput.value) return;
+    setKeyProperties({ refreshSeconds: Number(metricInterval.value) });
+  });
+  metricGraph.addEventListener('change', () => {
+    if (!metricInput.value) return;
+    setKeyProperties({ showGraph: metricGraph.checked });
   });
 
   uploadArtworkButton.addEventListener('click', async () => {
@@ -336,7 +404,7 @@
           delete key.targetPage;
         }
       }
-      page.keys = page.keys.filter(key => key.label || key.action || key.icon);
+      page.keys = page.keys.filter(key => key.label || key.action || key.icon || key.metric);
     }
     layout.activePage = layout.pages[0].id;
     selected = -1;
@@ -392,6 +460,19 @@
       const status = await api('status');
       statusText.textContent = status.status;
       statusText.dataset.connected = status.connected ? 'true' : 'false';
+      const nextMetrics = status.metrics || {};
+      if (JSON.stringify(nextMetrics) !== JSON.stringify(metricLive)) {
+        metricLive = nextMetrics;
+        // Update value labels in place: keep keyboard focus, and avoid
+        // reloading uploaded artwork from the local server on each poll.
+        updateMetricPreview();
+        const selectedMetric = assignment(selected)?.metric;
+        if (selectedMetric) {
+          metricStatus.textContent = Number.isFinite(metricLive[selectedMetric])
+            ? 'Live sensor reading available.'
+            : 'No current reading for this metric.';
+        }
+      }
       // Physical key presses may change pages without involving the editor.
       // Only adopt server changes when there are no unsaved browser edits.
       if (layout && !dirty && !saving && status.activePage && layout.activePage !== status.activePage) {

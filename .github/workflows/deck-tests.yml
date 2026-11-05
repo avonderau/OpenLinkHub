@@ -32,6 +32,18 @@ jobs:
             gofmt -l "${files[@]}"
             exit 1
           fi
+      - name: Check new Deck metric Go formatting
+        run: |
+          files=(
+            src/devices/deck/key_metrics.go
+            src/devices/deck/key_metrics_test.go
+            src/devices/deck/metric_refresh.go
+            src/devices/nexus/host_telemetry.go
+          )
+          if [ -n "$(gofmt -l "${files[@]}")" ]; then
+            gofmt -d "${files[@]}"
+            exit 1
+          fi
       - name: Validate Deck editor JavaScript
         run: |
           node --check static/js/deck-editor.js

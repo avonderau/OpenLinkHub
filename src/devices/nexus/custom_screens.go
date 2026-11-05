@@ -1,13 +1,9 @@
 package nexus
 
 import (
- "OpenLinkHub/src/config"
  "OpenLinkHub/src/inputmanager"
- "OpenLinkHub/src/systeminfo"
- "OpenLinkHub/src/temperatures"
  "fmt"
  "image"
- "os"
  "path/filepath"
  "strings"
  "time"
@@ -59,18 +55,7 @@ func (d *Device) navigateCustomScreen(next bool) {
  _=SaveScreens(d.customScreenPath(),d.customScreens)
 }
 func (d *Device) collectCustomTelemetry(now time.Time) MetricSnapshot {
- values:=MetricSnapshot{
-  "cpu.temperature":float64(temperatures.GetCpuTemperature()),
-  "gpu.temperature":float64(temperatures.GetGpuTemperature()),
-  "cpu.utilization":systeminfo.GetCpuUtilization(),
-  "gpu.utilization":float64(systeminfo.GetGPUUtilization()),
- }
- if mem,err:=os.ReadFile("/proc/meminfo");err==nil{
-  if used,pct,ok:=parseMemoryMetrics(string(mem));ok{
-   values["memory.used"]=used
-   values["memory.utilization"]=pct
-  }
- }
+ values:=CollectHostMetrics()
  if network,disk:=detectCounterDevices();network!=""&&disk!=""{
   if counters,err:=ReadLinuxCounters(network,disk);err==nil{
    d.mutex.Lock()
@@ -82,18 +67,6 @@ func (d *Device) collectCustomTelemetry(now time.Time) MetricSnapshot {
     values["disk.read_rate"]=rates.DiskReadBytesPerSecond
     values["disk.write_rate"]=rates.DiskWriteBytesPerSecond
    }
-  }
- }
- for name,reading:=range ReadLinuxExtendedMetrics(defaultLinuxExtendedMetricPaths()){
-  values[name]=reading
- }
- // NVIDIA's optional clock, power and VRAM data is not available through
- // the generic AMD DRM sysfs provider; sample a bounded driver query only
- // for a configured NVIDIA GPU, no faster than once per telemetry snapshot.
- if info:=systeminfo.GetInfo();info!=nil&&info.GPU!=nil{
-  index:=config.GetConfig().DefaultNvidiaGPU
-  if gpu,ok:=info.GPU[index];ok&&strings.Contains(strings.ToLower(gpu.Model),"nvidia"){
-   for name,reading:=range ReadNvidiaMetrics(index){values[name]=reading}
   }
  }
  return values
