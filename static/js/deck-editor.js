@@ -150,6 +150,7 @@
       delete key.metricStyle;
       delete key.metricColor;
     }
+    if (!key.metricColor) delete key.metricColor;
     if (key.label || key.action || key.icon || key.metric) page.keys.push(key);
     page.keys.sort((a, b) => a.index - b.index);
     setDirty();
