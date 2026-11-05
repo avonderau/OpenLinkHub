@@ -44,7 +44,8 @@ async function run() {
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
     'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-selected-hero', 'deck-artwork-preview',
-    'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
+    'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator', 'deck-control-indicator',
+    'deck-key-control', 'deck-key-brightness', 'deck-brightness-property',
     'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
     'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
@@ -140,8 +141,8 @@ async function run() {
   }
 
   // Contextual inspector hides inactive controls until a physical key is selected.
-  assert.equal((html.match(/class="deck-inspector-section" aria-labelledby=/g) || []).length, 3);
-  for (const heading of ['Appearance', 'Live data', 'Button behavior']) {
+  assert.equal((html.match(/class="deck-inspector-section" aria-labelledby=/g) || []).length, 4);
+  for (const heading of ['Appearance', 'Live data', 'Deck controls', 'Button behavior']) {
     assert.ok(html.includes('>'+heading+'</strong>'), heading + ' card title missing');
   }
   assert.match(html, /id="deck-key-settings" hidden/);
@@ -178,6 +179,7 @@ async function run() {
   assert.equal(nodes['deck-metric-details'].hidden, true);
   assert.equal(nodes['deck-metric-indicator'].textContent, 'Off');
   assert.equal(nodes['deck-action-indicator'].textContent, 'None');
+  assert.equal(nodes['deck-control-indicator'].textContent, 'None');
 
   grid.children[0].dispatch('click');
   assert.equal(nodes['deck-key-settings'].hidden, false, 'key selection reveals grouped controls');
@@ -210,8 +212,10 @@ async function run() {
   assert.equal(nodes['deck-page'].value, 'page-2');
   assert.equal(nodes['deck-key-grid'].children.length, 18);
   grid.children[0].dispatch('click');
-  action.value = 'page-go';
-  action.dispatch('change');
+  const controls = nodes['deck-key-control'];
+  controls.value = 'page-go';
+  controls.dispatch('change');
+  assert.equal(action.value, '', 'Deck control must not also be a button action');
   assert.equal(nodes['deck-target-property'].hidden, false, 'go-to-page shows destination picker');
   const target = nodes['deck-key-target-page'];
   assert.equal(target.children.length, 2, 'all destinations available');
@@ -222,10 +226,31 @@ async function run() {
   assert.equal(received[1].pages[1].keys[0].action, 'page-go');
   assert.equal(received[1].pages[1].keys[0].targetPage, 'home');
 
+  // Brightness actions live with navigation under Deck controls.
+  controls.value = 'brightness-set';
+  controls.dispatch('change');
+  assert.equal(action.value, '');
+  assert.equal(nodes['deck-brightness-property'].hidden, false);
+  assert.equal(nodes['deck-key-brightness'].value, '50');
+  nodes['deck-key-brightness'].value = '75';
+  nodes['deck-key-brightness'].dispatch('change');
+  await nodes['deck-save'].dispatch('click');
+  const brightSaved = received.at(-1).pages[1].keys.find(key => key.index === 0);
+  assert.equal(brightSaved.action, 'brightness-set');
+  assert.equal(brightSaved.target, '75');
+  controls.value = 'brightness-up';
+  controls.dispatch('change');
+  await nodes['deck-save'].dispatch('click');
+  const upSaved = received.at(-1).pages[1].keys.find(key => key.index === 0);
+  assert.equal(upSaved.action, 'brightness-up');
+  assert.equal(upSaved.target, undefined, 'incremental brightness has no target');
+  assert.equal(nodes['deck-brightness-property'].hidden, true);
+
   // Saved macros are shared with the existing OpenLinkHub macro library.
   grid.children[1].dispatch('click');
   action.value = 'macro';
   action.dispatch('change');
+  assert.equal(controls.value, '', 'button action replaces prior Deck control');
   assert.equal(nodes['deck-macro-property'].hidden, false);
   assert.equal(nodes['deck-media-property'].hidden, true);
   const macros = nodes['deck-key-macro'];
@@ -235,8 +260,8 @@ async function run() {
   macros.value = '12';
   macros.dispatch('change');
   await nodes['deck-save'].dispatch('click');
-  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).action, 'macro');
-  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).target, '12');
+  assert.equal(received[4].pages[1].keys.find(key => key.index === 1).action, 'macro');
+  assert.equal(received[4].pages[1].keys.find(key => key.index === 1).target, '12');
 
   // Switching to media must not reuse the old macro identifier.
   action.value = 'media';
@@ -270,8 +295,8 @@ async function run() {
   label.dispatch('input');
   assert.equal(grid.children[1].children[2].textContent, 'Silence', 'custom label overrides default');
   await nodes['deck-save'].dispatch('click');
-  assert.equal(received[3].pages[1].keys.find(key => key.index === 1).action, 'media');
-  assert.equal(received[3].pages[1].keys.find(key => key.index === 1).target, 'volume-mute');
+  assert.equal(received[5].pages[1].keys.find(key => key.index === 1).action, 'media');
+  assert.equal(received[5].pages[1].keys.find(key => key.index === 1).target, 'volume-mute');
 
   // Image-only keys must survive the editor's assignment filtering and
   // show their artwork in the preview without interpreting a file as HTML.
@@ -286,7 +311,7 @@ async function run() {
   assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /\/api\/deck\/icon/);
   assert.ok(grid.children[3].style.backgroundImage.includes('/api/deck/icon'));
   await nodes['deck-save'].dispatch('click');
-  assert.equal(received[4].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
+  assert.equal(received[6].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
 
   nodes['deck-remove-image'].dispatch('click');
   assert.equal(nodes['deck-remove-image'].disabled, true);
@@ -294,7 +319,7 @@ async function run() {
   assert.equal(grid.children[3].dataset.hasImage, undefined);
   assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'false');
   await nodes['deck-save'].dispatch('click');
-  assert.equal(received[5].pages[1].keys.some(key => key.index === 3), false);
+  assert.equal(received[7].pages[1].keys.some(key => key.index === 3), false);
   // Metric-only keys retain configuration, update the browser preview from
   // the device's live metric snapshot, and save refresh + visualization options.
   grid.children[4].dispatch('click');
@@ -328,7 +353,7 @@ async function run() {
   assert.equal(grid.children[4], existingMetricKey, 'status poll should preserve physical preview DOM');
   assert.equal(grid.children[4].children[2].textContent, '62 C');
   await nodes['deck-save'].dispatch('click');
-  const metricKey = received[6].pages[1].keys.find(key => key.index === 4);
+  const metricKey = received[8].pages[1].keys.find(key => key.index === 4);
   assert.equal(metricKey.metric, 'cpu.temperature');
   assert.equal(metricKey.refreshSeconds, 10);
   assert.equal(metricKey.metricStyle, 'line');
@@ -342,7 +367,7 @@ async function run() {
   assert.equal(nodes['deck-metric-details'].hidden, true);
   assert.equal(nodes['deck-metric-status'].textContent, '', 'clearing metric hides generic copy');
   await nodes['deck-save'].dispatch('click');
-  assert.equal(received[7].pages[1].keys.some(key => key.index === 4), false);
+  assert.equal(received[9].pages[1].keys.some(key => key.index === 4), false);
   // Every visualization is saved independently, without replacing the metric.
   metric.value = 'memory.utilization';
   metric.dispatch('change');
