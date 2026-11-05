@@ -10,10 +10,10 @@ func TestWritePacketPreservesDeviceProtocolHeader(t *testing.T) {
 	data := []byte{0xaa, 0xbb, 0xcc}
 	prefix := []byte{0x12, 0x00}
 	for _, tc := range []struct {
-		name            string
-		prefix          []byte
-		countPrefix     bool
-		expectedLength  uint16
+		name           string
+		prefix         []byte
+		countPrefix    bool
+		expectedLength uint16
 	}{
 		{name: "key assignment", expectedLength: 3},
 		{name: "color data", prefix: prefix, expectedLength: 3},
