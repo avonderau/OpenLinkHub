@@ -42,6 +42,9 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
+    'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
+    'deck-icon-set-import', 'deck-icon-set-name', 'deck-import-icon-set',
+    'deck-icon-set-status',
     'deck-key-metric', 'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',

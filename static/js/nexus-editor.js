@@ -536,9 +536,9 @@ function renderTouchProperties(w,panel){
  });
  }
  if(w.type==='button'||w.type==='macro'||w.type==='image'){
-   const group=document.createElement('div');
+   const group=document.createElement('details');
    group.className='nexus-icon-set-picker';
-   const heading=document.createElement('label');
+   const heading=document.createElement('summary');
    heading.textContent='Reusable icon sets';
    const packSelect=document.createElement('select');
    packSelect.setAttribute('aria-label','Icon set');

@@ -468,7 +468,8 @@
       iconSetStatus.textContent = 'Choose a ZIP smaller than 8 MiB.';
       return;
     }
-    const name = (iconSetImportName.value || (file.name.toLowerCase().endsWith('.zip') ? file.name.slice(0, -4) : file.name)).trim();
+    const baseName = file.name.toLowerCase().endsWith('.zip') ? file.name.slice(0, -4) : file.name;
+    const name = (iconSetImportName.value || baseName).trim();
     iconSetImportButton.disabled = true;
     try {
       const response = await fetch('/api/icon-sets?name=' + encodeURIComponent(name), {

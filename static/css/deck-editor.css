@@ -391,8 +391,14 @@
 
 /* Shared reusable icon packs appear beneath the existing per-key upload. */
 .deck-workspace .deck-icon-set-library{
-  display:grid;gap:7px;margin-top:12px;padding-top:12px;
+  display:block;margin-top:12px;padding-top:12px;
   border-top:1px solid var(--deck-border);
+}
+.deck-workspace .deck-icon-set-library summary{
+  cursor:pointer;color:var(--deck-ink);font-size:.82rem;
+}
+.deck-workspace .deck-icon-set-controls{
+  display:grid;gap:7px;padding-top:10px;
 }
 .deck-workspace .deck-icon-set-library label{font-size:.76rem;color:var(--deck-muted)}
 .deck-workspace .deck-icon-set-library select,

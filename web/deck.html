@@ -93,8 +93,10 @@
                     </button>
                   </div>
                   <small id="deck-icon-status" role="status">PNG or JPEG, maximum 512 KiB and 512 × 512 px. Artwork is stored privately on this computer.</small>
-                  <div class="deck-icon-set-library">
-                    <label for="deck-icon-set">Reusable icon set</label>
+                  <details class="deck-icon-set-library">
+                    <summary>Reusable icon sets</summary>
+                    <div class="deck-icon-set-controls">
+                    <label for="deck-icon-set">Icon set</label>
                     <select id="deck-icon-set" class="form-select"><option value="">Select icon set</option></select>
                     <label for="deck-icon-set-item">Icon</label>
                     <select id="deck-icon-set-item" class="form-select" disabled><option value="">Select icon</option></select>
@@ -104,7 +106,8 @@
                     <input type="text" id="deck-icon-set-name" class="form-control" maxlength="60" placeholder="Set name (optional)">
                     <button type="button" id="deck-import-icon-set" class="deck-secondary">Import icon set</button>
                     <small id="deck-icon-set-status" role="status"></small>
-                  </div>
+                    </div>
+                  </details>
                 </div>
                 <div class="deck-property">
                   <label for="deck-key-metric"><i class="bi bi-activity" aria-hidden="true"></i> Live metric</label>
