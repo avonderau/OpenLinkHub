@@ -2,6 +2,7 @@ package nexus
 
 import (
  "errors"
+ "os"
 
  "OpenLinkHub/src/logger"
 )
@@ -19,11 +20,32 @@ func InitializeDeckDesktopLauncher(root string)error{
  return initializeNexusDesktopLaunchBroker(root)
 }
 
+// DeckDesktopLauncherStatus reports whether this daemon can hand desktop
+// actions to its local user session. A separate agent is required for a
+// headless or service-account daemon; the web browser cannot substitute.
+func DeckDesktopLauncherStatus()(bool,string){
+ if launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"))==nil{
+  return true,"Direct local graphical session available"
+ }
+ broker:=nexusLaunchBrokerGlobal.broker
+ if broker==nil{
+  return false,"Desktop launcher unavailable: check OpenLinkHub service logs"
+ }
+ broker.mu.Lock()
+ connected:=broker.client!=nil
+ broker.mu.Unlock()
+ if !connected{
+  return false,"Desktop agent disconnected. Run OpenLinkHub --nexus-desktop-agent as your logged-in desktop user."
+ }
+ return true,"Local desktop agent connected"
+}
+
 // QueueDeckLaunchAction sends a validated action to the *local* graphical
 // desktop or opt-in Unix socket agent, never to a remote WebUI browser.
 // Nonblocking, with a bounded queue shared with the Nexus touchscreen.
 func QueueDeckLaunchAction(action,target string)error{
  if err:=validateNexusLaunchAction(action,target);err!=nil{return err}
+ if ready,message:=DeckDesktopLauncherStatus();!ready{return errors.New(message)}
  select{
  case launchSlot<-struct{}{}:
  default:return errors.New("desktop launcher busy")
