@@ -859,3 +859,27 @@ test('Nexus media preview uses LCD pixel-shape masks and default captions with c
  assert.ok(input,'default media caption is visible as inspector placeholder');
  assert.equal(screen.widgets[0].settings.label,'','default caption must not be stored as custom label');
 });
+
+test('all six media keys retain absolute positioning and their saved preview slots',async()=>{
+ // Media icon wrappers must NEVER override .widget positioning. Relative
+ // positioning stacked the buttons and clipped most of them offscreen.
+ assert.match(style,/#nexus-editor \.widget\s*\{[^}]*position:\s*absolute/s);
+ assert.doesNotMatch(style,/#nexus-editor \.widget\.nexus-media-preview-widget\s*\{[^}]*position\s*:/s);
+ const {context,node}=makeEditor();
+ await vm.runInContext('load()',context);
+ node('newScreenPreset').value='media-deck';
+ await node('addScreen').onclick();
+ const screen=vm.runInContext('cfg.screens.find(s=>s.name==="Media Controls")',context);
+ assert.equal(screen.widgets.length,6);
+ const visible=node('screen').children;
+ assert.equal(visible.length,6,'the preview must render every media control');
+ assert.equal(visible.filter(el=>el.classList?.add && el.children.some(c=>c.className==='nexus-icon nexus-media-glyph')).length,6,
+  'all six media buttons should have hardware-matched glyph previews');
+ const positions=screen.widgets.map(w=>w.x);
+ assert.deepEqual(positions,[0,104,208,312,416,520]);
+ for(let i=0;i<screen.widgets.length;i++){
+  assert.ok(visible[i].style.cssText.includes('left:'+positions[i]+'px;'),
+   'button '+i+' must retain its original LCD X coordinate');
+  assert.equal(visible[i].dataset.id,screen.widgets[i].id);
+ }
+});
