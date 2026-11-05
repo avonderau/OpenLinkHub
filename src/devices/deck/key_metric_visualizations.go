@@ -208,9 +208,10 @@ func drawDeckRingText(dst *image.RGBA, text string, cx, baseline, maxWidth int, 
 	}
 	label := string(runes)
 	width := font.MeasureString(basicfont.Face7x13, label).Ceil()
-	font.Drawer{
+	drawer := font.Drawer{
 		Dst: dst, Src: image.NewUniform(ink),
 		Face: basicfont.Face7x13,
 		Dot: fixed.P(cx-width/2, baseline),
-	}.DrawString(label)
+	}
+	drawer.DrawString(label)
 }
