@@ -169,6 +169,14 @@ func ReadDeckIcon(root, id string) ([]byte, error) {
 	return data, nil
 }
 
+func (d *Device) SaveIcon(data []byte) (string, error) {
+	return SaveDeckIcon(d.root, data)
+}
+
+func (d *Device) ReadIcon(id string) ([]byte, error) {
+	return ReadDeckIcon(d.root, id)
+}
+
 // Background with letterboxing, then the uploaded image and optional label.
 func renderDeckArtwork(size int, icon image.Image, label string) image.Image {
 	canvas := renderKeyLabel(size, "")
