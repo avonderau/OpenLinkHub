@@ -22,6 +22,7 @@ type KeyConfig struct {
  Action string `json:"action,omitempty"`
  TargetPage string `json:"targetPage,omitempty"`
  Target string `json:"target,omitempty"`
+ Icon string `json:"icon,omitempty"`
 }
 type Page struct {
  ID string `json:"id"`
@@ -53,6 +54,9 @@ func (l Layout)Validate(m Model)error{
    if key.Index<0||key.Index>=m.Keys()||seen[key.Index] {return fmt.Errorf("invalid or duplicate key index: %d",key.Index)}
    seen[key.Index]=true
    if len(key.Label)>48 {return fmt.Errorf("key %d label too long",key.Index)}
+   if key.Icon!="" && !deckIconID.MatchString(key.Icon) {
+    return fmt.Errorf("key %d: invalid image reference",key.Index)
+   }
    for _,char:=range key.Label{
     if char<32||char==127{return errors.New("key labels cannot contain control characters")}
    }
