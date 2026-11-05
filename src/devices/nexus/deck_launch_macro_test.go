@@ -43,3 +43,19 @@ func TestDeckSavedMacroValidationUsesNexusBounds(t *testing.T){
  }
  if DeckMacroMaxDuration().Seconds()>15{t.Fatal("macro limit exceeded")}
 }
+
+func TestDeckDesktopLaunchRequiresConnectedAgent(t *testing.T) {
+ t.Setenv("DISPLAY","")
+ t.Setenv("WAYLAND_DISPLAY","")
+ if nexusLaunchBrokerGlobal.broker!=nil {
+  t.Skip("a shared desktop broker is already initialized by another test")
+ }
+ ready,explanation:=DeckDesktopLauncherStatus()
+ if ready||explanation==""{t.Fatalf("unexpected desktop readiness: ready=%t, status=%q",ready,explanation)}
+ if err:=QueueDeckLaunchAction("url","https://example.com/");err==nil{
+  t.Fatal("desktop URL was queued without a connected graphical agent")
+ }
+ if err:=QueueDeckLaunchAction("application","firefox.desktop");err==nil{
+  t.Fatal("application was queued without a connected graphical agent")
+ }
+}
