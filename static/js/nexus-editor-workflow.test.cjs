@@ -746,7 +746,7 @@ test('Nexus design system loads after upstream and keeps Settings styles scoped'
  assert.doesNotMatch(settingsCss,/^\s*(?:body|html|\.main-content|\.card|\.card-header)\s*[{,]/m,'Settings-only CSS must be scoped, not rewrite other pages');
 });
 
-test('Settings pilot preserves actions, localization and all seven section icons',()=>{
+test('Settings pilot preserves actions, localization and all eight section icons',()=>{
  const root=path.join(__dirname,'..','..');
  const page=fs.readFileSync(path.join(root,'web','settings.html'),'utf8');
  const expectedIds=['deviceId','checkbox-celsius','checkbox-temperatureBar','checkbox-deviceLabels',
@@ -760,11 +760,12 @@ test('Settings pilot preserves actions, localization and all seven section icons
  }
  const sectionIds=['txtDashboard','txtBackupRestore','txtRgbScheduler','txtVirtualAudio','txtDisplay','txtDashboardAuth','txtSupportedDevices'];
  const headers=[...page.matchAll(/<div class="card-header olh-section-header">([\s\S]*?)<\/div>/g)];
- assert.equal(headers.length,sectionIds.length,'all Settings panels have redesigned, accessible headers');
+ assert.equal(headers.length,sectionIds.length+1,'all Settings panels have redesigned, accessible headers');
+  assert.ok(headers.some(([markup])=>markup.includes('Icon Pack Library')),'pack manager has matching card header');
  for(const key of sectionIds){
   assert.ok(headers.some(([markup])=>markup.includes('{{ .Lang "'+key+'" }}')),'localized header preserved: '+key);
  }
- assert.equal((page.match(/class="olh-section-icon"/g)||[]).length,7,'one icon per section');
+ assert.equal((page.match(/class="olh-section-icon"/g)||[]).length,8,'one icon per section');
  assert.match(page,/class="main-content p-4 olh-settings-page"/);
  assert.equal((page.match(/class="olh-settings-subheading"/g)||[]).length,3,'Dashboard options are grouped by purpose');
  assert.match(page,/for="keyboardLayout"/,'keyboard layout label targets correct field');
