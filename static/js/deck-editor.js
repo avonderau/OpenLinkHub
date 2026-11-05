@@ -211,7 +211,7 @@
         ? { targetPage: assignment(selected)?.targetPage || layout.activePage }
         : {}),
       ...(actionInput.value === 'media'
-        ? { target: assignment(selected)?.target || 'play-pause' }
+        ? { target: assignment(selected)?.action === 'media' ? assignment(selected)?.target || 'play-pause' : 'play-pause' }
         : {}),
       ...(actionInput.value === 'hotkey'
         ? { target: assignment(selected)?.action === 'hotkey' ? assignment(selected)?.target || '' : '' }
