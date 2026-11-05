@@ -446,6 +446,7 @@
   mediaInput.addEventListener('change', () => {
     if (actionInput.value !== 'media') return;
     setKeyProperties({ target: mediaInput.value });
+    renderInspector(); // Update the default label placeholder for this command.
   });
 
   async function loadSavedMacros() {
