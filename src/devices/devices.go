@@ -248,24 +248,35 @@ func StopDirtyDevPath(devPath string) {
 func GetSupportedDevices() interface{} {
 	type product struct {
 		ProductId uint16
+		VendorId  uint16
+		DeviceKey string
+		Family    string
 		Name      string
 		Enabled   bool
 	}
-
 	var products []product
 	for key, val := range deviceRegisterMap {
 		if key > 0 {
-			p := product{
+			products = append(products, product{
 				ProductId: key,
+				VendorId: vendorId,
+				DeviceKey: deck.DeviceKey(vendorId, key),
+				Family:    "corsair",
 				Name:      val.Name,
-				Enabled:   true,
-			}
-
-			if slices.Contains(config.GetConfig().Exclude, key) {
-				p.Enabled = false
-			}
-			products = append(products, p)
+				Enabled:   !slices.Contains(config.GetConfig().Exclude, key),
+			})
 		}
+	}
+	for _, model := range deck.SupportedModels() {
+		key := deck.DeviceKey(model.VendorID, model.ProductID)
+		products = append(products, product{
+			ProductId: model.ProductID,
+			VendorId: model.VendorID,
+			DeviceKey: key,
+			Family:    "deck",
+			Name:      model.Name,
+			Enabled:   config.DeckEnabled(key),
+		})
 	}
 	return products
 }
@@ -763,6 +774,7 @@ func initializeDeckDevices() {
 		err := hid.Enumerate(vendor, hid.ProductIDAny, hid.EnumFunc(func(info *hid.DeviceInfo) error {
 			model, supported := deck.LookupModel(info.VendorID, info.ProductID)
 			if !supported || info.Path == "" { return nil }
+			if !config.DeckEnabled(deck.DeviceKey(info.VendorID, info.ProductID)) { return nil }
 			// Mirabox's command interface is the HID usage page required by
 			// the supported OpenDeck AKP153 driver. Do not claim other interfaces.
 			if model.Family == "mirabox" && (info.UsagePage != 65440 || info.Usage != 1) { return nil }
