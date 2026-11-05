@@ -54,6 +54,10 @@ func launchPermissionCheck(uid int,display,wayland string)error{
  return nil
 }
 
+func nexusDirectDesktopAllowed(systemService bool,uid int,display,wayland string)bool {
+ return !systemService && launchPermissionCheck(uid,display,wayland)==nil
+}
+
 func runNexusLaunchAction(action,target string)error{
  if err:=validateNexusLaunchAction(action,target);err!=nil{return err}
  if err:=launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"));err!=nil{return err}
@@ -82,8 +86,7 @@ func dispatchNexusLaunchAction(action,target string)error{
  // no right to use the logged-in user's graphical session. In that case,
  // deliver directly to the opt-in user agent instead of trying xdg-open
  // as the service account and silently failing.
- if !config.IsSystemService() &&
-  launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"))==nil{
+ if nexusDirectDesktopAllowed(config.IsSystemService(),os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY")){
   if err:=runNexusLaunchAction(action,target);err==nil{return nil}
  }
  return forwardNexusDesktopLaunch(action,target)
