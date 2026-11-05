@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=desktop-actions-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=artwork-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -83,6 +83,19 @@
                   <small>Changes appear in the preview immediately. Save &amp; Apply sends LCD images to Mirabox hardware.</small>
                 </div>
                 <div class="deck-property">
+                  <label for="deck-key-image">Key artwork</label>
+                  <input id="deck-key-image" type="file" accept="image/png,image/jpeg" disabled>
+                  <div class="deck-artwork-controls">
+                    <button type="button" id="deck-upload-image" class="deck-secondary" disabled>
+                      <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Upload artwork
+                    </button>
+                    <button type="button" id="deck-remove-image" class="deck-secondary" disabled>
+                      <i class="bi bi-x-circle" aria-hidden="true"></i> Remove artwork
+                    </button>
+                  </div>
+                  <small id="deck-icon-status" role="status">PNG or JPEG, maximum 512 KiB and 512 × 512 px. Artwork is stored privately on this computer.</small>
+                </div>
+                <div class="deck-property">
                   <label for="deck-key-action"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Button action</label>
                   <select class="form-select" id="deck-key-action" disabled>
                     <option value="">No action</option>
@@ -150,7 +163,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=desktop-actions-1"></script>
+<script src="/static/js/deck-editor.js?v=artwork-1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
