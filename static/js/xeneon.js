@@ -276,9 +276,12 @@ $(document).ready(function () {
                     console.warn('Unknown media button:', info);
             }
 
+            if (!urlAction) return;
             $.ajax({
                 url: urlAction,
-                method: 'GET',
+                method: 'POST',
+                contentType: 'application/json',
+                data: '{}',
                 dataType: 'json',
                 success: function (response) {
                     // No result

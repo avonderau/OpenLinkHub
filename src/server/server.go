@@ -35,6 +35,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"mime"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -926,7 +927,24 @@ func getMediaPlayback(w http.ResponseWriter, _ *http.Request) {
 }
 
 // getMediaPlayback will return active media playback
+// mediaPlaybackControl dispatches keyboard events. Never expose a state-changing
+// action through GET: a cross-origin page could otherwise invoke it using an
+// image or navigation request without needing CORS permissions.
 func mediaPlaybackControl(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "media actions require POST", http.StatusMethodNotAllowed)
+		return
+	}
+	if !nexusWriteAllowed(r) {
+		http.Error(w, "cross-origin media control forbidden", http.StatusForbidden)
+		return
+	}
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || mediaType != "application/json" {
+		http.Error(w, "application/json required", http.StatusUnsupportedMediaType)
+		return
+	}
 	resp := &Response{Code: http.StatusOK, Status: 0}
 	mediaPlaybackAction, valid := getVar("/api/media/", r)
 	if !valid {
@@ -2963,7 +2981,7 @@ func setRoutes() http.Handler {
 	handleFunc(r, "/api/devices/probes/", http.MethodGet, getTemperatureProbes)
 	handleFunc(r, "/api/devices/mouse", http.MethodGet, getMouseDevice)
 	handleFunc(r, "/api/media/playback", http.MethodGet, getMediaPlayback)
-	handleFunc(r, "/api/media/", http.MethodGet, mediaPlaybackControl)
+	handleFunc(r, "/api/media/", http.MethodPost, mediaPlaybackControl)
 	handleFunc(r, "/api/application/profiles", http.MethodGet, getApplicationProfiles)
 	handleFunc(r, "/api/application/manualProfiles", http.MethodGet, getManualApplicationProfiles)
 	handleFunc(r, "/api/application/applications", http.MethodGet, getApplications)
