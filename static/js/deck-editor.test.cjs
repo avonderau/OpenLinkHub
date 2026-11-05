@@ -38,6 +38,7 @@ class FakeElement {
 async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
+    'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
     'deck-key-shortcut', 'deck-hotkey-property', 'deck-key-media', 'deck-media-property',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
@@ -57,6 +58,10 @@ async function run() {
   };
   const fetch = async (url, options = {}) => {
     const type = url.split('?')[0];
+    if (type === '/api/deck/icon' && options.method === 'POST') {
+      assert.equal(options.headers['Content-Type'], 'image/png');
+      return { ok: true, status: 201, json: async () => ({ id: 'a'.repeat(32) }) };
+    }
     if (type === '/api/deck/layout' && options.method === 'PUT') {
       received.push(JSON.parse(options.body));
       return {
@@ -150,6 +155,24 @@ async function run() {
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[3].pages[1].keys.find(key => key.index === 1).action, 'media');
   assert.equal(received[3].pages[1].keys.find(key => key.index === 1).target, 'volume-mute');
+
+  // Image-only keys must survive the editor's assignment filtering and
+  // show their artwork in the preview without interpreting a file as HTML.
+  grid.children[3].dispatch('click');
+  const image = nodes['deck-key-image'];
+  image.files = [{ type: 'image/png', size: 150, name: 'icon.png' }];
+  await nodes['deck-upload-image'].dispatch('click');
+  assert.equal(nodes['deck-remove-image'].disabled, false);
+  assert.equal(grid.children[3].dataset.hasImage, 'true');
+  assert.match(grid.children[3].style.backgroundImage, /api\\/deck\\/icon/);
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received[4].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
+
+  nodes['deck-remove-image'].dispatch('click');
+  assert.equal(nodes['deck-remove-image'].disabled, true);
+  assert.equal(grid.children[3].dataset.hasImage, undefined);
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received[5].pages[1].keys.some(key => key.index === 3), false);
   console.log('Deck Editor interaction test passed');
 }
 
