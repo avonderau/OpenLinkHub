@@ -43,7 +43,7 @@ async function run() {
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
-    'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-artwork-preview',
+    'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-selected-hero', 'deck-artwork-preview',
     'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
     'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
     'deck-metric-interval', 'deck-metric-style',
@@ -173,6 +173,7 @@ async function run() {
   assert.equal(nodes['deck-connection-state'].dataset.connected, 'true');
   assert.equal(nodes['deck-metric-status'].textContent, '', 'empty metric selection has no helper sentence');
   assert.equal(nodes['deck-key-settings'].hidden, true, 'no selected key should hide inactive fields');
+  assert.equal(nodes['deck-selected-hero'].hidden, true);
   assert.equal(nodes['deck-empty-state'].hidden, false);
   assert.equal(nodes['deck-metric-details'].hidden, true);
   assert.equal(nodes['deck-metric-indicator'].textContent, 'Off');
@@ -180,6 +181,7 @@ async function run() {
 
   grid.children[0].dispatch('click');
   assert.equal(nodes['deck-key-settings'].hidden, false, 'key selection reveals grouped controls');
+  assert.equal(nodes['deck-selected-hero'].hidden, false);
   assert.equal(nodes['deck-empty-state'].hidden, true);
   assert.match(nodes['deck-selected-summary'].textContent, /Unlabeled key/);
   const label = nodes['deck-key-label'];
@@ -187,6 +189,7 @@ async function run() {
   label.value = 'test';
   label.dispatch('input');
   assert.equal(grid.children[0].children[1].textContent, 'test', 'live preview should show typed labels');
+  assert.match(nodes['deck-selected-summary'].textContent, /test/);
   const action = nodes['deck-key-action'];
   action.value = 'page-next';
   action.dispatch('change');
@@ -277,6 +280,7 @@ async function run() {
   image.files = [{ type: 'image/png', size: 150, name: 'icon.png' }];
   await nodes['deck-upload-image'].dispatch('click');
   assert.equal(nodes['deck-remove-image'].disabled, false);
+  assert.equal(nodes['deck-remove-image'].hidden, false);
   assert.equal(grid.children[3].dataset.hasImage, 'true');
   assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true');
   assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /\/api\/deck\/icon/);
@@ -286,6 +290,7 @@ async function run() {
 
   nodes['deck-remove-image'].dispatch('click');
   assert.equal(nodes['deck-remove-image'].disabled, true);
+  assert.equal(nodes['deck-remove-image'].hidden, true);
   assert.equal(grid.children[3].dataset.hasImage, undefined);
   assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'false');
   await nodes['deck-save'].dispatch('click');
