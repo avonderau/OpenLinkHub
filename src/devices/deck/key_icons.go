@@ -8,8 +8,14 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
-	"image/jpeg"
+	_ "image/jpeg"
 	"image/png"
+	"image/color"
+	"strings"
+
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -176,8 +182,23 @@ func renderDeckArtwork(size int, icon image.Image, label string) image.Image {
 	return drawDeckKeyCaption(canvas.(*image.RGBA), label)
 }
 
-// Decode helpers used by image.Decode/Image.DecodeConfig need both formats.
-var (
-	_ = jpeg.DefaultQuality
-	_ = png.BestCompression
-)
+func drawDeckKeyCaption(img *image.RGBA, label string) image.Image {
+	size := img.Bounds().Dx()
+	text := []rune(strings.TrimSpace(label))
+	for len(text) > 0 && font.MeasureString(basicfont.Face7x13, string(text)).Ceil() > size-8 {
+		text = text[:len(text)-1]
+	}
+	if len(text) == 0 {
+		return img
+	}
+	band := image.Rect(0, size-22, size, size)
+	draw.DrawMask(img, band, image.NewUniform(color.Black), image.Point{},
+		image.NewUniform(color.Alpha{A:180}), image.Point{}, draw.Over)
+	width := font.MeasureString(basicfont.Face7x13, string(text)).Ceil()
+	drawer := font.Drawer{
+		Dst: img, Src: image.NewUniform(color.White), Face: basicfont.Face7x13,
+		Dot: fixed.P((size-width)/2, size-6),
+	}
+	drawer.DrawString(string(text))
+	return img
+}
