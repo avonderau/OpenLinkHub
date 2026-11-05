@@ -321,7 +321,28 @@
                 </div>
             </div>
         </div>
-                    </div></div></section><section class="olh-settings-tab-panel" id="olh-settings-security" role="tabpanel" aria-labelledby="olh-settings-tab-security" tabindex="0" hidden><div class="olh-settings-section-intro"><div><h2>Security &amp; backup</h2><p>Access controls and configuration export or restore.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Review access changes carefully</span></div><div class="olh-settings-category-grid olh-settings-security-grid"><div class="card system-card text-center">
+                    </div>
+        </div>
+        </div>
+        <div class="card system-card olh-icon-pack-card">
+          <div class="card-header olh-section-header">
+            <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-images"></i></span>
+            <span class="olh-section-title">Icon Pack Library</span>
+          </div>
+          <div class="card-body text-left">
+            <p class="olh-icon-pack-description">Import and manage reusable icons here. Choose installed icons inside the Nexus or Mirabox editor.</p>
+            <div class="olh-icon-pack-import">
+              <label for="olh-icon-pack-name">Pack name</label>
+              <input id="olh-icon-pack-name" type="text" class="form-control" maxlength="60" placeholder="e.g. Media and navigation">
+              <label for="olh-icon-pack-file">ZIP containing PNG, JPEG or SVG icons</label>
+              <input id="olh-icon-pack-file" type="file" accept=".zip,application/zip">
+              <button id="olh-icon-pack-import" class="system-button" type="button"><i class="bi bi-upload" aria-hidden="true"></i> Import icon pack</button>
+              <small>Up to 48 icons per pack, 512 KiB per image and 8 MiB per ZIP. SVG images are converted to PNG.</small>
+            </div>
+            <p id="olh-icon-pack-status" role="status" aria-live="polite"></p>
+            <div id="olh-icon-pack-library" class="olh-icon-pack-library" aria-label="Installed icon packs"></div>
+          </div>
+        </div></section><section class="olh-settings-tab-panel" id="olh-settings-security" role="tabpanel" aria-labelledby="olh-settings-tab-security" tabindex="0" hidden><div class="olh-settings-section-intro"><div><h2>Security &amp; backup</h2><p>Access controls and configuration export or restore.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Review access changes carefully</span></div><div class="olh-settings-category-grid olh-settings-security-grid"><div class="card system-card text-center">
             <div class="card-header olh-section-header">
                 <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
                 <span class="olh-section-title">{{ .Lang "txtDashboardAuth" }}</span>
@@ -415,6 +436,7 @@
 </div>
 <script src="/static/js/settings.js?v=deck-settings-20261104-b"></script>
 <script src="/static/js/settings-sections.js"></script>
+<script src="/static/js/icon-pack-settings.js?v=1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

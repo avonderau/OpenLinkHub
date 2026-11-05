@@ -294,3 +294,52 @@
 .olh-settings-page .olh-supported-devices-status.is-error {
   color:#e7b4a4;
 }
+
+/* Fork-owned icon library: one place to import, rename and delete packs. */
+.olh-settings-page .olh-icon-pack-card{grid-column:1/-1}
+.olh-settings-page .olh-icon-pack-card .card-body{padding:15px}
+.olh-settings-page .olh-icon-pack-description{
+  color:var(--olh-muted);font-size:.8rem;line-height:1.5;margin:0 0 14px;
+}
+.olh-settings-page .olh-icon-pack-import{
+  display:grid;grid-template-columns:minmax(140px,1fr) minmax(200px,1.25fr) auto;
+  gap:7px 12px;align-items:center;
+  padding:12px;border:1px solid var(--olh-line);
+  border-radius:10px;background:rgba(12,13,15,.22);
+}
+.olh-settings-page .olh-icon-pack-import label{color:var(--olh-muted);font-size:.76rem}
+.olh-settings-page .olh-icon-pack-import :is(input,button){min-width:0;max-width:100%}
+.olh-settings-page .olh-icon-pack-import small{grid-column:1/-1;color:var(--olh-muted);font-size:.73rem}
+.olh-settings-page #olh-icon-pack-status{
+  min-height:1.4em;padding:10px 2px 4px;color:var(--olh-muted);font-size:.78rem;
+}
+.olh-settings-page #olh-icon-pack-status.is-error{color:#ebaf9d}
+.olh-settings-page .olh-icon-pack-library{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;
+}
+.olh-settings-page .olh-icon-pack-item{
+  padding:12px;border:1px solid var(--olh-line-strong);border-radius:10px;
+  background:rgba(12,13,15,.22);
+}
+.olh-settings-page .olh-icon-pack-item-title{display:flex;gap:9px;align-items:center;margin-bottom:9px}
+.olh-settings-page .olh-icon-pack-item-title input{
+  flex:1;min-width:0;max-width:100%;padding:7px 9px;
+}
+.olh-settings-page .olh-icon-pack-item-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.olh-settings-page .olh-icon-pack-item-actions button{font-size:.77rem;padding:7px 10px}
+.olh-settings-page .olh-icon-pack-thumbnails{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:7px;
+}
+.olh-settings-page .olh-icon-pack-tile{
+  min-width:0;display:grid;justify-items:center;gap:4px;padding:7px 4px;
+  background:rgba(12,13,15,.3);border:1px solid var(--olh-line);border-radius:7px;
+}
+.olh-settings-page .olh-icon-pack-tile img{height:42px;width:42px;object-fit:contain}
+.olh-settings-page .olh-icon-pack-tile span{
+  width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-size:.68rem;text-align:center;color:var(--olh-muted);
+}
+@media(max-width:800px){
+ .olh-settings-page .olh-icon-pack-import{grid-template-columns:minmax(0,1fr)}
+ .olh-settings-page .olh-icon-pack-library{grid-template-columns:minmax(0,1fr)}
+}
