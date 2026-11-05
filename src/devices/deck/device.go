@@ -84,7 +84,16 @@ func Init(info *hid.DeviceInfo)*common.Device {
    logger.Log(logger.Fields{"error":err,"model":m.Name,"path":info.Path}).Warn("Unable to open Deck HID device")
    return nil
   }
+  // The vendor protocol requires initialization before any button
+  // reports are read. Mirajazz also sets brightness before attaching its
+  // input reader; opening the handle alone is not a ready device session.
+  if err:=initializeMiraboxSession(handle,m);err!=nil{
+   _=handle.Close()
+   logger.Log(logger.Fields{"error":err,"model":m.Name,"path":info.Path}).Warn("Unable to initialize Deck HID session")
+   return nil
+  }
   d.hidDevice=handle
+  d.initialized=true
   d.readerDone=make(chan struct{})
   d.connected=true
   d.status="Connected; static images and key presses available"
