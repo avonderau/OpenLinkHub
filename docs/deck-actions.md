@@ -1,9 +1,9 @@
-# Native Deck button actions — first increment
+# Native Deck button actions
 
 OpenLinkHub Nexus provides its own action picker on **Deck Editor → Key**.
-The first action types are intentionally limited to internal page navigation:
-`page-next`, `page-previous`, and `page-go` (with a valid `targetPage`
-ID). Empty action means a display-only label.
+Available action types are internal page navigation, validated keyboard shortcuts,
+media controls and saved OpenLinkHub macros. Empty action means a display-only
+label.
 
 ## Configure a key
 
@@ -20,9 +20,9 @@ The active page is saved in the same per-device layout so that reconnecting
 the hardware restores the selected page. If LCD rendering fails after a key
 press, the key event still counts and the saved active page is retained.
 
-No desktop programs, commands, hotkeys, or plugins run in this increment.
-Future desktop actions must be delivered via the logged-in user session,
-not executed as the system service.
+Keyboard shortcuts and media controls use the existing Linux virtual keyboard;
+saved macros use the shared bounded macro engine. Standalone launch-app and
+open-website actions are not part of this Deck increment.
 
 ## Verification
 
