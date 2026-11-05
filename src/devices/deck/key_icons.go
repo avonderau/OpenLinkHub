@@ -31,40 +31,7 @@ const (
 	deckIconPixels       = 128
 )
 
-var deckIconID = regexp.MustCompile(`^[a-f0-9]{32}package deck
-
-import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
-	"errors"
-	"fmt"
-	"image"
-	"image/color"
-	"image/draw"
-	_ "image/jpeg"
-	"image/png"
-	"strings"
-	"sync"
-
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
-	"os"
-	"path/filepath"
-	"regexp"
-
-	xdraw "golang.org/x/image/draw"
-)
-
-const (
-	MaxDeckIconBytes     = 512 * 1024
-	maxDeckIconDimension = 512
-	maxDeckIconFiles     = 256
-	deckIconPixels       = 128
-)
-
-)
+var deckIconID = regexp.MustCompile(`^[a-f0-9]{32}$`)
 
 // Serialize icon-library writes so concurrent uploads cannot bypass the file cap.
 var deckIconSaveMu sync.Mutex
