@@ -77,7 +77,9 @@ func MiraboxKeyImage(m Model,key int,src image.Image)([]byte,error){
  return buf.Bytes(),nil
 }
 
-func MiraboxSetKeyJPEG(writer outputReporter,m Model,key int,jpg []byte)error{
+// MiraboxWriteKeyJPEG queues one key image; call MiraboxFlush once after
+// writing all keys on a page. This matches mirajazz's send_image/flush split.
+func MiraboxWriteKeyJPEG(writer outputReporter,m Model,key int,jpg []byte)error{
  if m.Family!="mirabox" {return errUnsupportedModel}
  if key<0||key>=m.Keys(){return errInvalidKey}
  if len(jpg)==0 || len(jpg)>65535 || !bytes.HasPrefix(jpg,[]byte{0xff,0xd8}) {
@@ -93,7 +95,18 @@ func MiraboxSetKeyJPEG(writer outputReporter,m Model,key int,jpg []byte)error{
   payload:=append([]byte{0},jpg[start:end]...)
   if err:=writeMiraboxReport(writer,m,payload);err!=nil{return fmt.Errorf("image body: %w",err)}
  }
+ return nil
+}
+
+// MiraboxFlush commits all images written since the previous flush.
+func MiraboxFlush(writer outputReporter,m Model)error {
  return writeMiraboxReport(writer,m,miraboxCommand("STP"))
+}
+
+// MiraboxSetKeyJPEG is the single-key convenience entry point.
+func MiraboxSetKeyJPEG(writer outputReporter,m Model,key int,jpg []byte)error{
+ if err:=MiraboxWriteKeyJPEG(writer,m,key,jpg);err!=nil{return err}
+ return MiraboxFlush(writer,m)
 }
 
 // MiraboxKeyEvent decodes a single key event. V1 hardware reports presses
