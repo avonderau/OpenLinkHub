@@ -122,17 +122,13 @@
     }
   }
 
-  const mediaGlyphClasses = Object.freeze({
-    'play-pause': 'bi-play-circle-fill',
-    'previous-track': 'bi-skip-backward-fill',
-    'next-track': 'bi-skip-forward-fill',
-    stop: 'bi-stop-fill',
-    'volume-up': 'bi-volume-up-fill',
-    'volume-down': 'bi-volume-down-fill',
-    'volume-mute': 'bi-volume-mute-fill',
+  // These preview masks use the physical device's pixel-level icon shapes.
+  const mediaGlyphs = Object.freeze({
+    'play-pause': true, 'previous-track': true, 'next-track': true,
+    stop: true, 'volume-up': true, 'volume-down': true, 'volume-mute': true,
   });
   const mediaKeyLabels = Object.freeze({
-    'play-pause': 'Play / Pause',
+    'play-pause': 'Play/Pause',
     'previous-track': 'Previous',
     'next-track': 'Next',
     stop: 'Stop',
@@ -197,9 +193,11 @@
       label.textContent = displayName;
       button.append(number);
       if (configured?.action === 'media' && !configured?.metric &&
-          !validIconID(configured?.icon) && mediaGlyphClasses[configured?.target]) {
-        const glyph = document.createElement('i');
-        glyph.className = `bi ${mediaGlyphClasses[configured.target]} deck-media-glyph`;
+          !validIconID(configured?.icon) && mediaGlyphs[configured?.target]) {
+        const glyph = document.createElement('span');
+        glyph.className = 'deck-media-glyph';
+        glyph.style.maskImage = `url("/static/media-glyphs/${configured.target}.svg")`;
+        glyph.style.webkitMaskImage = glyph.style.maskImage;
         glyph.setAttribute('aria-hidden', 'true');
         button.appendChild(glyph);
         button.dataset.hasMediaIcon = 'true';
@@ -250,6 +248,7 @@
     const key = valid ? assignment(selected) : null;
     labelInput.disabled = !valid;
     labelInput.value = key?.label || '';
+    labelInput.placeholder = key?.action === 'media' ? (mediaKeyLabels[key.target] || '') : '';
     artworkInput.disabled = !valid;
     uploadArtworkButton.disabled = !valid;
     removeArtworkButton.disabled = !valid || !validIconID(key?.icon);

@@ -193,23 +193,30 @@ async function run() {
   assert.equal(nodes['deck-media-property'].hidden, false);
   const media = nodes['deck-key-media'];
   assert.equal(media.value, 'play-pause');
-  for (const [command, expectedClass] of [
-    ['play-pause', 'bi-play-circle-fill'],
-    ['previous-track', 'bi-skip-backward-fill'],
-    ['next-track', 'bi-skip-forward-fill'],
-    ['stop', 'bi-stop-fill'],
-    ['volume-up', 'bi-volume-up-fill'],
-    ['volume-down', 'bi-volume-down-fill'],
-    ['volume-mute', 'bi-volume-mute-fill'],
+  for (const command of [
+    'play-pause', 'previous-track', 'next-track', 'stop',
+    'volume-up', 'volume-down', 'volume-mute',
   ]) {
     media.value = command;
     media.dispatch('change');
     const preview = grid.children[1];
     assert.equal(preview.dataset.hasMediaIcon, 'true', command);
-    assert.ok(preview.children[1].className.includes(expectedClass), command);
+    assert.equal(preview.children[1].className, 'deck-media-glyph', command);
+    assert.equal(preview.children[1].style.maskImage,
+      `url("/static/media-glyphs/${command}.svg")`, command);
+    const expected = {
+      'play-pause':'Play/Pause', 'previous-track':'Previous',
+      'next-track':'Next Track', stop:'Stop', 'volume-up':'Volume +',
+      'volume-down':'Volume -', 'volume-mute':'Mute',
+    };
+    assert.equal(preview.children[2].textContent, expected[command], command);
   }
   media.value = 'volume-mute';
   media.dispatch('change');
+  assert.equal(label.placeholder, 'Mute', 'default should not populate custom label field');
+  label.value = 'Silence';
+  label.dispatch('input');
+  assert.equal(grid.children[1].children[2].textContent, 'Silence', 'custom label overrides default');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[3].pages[1].keys.find(key => key.index === 1).action, 'media');
   assert.equal(received[3].pages[1].keys.find(key => key.index === 1).target, 'volume-mute');

@@ -130,9 +130,17 @@
 }
 .deck-key small{font-size:.65rem;color:var(--deck-muted);font-variant-numeric:tabular-nums}
 .deck-key .deck-media-glyph{
-  color:#f2cf93;
-  line-height:1;
-  font-size:clamp(1.25rem,2vw,2.1rem);
+  display:block;
+  flex:0 0 auto;
+  width:min(60%,54px);
+  aspect-ratio:1;
+  background-color:#f2cf93;
+  mask-repeat:no-repeat;
+  mask-position:center;
+  mask-size:contain;
+  -webkit-mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  -webkit-mask-size:contain;
   pointer-events:none;
 }
 .deck-key[data-has-media-icon="true"] span{font-size:clamp(.56rem,.7vw,.68rem)}
