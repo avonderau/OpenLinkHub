@@ -44,6 +44,9 @@ func TestDeckBrightnessControlsPersistAndReconnect(t *testing.T){
  stale.Brightness=0
  if _,err:=d.UpdateLayout(stale);err!=nil{t.Fatal(err)}
  if d.GetLayout().Brightness!=75{t.Fatal("browser save discarded hardware brightness")}
+ stale.Brightness=25
+ if _,err:=d.UpdateLayout(stale);err!=nil{t.Fatal(err)}
+ if d.GetLayout().Brightness!=75{t.Fatal("stale browser brightness overwrote hardware level")}
  for i:=0;i<4;i++{check(0,min(100,85+i*10))}
  for i:=0;i<12;i++{d.handleKeyPress(1)}
  if d.GetLayout().Brightness!=10{t.Fatalf("min brightness should clamp at 10, got %d",d.GetLayout().Brightness)}
