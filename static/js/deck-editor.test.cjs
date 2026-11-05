@@ -43,6 +43,8 @@ async function run() {
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
+    'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-artwork-preview',
+    'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
     'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
     'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
@@ -137,6 +139,22 @@ async function run() {
     assert.ok(!html.includes(hiddenCopy), `obsolete Deck helper copy: ${hiddenCopy}`);
   }
 
+  // Contextual inspector hides inactive controls until a physical key is selected.
+  assert.equal((html.match(/class="deck-inspector-section" aria-labelledby=/g) || []).length, 3);
+  for (const heading of ['Appearance', 'Live data', 'Button behavior']) {
+    assert.ok(html.includes('>'+heading+'</strong>'), heading + ' card title missing');
+  }
+  assert.match(html, /id="deck-key-settings" hidden/);
+  assert.match(html, /id="deck-empty-state"/);
+  assert.match(html, /id="deck-metric-details" hidden/);
+  assert.match(html, /id="deck-artwork-preview"/);
+  assert.doesNotMatch(html, /Action plugins \(planned\)|aria-label="Action plugins/);
+  const sectionCss = fs.readFileSync(path.join(__dirname, '..', 'css', 'deck-editor.css'), 'utf8');
+  assert.match(sectionCss, /#deck-metric-details\[hidden\]/);
+  assert.match(sectionCss, /\.deck-inspector-section-header/);
+  assert.match(sectionCss, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1\.15fr\)/,
+    'retain the compact two-column metric controls instead of PR 77 layout');
+
   assert.match(html, /<select class="form-select" id="deck-metric-style"/);
   assert.match(html, /class="deck-metric-options">\s*<div class="deck-metric-option">/);
   assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 3,
@@ -154,8 +172,16 @@ async function run() {
   assert.equal(nodes['deck-save'].disabled, false, 'Save & Apply must work even without edits');
   assert.equal(nodes['deck-connection-state'].dataset.connected, 'true');
   assert.equal(nodes['deck-metric-status'].textContent, '', 'empty metric selection has no helper sentence');
+  assert.equal(nodes['deck-key-settings'].hidden, true, 'no selected key should hide inactive fields');
+  assert.equal(nodes['deck-empty-state'].hidden, false);
+  assert.equal(nodes['deck-metric-details'].hidden, true);
+  assert.equal(nodes['deck-metric-indicator'].textContent, 'Off');
+  assert.equal(nodes['deck-action-indicator'].textContent, 'None');
 
   grid.children[0].dispatch('click');
+  assert.equal(nodes['deck-key-settings'].hidden, false, 'key selection reveals grouped controls');
+  assert.equal(nodes['deck-empty-state'].hidden, true);
+  assert.match(nodes['deck-selected-summary'].textContent, /Unlabeled key/);
   const label = nodes['deck-key-label'];
   assert.equal(label.disabled, false, 'selecting a key enables the inspector');
   label.value = 'test';
@@ -164,6 +190,7 @@ async function run() {
   const action = nodes['deck-key-action'];
   action.value = 'page-next';
   action.dispatch('change');
+  assert.equal(nodes['deck-action-indicator'].textContent, 'Assigned');
   assert.equal(nodes['deck-target-property'].hidden, true, 'next-page action does not need a destination');
   assert.match(nodes['deck-message'].textContent, /Unsaved changes/);
   await nodes['deck-save'].dispatch('click');
@@ -251,6 +278,8 @@ async function run() {
   await nodes['deck-upload-image'].dispatch('click');
   assert.equal(nodes['deck-remove-image'].disabled, false);
   assert.equal(grid.children[3].dataset.hasImage, 'true');
+  assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true');
+  assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /\/api\/deck\/icon/);
   assert.ok(grid.children[3].style.backgroundImage.includes('/api/deck/icon'));
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[4].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
@@ -258,6 +287,7 @@ async function run() {
   nodes['deck-remove-image'].dispatch('click');
   assert.equal(nodes['deck-remove-image'].disabled, true);
   assert.equal(grid.children[3].dataset.hasImage, undefined);
+  assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'false');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[5].pages[1].keys.some(key => key.index === 3), false);
   // Metric-only keys retain configuration, update the browser preview from
@@ -266,6 +296,8 @@ async function run() {
   const metric = nodes['deck-key-metric'];
   metric.value = 'cpu.temperature';
   metric.dispatch('change');
+  assert.equal(nodes['deck-metric-details'].hidden, false);
+  assert.equal(nodes['deck-metric-indicator'].textContent, 'Active');
   assert.equal(nodes['deck-metric-interval'].disabled, false);
   assert.equal(nodes['deck-metric-style'].disabled, false);
   const picker = nodes['deck-metric-color'];
@@ -302,6 +334,7 @@ async function run() {
   assert.equal(grid.children[4].dataset.hasMetric, undefined);
   assert.equal(picker.disabled, true);
   assert.equal(colorReset.disabled, true);
+  assert.equal(nodes['deck-metric-details'].hidden, true);
   assert.equal(nodes['deck-metric-status'].textContent, '', 'clearing metric hides generic copy');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[7].pages[1].keys.some(key => key.index === 4), false);
