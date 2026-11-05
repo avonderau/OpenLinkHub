@@ -189,8 +189,8 @@ func TestDeckRingGaugeDisplaysValueInsideArc(t *testing.T) {
 		t.Fatalf("ring geometry too small or overlaps label: (%d,%d) radius %d", cx, cy, radius)
 	}
 	changedCenter := false
-	for y := cy-12; y < cy+12; y++ {
-		for x := cx-18; x < cx+18; x++ {
+	for y := cy - 12; y < cy+12; y++ {
+		for x := cx - 18; x < cx+18; x++ {
 			if withValue.At(x, y) != withoutValue.At(x, y) {
 				changedCenter = true
 			}
