@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=desktop-actions-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=launch-macro-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -91,6 +91,9 @@
                     <option value="page-go">Go to page</option>
                     <option value="hotkey">Keyboard shortcut</option>
                     <option value="media">Media control</option>
+                    <option value="url">Open URL</option>
+                    <option value="application">Launch application</option>
+                    <option value="macro">Run saved macro</option>
                   </select>
                   <small>Actions trigger when you press the physical Mirabox key.</small>
                 </div>
@@ -116,10 +119,26 @@
                     <option value="volume-mute">Mute</option>
                   </select>
                 </div>
+                <div class="deck-property" id="deck-launch-property" hidden>
+                  <label id="deck-launch-label" for="deck-key-launch-target">Desktop action target</label>
+                  <input class="form-control" id="deck-key-launch-target" type="text" maxlength="256"
+                         autocomplete="off" spellcheck="false" disabled
+                         placeholder="https://example.com">
+                  <small id="deck-launch-help">HTTPS/HTTP URLs or safe installed desktop-entry IDs only. Actions run on the local graphical desktop.</small>
+                </div>
+                <div class="deck-property" id="deck-macro-property" hidden>
+                  <label for="deck-key-macro">Saved OpenLinkHub macro</label>
+                  <select class="form-select" id="deck-key-macro" disabled></select>
+                  <div class="deck-action-links">
+                    <button type="button" class="deck-secondary" id="deck-refresh-macros"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</button>
+                    <a href="/macros" target="_blank" rel="noopener noreferrer">Manage macros</a>
+                  </div>
+                  <small id="deck-macro-status" role="status">Create a macro in OpenLinkHub Macros, then select it here.</small>
+                </div>
                 <div class="deck-planned-feature">
                   <i class="bi bi-puzzle" aria-hidden="true"></i>
                   <div><strong>More button actions are coming</strong>
-                    <p>Saved macros, application launching and OpenAction plugins are next. Keyboard and media keys now share the native Nexus input backend.</p>
+                    <p>Desktop launching and saved macros share the existing Nexus engines. Custom icons and third-party action plugins are coming next.</p>
                   </div>
                 </div>
               </section>
@@ -150,7 +169,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=desktop-actions-1"></script>
+<script src="/static/js/deck-editor.js?v=launch-macro-1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
