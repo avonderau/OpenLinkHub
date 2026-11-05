@@ -34,7 +34,8 @@ func TestMiraboxImageTransferAndMapping(t *testing.T){
  if err:=MiraboxSetKeyJPEG(r,m,0,jpg);err!=nil{t.Fatal(err)}
  if len(r.reports)<3{t.Fatalf("expected command, body, commit: %d",len(r.reports))}
  if !bytes.Equal(r.reports[0][6:9],[]byte("BAT")){t.Fatal("missing BAT")}
- if r.reports[0][13]!=1{t.Fatal("first key should be device key 1")}
+ if r.reports[0][13]!=13{t.Fatal("first logical key should be physical key 13")}
+ for logical,device:=range miraboxLogicalToDevice{if miraboxMapping[device]!=logical {t.Fatalf("map mismatch for %d",logical)}}
  if !bytes.Equal(r.reports[len(r.reports)-1][6:9],[]byte("STP")){t.Fatal("missing flush")}
  for _,report:=range r.reports{if len(report)!=513{t.Fatal("bad page size")}}
  if err:=MiraboxSetKeyJPEG(r,m,18,jpg);!errors.Is(err,errInvalidKey){t.Fatal("invalid index accepted")}
