@@ -67,6 +67,9 @@ async function run() {
   };
   const fetch = async (url, options = {}) => {
     const type = url.split('?')[0];
+    if (type === '/api/icon-sets') {
+      return { ok: true, status: 200, json: async () => ({ sets: [] }) };
+    }
     if (type === '/api/macro/') {
       return { ok: true, status: 200, json: async () => ({
         status: 1,
@@ -102,6 +105,10 @@ async function run() {
     console,
   }, { filename: 'deck-editor.js' });
 
+  const iconSetMarkup = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
+  assert.match(iconSetMarkup, /id="deck-icon-set"/);
+  assert.match(iconSetMarkup, /id="deck-icon-set-item"/);
+  assert.match(fs.readFileSync(path.join(__dirname, 'deck-editor.js'), 'utf8'), /\/api\/icon-sets/);
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
   for (const hiddenCopy of [

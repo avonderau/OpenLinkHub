@@ -12,6 +12,14 @@
   const uploadArtworkButton = document.getElementById('deck-upload-image');
   const removeArtworkButton = document.getElementById('deck-remove-image');
   const artworkStatus = document.getElementById('deck-icon-status');
+  const iconSetSelect = document.getElementById('deck-icon-set');
+  const iconSetItem = document.getElementById('deck-icon-set-item');
+  const iconSetApply = document.getElementById('deck-apply-icon-set');
+  const iconSetImport = document.getElementById('deck-icon-set-import');
+  const iconSetImportName = document.getElementById('deck-icon-set-name');
+  const iconSetImportButton = document.getElementById('deck-import-icon-set');
+  const iconSetStatus = document.getElementById('deck-icon-set-status');
+  let iconSets = [];
   const metricInput = document.getElementById('deck-key-metric');
   const metricInterval = document.getElementById('deck-metric-interval');
   const metricStyle = document.getElementById('deck-metric-style');
@@ -252,6 +260,7 @@
     artworkInput.disabled = !valid;
     uploadArtworkButton.disabled = !valid;
     removeArtworkButton.disabled = !valid || !validIconID(key?.icon);
+    iconSetApply.disabled = !valid || !validIconID(iconSetItem.value);
     artworkStatus.textContent = validIconID(key?.icon)
       ? 'Artwork assigned. Save & Apply to send it to the physical LCD.'
       : 'PNG/JPEG · up to 512 KiB · maximum 512 × 512 pixels.';
@@ -403,6 +412,77 @@
     } finally {
       if (layout && selected >= 0) uploadArtworkButton.disabled = false;
     }
+  });
+
+  function refreshIconSetPicker() {
+    const chosen = iconSetSelect.value;
+    iconSetSelect.replaceChildren();
+    const none = document.createElement('option');
+    none.value = ''; none.textContent = 'Select icon set';
+    iconSetSelect.appendChild(none);
+    for (const pack of iconSets) {
+      const option = document.createElement('option');
+      option.value = pack.id;
+      option.textContent = pack.name;
+      iconSetSelect.appendChild(option);
+    }
+    iconSetSelect.value = iconSets.some(set => set.id === chosen) ? chosen : '';
+    const pack = iconSets.find(set => set.id === iconSetSelect.value);
+    const selectedIcon = iconSetItem.value;
+    iconSetItem.replaceChildren();
+    const placeholder = document.createElement('option');
+    placeholder.value = ''; placeholder.textContent = 'Select icon';
+    iconSetItem.appendChild(placeholder);
+    for (const icon of pack?.icons || []) {
+      const option = document.createElement('option');
+      option.value = icon.deckId;
+      option.textContent = icon.name;
+      iconSetItem.appendChild(option);
+    }
+    iconSetItem.value = pack?.icons.some(icon => icon.deckId === selectedIcon) ? selectedIcon : '';
+    iconSetItem.disabled = !pack;
+    iconSetApply.disabled = selected < 0 || !validIconID(iconSetItem.value);
+  }
+  async function loadIconSets() {
+    try {
+      const response = await fetch('/api/icon-sets', { cache: 'no-store' });
+      if (!response.ok) return;
+      const payload = await response.json();
+      iconSets = Array.isArray(payload?.sets) ? payload.sets : [];
+      refreshIconSetPicker();
+    } catch (_error) {
+      iconSetStatus.textContent = 'Icon sets are currently unavailable.';
+    }
+  }
+  iconSetSelect.addEventListener('change', refreshIconSetPicker);
+  iconSetItem.addEventListener('change', refreshIconSetPicker);
+  iconSetApply.addEventListener('click', () => {
+    if (!validIconID(iconSetItem.value) || selected < 0) return;
+    setKeyProperties({ icon: iconSetItem.value });
+    renderInspector();
+    setMessage('Icon set artwork assigned. Save & Apply to update the LCD.', 'success');
+  });
+  iconSetImportButton.addEventListener('click', async () => {
+    const file = iconSetImport.files?.[0];
+    if (!file || file.size < 1 || file.size > 8 * 1024 * 1024) {
+      iconSetStatus.textContent = 'Choose a ZIP smaller than 8 MiB.';
+      return;
+    }
+    const name = (iconSetImportName.value || file.name.replace(/\\.zip$/i, '')).trim();
+    iconSetImportButton.disabled = true;
+    try {
+      const response = await fetch('/api/icon-sets?name=' + encodeURIComponent(name), {
+        method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: file,
+      });
+      if (!response.ok) throw new Error((await response.text()).trim() || 'Import failed');
+      const result = await response.json();
+      await loadIconSets();
+      iconSetSelect.value = result?.set?.id || '';
+      refreshIconSetPicker();
+      iconSetStatus.textContent = 'Icon set imported. Select an icon to use.';
+    } catch (error) {
+      iconSetStatus.textContent = 'Import failed: ' + error.message;
+    } finally { iconSetImportButton.disabled = false; }
   });
 
   removeArtworkButton.addEventListener('click', () => {
@@ -603,6 +683,7 @@
     try {
       layout = normalizeLayout(await api('layout'));
       await loadSavedMacros();
+      await loadIconSets();
       renderPages();
       renderGrid();
       renderInspector();
