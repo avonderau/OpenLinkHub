@@ -42,6 +42,10 @@ func ValidDeckMediaAction(target string) bool {
 func ExecuteDeckMediaAction(target string) error {
  code, ok := deckMediaKeys[target]
  if !ok { return fmt.Errorf("unsupported Deck media action %q",target) }
+ // Serialize with Nexus keyboard chords to avoid a media key being emitted
+ // while this backend is holding a modifier key from another Deck action.
+ nexusShortcutMutex.Lock()
+ defer nexusShortcutMutex.Unlock()
  inputmanager.InputControlKeyboard(code, false)
  return nil
 }
