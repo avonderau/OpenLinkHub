@@ -1,0 +1,37 @@
+name: Deck foundation tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/devices/deck/**'
+      - 'src/server/deck_api.go'
+      - 'src/devices/devices.go'
+      - 'src/common/common.go'
+      - 'static/js/deck-editor.js'
+      - '.github/workflows/deck-tests.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install HID dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config
+      - name: Validate Deck editor JavaScript
+        run: node --check static/js/deck-editor.js
+      - name: Test Deck protocol, layouts, and server integration
+        env:
+          CGO_CFLAGS_ALLOW: -fno-strict-overflow
+        run: go test ./src/devices/deck ./src/server -count=1 -v
+      - name: Compile device manager
+        env:
+          CGO_CFLAGS_ALLOW: -fno-strict-overflow
+        run: go build ./src/devices
