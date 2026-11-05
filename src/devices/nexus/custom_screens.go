@@ -56,6 +56,21 @@ func (d *Device) navigateCustomScreen(next bool) {
 }
 func (d *Device) collectCustomTelemetry(now time.Time) MetricSnapshot {
  values:=CollectHostMetrics()
+ d.mutex.Lock()
+ requests:=[]MetricSourceRequest{}
+ for _,screen:=range d.customScreens.Screens {
+  if screen.ID!=d.customScreens.ActiveScreenID {continue}
+  for _,w:=range screen.Widgets {
+   if source:=w.Settings["metricSource"];source!="" && (w.Type=="metric"||w.Type=="bar"||w.Type=="graph"){
+    requests=append(requests,MetricSourceRequest{Metric:w.Metric,Source:source})
+   }
+  }
+  break
+ }
+ d.mutex.Unlock()
+ for name,value:=range ReadSourcedMetrics(&d.customSourceSampler,requests,now){
+  values[name]=value
+ }
  if network,disk:=detectCounterDevices();network!=""&&disk!=""{
   if counters,err:=ReadLinuxCounters(network,disk);err==nil{
    d.mutex.Lock()

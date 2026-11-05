@@ -53,3 +53,17 @@ func TestDiscoveredMetricSourcesAreValidAndFinite(t *testing.T){
   if math.IsNaN(value)||math.IsInf(value,0){t.Fatalf("nonfinite result %s",key)}
  }
 }
+
+func TestNexusMetricSourceValidation(t *testing.T){
+ base:=ScreenConfiguration{Version:1,ActiveScreenID:"home",Screens:[]Screen{{
+  ID:"home",Name:"Home",Widgets:[]Widget{{
+   ID:"disk",Type:"metric",Metric:"disk.utilization",X:0,Y:0,Width:120,Height:48,
+   Settings:map[string]string{"metricSource":"mount:/"},
+  }},
+ }}}
+ if err:=base.Validate();err!=nil{t.Fatalf("volume source should validate: %v",err)}
+ base.Screens[0].Widgets[0].Settings["metricSource"]="disk:sda"
+ if err:=base.Validate();err==nil{t.Fatal("wrong source type should fail")}
+ base.Screens[0].Widgets[0].Type="button"
+ if err:=base.Validate();err==nil{t.Fatal("source cannot be assigned to a button")}
+}
