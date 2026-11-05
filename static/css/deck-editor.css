@@ -277,3 +277,29 @@
   font-family:inherit;
   font-variant-ligatures:none;
 }
+
+/* Uploaded artwork keeps key outlines and labels legible in the preview. */
+.deck-workspace .deck-key[data-has-image="true"]{
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  text-shadow:0 1px 3px rgba(0,0,0,.95);
+}
+.deck-workspace .deck-key[data-has-image="true"] span{color:#fff}
+.deck-workspace .deck-key[data-has-image="true"] small{color:#e6e6e6}
+.deck-artwork-controls{display:flex;flex-wrap:wrap;gap:8px}
+.deck-workspace .deck-artwork-controls button{margin:0}
+.deck-workspace #deck-key-image{
+  width:100%;max-width:100%;
+  padding:8px;font-size:.76rem;
+  border:1px dashed rgba(213,166,90,.36);
+  border-radius:8px;
+}
+.deck-workspace #deck-key-image::file-selector-button{
+  margin-right:10px;
+  border:0;border-radius:5px;
+  padding:5px 8px;
+  background:#4f3e29;
+  color:#f4ddb6;
+  cursor:pointer;
+}
