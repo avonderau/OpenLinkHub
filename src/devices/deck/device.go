@@ -41,6 +41,7 @@ type Device struct {
  eventCount uint64
  initialized bool
  done chan struct{}
+ readerDone chan struct{}
  once sync.Once
 }
 
@@ -84,12 +85,13 @@ func Init(info *hid.DeviceInfo)*common.Device {
    return nil
   }
   d.hidDevice=handle
+  d.readerDone=make(chan struct{})
   d.connected=true
   d.status="Connected; static images and key presses available"
   go d.listen()
  }
  return &common.Device{
-  ProductType:800,Product:m.Name,Serial:id,Firmware:"",
+  ProductType:common.ProductTypeDeck,Product:m.Name,Serial:id,Firmware:"",
   DeviceType:common.DeviceTypeKeypad,ProductId:m.ProductID,
   DevicePath:info.Path,DeviceLookup:id,Image:"icon-device.svg",Instance:d,
  }
@@ -99,6 +101,10 @@ func(d *Device)GetDeviceTemplate()string{return d.Template}
 func(d *Device)Stop(){
  d.once.Do(func(){
   close(d.done)
+  // Let the timed HID reader leave before closing its handle.
+  if d.readerDone!=nil {
+   select {case <-d.readerDone:case <-time.After(2*time.Second):}
+  }
   d.mu.Lock()
   defer d.mu.Unlock()
   d.connected=false
@@ -178,6 +184,7 @@ func renderKeyLabel(size int,label string)image.Image{
  return img
 }
 func(d *Device)listen(){
+ defer close(d.readerDone)
  buffer:=make([]byte,512)
  for {
   select{case <-d.done:return;default:}
