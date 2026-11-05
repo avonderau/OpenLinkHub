@@ -292,3 +292,21 @@
 }
 .deck-workspace .deck-action-links a:hover{text-decoration:underline}
 #deck-macro-status{overflow-wrap:anywhere}
+
+/* Inline launch status distinguishes an unconnected desktop agent from a
+ * working HID key. Colors are consistent with the existing Nexus inspector. */
+.deck-workspace #deck-launcher-status{
+  margin:8px 0 0;
+  padding:8px 10px;
+  font-size:.76rem;
+  border-radius:7px;
+  background:rgba(181,120,72,.12);
+  border:1px solid rgba(220,150,90,.30);
+  color:#e5b7a0;
+  line-height:1.5;
+}
+.deck-workspace #deck-launcher-status[data-ready="true"]{
+  background:rgba(124,156,119,.12);
+  border-color:rgba(143,177,130,.30);
+  color:#bad6b2;
+}
