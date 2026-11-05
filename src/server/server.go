@@ -2918,9 +2918,19 @@ func handleFunc(mux *http.ServeMux, path, method string, handler func(w http.Res
 			http.Error(w, language.GetValue("txtMethodNotAllowed"), http.StatusMethodNotAllowed)
 			return
 		}
-		if method != http.MethodGet && method != http.MethodHead && !nexusWriteAllowed(r) {
-			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
-			return
+		if method != http.MethodGet && method != http.MethodHead {
+			if !nexusWriteAllowed(r) {
+				http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
+				return
+			}
+			// Bound inherited handlers that decode JSON or form bodies without
+			// their own limits. File-import routes retain their larger quota.
+			limit := legacyRequestBodyLimit(path)
+			if r.ContentLength > limit {
+				http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+				return
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, limit)
 		}
 		handler(w, r)
 	})
