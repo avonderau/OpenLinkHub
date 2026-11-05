@@ -20,6 +20,16 @@ const nexusDisplayLabel=w=>w?.settings?.label||nexusActionDefaultLabel(w);
 const metrics=['cpu.temperature','gpu.temperature','cpu.utilization','gpu.utilization','memory.used','memory.utilization','network.rx_rate','network.tx_rate','disk.read_rate','disk.write_rate',"cpu.clock_mhz","cpu.load_1m","cpu.load_5m","cpu.load_15m","disk.utilization","disk.free_gb","fan.rpm","pump.rpm","gpu.vram.used_mb","gpu.vram.utilization","gpu.vram.total_mb","gpu.clock_mhz","gpu.power_w"];
 const GRID=8;
 let nexusSharedMacros={};
+let nexusIconSets=[];
+async function loadNexusIconSets(){
+ try{
+  const response=await fetch('/api/icon-sets',{cache:'no-store'});
+  if(response.ok){
+   const data=await response.json();
+   nexusIconSets=Array.isArray(data?.sets)?data.sets:[];
+  }
+ }catch(_error){nexusIconSets=[]}
+}
 const NEXUS_MAX_SCREENS=256, NEXUS_MAX_TOTAL_WIDGETS=4096;
 const totalNexusWidgets=()=>cfg?.screens.reduce((sum,s)=>sum+s.widgets.length,0)||0;
 function formatNexusClock(settings={},now=new Date()){
@@ -351,7 +361,7 @@ nexusElementById('screen').addEventListener('keydown',event=>{
 });
 
 async function loadDevices(){try{const response=await fetch('/api/devices/');const json=await response.json();const data=json.devices||json.device||json.data||json;const entries=Object.entries(data);nexusElementById('device').replaceChildren();for(const [key,v] of entries){if(/nexus/i.test(JSON.stringify(v))){nexusElementById('device').add(new Option((v.product||v.Product||'Nexus')+' — '+key,key))}}if(!nexusElementById('device').length)message('No Nexus found automatically. Enter its serial below.')}catch(e){message(e.message)}}
-async function load(){serial=nexusElementById('deviceId')?.value||nexusElementById('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await loadSharedMacroProfiles();selected=null;const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
+async function load(){serial=nexusElementById('deviceId')?.value||nexusElementById('device')?.value||prompt('Nexus device serial');if(!serial)return;const res=await fetch('/api/nexus/screens?serial='+encodeURIComponent(serial));if(!res.ok)throw Error(await res.text());cfg=await res.json();await Promise.all([loadSharedMacroProfiles(),loadNexusIconSets()]);selected=null;const mode=nexusElementById('cyclingMode');const interval=nexusElementById('cyclingSeconds');if(mode)mode.value=cfg.cyclingMode||'manual';if(interval){const seconds=cfg.cyclingSeconds||15;if(![...interval.options].some(o=>Number(o.value)===seconds))interval.add(new Option(seconds+' seconds (saved)',String(seconds)));interval.value=String(seconds)}syncCycleInterval();if(nexusElementById('displayBrightness'))nexusElementById('displayBrightness').value=String(cfg.brightness||100);refreshScreens();refreshWidgetLibrary();message('')}
 if(nexusElementById('load'))nexusElementById('load').onclick=()=>load().catch(e=>message(e.message));
 nexusElementById('screens').onchange=()=>{cfg.activeScreenId=nexusElementById('screens').value;selected=null;render()};
 // Starter designs are simply saved-screen JSON, copied into the regular
@@ -525,6 +535,61 @@ function renderTouchProperties(w,panel){
   if(v==='none')delete w.settings.icon;else w.settings.icon=v;
  });
  }
+ if(w.type==='button'||w.type==='macro'||w.type==='image'){
+   const group=document.createElement('div');
+   group.className='nexus-icon-set-picker';
+   const heading=document.createElement('label');
+   heading.textContent='Reusable icon sets';
+   const packSelect=document.createElement('select');
+   packSelect.setAttribute('aria-label','Icon set');
+   packSelect.add(new Option('Select icon set',''));
+   for(const pack of nexusIconSets)packSelect.add(new Option(pack.name,pack.id));
+   const iconSelect=document.createElement('select');
+   iconSelect.setAttribute('aria-label','Icon in set');
+   const refresh=()=>{
+    const pack=nexusIconSets.find(p=>p.id===packSelect.value);
+    iconSelect.replaceChildren();
+    iconSelect.add(new Option('Select icon',''));
+    for(const icon of pack?.icons||[])iconSelect.add(new Option(icon.name,icon.nexusId));
+   };
+   packSelect.addEventListener('change',refresh);
+   const useIcon=document.createElement('button');
+   useIcon.type='button';useIcon.textContent='Use set icon';
+   useIcon.onclick=()=>{
+    if(!iconSelect.value)return;
+    w.settings??={};
+    w.settings.customIcon=iconSelect.value;
+    delete w.settings.icon;
+    render();
+    message('Icon from shared set assigned. Save Layout to apply.');
+   };
+   const file=document.createElement('input');
+   file.type='file';file.accept='.zip,application/zip';
+   file.setAttribute('aria-label','Import icon set ZIP');
+   const name=document.createElement('input');
+   name.type='text';name.maxLength=60;name.placeholder='Set name (optional)';
+   const importButton=document.createElement('button');
+   importButton.type='button';importButton.textContent='Import icon set';
+   importButton.onclick=async()=>{
+    const uploaded=file.files?.[0];
+    if(!uploaded||uploaded.size<1||uploaded.size>8*1024*1024)return message('Choose a ZIP under 8 MiB.');
+    const baseName=uploaded.name.toLowerCase().endsWith('.zip')?uploaded.name.slice(0,-4):uploaded.name;
+    const title=(name.value||baseName).trim();
+    importButton.disabled=true;
+    try{
+     const res=await fetch('/api/icon-sets?name='+encodeURIComponent(title),
+      {method:'POST',headers:{'Content-Type':'application/zip'},body:uploaded});
+     if(!res.ok)throw Error(await res.text());
+     const data=await res.json();
+     await loadNexusIconSets();
+     render();
+     message('Icon set '+(data?.set?.name||title)+' imported. Choose an icon.');
+    }catch(err){message('Icon set import failed: '+err.message)}
+    finally{importButton.disabled=false}
+   };
+   group.append(heading,packSelect,iconSelect,useIcon,file,name,importButton);
+   panel.append(group);
+  }
  if(w.settings?.customIcon || w.settings?.icon==='custom'){
   const wrapper=document.createElement('label');wrapper.className='nexus-custom-icon-upload';
   wrapper.textContent='Custom icon (PNG/JPEG/GIF) ';

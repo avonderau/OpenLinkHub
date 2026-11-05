@@ -32,3 +32,13 @@ node --test static/js/deck-editor.test.cjs
 Manual smoke test on HSV293S: upload a PNG and JPEG, verify previews and
 labels, Save & Apply, confirm the physical key shows the image, reconnect
 the device, and verify the saved page and image restore correctly.
+
+### Reusable icon sets
+
+You can import a ZIP containing up to 48 PNG or JPEG icons (up to 512 KiB
+and 512 pixels per image, 8 MiB ZIP limit). Name the set, then select it in
+the **Reusable icon set** picker and assign an icon to the selected key.
+The same set appears in the Nexus editor and can be reused on multiple keys
+or widgets. Uploaded icons are normalized and saved privately, not served from
+the original ZIP or extracted as arbitrary filesystem paths. Deleting a set
+manifest does not remove icons referenced by saved layouts.

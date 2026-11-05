@@ -160,3 +160,11 @@ preserved; no conversion or migration is required.
 
 Deck's macro execution reuses the bounded Nexus macro runner. Page navigation,
 media controls, artwork and live metrics remain available.
+
+### Shared custom icon sets
+
+Open **Actions & icons** for a button or image, choose a previously imported
+icon set, and apply an icon. To install a new set, upload a ZIP containing
+PNG/JPEG images (at most 48 icons, 512 KiB each, 8 MiB compressed).
+Sets are shared with Mirabox Deck. Existing one-off icon uploads continue to
+work, and active layouts store image IDs, not archive paths.
