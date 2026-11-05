@@ -1,10 +1,21 @@
 {{ define "nexus-custom-workspace" }}
-            <!-- Nexus device controls beside the integrated screen editor -->
+            <!-- Nexus editor shares the Deck Editor's workstation chrome. -->
+            <header class="olh-page-intro nexus-editor-intro">
+                <span class="olh-page-emblem" aria-hidden="true"><i class="bi bi-display"></i></span>
+                <span class="olh-page-copy">
+                    <span class="olh-page-kicker">OpenLinkHub Nexus / Screen editor</span>
+                    <h1>Nexus Touchscreen Editor</h1>
+                    <small>Design, preview and save your touchscreen layouts.</small>
+                </span>
+                <span class="nexus-editor-intro-device"><i class="bi bi-hdd-rack" aria-hidden="true"></i> {{ .Device.Product }}</span>
+            </header>
+            <!-- Preserve the existing Nexus device/settings and edit workflow. -->
             <div class="nexus-workspace">
                 <div class="nexus-device-column">
                     <div class="card system-card text-center">
-                        <div class="card-header">
-                            {{ .Device.Product }}
+                        <div class="card-header olh-section-header">
+                            <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-display"></i></span>
+                            <span class="olh-section-title">Touchscreen Settings</span>
                         </div>
                         <div class="card-body">
                             <div class="settings-list">
@@ -44,17 +55,21 @@
 <option value="100" selected>100% (full)</option>
 </select>
 <small class="nexus-cycle-note">Dims rendered pixels, not the hardware backlight.</small>
-                                    <button id="save" type="button">Save Layout</button>
+                                    <button id="save" type="button"><i class="bi bi-floppy" aria-hidden="true"></i> Save Layout</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="nexus-editor-column">
-                    <section id="nexus-editor" class="card system-card"><div class="card-body">
-
+                    <section id="nexus-editor" class="card system-card">
+  <header class="card-header olh-section-header nexus-editor-toolbar-header">
+    <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-grid-1x2"></i></span>
+    <span class="nexus-toolbar-heading"><strong class="olh-section-title">Screen Preview</strong><small>Arrange widgets on your physical Nexus display</small></span>
+  </header>
+  <div class="card-body">
 <p id="message" role="status" aria-live="polite"></p>
-<div class="nexus-screen-actions">
+<div class="nexus-screen-actions" aria-label="Manage Nexus screens">
 <label>Screen <select id="screens"></select></label>
 <label class="nexus-new-screen-choice" for="newScreenPreset">New screen
 <select id="newScreenPreset" aria-label="New screen layout">
@@ -65,21 +80,24 @@
 <option value="media-deck">Media Controls</option>
 <option value="navigation">Screen Navigation (animated)</option>
 </select></label>
-<button id="addScreen" type="button">Add screen</button>
-<button id="replaceScreenWithPreset" type="button" disabled>Replace selected</button>
-<button id="moveScreenUp" type="button">Move up</button>
-<button id="moveScreenDown" type="button">Move down</button>
-<button id="renameScreen" type="button">Rename</button>
-<button id="duplicateScreen" type="button">Duplicate screen</button>
-<button id="deleteScreen" type="button">Delete screen</button>
+<button id="addScreen" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add screen</button>
+<button id="replaceScreenWithPreset" type="button" disabled><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Replace selected</button>
+<button id="moveScreenUp" type="button" aria-label="Move screen up"><i class="bi bi-arrow-up" aria-hidden="true"></i> Move up</button>
+<button id="moveScreenDown" type="button" aria-label="Move screen down"><i class="bi bi-arrow-down" aria-hidden="true"></i> Move down</button>
+<button id="renameScreen" type="button"><i class="bi bi-pencil-square" aria-hidden="true"></i> Rename</button>
+<button id="duplicateScreen" type="button"><i class="bi bi-files" aria-hidden="true"></i> Duplicate screen</button>
+<button id="deleteScreen" type="button"><i class="bi bi-trash3" aria-hidden="true"></i> Delete screen</button>
 </div>
-<div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
-<p id="nexus-keyboard-hint" class="nexus-panel-description">Keyboard editing: [ / ] select widget, arrows move, Shift + arrows resize, Delete removes, Ctrl + C/V copies and pastes.</p>
-<section class="nexus-editor-tabs" aria-label="Nexus editor workspace"><div class="nexus-editor-tablist" role="tablist" aria-label="Nexus editor sections"><button type="button" id="nexus-tab-widget" role="tab" aria-controls="nexus-panel-widget" aria-selected="true" tabindex="0">Widget</button>
-<button type="button" id="nexus-tab-library" role="tab" aria-controls="nexus-panel-library" aria-selected="false" tabindex="-1">Widget library</button>
-<button type="button" id="nexus-tab-background" role="tab" aria-controls="nexus-panel-background" aria-selected="false" tabindex="-1">Background</button>
-<button type="button" id="nexus-tab-layout" role="tab" aria-controls="nexus-panel-layout" aria-selected="false" tabindex="-1">Layout files</button>
-<button type="button" id="nexus-tab-applications" role="tab" aria-controls="nexus-panel-applications" aria-selected="false" tabindex="-1">Application screens</button></div><div class="nexus-editor-tabcontent">
+<div class="nexus-preview-stage">
+  <div class="nexus-preview-chrome" aria-hidden="true"><span class="nexus-preview-light"></span><span>Live layout preview</span><span class="nexus-preview-scale">640 × 48</span></div>
+  <div id="preview"><div id="screen" tabindex="0" role="group" aria-label="Nexus screen layout, keyboard editable" aria-describedby="nexus-keyboard-hint"></div></div>
+  <p id="nexus-keyboard-hint" class="nexus-panel-description"><i class="bi bi-keyboard" aria-hidden="true"></i> Keyboard: [ / ] select widget · Arrows move · Shift + arrows resize · Delete removes · Ctrl + C/V copies and pastes.</p>
+</div>
+<section class="nexus-editor-tabs" aria-label="Nexus editor workspace"><div class="nexus-editor-tablist" role="tablist" aria-label="Nexus editor sections"><button type="button" id="nexus-tab-widget" role="tab" aria-controls="nexus-panel-widget" aria-selected="true" tabindex="0"><i class="bi bi-sliders2" aria-hidden="true"></i> Widget</button>
+<button type="button" id="nexus-tab-library" role="tab" aria-controls="nexus-panel-library" aria-selected="false" tabindex="-1"><i class="bi bi-collection" aria-hidden="true"></i> Widget library</button>
+<button type="button" id="nexus-tab-background" role="tab" aria-controls="nexus-panel-background" aria-selected="false" tabindex="-1"><i class="bi bi-image" aria-hidden="true"></i> Background</button>
+<button type="button" id="nexus-tab-layout" role="tab" aria-controls="nexus-panel-layout" aria-selected="false" tabindex="-1"><i class="bi bi-file-earmark-code" aria-hidden="true"></i> Layout files</button>
+<button type="button" id="nexus-tab-applications" role="tab" aria-controls="nexus-panel-applications" aria-selected="false" tabindex="-1"><i class="bi bi-window-stack" aria-hidden="true"></i> Application screens</button></div><div class="nexus-editor-tabcontent">
 <div id="nexus-panel-widget" class="nexus-editor-tabpanel" role="tabpanel" aria-labelledby="nexus-tab-widget"><section id="nexus-add-panel" class="nexus-add-toolbar" aria-label="Add widgets">
   <strong class="nexus-add-toolbar-title">Add widget</strong>
   <div class="nexus-create-actions">
