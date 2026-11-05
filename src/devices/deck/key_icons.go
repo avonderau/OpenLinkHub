@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 	_ "image/jpeg"
 	"image/png"
-	"image/color"
 	"strings"
 
 	"golang.org/x/image/font"
@@ -24,10 +24,10 @@ import (
 )
 
 const (
-	MaxDeckIconBytes = 512 * 1024
+	MaxDeckIconBytes     = 512 * 1024
 	maxDeckIconDimension = 512
-	maxDeckIconFiles = 256
-	deckIconPixels = 128
+	maxDeckIconFiles     = 256
+	deckIconPixels       = 128
 )
 
 var deckIconID = regexp.MustCompile(`^[a-f0-9]{32}$`)
@@ -201,7 +201,7 @@ func drawDeckKeyCaption(img *image.RGBA, label string) image.Image {
 	}
 	band := image.Rect(0, size-22, size, size)
 	draw.DrawMask(img, band, image.NewUniform(color.Black), image.Point{},
-		image.NewUniform(color.Alpha{A:180}), image.Point{}, draw.Over)
+		image.NewUniform(color.Alpha{A: 180}), image.Point{}, draw.Over)
 	width := font.MeasureString(basicfont.Face7x13, string(text)).Ceil()
 	drawer := font.Drawer{
 		Dst: img, Src: image.NewUniform(color.White), Face: basicfont.Face7x13,
