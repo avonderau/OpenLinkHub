@@ -193,9 +193,11 @@ async function run() {
   assert.equal(grid.children[0].children[1].textContent, 'test', 'live preview should show typed labels');
   assert.match(nodes['deck-selected-summary'].textContent, /test/);
   const action = nodes['deck-key-action'];
-  action.value = 'page-next';
-  action.dispatch('change');
-  assert.equal(nodes['deck-action-indicator'].textContent, 'Assigned');
+  const deckControl = nodes['deck-key-control'];
+  deckControl.value = 'page-next';
+  deckControl.dispatch('change');
+  assert.equal(nodes['deck-control-indicator'].textContent, 'Assigned');
+  assert.equal(nodes['deck-action-indicator'].textContent, 'None');
   assert.equal(nodes['deck-target-property'].hidden, true, 'next-page action does not need a destination');
   assert.match(nodes['deck-message'].textContent, /Unsaved changes/);
   await nodes['deck-save'].dispatch('click');
