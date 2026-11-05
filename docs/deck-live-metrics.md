@@ -8,19 +8,23 @@ For any key:
 1. Select a **Live metric**, e.g. CPU temperature, GPU utilization, memory,
    fan RPM, network transfer or disk utilization.
 2. Choose the **Refresh** interval (2, 5, 10, 15, 30 or 60 seconds).
-3. Choose a **Visualization**: Value only, Line graph, Bar graph,
+3. For disk and network metrics, choose a **Source** to monitor a specific
+   mounted filesystem, block device, or network interface. **Automatic /
+   default** retains the previous behavior. Disconnected sources are displayed
+   as unavailable rather than silently switching to another disk.
+4. Choose a **Visualization**: Value only, Line graph, Bar graph,
    Fuel gauge, or Ring gauge. Line and bar graphs use up to 24 recent
    samples, with gaps for missing readings. Fuel and ring gauges use an
    absolute 0–100% range for utilization metrics, 0–100 C for temperatures,
    and a relative 120% of the recent maximum for other sensor readings.
    The numeric reading remains visible with each visualization.
-4. Use **Visualization color** to choose a custom accent (the graph line,
+5. Use **Visualization color** to choose a custom accent (the graph line,
    history bars, fuel segments, ring arc and ring unit). **Default** restores
    the original gold without writing a custom color to the saved layout.
    Value-only metrics also use the chosen accent for their numeric reading.
-5. Optionally upload artwork or set a custom display label. Existing
+6. Optionally upload artwork or set a custom display label. Existing
    button actions still run if assigned to a metric key.
-6. Save & Apply. The first sampling interval updates the LCD; the editor
+7. Save & Apply. The first sampling interval updates the LCD; the editor
    receives the current values through the existing Deck status API.
 
 Metrics not present on a host display `--` rather than invented readings.

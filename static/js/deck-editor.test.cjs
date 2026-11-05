@@ -42,7 +42,8 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
-    'deck-key-metric', 'deck-metric-interval', 'deck-metric-style',
+    'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
+    'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
     'deck-key-shortcut', 'deck-hotkey-property',
@@ -67,6 +68,16 @@ async function run() {
   };
   const fetch = async (url, options = {}) => {
     const type = url.split('?')[0];
+    if (type === '/api/telemetry/sources') {
+      return { ok: true, status: 200, json: async () => ({
+        sources: {
+          'disk.utilization': [{ id: 'mount:/', label: '/' }, { id: 'mount:/home', label: '/home' }],
+          'disk.free_gb': [{ id: 'mount:/', label: '/' }],
+          'network.rx_rate': [{ id: 'net:eth0', label: 'eth0' }],
+          'disk.read_rate': [{ id: 'disk:sda', label: '/dev/sda' }],
+        },
+      }) };
+    }
     if (type === '/api/macro/') {
       return { ok: true, status: 200, json: async () => ({
         status: 1,
@@ -337,4 +348,13 @@ async function run() {
 run().catch(error => {
   console.error(error);
   process.exitCode = 1;
+});
+
+test('Deck source selector uses available mountpoints and preserves each selected device',async()=>{
+ const source = fs.readFileSync(path.join(__dirname,'deck-editor.js'),'utf8');
+ assert.match(source,/\/api\/telemetry\/sources/);
+ const html = fs.readFileSync(path.join(__dirname,'..','..','web','deck.html'),'utf8');
+ assert.match(html,/id="deck-metric-source"/);
+ assert.match(source,/metricSource:\s*''/,'changing metric must reset previous source');
+ assert.match(source,/metricLive\[key\.metricSource\s*\?/,'live preview must use source-qualified key');
 });
