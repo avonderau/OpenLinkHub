@@ -11,6 +11,7 @@ import (
  "strings"
  "time"
 
+ "OpenLinkHub/src/config"
  "OpenLinkHub/src/logger"
 )
 
@@ -77,7 +78,12 @@ var launchSlot=make(chan struct{},1)
 // agent instead. No commands are launched as root.
 func dispatchNexusLaunchAction(action,target string)error{
  if err:=validateNexusLaunchAction(action,target);err!=nil{return err}
- if launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"))==nil{
+ // A background service may inherit DISPLAY from a shell but still has
+ // no right to use the logged-in user's graphical session. In that case,
+ // deliver directly to the opt-in user agent instead of trying xdg-open
+ // as the service account and silently failing.
+ if !config.IsSystemService() &&
+  launchPermissionCheck(os.Geteuid(),os.Getenv("DISPLAY"),os.Getenv("WAYLAND_DISPLAY"))==nil{
   if err:=runNexusLaunchAction(action,target);err==nil{return nil}
  }
  return forwardNexusDesktopLaunch(action,target)
