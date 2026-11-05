@@ -542,16 +542,18 @@ function renderTouchProperties(w,panel){
    const refreshBrowserTestLink=()=>{
     if(!browserTestLink)return;
     const raw=w.target||'';
-    let valid=false;
+    let safeHref=null;
     try {
      const parsed=typeof URL==='function'?new URL(raw):null;
-     valid=Boolean(parsed&&raw.length>=10&&raw.length<=256&&
+     if(parsed&&raw.length>=10&&raw.length<=256&&
       !/[\s\x00-\x1f\x7f]/.test(raw)&&
       ['http:','https:'].includes(parsed.protocol)&&
-      parsed.hostname&&!parsed.username&&!parsed.password);
+      parsed.hostname&&!parsed.username&&!parsed.password){
+      safeHref=parsed.href;
+     }
     }catch(_){}
-    browserTestLink.hidden=!valid;
-    if(valid)browserTestLink.href=raw;
+    browserTestLink.hidden=safeHref===null;
+    if(safeHref!==null)browserTestLink.href=safeHref;
     else browserTestLink.removeAttribute?.('href');
    };
    input.addEventListener('change',()=>{

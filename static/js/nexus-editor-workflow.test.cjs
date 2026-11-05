@@ -136,7 +136,7 @@ test('Nexus uses existing saved macros and does not expose the old macro builder
  };
  const action=find(node('properties'),el=>el.options?.some(option=>option.label==='Run saved macro'));
  assert.ok(action,'macro must be a button action');
-  assert.equal(action.options.some(option=>option.label==='Keyboard shortcut'),true,'standalone shortcut remains available in Nexus');
+ assert.equal(action.options.some(option=>option.label==='Keyboard shortcut'),true,'standalone shortcut remains available in Nexus');
  action.value='macro';
  (action.listeners.change||action.onchange)();
  assert.equal(widget.type,'button');
@@ -609,6 +609,13 @@ test('Open URL shows a safe browser test link but does not execute via preview',
  input.listeners.change();
  assert.equal(link.hidden,true,'unsafe schemes cannot be opened in browser');
  assert.equal(screen.widgets[0].target,'javascript:alert(1)');
+ input.value='https://user:password@example.com/';
+ input.listeners.change();
+ assert.equal(link.hidden,true,'embedded credentials cannot become a clickable URL');
+ input.value='HTTPS://EXAMPLE.COM:443/new';
+ input.listeners.change();
+ assert.equal(link.hidden,false);
+ assert.equal(link.href,'https://example.com/new','link uses the canonical validated URL, not raw input');
  input.value='https://example.com/new';
  input.listeners.change();
  assert.equal(link.hidden,false);

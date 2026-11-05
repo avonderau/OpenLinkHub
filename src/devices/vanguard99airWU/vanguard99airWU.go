@@ -2764,10 +2764,11 @@ func (d *Device) writeColorBuffer(data []byte) {
 	// Control dial
 	copy(data[417:429], d.getControlDialColor())
 
-	buffer := make([]byte, len(dataTypeSetColor)+len(data)+headerWriteSize)
-	binary.LittleEndian.PutUint16(buffer[0:2], uint16(len(data)))
-	copy(buffer[headerWriteSize:headerWriteSize+len(dataTypeSetColor)], dataTypeSetColor)
-	copy(buffer[headerWriteSize+len(dataTypeSetColor):], data)
+	buffer, err := buildVanguardWritePacket(dataTypeSetColor, data, false)
+	if err != nil {
+		logger.Log(logger.Fields{"error": err}).Error("Invalid color packet length")
+		return
+	}
 
 	chunks := common.ProcessMultiChunkPacket(buffer, maxBufferSizePerRequest)
 	for i, chunk := range chunks {
@@ -2828,10 +2829,11 @@ func (d *Device) writeColorCluster(data []byte, _ int) {
 	// Control dial
 	copy(buf[417:429], d.getControlDialColor())
 
-	buffer := make([]byte, len(dataTypeSetColor)+len(buf)+headerWriteSize)
-	binary.LittleEndian.PutUint16(buffer[0:2], uint16(len(buf)))
-	copy(buffer[headerWriteSize:headerWriteSize+len(dataTypeSetColor)], dataTypeSetColor)
-	copy(buffer[headerWriteSize+len(dataTypeSetColor):], buf)
+	buffer, err := buildVanguardWritePacket(dataTypeSetColor, buf, false)
+	if err != nil {
+		logger.Log(logger.Fields{"error": err}).Error("Invalid color packet length")
+		return
+	}
 
 	chunks := common.ProcessMultiChunkPacket(buffer, maxBufferSizePerRequest)
 	for i, chunk := range chunks {
@@ -3397,13 +3399,34 @@ func (d *Device) triggerKeyAssignment(value []byte, functionKey bool, modifierKe
 	}
 }
 
+// buildVanguardWritePacket bounds allocations to the 16-bit device packet
+// protocol and encodes the header length without truncation.
+func buildVanguardWritePacket(prefix, data []byte, countPrefix bool) ([]byte, error) {
+	const maxPacketPayload = int(^uint16(0))
+	if len(prefix) > maxPacketPayload || len(data) > maxPacketPayload-len(prefix) {
+		return nil, fmt.Errorf("packet payload exceeds %d bytes", maxPacketPayload)
+	}
+	payloadSize := len(prefix) + len(data)
+	encodedSize := len(data)
+	if countPrefix {
+		encodedSize = payloadSize
+	}
+	buffer := make([]byte, headerWriteSize+payloadSize)
+	binary.LittleEndian.PutUint16(buffer[0:2], uint16(encodedSize))
+	copy(buffer[headerWriteSize:], prefix)
+	copy(buffer[headerWriteSize+len(prefix):], data)
+	return buffer, nil
+}
+
 // writeKeyAssignment will write Key Assignment data
 func (d *Device) writeKeyAssignment(data []byte) {
-	buffer := make([]byte, len(data)+headerWriteSize)
-	binary.LittleEndian.PutUint16(buffer[0:2], uint16(len(data)))
-	copy(buffer[headerWriteSize:], data)
+	buffer, err := buildVanguardWritePacket(nil, data, false)
+	if err != nil {
+		logger.Log(logger.Fields{"error": err}).Error("Invalid key assignment packet length")
+		return
+	}
 
-	_, err := d.transfer(cmdOpenEndpoint, nil)
+	_, err = d.transfer(cmdOpenEndpoint, nil)
 	if err != nil {
 		logger.Log(logger.Fields{"error": err}).Error("Unable to open write endpoint")
 		return
@@ -3421,14 +3444,15 @@ func (d *Device) writeKeyAssignment(data []byte) {
 	}
 }
 
-// writeKeyAssignment will write Key Assignment data
+// writeKeyActuation will write key actuation data.
 func (d *Device) writeKeyActuation(endpoint, data []byte) {
-	buffer := make([]byte, len(dataTypeKeyActuation)+len(data)+headerWriteSize)
-	binary.LittleEndian.PutUint16(buffer[0:2], uint16(len(data)+2))
-	copy(buffer[headerWriteSize:headerWriteSize+len(dataTypeKeyActuation)], dataTypeKeyActuation)
-	copy(buffer[headerWriteSize+len(dataTypeKeyActuation):], data)
+	buffer, err := buildVanguardWritePacket(dataTypeKeyActuation, data, true)
+	if err != nil {
+		logger.Log(logger.Fields{"error": err}).Error("Invalid key actuation packet length")
+		return
+	}
 
-	_, err := d.transfer(endpoint, nil)
+	_, err = d.transfer(endpoint, nil)
 	if err != nil {
 		logger.Log(logger.Fields{"error": err}).Error("Unable to open write endpoint")
 		return
