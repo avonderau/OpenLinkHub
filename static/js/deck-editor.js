@@ -130,7 +130,7 @@
   const mediaKeyLabels = Object.freeze({
     'play-pause': 'Play/Pause',
     'previous-track': 'Previous',
-    'next-track': 'Next',
+    'next-track': 'Next Track',
     stop: 'Stop',
     'volume-up': 'Volume +',
     'volume-down': 'Volume -',

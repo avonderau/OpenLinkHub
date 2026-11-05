@@ -2,6 +2,9 @@ package nexus
 
 import (
  "bytes"
+ "encoding/xml"
+ "os"
+ "path/filepath"
  "image"
  "image/color"
  "testing"
@@ -97,5 +100,48 @@ func TestNexusMediaCaptionDefaultsAndCustomOverride(t *testing.T){
   same,err:=RenderScreen(expected,nil)
   if err!=nil {t.Fatal(err)}
   if !bytes.Equal(frame.Pix,same.Pix) {t.Fatalf("custom/default caption failed for %q",label)}
+ }
+}
+
+func TestMediaPreviewMasksMatchDeviceGlyphPixels(t *testing.T) {
+ type svgRect struct {
+  X int `xml:"x,attr"`
+  Y int `xml:"y,attr"`
+  Width int `xml:"width,attr"`
+  Height int `xml:"height,attr"`
+ }
+ type svgArtwork struct{
+  Rects []svgRect `xml:"g>rect"`
+ }
+ // SVG mask assets are checked against the actual built-in LCD glyph pixels.
+ // This protects both the Nexus and Deck editor previews against icon drift.
+ for _,command:=range []string{
+  "play-pause","previous-track","next-track","stop",
+  "volume-up","volume-down","volume-mute","next","previous",
+ }{
+  t.Run(command,func(t *testing.T){
+   bytes,err:=os.ReadFile(filepath.Join("..","..","..","static","media-glyphs",command+".svg"))
+   if err!=nil{t.Fatal(err)}
+   var artwork svgArtwork
+   if err=xml.Unmarshal(bytes,&artwork);err!=nil{t.Fatal(err)}
+   if len(artwork.Rects)==0{t.Fatal("preview asset contains no pixel rectangles")}
+   mask:=make([]bool,48*48)
+   for _,rect:=range artwork.Rects {
+    if rect.Width<=0||rect.Height<=0||rect.X<0||rect.Y<0||rect.X+rect.Width>48||rect.Y+rect.Height>48{
+     t.Fatalf("invalid rectangle %+v",rect)
+    }
+    for y:=rect.Y;y<rect.Y+rect.Height;y++ {
+     for x:=rect.X;x<rect.X+rect.Width;x++ {mask[y*48+x]=true}
+    }
+   }
+   frame:=image.NewRGBA(image.Rect(0,0,48,48))
+   drawMediaIcon(frame,frame.Bounds(),command,color.RGBA{255,255,255,255})
+   for y:=0;y<48;y++ {
+    for x:=0;x<48;x++ {
+     actual:=frame.RGBAAt(x,y).A!=0
+     if actual!=mask[y*48+x] {t.Fatalf("%s preview/LCD pixel mismatch at (%d,%d)",command,x,y)}
+    }
+   }
+  })
  }
 }
