@@ -30,7 +30,7 @@ func testDevice(t *testing.T)*Device{
  m,ok:=LookupModel(0x5548,0x6670)
  if !ok{t.Fatal("missing HSV293S model")}
  return &Device{
-  Serial:"deck-5548-6670-test",Product:m.Name,Model:m,
+  Serial:deviceID(&hid.DeviceInfo{VendorID:m.VendorID,ProductID:m.ProductID},m),Product:m.Name,Model:m,
   root:t.TempDir(),layout:DefaultLayout(m),done:make(chan struct{}),
   pressedKey:-1,
  }
