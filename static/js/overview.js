@@ -4194,13 +4194,11 @@ $(document).ready(function () {
 
     function generateLedDataPerDevice(ledAmount, subDevice, device, data) {
         const wrapperDiv = document.createElement('div');
-        let result = [];
 
         let frontOuter = [];
         let frontInner = [];
         let backOuter = [];
         let backInner = [];
-        let containerHtml = '';
 
         switch (device) {
             case "lsh": {
