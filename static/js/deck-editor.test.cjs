@@ -27,6 +27,7 @@ class FakeElement {
   setAttribute(name, value) { this.attrs[name] = String(value); }
   getAttribute(name) { return this.attrs[name]; }
   append(...elements) { this.children.push(...elements); }
+  appendChild(element) { this.children.push(element); }
   replaceChildren(...elements) { this.children = elements; }
   focus() { this.focused = true; }
   get selectedOptions() {
