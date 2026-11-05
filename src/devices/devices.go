@@ -20,6 +20,7 @@ import (
 	"OpenLinkHub/src/devices/darkcorergbseWU"
 	"OpenLinkHub/src/devices/darkcorergbsesongle"
 	"OpenLinkHub/src/devices/darkstarWU"
+	"OpenLinkHub/src/devices/deck"
 	"OpenLinkHub/src/devices/elite"
 	"OpenLinkHub/src/devices/galleon100sd"
 	"OpenLinkHub/src/devices/glaivergb"
@@ -739,6 +740,10 @@ func Init() {
 		initializeDevice(productId, key, productPath)
 	}
 
+	// Fork-owned Deck discovery is vendor+product keyed and remains separate
+	// from the upstream Corsair PID-only registration table.
+	initializeDeckDevices()
+
 	if config.GetConfig().EnableOpenRGBTargetServer {
 		initWG.Wait()
 		openrgb.Init()
@@ -747,6 +752,34 @@ func Init() {
 
 	inputmanager.SetDispatcher(Dispatch)
 	appmonitor.SetDispatcher(Dispatch)
+}
+
+// initializeDeckDevices detects the first supported Stream Deck and Mirabox
+// models without modifying the upstream-owned Corsair registry. Elgato devices
+// are discovery-only until their native output driver lands.
+func initializeDeckDevices() {
+	seen := make(map[string]bool)
+	for _, vendor := range deck.SupportedVendors() {
+		err := hid.Enumerate(vendor, hid.ProductIDAny, hid.EnumFunc(func(info *hid.DeviceInfo) error {
+			model, supported := deck.LookupModel(info.VendorID, info.ProductID)
+			if !supported || info.Path == "" { return nil }
+			// Mirabox's command interface is the HID usage page required by
+			// the supported OpenDeck AKP153 driver. Do not claim other interfaces.
+			if model.Family == "mirabox" && (info.UsagePage != 65440 || info.Usage != 1) { return nil }
+			identity := strconv.Itoa(int(info.VendorID)) + ":" + strconv.Itoa(int(info.ProductID)) + ":" + info.SerialNbr
+			if seen[identity] { return nil }
+			// A successful open is required for Mirabox registration. An Elgato
+			// model is registered as discovery-only and never opens a HID handle.
+			if device := deck.Init(info); device != nil {
+				seen[identity] = true
+				addDevice(device)
+			}
+			return nil
+		}))
+		if err != nil {
+			logger.Log(logger.Fields{"vendorId": vendor, "error": err}).Warn("Unable to enumerate Deck devices")
+		}
+	}
 }
 
 // deviceRegisterMap hold map of supported devices and their initialization call
