@@ -2,6 +2,7 @@ package nexus
 
 import (
  "math"
+ "strings"
  "time"
 )
 
@@ -17,7 +18,11 @@ func prepareNexusTelemetryPreview(snapshot MetricSnapshot,history MetricHistory,
  result:=NexusTelemetryPreview{Metrics:map[string]float64{},History:map[string][]*float64{}}
  if sampledAt.IsZero()||now.Before(sampledAt)||now.Sub(sampledAt)>10*time.Second{return result}
  result.SampledAt=sampledAt.Unix()
- for name:=range supportedMetrics{
+ names:=map[string]bool{}
+ for name:=range supportedMetrics {names[name]=true}
+ for name:=range snapshot {if strings.Contains(name,"|"){names[name]=true}}
+ for name:=range history {if strings.Contains(name,"|"){names[name]=true}}
+ for name:=range names{
   if v,ok:=snapshot[name];ok&&!math.IsNaN(v)&&!math.IsInf(v,0){result.Metrics[name]=v}
   points,ok:=history[name]
   if !ok{continue}

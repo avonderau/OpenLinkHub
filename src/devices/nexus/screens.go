@@ -85,6 +85,11 @@ func (c ScreenConfiguration) Validate() error {
    widgets[w.ID]=true
    if !supportedWidgets[w.Type] {return fmt.Errorf("unsupported widget type: %q",w.Type)}
    if (w.Type=="metric"||w.Type=="bar"||w.Type=="graph")&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
+   if source:=w.Settings["metricSource"];source!="" {
+    if (w.Type!="metric"&&w.Type!="bar"&&w.Type!="graph")||!ValidMetricSource(w.Metric,source){
+     return fmt.Errorf("invalid source for metric %q",w.Metric)
+    }
+   }
    if w.X<0||w.Y<0||w.Width<=0||w.Height<=0||w.X>ScreenWidth-w.Width||w.Y>ScreenHeight-w.Height {return fmt.Errorf("widget %q outside display",w.ID)}
    if w.Type=="button" {
     if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" && w.Action!="macro" && w.Action!="hotkey" && w.Action!="mouse" && w.Action!="url" && w.Action!="application" && w.Action!="device" && w.Action!="text" {return fmt.Errorf("invalid button action for %q",w.ID)}
