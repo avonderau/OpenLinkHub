@@ -1,0 +1,407 @@
+/* OpenLinkHub Nexus | Unified touchscreen / Deck Editor visual system
+ * Fork-only presentation layer. Original editor JS, IDs, device API, and
+ * layout documents remain unchanged to preserve upstream compatibility.
+ * Keep this stylesheet after nexus-editor.css and compact-inspector.css.
+ */
+.main-content:has(.nexus-editor-intro){
+  min-width:0;
+}
+.main-content .nexus-editor-intro{
+  max-width:1550px;
+  margin-inline:auto;
+  flex-wrap:wrap;
+}
+.nexus-editor-intro .olh-page-copy{
+  flex:1 1 250px;
+}
+.nexus-editor-intro .olh-page-copy>small{
+  margin-top:2px;
+  color:var(--olh-muted,#a3a5ae);
+  font-size:.8rem;
+}
+.nexus-editor-intro-device{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  max-width:100%;
+  margin-left:auto;
+  padding:8px 11px;
+  border:1px solid rgba(213,166,90,.27);
+  border-radius:9px;
+  background:rgba(0,0,0,.19);
+  color:var(--olh-ink,#e8e9ec);
+  font-size:.77rem;
+  overflow-wrap:anywhere;
+}
+.nexus-editor-intro-device .bi{color:var(--olh-icon-ink,#f0c581)}
+/* Stop the legacy two-column editor from occupying only ~1000px total. */
+.main-content .nexus-workspace{
+  display:grid;
+  grid-template-columns:minmax(240px,285px) minmax(0,1fr);
+  align-items:start;
+  gap:17px;
+  width:100%;
+  max-width:1550px;
+  min-width:0;
+  margin-inline:auto;
+}
+.nexus-workspace .nexus-device-column,
+.nexus-workspace .nexus-editor-column{
+  width:100%;
+  max-width:none;
+  min-width:0;
+}
+.nexus-workspace .nexus-device-column>.card,
+.nexus-workspace #nexus-editor{
+  border:1px solid var(--olh-line-strong,rgba(225,225,235,.2));
+  border-radius:var(--olh-panel-radius,11px);
+  background:var(--olh-panel-gradient,linear-gradient(150deg,#242527,#202123));
+  box-shadow:var(--olh-panel-shadow,0 10px 24px rgba(0,0,0,.19));
+  overflow:hidden;
+  margin:0!important;
+}
+.nexus-workspace .nexus-device-column .card-header.olh-section-header,
+.nexus-workspace #nexus-editor>.card-header.olh-section-header{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-height:63px;
+  padding:11px 14px;
+  border-bottom:1px solid var(--olh-header-line,rgba(220,175,101,.35));
+  background:var(--olh-header-gradient,linear-gradient(110deg,#403729,#302c27,#222325));
+  color:#f3f0e9;
+  font-size:.88rem;
+  text-align:left;
+}
+.nexus-workspace .olh-section-icon{
+  flex:0 0 37px;
+  display:grid;
+  place-items:center;
+  width:37px;
+  height:37px;
+  border:1px solid var(--olh-icon-stroke,#947143);
+  border-radius:9px;
+  background:var(--olh-icon-bg,#59472f);
+  color:var(--olh-icon-ink,#f0c581);
+  font-size:17px;
+}
+.nexus-toolbar-heading{
+  display:flex;
+  flex-direction:column;
+  flex:1 1 140px;
+  gap:3px;
+  min-width:0;
+}
+.nexus-toolbar-heading strong{
+  color:#f3f0e9;
+  font-size:.89rem;
+  font-weight:700;
+}
+.nexus-toolbar-heading small{
+  color:#c3b6a2;
+  font-size:.73rem;
+  line-height:1.35;
+}
+.nexus-workspace #nexus-editor>.card-body{
+  padding:15px;
+  background:transparent;
+  min-width:0;
+}
+.nexus-workspace .nexus-device-column .card-body{
+  padding:14px 13px;
+  text-align:left;
+  background:transparent;
+}
+.nexus-workspace .nexus-device-column .settings-row:not(:last-child){
+  border-bottom:1px solid var(--olh-line,rgba(220,225,232,.10));
+}
+.nexus-workspace .nexus-device-column .nexus-cycle-settings{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding-top:10px;
+}
+.nexus-workspace .nexus-cycle-settings .settings-label{
+  margin:5px 0 0;
+  font-size:.74rem;
+  letter-spacing:.035em;
+  text-transform:none;
+  color:var(--olh-ink,#e8e9ec);
+  font-weight:650;
+}
+.nexus-workspace .nexus-cycle-settings .nexus-cycle-note{
+  margin:0 0 2px;
+  color:var(--olh-muted,#a3a5ae);
+  text-transform:none;
+  letter-spacing:0;
+  font-size:.74rem;
+  line-height:1.5;
+}
+.nexus-workspace .nexus-cycle-settings .form-select{
+  width:100%;
+  max-width:100%;
+  min-height:39px;
+  background:var(--olh-control,#1b1d20);
+  color:var(--olh-ink,#e8e9ec);
+  border:1px solid var(--olh-line-strong,rgba(220,225,232,.2));
+  border-radius:8px;
+  font-size:.8rem;
+  padding:8px 10px;
+}
+.nexus-workspace .nexus-device-column #save{
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  gap:9px;
+  min-height:41px;
+  margin-top:13px;
+  padding:10px 14px;
+  border:1px solid #b88740;
+  border-radius:9px;
+  background:linear-gradient(180deg,#e3b96f,#c9964b);
+  color:#1b1712;
+  -webkit-text-fill-color:#1b1712;
+  font-size:.84rem;
+  font-weight:750;
+  line-height:1.25;
+  text-transform:none;
+  letter-spacing:0;
+}
+.nexus-workspace .nexus-device-column #save:hover:not(:disabled){
+  background:linear-gradient(180deg,#edc789,#d4a158);
+  border-color:#d5a65a;
+}
+.nexus-workspace #nexus-editor #message{
+  min-height:0;
+  margin:0 0 9px;
+  color:var(--olh-muted,#a3a5ae);
+  font-size:.78rem;
+  line-height:1.5;
+}
+.nexus-workspace #nexus-editor #message:empty{display:none}
+/* Screen actions behave like the Deck control bar: compact and responsive. */
+.nexus-workspace #nexus-editor .nexus-screen-actions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  row-gap:9px;
+  flex-wrap:wrap;
+  width:100%;
+  padding:11px 12px;
+  margin:0 0 14px;
+  border:1px solid var(--olh-line-strong,rgba(225,225,235,.16));
+  border-radius:10px;
+  background:linear-gradient(110deg,#292723,#1d1e20 52%,#222326);
+}
+.nexus-workspace #nexus-editor .nexus-screen-actions label{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin:0;
+  min-width:0;
+  max-width:100%;
+  color:var(--olh-muted,#a3a5ae);
+  font-size:.75rem;
+  font-weight:650;
+}
+.nexus-workspace #nexus-editor .nexus-screen-actions select{
+  width:auto;
+  min-width:130px;
+  max-width:min(220px,100%);
+  min-height:35px;
+  margin:0;
+  padding:6px 9px;
+  color:var(--olh-ink,#e8e9ec);
+  -webkit-text-fill-color:var(--olh-ink,#e8e9ec);
+  background:#191a1c;
+  border-color:#4b4945;
+  border-radius:7px;
+  font-size:.78rem;
+}
+.nexus-workspace #nexus-editor .nexus-screen-actions button{
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  gap:7px;
+  min-height:35px;
+  margin:0;
+  padding:8px 10px;
+  border:1px solid rgba(225,225,235,.2);
+  border-radius:8px;
+  background:linear-gradient(180deg,#303135,#252629);
+  color:#e8e9ec;
+  -webkit-text-fill-color:#e8e9ec;
+  font-size:.76rem;
+  font-weight:600;
+  white-space:normal;
+}
+.nexus-workspace #nexus-editor .nexus-screen-actions button .bi{
+  color:var(--olh-icon-ink,#f0c581);
+  font-size:.84rem;
+}
+.nexus-workspace #nexus-editor .nexus-screen-actions button:hover:not(:disabled){
+  border-color:rgba(213,166,90,.6);
+  background:linear-gradient(180deg,#38342d,#292827);
+}
+.nexus-workspace #nexus-editor #addScreen{
+  background:linear-gradient(180deg,#6b5231,#4a3a29);
+  border-color:#9c7543;
+  color:#ffe3b6;
+  -webkit-text-fill-color:#ffe3b6;
+}
+.nexus-workspace #nexus-editor #deleteScreen:not(:disabled){
+  color:#e6aaaa;
+  -webkit-text-fill-color:#e6aaaa;
+  border-color:rgba(202,119,119,.44);
+}
+.nexus-workspace #nexus-editor .nexus-screen-actions button:disabled{
+  opacity:.44;
+  cursor:not-allowed;
+}
+/* Physical Nexus aspect ratio is preserved; this is a decorative bezel only. */
+.nexus-workspace .nexus-preview-stage{
+  min-width:0;
+  padding:11px 13px 9px;
+  border:1px solid rgba(213,166,90,.23);
+  border-radius:14px;
+  background:linear-gradient(145deg,#101113,#202123 58%,#131416);
+  box-shadow:inset 0 1px rgba(255,255,255,.055),0 13px 28px rgba(0,0,0,.17);
+}
+.nexus-workspace .nexus-preview-chrome{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  padding:0 3px 9px;
+  color:#b8aaa0;
+  font-size:.69rem;
+  letter-spacing:.015em;
+}
+.nexus-workspace .nexus-preview-light{
+  width:7px;height:7px;
+  flex:none;border-radius:50%;
+  background:#d5a65a;
+  box-shadow:0 0 0 3px rgba(213,166,90,.12);
+}
+.nexus-workspace .nexus-preview-scale{
+  margin-left:auto;
+  color:var(--olh-muted,#a3a5ae);
+  font-variant-numeric:tabular-nums;
+}
+.nexus-workspace #nexus-editor #preview{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:105px;
+  margin:0;
+  padding:17px 11px;
+  border:1px solid rgba(225,225,235,.10);
+  border-radius:9px;
+  background:radial-gradient(ellipse at 50% 50%,rgba(213,166,90,.075),transparent 69%),#151618;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.nexus-workspace #nexus-editor #preview #screen{
+  flex:none;
+  margin-inline:auto;
+  /* Keep exact device geometry and existing editor render/background classes. */
+  box-shadow:0 0 0 5px #0b0c0f,0 8px 20px rgba(0,0,0,.5);
+}
+.nexus-workspace #nexus-editor #nexus-keyboard-hint{
+  margin:12px 3px 2px;
+  color:var(--olh-muted,#a3a5ae);
+  font-size:.72rem;
+  line-height:1.5;
+}
+.nexus-workspace #nexus-editor #nexus-keyboard-hint>.bi{
+  margin-right:5px;
+  color:var(--olh-icon-ink,#f0c581);
+}
+.nexus-workspace #nexus-editor .nexus-editor-tabs{
+  margin-top:17px;
+}
+.nexus-workspace #nexus-editor .nexus-editor-tablist{
+  display:flex;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:3px;
+  padding:0 6px;
+  border-bottom:1px solid var(--olh-line-strong,rgba(225,225,235,.22));
+}
+.nexus-workspace #nexus-editor .nexus-editor-tablist [role=tab]{
+  display:inline-flex;
+  justify-content:center;
+  align-items:center;
+  gap:7px;
+  margin:0;
+  padding:10px 13px;
+  border:1px solid var(--olh-line-strong,rgba(225,225,235,.2));
+  border-bottom-color:var(--olh-line-strong,rgba(225,225,235,.2));
+  border-radius:9px 9px 0 0;
+  background:#252628;
+  color:var(--olh-muted,#a3a5ae);
+  -webkit-text-fill-color:var(--olh-muted,#a3a5ae);
+  font-size:.79rem;
+  font-weight:600;
+  white-space:normal;
+  text-align:center;
+}
+.nexus-workspace #nexus-editor .nexus-editor-tablist [role=tab]>.bi{
+  flex:none;
+  color:#c4a77b;
+  font-size:.85rem;
+}
+.nexus-workspace #nexus-editor .nexus-editor-tablist [role=tab][aria-selected=true]{
+  background:#1c1d1f;
+  color:#f0c581;
+  -webkit-text-fill-color:#f0c581;
+  border-top:2px solid var(--olh-accent,#d5a65a);
+  border-bottom-color:#1c1d1f;
+}
+.nexus-workspace #nexus-editor .nexus-editor-tabcontent{
+  padding:13px;
+  border:1px solid var(--olh-line-strong,rgba(225,225,235,.2));
+  border-top:0;
+  border-radius:0 0 11px 11px;
+  background:#1c1d1f;
+}
+/* Match the card-within-panel look of the Deck inspector, not the old blue UI. */
+.nexus-workspace #nexus-editor .nexus-editor-tabpanel .nexus-tool-card{
+  border-color:rgba(225,225,235,.18);
+  background:#1c1d1f;
+}
+.nexus-workspace #nexus-editor :is(button,input,select):focus-visible,
+.nexus-workspace .nexus-device-column :is(button,input,select):focus-visible{
+  outline:2px solid rgba(213,166,90,.83);
+  outline-offset:2px;
+}
+@media(max-width:1130px){
+  .main-content .nexus-workspace{grid-template-columns:minmax(0,1fr)}
+  .nexus-workspace .nexus-device-column{max-width:none}
+  .nexus-workspace .nexus-device-column .nexus-cycle-settings{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:end;
+  }
+  .nexus-workspace .nexus-cycle-settings #save{grid-column:1/-1}
+}
+@media(max-width:700px){
+  .nexus-workspace #nexus-editor .nexus-screen-actions label{flex:1 1 180px}
+  .nexus-workspace #nexus-editor .nexus-screen-actions select{width:100%;min-width:0}
+  .nexus-workspace #nexus-editor .nexus-editor-tablist [role=tab]{
+    flex:1 1 125px;
+    padding:9px 10px;
+  }
+  .nexus-workspace #nexus-editor>.card-body{padding:11px}
+  .nexus-workspace .nexus-preview-stage{padding:10px 9px 8px}
+  .nexus-workspace #nexus-editor #preview{justify-content:flex-start}
+}
+@media(max-width:480px){
+  .nexus-workspace .nexus-device-column .nexus-cycle-settings{grid-template-columns:minmax(0,1fr)}
+  .nexus-workspace #nexus-editor .nexus-editor-tabcontent{padding:9px}
+  .nexus-workspace #nexus-editor .nexus-screen-actions button{flex:1 1 auto}
+  .nexus-editor-intro-device{margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .nexus-workspace #nexus-editor button{transition:none}
+}
