@@ -5,7 +5,6 @@ import (
  "errors"
  "fmt"
  "strconv"
- "time"
 
  "OpenLinkHub/src/macro"
 )
@@ -36,6 +35,3 @@ func RunDeckSavedMacro(ctx context.Context,id string)error{
  return nil
 }
 
-// DeckMacroMaxDuration documents the pre-existing execution ceiling for
-// button macros without exporting internal macro scheduler constants.
-func DeckMacroMaxDuration()time.Duration{return nexusSharedMacroMaxDuration}
