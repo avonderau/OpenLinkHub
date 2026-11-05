@@ -304,58 +304,87 @@
   cursor:pointer;
 }
 
-/* Live LCD metric configuration shares the artwork inspector's controls. */
+/* Narrow Deck inspector: each metric setting is a full-width field.
+ * Native select min-widths and global label rules must not force mixed rows.
+ */
 .deck-workspace .deck-metric-options{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
-  column-gap:10px;
-  align-items:end;
+  grid-template-columns:minmax(0,1fr);
+  gap:12px;
+  width:100%;
+  min-width:0;
 }
 .deck-workspace .deck-metric-option{
   display:grid;
-  gap:5px;
+  grid-template-columns:minmax(0,1fr);
+  gap:6px;
+  width:100%;
   min-width:0;
 }
+.deck-workspace .deck-metric-option[hidden]{display:none!important}
 .deck-workspace .deck-metric-option label{
-  font-size:.75rem;
+  display:block;
+  width:100%;
+  margin:0;
+  font-size:.78rem;
+  font-weight:650;
   color:var(--deck-muted);
 }
 .deck-workspace .deck-property .deck-metric-option select{
-  box-sizing:border-box;
   display:block;
+  box-sizing:border-box;
   min-width:0;
-  max-width:none;
+  max-width:100%;
   width:100%;
-  padding:7px 23px 7px 9px;
-  font-size:.78rem;
-  height:37px;
+  height:42px;
+  margin:0;
+  padding:9px 34px 9px 12px;
+  font-size:.83rem;
+  color:var(--deck-ink);
+  background-color:var(--olh-control,#1b1d20);
+  border:1px solid var(--deck-border);
+  border-radius:9px;
 }
-/* Compact native color picker beneath the two side-by-side metric selects. */
 .deck-workspace .deck-metric-color-row{
-  display:flex;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 44px auto;
   align-items:center;
-  flex-wrap:wrap;
-  column-gap:10px;
-  row-gap:7px;
+  gap:10px;
+  min-width:0;
+  padding-top:4px;
 }
 .deck-workspace .deck-metric-color-row label{
-  margin-right:auto;
-  font-size:.75rem;
+  margin:0;
+  min-width:0;
+  font-size:.78rem;
+  font-weight:650;
   color:var(--deck-muted);
 }
 .deck-workspace .deck-property #deck-metric-color{
-  flex:0 0 40px;
-  width:40px;
-  min-width:40px;
-  height:33px;
+  width:44px;
+  min-width:44px;
+  height:38px;
   padding:3px;
-  border-radius:7px;
+  border-radius:8px;
   cursor:pointer;
 }
 .deck-workspace .deck-metric-color-row button{
-  padding:7px 9px;
-  font-size:.76rem;
-  border-radius:7px;
+  white-space:nowrap;
+  margin:0;
+  padding:8px 10px;
+  font-size:.77rem;
+  border-radius:8px;
+}
+.deck-workspace #deck-metric-status{
+  display:block;
+  min-width:0;
+  font-size:.74rem;
+  line-height:1.45;
+  color:var(--deck-muted);
+}
+@media(max-width:390px){
+  .deck-workspace .deck-metric-color-row{grid-template-columns:minmax(0,1fr) 44px}
+  .deck-workspace .deck-metric-color-row button{grid-column:2}
 }
 .deck-workspace .deck-key[data-has-metric="true"]{
   gap:3px;
