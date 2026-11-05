@@ -1,9 +1,9 @@
-# Native Deck button actions — first increment
+# Native Deck button actions
 
 OpenLinkHub Nexus provides its own action picker on **Deck Editor → Key**.
-The first action types are intentionally limited to internal page navigation:
-`page-next`, `page-previous`, and `page-go` (with a valid `targetPage`
-ID). Empty action means a display-only label.
+Available action types are internal page navigation, validated keyboard shortcuts,
+media controls and saved OpenLinkHub macros. Empty action means a display-only
+label.
 
 ## Configure a key
 
@@ -20,9 +20,9 @@ The active page is saved in the same per-device layout so that reconnecting
 the hardware restores the selected page. If LCD rendering fails after a key
 press, the key event still counts and the saved active page is retained.
 
-No desktop programs, commands, hotkeys, or plugins run in this increment.
-Future desktop actions must be delivered via the logged-in user session,
-not executed as the system service.
+Keyboard shortcuts and media controls use the existing Linux virtual keyboard;
+saved macros use the shared bounded macro engine. Standalone launch-app and
+open-website actions are not part of this Deck increment.
 
 ## Verification
 
@@ -32,25 +32,25 @@ not executed as the system service.
   physical LCD page updates and that reconnecting restores the selected page.
 - Verify an unsaved browser edit is not discarded by a hardware page change.
 
-## Keyboard shortcuts and media keys (PR #63)
+## Keyboard shortcuts, media controls and saved macros
 
-From **Deck Editor → Key → Button action**, choose either:
+**Keyboard shortcut** remains available for a validated combination such as
+`Ctrl+Alt+T` or `Super+D`. **Media control** provides Play/Pause, Previous/Next,
+Stop and Volume Up/Down/Mute. **Run saved macro** assigns a reusable macro from
+the existing OpenLinkHub Macros page. The macro picker includes a Refresh
+button and a link to Manage macros.
 
-- **Keyboard shortcut** and enter a bounded key chord such as `Ctrl+Alt+T`,
-  `Super+D` or `Ctrl+Shift+Esc`.
-- **Media control** and select Play/Pause, Previous/Next, Stop,
-  Volume Up/Down or Mute.
+Choose the action, configure its target, then click **Save & Apply**. Press
+the physical Mirabox key. Keyboard shortcuts and media controls use Nexus's
+existing validated Linux virtual keyboard backend; saved macros use the
+shared Nexus macro execution engine.
 
-Save & Apply, then press the *physical* Mirabox key. These actions use the
-existing Nexus Linux virtual keyboard via uinput. They affect the local active
-graphical desktop seat, not the browser session viewing OpenLinkHub remotely.
+All three action types can be assigned to different keys in one layout.
+Existing keyboard shortcut assignments remain supported.
 
-Only validated key names and media actions are accepted. The Deck API never
-runs shell commands or arbitrary executables. A non-graphical/headless host
-cannot forward those keys to a separate remote desktop through this feature.
-
-For the initial physical test, assign Play/Pause to a key, then a keyboard
-shortcut you know the local desktop handles. Confirm the existing Next Page,
-Previous Page and Go to Page actions still work. If no keys are emitted,
-check whether the OpenLinkHub virtual keyboard is initialized and visible
-with `libinput list-devices` or `sudo evtest`.
+For a combined regression check, assign a **Keyboard shortcut** to one key and
+**Run saved macro** to another, then Save & Apply. Verify both actions on the
+physical device and confirm their assignments persist after restarting the
+installed OpenLinkHub service. Use the service account so Corsair HID devices
+have the expected access permissions; a root-only test may behave differently
+from the production installation.

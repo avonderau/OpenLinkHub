@@ -148,3 +148,15 @@ screen configuration.
 PNG/JPEG backgrounds continue to work without conversion. Replacing an
 existing background ID removes obsolete image extensions to avoid an old
 GIF shadowing the replacement image.
+
+## Button actions: keyboard shortcuts and saved macros
+
+Both iCUE NEXUS and the Mirabox Deck support **Keyboard shortcut** and
+**Run saved macro** actions. Shortcut actions remain individually configurable
+and validated using the existing Nexus key-chord parser. Saved macros are
+selected from the shared OpenLinkHub Macros library, allowing reusable
+workflows on either device. Existing keyboard shortcut assignments are
+preserved; no conversion or migration is required.
+
+Deck's macro execution reuses the bounded Nexus macro runner. Page navigation,
+media controls, artwork and live metrics remain available.

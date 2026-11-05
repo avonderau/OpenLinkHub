@@ -48,6 +48,7 @@ type Device struct {
  pressedKey int
  eventCount uint64
  initialized bool
+ macroRunning bool
  metricValues map[string]float64
  metricHistory map[string][]float64
  metricUpdated map[string]time.Time

@@ -78,13 +78,17 @@ func (l Layout)Validate(m Model)error{
     if key.TargetPage!="" || key.Target!="" {return fmt.Errorf("key %d: unexpected action target for %q",key.Index,key.Action)}
    case "page-go":
     if !safePageID.MatchString(key.TargetPage) || key.Target!="" {return fmt.Errorf("key %d: invalid page navigation target",key.Index)}
+   case "hotkey":
+    if key.TargetPage!="" {return fmt.Errorf("key %d: unexpected hotkey page",key.Index)}
+    if err:=nexus.ValidateDeckShortcut(key.Target);err!=nil{return fmt.Errorf("key %d: %w",key.Index,err)}
    case "media":
     if key.TargetPage!="" || !nexus.ValidDeckMediaAction(key.Target){
      return fmt.Errorf("key %d: invalid media action",key.Index)
     }
-   case "hotkey":
-    if key.TargetPage!="" {return fmt.Errorf("key %d: unexpected hotkey page",key.Index)}
-    if err:=nexus.ValidateDeckShortcut(key.Target);err!=nil{return fmt.Errorf("key %d: %w",key.Index,err)}
+   case "macro":
+    if key.TargetPage!="" || !nexus.ValidateDeckSavedMacroID(key.Target) {
+     return fmt.Errorf("key %d: invalid saved macro ID",key.Index)
+    }
    default:
     return fmt.Errorf("key %d: unsupported action %q",key.Index,key.Action)
    }

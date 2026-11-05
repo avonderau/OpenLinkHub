@@ -272,11 +272,6 @@
 
 /* Action-specific inspector rows never appear until their action is selected. */
 #deck-hotkey-property[hidden],#deck-media-property[hidden]{display:none!important}
-.deck-workspace #deck-key-shortcut{
-  width:100%;max-width:100%;
-  font-family:inherit;
-  font-variant-ligatures:none;
-}
 
 /* Uploaded artwork keeps key outlines and labels legible in the preview. */
 .deck-workspace .deck-key[data-has-image="true"]{
@@ -334,4 +329,18 @@
 .deck-workspace .deck-key[data-has-metric="true"]>span:not(.deck-live-value){
   font-size:.65rem;
   color:#c3cbd3;
+}
+
+/* Macro assignments use the Deck inspector controls. */
+#deck-macro-property[hidden]{display:none!important}
+.deck-action-links{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:10px 0 3px}
+.deck-workspace .deck-action-links button{margin:0;font-size:.77rem}
+.deck-workspace .deck-action-links a{color:var(--deck-accent,#d5a65a);font-size:.78rem;font-weight:650;text-decoration:none}
+.deck-workspace .deck-action-links a:hover{text-decoration:underline}
+#deck-macro-status{overflow-wrap:anywhere}
+
+.deck-workspace #deck-key-shortcut{
+  width:100%;max-width:100%;
+  font-family:inherit;
+  font-variant-ligatures:none;
 }

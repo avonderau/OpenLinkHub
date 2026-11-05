@@ -1,6 +1,7 @@
 package deck
 
 import (
+ "context"
  "fmt"
 
  "OpenLinkHub/src/devices/nexus"
@@ -14,6 +15,7 @@ func keyDisplayLabel(key KeyConfig) string {
  case "page-previous":return "Prev Page"
  case "page-go":return "Go to Page"
  case "hotkey":return "Hotkey"
+ case "macro":return "Run Macro"
  case "media":
   switch key.Target {
   case "play-pause":return "Play / Pause"
@@ -28,8 +30,7 @@ func keyDisplayLabel(key KeyConfig) string {
  return ""
 }
 
-// executeDeckInputAction delegates to Nexus's allowlisted keyboard backend.
-// This cannot spawn programs or execute arbitrary command strings.
+// Keyboard shortcuts and media keys use the existing bounded Nexus input backend.
 func executeDeckInputAction(kind,target string)error{
  switch kind{
  case "hotkey":return nexus.ExecuteDeckShortcut(target)
@@ -39,17 +40,59 @@ func executeDeckInputAction(kind,target string)error{
 }
 
 // handleKeyPress records every physical event, handles internal page changes,
-// and dispatches keyboard/media output AFTER releasing the device mutex.
+// and dispatches keyboard/media/macro output AFTER releasing the device mutex.
 // No external input handler can hold the HID layout lock.
 func(d *Device)handleKeyPress(index int){
  action,target,run := d.selectKeyAction(index)
  if action==""{return}
+ if action=="macro"{
+  d.runDeckMacroAsync(target,run)
+  return
+ }
  if run==nil{run=executeDeckInputAction}
  if err:=run(action,target);err!=nil{
   d.mu.Lock()
   d.status=fmt.Sprintf("Button action failed: %v",err)
   d.mu.Unlock()
  }
+}
+
+// A saved macro can run for up to 15 seconds. Never block the HID reader,
+// allow concurrent macros from the same device, or leave a macro running
+// after that device is stopped. The Nexus engine validates a fresh snapshot
+// of the shared OpenLinkHub macro at execution time.
+func(d *Device)runDeckMacroAsync(target string,runner func(string,string)error){
+ d.mu.Lock()
+ if d.macroRunning {
+  d.mu.Unlock()
+  return
+ }
+ select{case <-d.done:d.mu.Unlock();return;default:}
+ d.macroRunning=true
+ d.mu.Unlock()
+ go func(){
+  defer func(){
+   d.mu.Lock()
+   d.macroRunning=false
+   d.mu.Unlock()
+  }()
+  ctx,cancel:=context.WithCancel(context.Background())
+  defer cancel()
+  go func(){
+   select{case <-d.done:cancel();case <-ctx.Done():}
+  }()
+  var err error
+  if runner!=nil{
+   err=runner("macro",target) // injected test runner; real HID uses Nexus macro engine
+  }else{
+   err=nexus.RunDeckSavedMacro(ctx,target)
+  }
+  if err!=nil{
+   d.mu.Lock()
+   d.status=fmt.Sprintf("Saved macro failed: %v",err)
+   d.mu.Unlock()
+  }
+ }()
 }
 
 // selectKeyAction holds d.mu while reading/changing layouts. An input action
@@ -74,12 +117,18 @@ func(d *Device)selectKeyAction(index int)(string,string,func(string,string)error
   }
  }
  if chosen==nil{return "","",nil}
- if chosen.Action=="hotkey"||chosen.Action=="media" {
-  // Layouts are validated when loaded/saved, but reject malformed action
-  // data here as well, before it can reach the input backend.
+ if chosen.Action=="hotkey"||chosen.Action=="media"||chosen.Action=="macro" {
+  // Layouts are validated when loaded/saved. Revalidate the HID action
+  // before dispatch, so malformed memory or stale settings cannot run.
   if chosen.TargetPage!="" {return "","",nil}
-  if chosen.Action=="media" && !nexus.ValidDeckMediaAction(chosen.Target){return "","",nil}
-  if chosen.Action=="hotkey" && nexus.ValidateDeckShortcut(chosen.Target)!=nil{return "","",nil}
+  switch chosen.Action {
+  case "hotkey":
+   if nexus.ValidateDeckShortcut(chosen.Target)!=nil {return "","",nil}
+  case "media":
+   if !nexus.ValidDeckMediaAction(chosen.Target){return "","",nil}
+  case "macro":
+   if !nexus.ValidateDeckSavedMacroID(chosen.Target){return "","",nil}
+  }
   return chosen.Action,chosen.Target,d.inputActionRunner
  }
 
