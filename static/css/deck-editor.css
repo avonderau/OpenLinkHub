@@ -277,3 +277,18 @@
   font-family:inherit;
   font-variant-ligatures:none;
 }
+
+/* Deck desktop launch and existing OpenLinkHub macro selection. */
+#deck-launch-property[hidden],#deck-macro-property[hidden]{display:none!important}
+.deck-workspace #deck-key-launch-target{width:100%;max-width:100%;min-width:0}
+.deck-action-links{
+  display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;
+  gap:9px;margin:10px 0 3px;
+}
+.deck-workspace .deck-action-links button{margin:0;font-size:.77rem}
+.deck-workspace .deck-action-links a{
+  color:var(--deck-accent,#d5a65a);font-size:.78rem;font-weight:650;
+  text-decoration:none;
+}
+.deck-workspace .deck-action-links a:hover{text-decoration:underline}
+#deck-macro-status{overflow-wrap:anywhere}
