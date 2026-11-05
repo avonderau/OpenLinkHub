@@ -13,7 +13,7 @@ import (
 // The Mirabox wire format is based on 4ndv/mirajazz (MPL-2.0) and
 // 4ndv/opendeck-akp153. Protocol versions 1 and 3 differ in packet size,
 // key-release semantics and some screen-clearing behavior.
-type outputReporter interface { SendOutputReport([]byte)(int,error) }
+type outputReporter interface { Write([]byte)(int,error) }
 
 var (
  errUnsupportedModel=errors.New("not a supported Mirabox device")
@@ -28,7 +28,7 @@ func writeMiraboxReport(writer outputReporter, m Model, payload []byte)error{
  if len(payload)>size+1 || len(payload)==0 || payload[0]!=0 {return errors.New("invalid Mirabox report")}
  report:=make([]byte,size+1)
  copy(report,payload)
- n,err:=writer.SendOutputReport(report)
+ n,err:=writer.Write(report)
  if err!=nil{return err}
  if n!=len(report){return io.ErrShortWrite}
  return nil
