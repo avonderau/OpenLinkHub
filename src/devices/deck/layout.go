@@ -68,6 +68,15 @@ func (l Layout)Validate(m Model)error{
    case "hotkey":
     if key.TargetPage!="" {return fmt.Errorf("key %d: unexpected hotkey page",key.Index)}
     if err:=nexus.ValidateDeckShortcut(key.Target);err!=nil{return fmt.Errorf("key %d: %w",key.Index,err)}
+   case "url", "application":
+    if key.TargetPage!="" {return fmt.Errorf("key %d: unexpected launcher page target",key.Index)}
+    if err:=nexus.ValidateDeckLaunchAction(key.Action,key.Target);err!=nil{
+     return fmt.Errorf("key %d: invalid desktop launch target: %w",key.Index,err)
+    }
+   case "macro":
+    if key.TargetPage!="" || !nexus.ValidateDeckSavedMacroID(key.Target){
+     return fmt.Errorf("key %d: invalid saved macro ID",key.Index)
+    }
    default:
     return fmt.Errorf("key %d: unsupported action %q",key.Index,key.Action)
    }
