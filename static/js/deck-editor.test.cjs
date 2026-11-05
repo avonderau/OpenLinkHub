@@ -44,7 +44,8 @@ async function run() {
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-key-metric', 'deck-metric-interval', 'deck-metric-graph', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
-    'deck-key-shortcut', 'deck-hotkey-property', 'deck-key-media', 'deck-media-property',
+    'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
+    'deck-key-media', 'deck-media-property',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
     'deck-remove-page', 'deck-message', 'deck-key-count', 'deck-page-count',
     'deck-connection-state', 'deck-tab-key', 'deck-tab-pages',
@@ -64,6 +65,12 @@ async function run() {
   };
   const fetch = async (url, options = {}) => {
     const type = url.split('?')[0];
+    if (type === '/api/macro/') {
+      return { ok: true, status: 200, json: async () => ({
+        status: 1,
+        data: { '7': { id: 7, name: 'Window Manager' }, '12': { id: 12, name: 'Editor Macro' } },
+      }) };
+    }
     if (type === '/api/deck/icon' && options.method === 'POST') {
       assert.equal(options.headers['Content-Type'], 'image/png');
       return { ok: true, status: 201, json: async () => ({ id: 'a'.repeat(32) }) };
@@ -137,23 +144,26 @@ async function run() {
   assert.equal(received[1].pages[1].keys[0].action, 'page-go');
   assert.equal(received[1].pages[1].keys[0].targetPage, 'home');
 
-  // A keyboard shortcut uses a validated text target, never a command line.
+  // Saved macros are shared with the existing OpenLinkHub macro library.
   grid.children[1].dispatch('click');
-  action.value = 'hotkey';
+  action.value = 'macro';
   action.dispatch('change');
-  assert.equal(nodes['deck-hotkey-property'].hidden, false);
+  assert.equal(nodes['deck-macro-property'].hidden, false);
   assert.equal(nodes['deck-media-property'].hidden, true);
-  const shortcut = nodes['deck-key-shortcut'];
-  shortcut.value = 'Ctrl+Alt+T';
-  shortcut.dispatch('input');
+  const macros = nodes['deck-key-macro'];
+  assert.equal(macros.disabled, false);
+  assert.equal(macros.children.length, 2);
+  assert.equal(macros.value, '7');
+  macros.value = '12';
+  macros.dispatch('change');
   await nodes['deck-save'].dispatch('click');
-  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).action, 'hotkey');
-  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).target, 'Ctrl+Alt+T');
+  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).action, 'macro');
+  assert.equal(received[2].pages[1].keys.find(key => key.index === 1).target, '12');
 
-  // Switching from a shortcut to media must not leave a stale hotkey target.
+  // Switching to media must not reuse the old macro identifier.
   action.value = 'media';
   action.dispatch('change');
-  assert.equal(nodes['deck-hotkey-property'].hidden, true);
+  assert.equal(nodes['deck-macro-property'].hidden, true);
   assert.equal(nodes['deck-media-property'].hidden, false);
   const media = nodes['deck-key-media'];
   assert.equal(media.value, 'play-pause');
