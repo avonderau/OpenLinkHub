@@ -269,3 +269,11 @@
   font-size:.84rem;
 }
 #deck-target-property[hidden]{display:none!important}
+
+/* Action-specific inspector rows never appear until their action is selected. */
+#deck-hotkey-property[hidden],#deck-media-property[hidden]{display:none!important}
+.deck-workspace #deck-key-shortcut{
+  width:100%;max-width:100%;
+  font-family:inherit;
+  font-variant-ligatures:none;
+}
