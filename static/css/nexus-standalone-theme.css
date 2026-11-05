@@ -1,0 +1,137 @@
+/* Standalone Nexus editor uses the same charcoal / gold visual language as
+ * the integrated touchscreen and Deck editors. Loaded after legacy inline CSS.
+ */
+body.nexus-standalone{
+  box-sizing:border-box;
+  max-width:1450px;
+  margin:22px auto;
+  padding:0 22px 30px;
+  background:#141518;
+  color:#e8e9ec;
+  font:14px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.nexus-standalone *, .nexus-standalone *::before,.nexus-standalone *::after{box-sizing:border-box}
+.nexus-standalone .nexus-editor-heading{
+  display:flex;align-items:center;flex-wrap:wrap;gap:15px;
+  padding:15px 18px;margin:0 0 15px;
+  border:1px solid rgba(225,225,235,.20);
+  border-left:3px solid #d5a65a;
+  border-radius:11px;
+  background:linear-gradient(105deg,#2f2922,#202124 43%,#191a1d);
+  box-shadow:0 10px 24px rgba(0,0,0,.19);
+}
+.nexus-standalone .nexus-standalone-heading-icon{
+  display:grid;place-items:center;flex:0 0 45px;
+  height:45px;border:1px solid #947143;border-radius:10px;
+  background:linear-gradient(155deg,#59472f,#3f3328);
+  color:#f0c581;font-size:21px;
+}
+.nexus-standalone .nexus-standalone-heading-copy{
+  display:flex;flex:1 1 240px;flex-direction:column;gap:3px;
+}
+.nexus-standalone .nexus-standalone-heading-copy small{
+  color:#c4a77b;font-size:.68rem;font-weight:750;letter-spacing:.12em;text-transform:uppercase;
+}
+.nexus-standalone .nexus-editor-heading h1{font-size:1.38rem;line-height:1.25;color:#f3f0e9;margin:0}
+.nexus-standalone button,.nexus-standalone input,.nexus-standalone select{
+  max-width:100%;
+  padding:8px 11px;
+  color:#e8e9ec;
+  background:#222326;
+  border:1px solid rgba(225,225,235,.24);
+  border-radius:8px;
+  font:500 .82rem/1.35 inherit;
+  margin:3px;
+}
+.nexus-standalone button{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.nexus-standalone button:hover:not(:disabled){background:#34312c;border-color:rgba(213,166,90,.58)}
+.nexus-standalone :is(button,input,select):focus-visible{outline:2px solid #d5a65a;outline-offset:2px}
+.nexus-standalone #save{
+  margin-left:auto;padding:10px 14px;min-height:40px;
+  color:#1b1712;background:linear-gradient(180deg,#e3b96f,#c9964b);
+  border:1px solid #b88740;font-size:.84rem;font-weight:750;
+}
+.nexus-standalone #save:hover{background:linear-gradient(180deg,#edc789,#d4a158)}
+.nexus-standalone>p{color:#a3a5ae;font-size:.79rem;line-height:1.5}
+.nexus-standalone #message{color:#b9ad96;font-size:.8rem}
+.nexus-standalone>label{display:inline-flex;align-items:center;gap:7px;color:#bfc0c5;font-size:.8rem}
+.nexus-standalone .nexus-screen-actions{
+  display:flex;align-items:center;flex-wrap:wrap;gap:7px;
+  margin:15px 0;padding:12px;
+  border:1px solid rgba(225,225,235,.19);border-radius:11px;
+  background:linear-gradient(110deg,#292723,#1d1e20 52%,#222326);
+}
+.nexus-standalone .nexus-screen-actions label{
+  display:inline-flex;align-items:center;gap:6px;margin:0;
+  color:#a3a5ae;font-size:.76rem;
+}
+.nexus-standalone .nexus-screen-actions button{margin:0;min-height:35px}
+.nexus-standalone .nexus-screen-actions button>.bi{color:#f0c581}
+.nexus-standalone #addScreen{
+  color:#ffe3b6;background:linear-gradient(180deg,#6b5231,#4a3a29);
+  border-color:#9c7543;
+}
+.nexus-standalone #deleteScreen:not(:disabled){color:#e6aaaa;border-color:rgba(202,119,119,.44)}
+.nexus-standalone .nexus-preview-stage{
+  padding:12px;border:1px solid rgba(213,166,90,.25);border-radius:14px;
+  background:linear-gradient(145deg,#101113,#202123 58%,#131416);
+  box-shadow:inset 0 1px rgba(255,255,255,.055),0 13px 28px rgba(0,0,0,.17);
+}
+.nexus-standalone .nexus-preview-chrome{
+  display:flex;align-items:center;gap:8px;
+  color:#b8aaa0;font-size:.7rem;padding:0 3px 10px;
+}
+.nexus-standalone .nexus-preview-light{
+  width:7px;height:7px;flex:none;border-radius:50%;
+  background:#d5a65a;box-shadow:0 0 0 3px rgba(213,166,90,.12);
+}
+.nexus-standalone .nexus-preview-scale{
+  margin-left:auto;color:#a3a5ae;font-variant-numeric:tabular-nums;
+}
+.nexus-standalone #preview{
+  display:flex;align-items:center;justify-content:center;min-height:110px;
+  overflow-x:auto;overflow-y:hidden;
+  padding:20px 10px;border:1px solid rgba(225,225,235,.1);
+  border-radius:9px;
+  background:radial-gradient(ellipse at 50% 50%,rgba(213,166,90,.075),transparent 69%),#151618;
+}
+.nexus-standalone #preview #screen{
+  flex:none;margin-inline:auto;
+  box-shadow:0 0 0 5px #0b0c0f,0 8px 20px rgba(0,0,0,.5);
+}
+.nexus-standalone #nexus-keyboard-hint{
+  margin:11px 3px 0;color:#a3a5ae;font-size:.73rem;line-height:1.5;
+}
+.nexus-standalone #nexus-keyboard-hint .bi{color:#f0c581}
+.nexus-standalone .nexus-editor-tablist{
+  display:flex;align-items:flex-end;flex-wrap:wrap;gap:3px;
+  padding:0 6px;border-bottom:1px solid rgba(225,225,235,.2);
+}
+.nexus-standalone .nexus-editor-tablist [role=tab]{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  margin:0;padding:10px 13px;
+  background:#252628;color:#a3a5ae;border:1px solid rgba(225,225,235,.2);
+  border-radius:9px 9px 0 0;font-size:.79rem;font-weight:600;
+}
+.nexus-standalone .nexus-editor-tablist [role=tab] .bi{color:#c4a77b}
+.nexus-standalone .nexus-editor-tablist [role=tab][aria-selected=true]{
+  color:#f0c581;background:#1c1d1f;
+  border-top:2px solid #d5a65a;border-bottom-color:#1c1d1f;
+}
+.nexus-standalone .nexus-editor-tabcontent{
+  background:#1c1d1f;border:1px solid rgba(225,225,235,.20);
+  border-top:0;border-radius:0 0 11px 11px;padding:13px;
+}
+.nexus-standalone .nexus-editor-tabpanel[hidden]{display:none!important}
+.nexus-standalone #properties .nexus-property-section{
+  background:#1c1d1f;border-color:rgba(225,225,235,.20);
+}
+@media(max-width:700px){
+  body.nexus-standalone{padding:0 12px 22px;margin:12px auto}
+  .nexus-standalone #preview{justify-content:flex-start}
+  .nexus-standalone .nexus-editor-tablist [role=tab]{flex:1 1 125px}
+  .nexus-standalone .nexus-editor-heading{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .nexus-standalone button{transition:none}
+}
