@@ -2,7 +2,6 @@ package nexus
 
 import (
  "fmt"
- "sync"
 
  "OpenLinkHub/src/inputmanager"
 )
@@ -17,7 +16,6 @@ var deckMediaKeys=map[string]uint16{
  "volume-down":inputmanager.VolumeDown,
  "volume-mute":inputmanager.VolumeMute,
 }
-var deckMediaKeyMutex sync.Mutex
 
 func ValidDeckMediaAction(target string) bool {
  _,ok:=deckMediaKeys[target]
@@ -26,8 +24,8 @@ func ValidDeckMediaAction(target string) bool {
 func ExecuteDeckMediaAction(target string) error {
  code,ok:=deckMediaKeys[target]
  if !ok{return fmt.Errorf("unsupported Deck media action %q",target)}
- deckMediaKeyMutex.Lock()
- defer deckMediaKeyMutex.Unlock()
+ nexusKeyboardMutex.Lock()
+ defer nexusKeyboardMutex.Unlock()
  inputmanager.InputControlKeyboard(code,false)
  return nil
 }
