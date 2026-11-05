@@ -80,7 +80,10 @@ func TestDeckMacroRunIsNonblockingAndSingleFlight(t *testing.T){
  select{case <-entered:case <-time.After(2*time.Second):t.Fatal("macro was not dispatched")}
  d.handleKeyPress(0)
  select{case <-entered:t.Fatal("macro executed twice concurrently");default:}
- if !d.macroRunning{t.Fatal("macro not marked active")}
+ d.mu.RLock()
+ running:=d.macroRunning
+ d.mu.RUnlock()
+ if !running{t.Fatal("macro not marked active")}
  close(release)
  select{case <-finished:case <-time.After(2*time.Second):t.Fatal("macro did not finish")}
  deadline:=time.After(2*time.Second)
