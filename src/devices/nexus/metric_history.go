@@ -4,6 +4,7 @@ import (
  "image"
  "image/color"
  "math"
+ "strings"
  "time"
 )
 
@@ -23,12 +24,26 @@ func (h *metricHistory) add(values MetricSnapshot,now time.Time){
  if !h.last.IsZero()&&now.Sub(h.last)<time.Second{return}
  h.last=now
  if h.values==nil{h.values=make(MetricHistory)}
- for metric:=range supportedMetrics{
+ metricKeys:=map[string]bool{}
+ for metric:=range supportedMetrics{metricKeys[metric]=true}
+ for metric:=range values {
+  if strings.Contains(metric,"|"){metricKeys[metric]=true}
+ }
+ for metric:=range h.values {
+  if strings.Contains(metric,"|"){metricKeys[metric]=true}
+ }
+ for metric:=range metricKeys{
   reading,ok:=values[metric]
   if !ok||math.IsInf(reading,0)||math.IsNaN(reading){reading=math.NaN()}
   samples:=append(h.values[metric],reading)
   if len(samples)>maxNexusHistorySamples{samples=append([]float64(nil),samples[len(samples)-maxNexusHistorySamples:]...)}
   h.values[metric]=samples
+  // Remove disconnected source histories once every sample is unavailable.
+  if strings.Contains(metric,"|")&&len(samples)==maxNexusHistorySamples {
+   missing:=true
+   for _,v:=range samples {if !math.IsNaN(v){missing=false;break}}
+   if missing{delete(h.values,metric)}
+  }
  }
 }
 
