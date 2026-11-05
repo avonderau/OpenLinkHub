@@ -146,6 +146,7 @@
                     <option value="page-next">Next page</option>
                     <option value="page-previous">Previous page</option>
                     <option value="page-go">Go to page</option>
+                    <option value="hotkey">Keyboard shortcut</option>
                     <option value="macro">Run saved macro</option>
                     <option value="media">Media control</option>
                   </select>
@@ -154,6 +155,12 @@
                 <div class="deck-property" id="deck-target-property" hidden>
                   <label for="deck-key-target-page">Destination page</label>
                   <select class="form-select" id="deck-key-target-page" disabled></select>
+                </div>
+                <div class="deck-property" id="deck-hotkey-property" hidden>
+                  <label for="deck-key-shortcut">Keyboard shortcut</label>
+                  <input class="form-control" id="deck-key-shortcut" type="text" maxlength="80"
+                         placeholder="Ctrl+Alt+T" autocomplete="off" spellcheck="false" disabled>
+                  <small>Uses the same validated virtual-keyboard backend as Nexus. For example: Ctrl+Alt+T or Super+D.</small>
                 </div>
                 <div class="deck-property" id="deck-media-property" hidden>
                   <label for="deck-key-media">Media command</label>

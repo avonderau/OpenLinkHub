@@ -146,7 +146,6 @@ import (
 	"slices"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type deviceRegister func(vid, pid uint16, serial, path string) *common.Device
@@ -757,35 +756,13 @@ func Init() {
 	initializeDeckDevices()
 
 	if config.GetConfig().EnableOpenRGBTargetServer {
-		// OpenRGB must see all initialized devices.
 		initWG.Wait()
 		openrgb.Init()
 		openrgb.SendToOpenRGB()
-	} else if !waitForInitialDeviceRegistrations(&initWG, 5*time.Second) {
-		// The WebUI may start while one slow device is still initializing.
-		// Log this explicitly rather than showing only synchronous Deck devices
-		// without explaining why the Corsair inventory may be incomplete.
-		logger.Log(logger.Fields{}).Warn("Corsair devices are still initializing; refresh the WebUI when ready")
 	}
 
 	inputmanager.SetDispatcher(Dispatch)
 	appmonitor.SetDispatcher(Dispatch)
-}
-
-// waitForInitialDeviceRegistrations lets normal Corsair device constructors
-// populate the initial WebUI device list without waiting forever for an
-// unresponsive USB device. The existing OpenRGB path still waits fully.
-func waitForInitialDeviceRegistrations(wg *sync.WaitGroup, timeout time.Duration) bool {
-	ready := make(chan struct{})
-	go func() { wg.Wait(); close(ready) }()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-	select {
-	case <-ready:
-		return true
-	case <-timer.C:
-		return false
-	}
 }
 
 // initializeDeckDevices detects the first supported Stream Deck and Mirabox

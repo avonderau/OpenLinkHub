@@ -14,6 +14,7 @@ func keyDisplayLabel(key KeyConfig) string {
  case "page-next":return "Next Page"
  case "page-previous":return "Prev Page"
  case "page-go":return "Go to Page"
+ case "hotkey":return "Hotkey"
  case "macro":return "Run Macro"
  case "media":
   switch key.Target {
@@ -29,16 +30,17 @@ func keyDisplayLabel(key KeyConfig) string {
  return ""
 }
 
-// Media keys use the existing bounded Nexus input backend.
+// Keyboard shortcuts and media keys use the existing bounded Nexus input backend.
 func executeDeckInputAction(kind,target string)error{
  switch kind{
+ case "hotkey":return nexus.ExecuteDeckShortcut(target)
  case "media":return nexus.ExecuteDeckMediaAction(target)
  default:return fmt.Errorf("unsupported Deck input action %q",kind)
  }
 }
 
 // handleKeyPress records every physical event, handles internal page changes,
-// and dispatches media/macro output AFTER releasing the device mutex.
+// and dispatches keyboard/media/macro output AFTER releasing the device mutex.
 // No external input handler can hold the HID layout lock.
 func(d *Device)handleKeyPress(index int){
  action,target,run := d.selectKeyAction(index)
@@ -115,11 +117,13 @@ func(d *Device)selectKeyAction(index int)(string,string,func(string,string)error
   }
  }
  if chosen==nil{return "","",nil}
- if chosen.Action=="media"||chosen.Action=="macro" {
+ if chosen.Action=="hotkey"||chosen.Action=="media"||chosen.Action=="macro" {
   // Layouts are validated when loaded/saved. Revalidate the HID action
   // before dispatch, so malformed memory or stale settings cannot run.
   if chosen.TargetPage!="" {return "","",nil}
   switch chosen.Action {
+  case "hotkey":
+   if nexus.ValidateDeckShortcut(chosen.Target)!=nil {return "","",nil}
   case "media":
    if !nexus.ValidDeckMediaAction(chosen.Target){return "","",nil}
   case "macro":

@@ -457,7 +457,7 @@ function renderTouchProperties(w,panel){
   input.value=value;input.onchange=()=>{change(input.value);render()};
   label.append(input);panel.append(label);
  };
- const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['device','Device RGB control'],['macro','Run saved macro'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text']];
+ const actions=[['next','Next screen'],['previous','Previous screen'],['screen','Go to screen'],['media','Media control'],['device','Device RGB control'],['macro','Run saved macro'],['hotkey','Keyboard shortcut'],['mouse','Mouse action'],['url','Open URL'],['application','Launch desktop app'],['text','Type text']];
  const hardwareActions=[['rgb-on','Enable device RGB'],['rgb-off','Disable device RGB']];
  const media=[['play-pause','Play/Pause'],['stop','Stop'],['volume-up','Volume +'],['volume-down','Volume -'],['next-track','Next track'],['previous-track','Previous track']];
  const targets=cfg.screens.map(s=>[s.id,s.name]);
@@ -468,6 +468,14 @@ function renderTouchProperties(w,panel){
   input.placeholder='Type this text';input.value=value||'';
   input.setAttribute('aria-label',name);
   input.addEventListener('change',()=>{update(input.value);message('Text entry updated. Save Layout to apply.')});
+  label.append(input);panel.append(label);
+ };
+ const shortcutInput=(name,value,update)=>{
+  const label=document.createElement('label');label.textContent=name+' ';
+  const input=document.createElement('input');input.type='text';input.maxLength=80;
+  input.placeholder='Ctrl+Alt+T';input.value=value||'';
+  input.setAttribute('aria-label',name);
+  input.addEventListener('change',()=>{update(input.value.trim());message('Shortcut updated. Save Layout to apply.')});
   label.append(input);panel.append(label);
  };
  if(w.type==='button'||w.type==='macro'||w.type==='image'){
@@ -508,7 +516,7 @@ function renderTouchProperties(w,panel){
   panel.append(wrapper,upload);
  }
  if(w.type==='button'){
-  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='device'?'rgb-on':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro')w.target=Object.keys(nexusSharedMacros)[0]||'1'});
+  field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='device'?'rgb-on':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro')w.target=Object.keys(nexusSharedMacros)[0]||'1'});
   if(w.action==='macro'){
    const macros=Object.entries(nexusSharedMacros).map(([id,m])=>[id,m.name||('Macro #'+id)]);
    if(macros.length)field('Saved macro',w.target,macros,v=>w.target=v);
@@ -516,6 +524,7 @@ function renderTouchProperties(w,panel){
    const link=document.createElement('a');link.href='/macros';link.textContent='Open macro editor';link.target='_blank';link.rel='noopener noreferrer';panel.append(link);
   }
   if(w.action==='screen')field('Target screen',w.target,targets,v=>w.target=v);
+  if(w.action==='hotkey')shortcutInput('Shortcut',w.target,v=>w.target=v);
   if(w.action==='text'){
    textInput('Text to type',w.target,v=>w.target=v);
    const note=document.createElement('small');note.textContent='US keyboard layout, printable ASCII only (1–80 characters). Saved in plain text: do not enter passwords.';panel.append(note);

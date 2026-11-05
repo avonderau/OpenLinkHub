@@ -17,6 +17,8 @@
   const metricGraph = document.getElementById('deck-metric-graph');
   const metricStatus = document.getElementById('deck-metric-status');
   const actionInput = document.getElementById('deck-key-action');
+  const shortcutInput = document.getElementById('deck-key-shortcut');
+  const shortcutProperty = document.getElementById('deck-hotkey-property');
   const macroProperty = document.getElementById('deck-macro-property');
   const macroInput = document.getElementById('deck-key-macro');
   const macroStatus = document.getElementById('deck-macro-status');
@@ -121,6 +123,7 @@
       'page-next': 'Next Page',
       'page-previous': 'Previous Page',
       'page-go': 'Go to Page',
+      hotkey: 'Shortcut',
       macro: 'Run Macro',
       media: 'Media',
     }[action] || '';
@@ -132,7 +135,7 @@
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
     if (key.action !== 'page-go') delete key.targetPage;
-    if (key.action !== 'macro' && key.action !== 'media') delete key.target;
+    if (key.action !== 'macro' && key.action !== 'media' && key.action !== 'hotkey') delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -242,6 +245,10 @@
     const hasTarget = valid && actionInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
+    const hasShortcut = valid && actionInput.value === 'hotkey';
+    shortcutProperty.hidden = !hasShortcut;
+    shortcutInput.disabled = !hasShortcut;
+    shortcutInput.value = hasShortcut ? key?.target || '' : '';
     const hasMedia = valid && actionInput.value === 'media';
     mediaProperty.hidden = !hasMedia;
     mediaInput.disabled = !hasMedia;
@@ -365,6 +372,9 @@
         ? { target: assignment(selected)?.action === 'macro' ? assignment(selected)?.target || '' :
             Object.keys(savedMacros).sort((a, b) => Number(a) - Number(b))[0] || '' }
         : {}),
+      ...(actionInput.value === 'hotkey'
+        ? { target: assignment(selected)?.action === 'hotkey' ? assignment(selected)?.target || '' : '' }
+        : {}),
     });
     renderInspector();
   });
@@ -372,6 +382,10 @@
   targetPageInput.addEventListener('change', () => {
     if (actionInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
+  });
+  shortcutInput.addEventListener('input', () => {
+    if (actionInput.value !== 'hotkey') return;
+    setKeyProperties({ target: shortcutInput.value });
   });
   macroInput.addEventListener('change', () => {
     if (actionInput.value !== 'macro') return;

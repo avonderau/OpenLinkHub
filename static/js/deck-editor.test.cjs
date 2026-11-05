@@ -44,6 +44,7 @@ async function run() {
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-key-metric', 'deck-metric-interval', 'deck-metric-graph', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
+    'deck-key-shortcut', 'deck-hotkey-property',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
     'deck-key-media', 'deck-media-property',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
@@ -221,6 +222,30 @@ async function run() {
   assert.equal(grid.children[4].dataset.hasMetric, undefined);
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[7].pages[1].keys.some(key => key.index === 4), false);
+  // Standalone shortcuts remain supported alongside saved macros.
+  grid.children[1].dispatch('click');
+  action.value = 'hotkey';
+  action.dispatch('change');
+  assert.equal(nodes['deck-hotkey-property'].hidden, false);
+  assert.equal(nodes['deck-macro-property'].hidden, true);
+  const shortcut = nodes['deck-key-shortcut'];
+  shortcut.value = 'Ctrl+Alt+T';
+  shortcut.dispatch('input');
+  await nodes['deck-save'].dispatch('click');
+  const shortcutSaved = received.at(-1).pages[1].keys.find(key => key.index === 1);
+  assert.equal(shortcutSaved.action, 'hotkey');
+  assert.equal(shortcutSaved.target, 'Ctrl+Alt+T');
+
+  // A different key can still run a shared macro in the same layout.
+  grid.children[5].dispatch('click');
+  action.value = 'macro';
+  action.dispatch('change');
+  await nodes['deck-save'].dispatch('click');
+  const combined = received.at(-1).pages[1].keys;
+  assert.equal(combined.find(key => key.index === 1).action, 'hotkey');
+  assert.equal(combined.find(key => key.index === 5).action, 'macro');
+  assert.equal(combined.find(key => key.index === 5).target, '7');
+
   console.log('Deck Editor interaction test passed');
 }
 

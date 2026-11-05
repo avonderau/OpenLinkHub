@@ -149,17 +149,14 @@ PNG/JPEG backgrounds continue to work without conversion. Replacing an
 existing background ID removes obsolete image extensions to avoid an old
 GIF shadowing the replacement image.
 
-## Button actions: saved macros replace standalone shortcuts
+## Button actions: keyboard shortcuts and saved macros
 
-The **Keyboard shortcut** button action has been removed from the iCUE NEXUS
-and Deck editors and is rejected by both saved-layout validators. For key
-combinations, create a reusable macro in the main OpenLinkHub Macros page and
-assign **Run saved macro** to the button instead. Existing saved macros still
-send keyboard input through the normal macro engine.
+Both iCUE NEXUS and the Mirabox Deck support **Keyboard shortcut** and
+**Run saved macro** actions. Shortcut actions remain individually configurable
+and validated using the existing Nexus key-chord parser. Saved macros are
+selected from the shared OpenLinkHub Macros library, allowing reusable
+workflows on either device. Existing keyboard shortcut assignments are
+preserved; no conversion or migration is required.
 
-The Deck macro picker reads the same saved profiles as NEXUS and uses the
-same bounded macro runner. Page navigation and media actions remain available.
-
-This intentionally does not migrate old `hotkey` assignments. Update saved
-screens or Deck layouts containing removed shortcut actions before using them
-with the new build.
+Deck's macro execution reuses the bounded Nexus macro runner. Page navigation,
+media controls, artwork and live metrics remain available.

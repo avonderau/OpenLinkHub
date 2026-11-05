@@ -136,7 +136,7 @@ test('Nexus uses existing saved macros and does not expose the old macro builder
  };
  const action=find(node('properties'),el=>el.options?.some(option=>option.label==='Run saved macro'));
  assert.ok(action,'macro must be a button action');
-  assert.equal(action.options.some(option=>option.label==='Keyboard shortcut'),false,'standalone shortcut must not appear in Nexus editor');
+  assert.equal(action.options.some(option=>option.label==='Keyboard shortcut'),true,'standalone shortcut remains available in Nexus');
  action.value='macro';
  (action.listeners.change||action.onchange)();
  assert.equal(widget.type,'button');

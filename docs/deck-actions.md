@@ -32,18 +32,18 @@ not executed as the system service.
   physical LCD page updates and that reconnecting restores the selected page.
 - Verify an unsaved browser edit is not discarded by a hardware page change.
 
-## Media and saved macros
+## Keyboard shortcuts, media controls and saved macros
 
-Choose **Media control** to assign Play/Pause, Previous/Next, Stop, or
-Volume Up/Down/Mute. Choose **Run saved macro** to reuse an existing
-OpenLinkHub macro. Use **Manage macros** to create or edit one, then
-**Refresh** the picker.
+**Keyboard shortcut** remains available for a validated combination such as
+`Ctrl+Alt+T` or `Super+D`. **Media control** provides Play/Pause, Previous/Next,
+Stop and Volume Up/Down/Mute. **Run saved macro** assigns a reusable macro from
+the existing OpenLinkHub Macros page. The macro picker includes a Refresh
+button and a link to Manage macros.
 
-Press **Save & Apply** to send the assignment to the Mirabox. Physical
-key presses execute macros through the shared Nexus engine with its
-existing bounds, cancellation and single-flight safeguards.
+Choose the action, configure its target, then click **Save & Apply**. Press
+the physical Mirabox key. Keyboard shortcuts and media controls use Nexus's
+existing validated Linux virtual keyboard backend; saved macros use the
+shared Nexus macro execution engine.
 
-Standalone Keyboard Shortcut actions have been removed from both the
-Deck and iCUE NEXUS editors. Use a saved macro for key combinations.
-Existing `hotkey` layout actions are no longer accepted, and are not
-migrated automatically.
+All three action types can be assigned to different keys in one layout.
+Existing keyboard shortcut assignments remain supported.
