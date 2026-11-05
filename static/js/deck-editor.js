@@ -13,6 +13,14 @@
   const shortcutProperty = document.getElementById('deck-hotkey-property');
   const mediaInput = document.getElementById('deck-key-media');
   const mediaProperty = document.getElementById('deck-media-property');
+  const launchProperty = document.getElementById('deck-launch-property');
+  const launchLabel = document.getElementById('deck-launch-label');
+  const launchInput = document.getElementById('deck-key-launch-target');
+  const launchHelp = document.getElementById('deck-launch-help');
+  const macroProperty = document.getElementById('deck-macro-property');
+  const macroInput = document.getElementById('deck-key-macro');
+  const macroStatus = document.getElementById('deck-macro-status');
+  const macroRefreshButton = document.getElementById('deck-refresh-macros');
   const targetPageInput = document.getElementById('deck-key-target-page');
   const targetProperty = document.getElementById('deck-target-property');
   const pageNameInput = document.getElementById('deck-page-name');
@@ -37,6 +45,8 @@
   let selected = -1;
   let dirty = false;
   let saving = false;
+  let savedMacros = {};
+  let macroLoadMessage = '';
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
@@ -83,6 +93,9 @@
       'page-go': 'Go to Page',
       hotkey: 'Shortcut',
       media: 'Media',
+      url: 'Open URL',
+      application: 'Launch App',
+      macro: 'Run Macro',
     }[action] || '';
   }
 
@@ -92,7 +105,7 @@
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
     if (key.action !== 'page-go') delete key.targetPage;
-    if (key.action !== 'hotkey' && key.action !== 'media') delete key.target;
+    if (!['hotkey', 'media', 'url', 'application', 'macro'].includes(key.action)) delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -176,6 +189,39 @@
     mediaProperty.hidden = !hasMedia;
     mediaInput.disabled = !hasMedia;
     mediaInput.value = hasMedia ? key?.target || 'play-pause' : 'play-pause';
+    const isURL = valid && actionInput.value === 'url';
+    const isApplication = valid && actionInput.value === 'application';
+    launchProperty.hidden = !(isURL || isApplication);
+    launchInput.disabled = !(isURL || isApplication);
+    launchLabel.textContent = isURL ? 'Web URL' : 'Desktop application ID';
+    launchHelp.textContent = isURL
+      ? 'Enter an HTTP or HTTPS address. Opens on this computer, not a remote browser.'
+      : 'Enter an installed desktop-entry ID such as org.gnome.Terminal.desktop. No shell commands.';
+    launchInput.placeholder = isURL ? 'https://example.com' : 'org.gnome.Terminal.desktop';
+    launchInput.maxLength = isURL ? 256 : 128;
+    launchInput.value = isURL || isApplication ? key?.target || '' : '';
+    const hasMacro = valid && actionInput.value === 'macro';
+    macroProperty.hidden = !hasMacro;
+    macroInput.disabled = !hasMacro || !Object.keys(savedMacros).length;
+    macroInput.replaceChildren();
+    const macroIDs = Object.keys(savedMacros).sort((a, b) => Number(a) - Number(b));
+    for (const macroID of macroIDs) {
+      const option = document.createElement('option');
+      option.value = macroID;
+      option.textContent = savedMacros[macroID]?.name || `Macro #${macroID}`;
+      macroInput.appendChild(option);
+    }
+    const selectedMacro = hasMacro ? key?.target || '' : '';
+    if (selectedMacro && !Object.hasOwn(savedMacros, selectedMacro)) {
+      const missing = document.createElement('option');
+      missing.value = selectedMacro;
+      missing.textContent = `Missing macro #${selectedMacro}`;
+      macroInput.appendChild(missing);
+    }
+    macroInput.value = selectedMacro || macroIDs[0] || '';
+    macroStatus.textContent = macroLoadMessage ||
+      (macroIDs.length ? 'Choose an existing macro. It runs on this computer when pressed.' :
+        'No saved macros found. Create one in OpenLinkHub Macros, then Refresh.');
     selectedText.textContent = valid ? `Key ${selected + 1}` : 'Select a key';
   }
 
@@ -216,6 +262,13 @@
       ...(actionInput.value === 'hotkey'
         ? { target: assignment(selected)?.action === 'hotkey' ? assignment(selected)?.target || '' : '' }
         : {}),
+      ...(['url', 'application'].includes(actionInput.value)
+        ? { target: assignment(selected)?.action === actionInput.value ? assignment(selected)?.target || '' : '' }
+        : {}),
+      ...(actionInput.value === 'macro'
+        ? { target: assignment(selected)?.action === 'macro' ? assignment(selected)?.target || '' :
+          Object.keys(savedMacros).sort((a, b) => Number(a) - Number(b))[0] || '' }
+        : {}),
     });
     renderInspector();
   });
@@ -232,6 +285,36 @@
     if (actionInput.value !== 'media') return;
     setKeyProperties({ target: mediaInput.value });
   });
+  launchInput.addEventListener('input', () => {
+    if (actionInput.value !== 'url' && actionInput.value !== 'application') return;
+    setKeyProperties({ target: launchInput.value });
+  });
+  macroInput.addEventListener('change', () => {
+    if (actionInput.value !== 'macro') return;
+    setKeyProperties({ target: macroInput.value });
+  });
+
+  async function loadSavedMacros() {
+    macroRefreshButton.disabled = true;
+    try {
+      const response = await fetch('/api/macro/', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (payload?.status !== 1 || !payload.data || typeof payload.data !== 'object') {
+        throw new Error('Invalid macro list');
+      }
+      savedMacros = Object.fromEntries(Object.entries(payload.data)
+        .filter(([id, value]) => /^[1-9][0-9]{0,8}$/.test(id) && value && typeof value === 'object'));
+      macroLoadMessage = '';
+    } catch (error) {
+      macroLoadMessage = `Could not load macros: ${error.message}`;
+      // Preserve previously loaded macros on transient network failures.
+    } finally {
+      macroRefreshButton.disabled = false;
+      if (layout) renderInspector();
+    }
+  }
+  macroRefreshButton.addEventListener('click', () => { loadSavedMacros(); });
 
   pageNameInput.addEventListener('input', () => {
     const page = currentPage();
@@ -353,6 +436,7 @@
   async function load() {
     try {
       layout = normalizeLayout(await api('layout'));
+      await loadSavedMacros();
       renderPages();
       renderGrid();
       renderInspector();
