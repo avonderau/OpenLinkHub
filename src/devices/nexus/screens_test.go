@@ -35,3 +35,12 @@ func TestColorValidationForMetricBarAndText(t *testing.T){
   })
  }
 }
+
+func TestStandaloneNexusShortcutRejectedAndMacroAccepted(t *testing.T) {
+ c:=sample()
+ c.Screens[0].Widgets=[]Widget{{ID:"shortcut",Type:"button",X:0,Y:0,Width:100,Height:48,Action:"hotkey",Target:"Ctrl+Alt+T"}}
+ if err:=c.Validate();err==nil{t.Fatal("removed standalone shortcut was accepted")}
+ c.Screens[0].Widgets[0].Action="macro"
+ c.Screens[0].Widgets[0].Target="1"
+ if err:=c.Validate();err!=nil{t.Fatalf("valid saved macro rejected: %v",err)}
+}

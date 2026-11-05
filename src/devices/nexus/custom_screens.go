@@ -258,7 +258,6 @@ func (d *Device) executeTouchAction(action,target string) {
   for _,s:=range d.customScreens.Screens {if s.ID==target {d.customScreens.ActiveScreenID=target;break}}
   d.lastCycle=time.Now()
   d.mutex.Unlock()
- case "hotkey":executeKeyChord(target)
  case "mouse":executeNexusMouseAction(target)
  case "text":executeNexusTextEntry(target)
  case "url","application":executeNexusLaunchAction(action,target)

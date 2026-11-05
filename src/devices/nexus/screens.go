@@ -87,11 +87,10 @@ func (c ScreenConfiguration) Validate() error {
    if (w.Type=="metric"||w.Type=="bar"||w.Type=="graph")&&!supportedMetrics[w.Metric] {return fmt.Errorf("unsupported metric: %q",w.Metric)}
    if w.X<0||w.Y<0||w.Width<=0||w.Height<=0||w.X>ScreenWidth-w.Width||w.Y>ScreenHeight-w.Height {return fmt.Errorf("widget %q outside display",w.ID)}
    if w.Type=="button" {
-    if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" && w.Action!="macro" && w.Action!="hotkey" && w.Action!="mouse" && w.Action!="url" && w.Action!="application" && w.Action!="device" && w.Action!="text" {return fmt.Errorf("invalid button action for %q",w.ID)}
+    if w.Action!="next" && w.Action!="previous" && w.Action!="screen" && w.Action!="media" && w.Action!="macro" && w.Action!="mouse" && w.Action!="url" && w.Action!="application" && w.Action!="device" && w.Action!="text" {return fmt.Errorf("invalid button action for %q",w.ID)}
     if w.Action=="screen" && !safeID.MatchString(w.Target) {return fmt.Errorf("invalid button target for %q",w.ID)}
     if w.Action=="media" && !supportedMediaAction(w.Target) {return fmt.Errorf("invalid media action for %q",w.ID)}
     if w.Action=="device" && !supportedNexusHardwareAction(w.Target) {return fmt.Errorf("invalid device action for %q",w.ID)}
-    if w.Action=="hotkey" {if _,err:=parseKeyChord(w.Target);err!=nil{return fmt.Errorf("invalid shortcut for %q: %w",w.ID,err)}}
     if w.Action=="mouse" {if _,err:=parseNexusMouseAction(w.Target);err!=nil{return fmt.Errorf("invalid mouse action for %q: %w",w.ID,err)}}
     if w.Action=="text" {if _,err:=parseNexusTextEntry(w.Target);err!=nil{return fmt.Errorf("invalid text entry for %q: %w",w.ID,err)}}
     if w.Action=="url" || w.Action=="application" {
