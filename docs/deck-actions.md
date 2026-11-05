@@ -47,3 +47,10 @@ shared Nexus macro execution engine.
 
 All three action types can be assigned to different keys in one layout.
 Existing keyboard shortcut assignments remain supported.
+
+For a combined regression check, assign a **Keyboard shortcut** to one key and
+**Run saved macro** to another, then Save & Apply. Verify both actions on the
+physical device and confirm their assignments persist after restarting the
+installed OpenLinkHub service. Use the service account so Corsair HID devices
+have the expected access permissions; a root-only test may behave differently
+from the production installation.
