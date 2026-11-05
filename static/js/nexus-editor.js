@@ -212,7 +212,7 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
  const contentSection=section('Content & data',true,'data','type');
  const isActionWidget=['button','macro','image'].includes(w.type);
  const iconSection=isActionWidget?section('Icon',true,'icons','image'):null;
- const touchSection=isActionWidget?section('Actions',false,'actions','cursor'):null;
+ const touchSection=isActionWidget?section('Actions',true,'actions','cursor'):null;
  geometrySection.append(dimensionsRow);
  appearanceSection.append(colorsRow);
  const appearanceRow=document.createElement('div');
