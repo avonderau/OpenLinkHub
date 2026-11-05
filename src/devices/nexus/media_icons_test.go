@@ -1,6 +1,7 @@
 package nexus
 
 import (
+ "bytes"
  "image"
  "image/color"
  "testing"
@@ -51,4 +52,50 @@ func TestStyledMacroButtonRender(t *testing.T){
  if err!=nil {t.Fatal(err)}
  if got:=result.RGBAAt(20,2);got!=(color.RGBA{0x12,0x34,0x56,255}){t.Fatalf("background color %v",got)}
  if got:=result.RGBAAt(0,0);got!=(color.RGBA{0xff,0x99,0,255}){t.Fatalf("border color %v",got)}
+}
+
+func TestPreviousTrackRewindBarOutsideTriangles(t *testing.T) {
+ frame := image.NewRGBA(image.Rect(0,0,48,48))
+ drawMediaIcon(frame,frame.Bounds(),"previous-track",color.RGBA{255,255,255,255})
+ cy,cx:=21,24
+ // Opaque bar and triangles must be separated by at least three empty columns.
+ for y:=cy-7;y<=cy+7;y++ {
+  if frame.RGBAAt(cx-15,y).A==0 {t.Fatalf("missing previous-track bar at %d,%d",cx-15,y)}
+  for x:=cx-12;x<=cx-10;x++ {
+   if frame.RGBAAt(x,y).A!=0 {t.Fatalf("previous-track bar overlaps rewind triangle at %d,%d",x,y)}
+  }
+ }
+ if frame.RGBAAt(cx-9,cy).A==0 {t.Fatal("missing first rewind triangle tip")}
+}
+
+func TestDefaultMediaLabels(t *testing.T){
+ for _,tc:=range []struct{target,label string}{
+  {"play-pause","Play/Pause"},{"previous-track","Previous"},
+  {"next-track","Next Track"},{"stop","Stop"},
+  {"volume-up","Volume +"},{"volume-down","Volume -"},{"volume-mute","Mute"},
+ } {
+  if got:=DefaultMediaLabel(tc.target);got!=tc.label {t.Fatalf("%s: %q",tc.target,got)}
+ }
+ if DefaultMediaLabel("unknown")!="" {t.Fatal("unknown media action has a default caption")}
+}
+
+func TestNexusMediaCaptionDefaultsAndCustomOverride(t *testing.T){
+ for _,label:=range []string{"","My Playlist"}{
+  screen:=Screen{ID:"media",Name:"Media",Widgets:[]Widget{{
+   ID:"prev",Type:"button",X:0,Y:0,Width:150,Height:48,
+   Action:"media",Target:"previous-track",
+   Settings:map[string]string{"icon":"previous-track","label":label},
+  }}}
+  frame,err:=RenderScreen(screen,nil)
+  if err!=nil {t.Fatal(err)}
+  if frame.Bounds()!=image.Rect(0,0,ScreenWidth,ScreenHeight){t.Fatal("wrong media dimensions")}
+  actualCaption:=label
+  if actualCaption=="" {actualCaption=DefaultMediaLabel("previous-track")}
+  expected:=screen
+  expected.Widgets=[]Widget{screen.Widgets[0]}
+  expected.Widgets[0].Settings=map[string]string{"icon":"previous-track","label":actualCaption}
+  same,err:=RenderScreen(expected,nil)
+  if err!=nil {t.Fatal(err)}
+  if !bytes.Equal(frame.Pix,same.Pix) {t.Fatalf("custom/default caption failed for %q",label)}
+ }
 }

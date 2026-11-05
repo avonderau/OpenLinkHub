@@ -17,7 +17,7 @@ func renderDeckMediaKey(size int, key KeyConfig) image.Image {
 	const sourceSize = 48
 	icon := image.NewRGBA(image.Rect(0, 0, sourceSize, sourceSize))
 	nexus.DrawDeckMediaGlyph(icon, icon.Bounds(), key.Target, color.RGBA{R: 242, G: 207, B: 147, A: 255})
-	label := strings.TrimSpace(key.Label)
+	label := strings.TrimSpace(keyDisplayLabel(key))
 	glyphSize := size * 80 / 100
 	top := (size - glyphSize) / 2
 	if label != "" {

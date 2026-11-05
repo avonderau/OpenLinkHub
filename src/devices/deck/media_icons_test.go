@@ -38,3 +38,18 @@ func TestDeckMediaKeysHaveBuiltInLCDGlyphs(t *testing.T) {
 		}
 	}
 }
+
+func TestDeckMediaCaptionDefaultsAndCustomOverride(t *testing.T){
+ for _,tc:=range []struct{target,caption string}{
+  {"play-pause","Play/Pause"},{"previous-track","Previous"},
+  {"next-track","Next Track"},{"volume-mute","Mute"},
+ } {
+  key:=KeyConfig{Action:"media",Target:tc.target}
+  if got:=keyDisplayLabel(key);got!=tc.caption{t.Fatalf("default %s: %q",tc.target,got)}
+  blank:=renderDeckMediaKey(85,key).(*image.RGBA)
+  explicit:=renderDeckMediaKey(85,KeyConfig{Action:"media",Target:tc.target,Label:tc.caption}).(*image.RGBA)
+  if !bytes.Equal(blank.Pix,explicit.Pix){t.Fatalf("missing LCD default caption for %s",tc.target)}
+  custom:=renderDeckMediaKey(85,KeyConfig{Action:"media",Target:tc.target,Label:"Custom"}).(*image.RGBA)
+  if bytes.Equal(custom.Pix,blank.Pix){t.Fatalf("custom label did not replace default for %s",tc.target)}
+ }
+}
