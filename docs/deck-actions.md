@@ -32,25 +32,18 @@ not executed as the system service.
   physical LCD page updates and that reconnecting restores the selected page.
 - Verify an unsaved browser edit is not discarded by a hardware page change.
 
-## Keyboard shortcuts and media keys (PR #63)
+## Media and saved macros
 
-From **Deck Editor → Key → Button action**, choose either:
+Choose **Media control** to assign Play/Pause, Previous/Next, Stop, or
+Volume Up/Down/Mute. Choose **Run saved macro** to reuse an existing
+OpenLinkHub macro. Use **Manage macros** to create or edit one, then
+**Refresh** the picker.
 
-- **Keyboard shortcut** and enter a bounded key chord such as `Ctrl+Alt+T`,
-  `Super+D` or `Ctrl+Shift+Esc`.
-- **Media control** and select Play/Pause, Previous/Next, Stop,
-  Volume Up/Down or Mute.
+Press **Save & Apply** to send the assignment to the Mirabox. Physical
+key presses execute macros through the shared Nexus engine with its
+existing bounds, cancellation and single-flight safeguards.
 
-Save & Apply, then press the *physical* Mirabox key. These actions use the
-existing Nexus Linux virtual keyboard via uinput. They affect the local active
-graphical desktop seat, not the browser session viewing OpenLinkHub remotely.
-
-Only validated key names and media actions are accepted. The Deck API never
-runs shell commands or arbitrary executables. A non-graphical/headless host
-cannot forward those keys to a separate remote desktop through this feature.
-
-For the initial physical test, assign Play/Pause to a key, then a keyboard
-shortcut you know the local desktop handles. Confirm the existing Next Page,
-Previous Page and Go to Page actions still work. If no keys are emitted,
-check whether the OpenLinkHub virtual keyboard is initialized and visible
-with `libinput list-devices` or `sudo evtest`.
+Standalone Keyboard Shortcut actions have been removed from both the
+Deck and iCUE NEXUS editors. Use a saved macro for key combinations.
+Existing `hotkey` layout actions are no longer accepted, and are not
+migrated automatically.
