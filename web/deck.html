@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=metrics-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=macro-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -146,7 +146,7 @@
                     <option value="page-next">Next page</option>
                     <option value="page-previous">Previous page</option>
                     <option value="page-go">Go to page</option>
-                    <option value="hotkey">Keyboard shortcut</option>
+                    <option value="macro">Run saved macro</option>
                     <option value="media">Media control</option>
                   </select>
                   <small>Actions trigger when you press the physical Mirabox key.</small>
@@ -154,12 +154,6 @@
                 <div class="deck-property" id="deck-target-property" hidden>
                   <label for="deck-key-target-page">Destination page</label>
                   <select class="form-select" id="deck-key-target-page" disabled></select>
-                </div>
-                <div class="deck-property" id="deck-hotkey-property" hidden>
-                  <label for="deck-key-shortcut">Keyboard shortcut</label>
-                  <input class="form-control" id="deck-key-shortcut" type="text" maxlength="80"
-                         placeholder="Ctrl+Alt+T" autocomplete="off" spellcheck="false" disabled>
-                  <small>Uses the same validated virtual-keyboard backend as Nexus. For example: Ctrl+Alt+T or Super+D.</small>
                 </div>
                 <div class="deck-property" id="deck-media-property" hidden>
                   <label for="deck-key-media">Media command</label>
@@ -173,10 +167,19 @@
                     <option value="volume-mute">Mute</option>
                   </select>
                 </div>
+                <div class="deck-property" id="deck-macro-property" hidden>
+                  <label for="deck-key-macro">Saved OpenLinkHub macro</label>
+                  <select class="form-select" id="deck-key-macro" disabled></select>
+                  <div class="deck-action-links">
+                    <button type="button" class="deck-secondary" id="deck-refresh-macros"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</button>
+                    <a href="/macros" target="_blank" rel="noopener noreferrer">Manage macros</a>
+                  </div>
+                  <small id="deck-macro-status" role="status">Create a macro in OpenLinkHub Macros, then select it here.</small>
+                </div>
                 <div class="deck-planned-feature">
                   <i class="bi bi-puzzle" aria-hidden="true"></i>
                   <div><strong>More button actions are coming</strong>
-                    <p>Saved macros, application launching and OpenAction plugins are next. Keyboard and media keys now share the native Nexus input backend.</p>
+                    <p>Saved macros reuse the existing Nexus macro engine. Desktop launching and OpenAction plugins remain future work.</p>
                   </div>
                 </div>
               </section>
@@ -207,7 +210,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=metrics-1"></script>
+<script src="/static/js/deck-editor.js?v=macro-1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
