@@ -17,8 +17,15 @@ list, but the Corsair Nexus touchscreen editor is unchanged.
 - Same-origin, size-limited APIs:
   `GET /api/deck/status?serial=...` and
   `GET/PUT /api/deck/layout?serial=...`.
-- Saving a Mirabox layout renders the active page's labels to static
-  key images. Elgato labels save as configuration only.
+- Mirabox startup and reconnection replay the active saved page to the LCD.
+  Saving a layout batches all key images and flushes once; the API reports
+  separately whether configuration was saved and hardware display updated.
+  Elgato labels save as configuration only.
+- HID read errors now close stale handles and trigger a VID/PID/usage-checked
+  reconnect attempt about every 1.5 seconds. The same device retains its
+  profile and restores its saved images after reconnection.
+- Editor visuals reuse the shared OpenLinkHub Nexus charcoal/gold gradients,
+  icon headers, and file-style Key/Pages tabs.
 
 The Mirabox-family reference plugin uses an **18-position, 3x6 layout**.
 The physical key placement, key orientation and any special positions must
@@ -30,8 +37,9 @@ key-release events. There is no support for long-press detection on old units.
 - Action execution, macros, folders, icon uploads, metrics and plugin hosting.
   These must be wired through a shared restricted action runtime.
 - The Elgato HID image/input driver, support for Neo, Plus, pedals and encoders.
-- USB hotplug/reconnection after service startup and device disconnection
-  removal from the existing device registry.
+- First-time plug-in **after** service startup is not yet registered.
+  Reconnection is implemented for Mirabox units already discovered at
+  startup. USB device-list add/remove for brand-new devices is still future work.
 - Hardware validation, cross-platform support and multiple identical legacy
   Mirabox units. Legacy units often share a fake serial number.
 - Plugin-process sandboxing and OpenAction/Stream Deck SDK compatibility.
@@ -59,6 +67,7 @@ testing. Elgato devices are not opened by the initial discovery-only driver.
 ```bash
 CGO_CFLAGS_ALLOW='-fno-strict-overflow' go test ./src/devices/deck ./src/server -count=1
 node --check static/js/deck-editor.js
+node --test static/js/deck-editor.test.cjs
 ```
 
 ### Reference implementations and licensing
