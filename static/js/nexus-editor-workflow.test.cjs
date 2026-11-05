@@ -10,7 +10,7 @@ const integrated=fs.readFileSync(path.join(__dirname,'..','..','web','nexus-cust
 const standalone=fs.readFileSync(path.join(__dirname,'..','nexus-editor.html'),'utf8');
 const style=fs.readFileSync(path.join(__dirname,'..','css','nexus-editor.css'),'utf8');
 
-function makeEditor(){
+function makeEditor(savedWidgetEntries=[]){
  const nodes=new Map();
  const writes=[];
  const persisted={version:1,activeScreenId:'existing',cyclingMode:'manual',cyclingSeconds:15,screens:[{id:'existing',name:'Existing layout',widgets:[]}]};
@@ -42,6 +42,19 @@ function makeEditor(){
   prompt(){return 'demo-nexus'},
   confirm(){return true},
   fetch:async(url,options={})=>{
+   if(url.startsWith('/api/nexus/widget-library')){
+    if(options.method==='POST'){
+     savedWidgetEntries.push(JSON.parse(options.body));
+     return {ok:true,status:201,json:async()=>JSON.parse(options.body)};
+    }
+    if(options.method==='DELETE'){
+     const target=new URL('http://localhost'+url).searchParams.get('id');
+     const index=savedWidgetEntries.findIndex(item=>item.id===target);
+     if(index>=0)savedWidgetEntries.splice(index,1);
+     return {ok:true,status:204};
+    }
+    return {ok:true,status:200,json:async()=>({entries:structuredClone(savedWidgetEntries)})};
+   }
    if(url.startsWith('/api/telemetry/sources'))return {
     ok:true,json:async()=>({sources:{
      'disk.free_gb':[{id:'mount:/',label:'/'},{id:'mount:/home',label:'/home'}],
@@ -66,6 +79,7 @@ function makeEditor(){
    return {ok:true,json:async()=>JSON.parse(JSON.stringify(persisted))};
   }
  });
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'nexus-widget-library.js'),'utf8'),context,{filename:'nexus-widget-library.js'});
  vm.runInContext(editorSource,context,{filename:'nexus-editor.js'});
  return {context,node,writes};
 }
@@ -921,6 +935,40 @@ test('all six media keys retain absolute positioning and their saved preview slo
    'button '+i+' must retain its original LCD X coordinate');
   assert.equal(visible[i].dataset.id,screen.widgets[i].id);
  }
+});
+
+test('Widget library saves to OpenLinkHub and survives a fresh editor/browser context',async()=>{
+ const shared=[];
+ const first=makeEditor(shared);
+ await vm.runInContext('load()',first.context);
+ first.node('addMetric').onclick();
+ await first.node('saveWidgetPreset').listeners.click();
+ assert.equal(shared.length,1);
+ assert.equal(shared[0].name,'demo-nexus');
+ assert.equal(shared[0].widget.type,'metric');
+ assert.match(first.node('message').textContent,/saved in OpenLinkHub/i);
+
+ const second=makeEditor(shared);
+ await vm.runInContext('load()',second.context);
+ assert.equal(second.node('widgetLibrarySelect').options.length,1);
+ second.node('widgetLibrarySelect').value=shared[0].id;
+ second.node('addWidgetPreset').listeners.click();
+ const widgets=vm.runInContext('cfg.screens[0].widgets',second.context);
+ assert.equal(widgets.length,1);
+ assert.equal(widgets[0].type,'metric');
+ assert.notEqual(widgets[0].id,shared[0].widget.id);
+ await second.node('deleteWidgetPreset').listeners.click();
+ assert.equal(shared.length,0);
+ assert.match(second.node('message').textContent,/removed from the OpenLinkHub library/);
+});
+
+test('Nexus Icon and Actions inspector cards are adjacent columns with responsive stacking',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','nexus-compact-inspector.css'),'utf8');
+ assert.match(css,/#nexus-panel-widget #properties>\\.nexus-icons-section\\{grid-column:1;grid-row:3\\}/);
+ assert.match(css,/#nexus-panel-widget #properties>\\.nexus-actions-section\\{grid-column:2;grid-row:3\\}/);
+ assert.match(css,/@container\\(max-width:610px\\)/);
+ assert.match(editorSource,/section\\('Actions',true,'actions','cursor'\\)/);
+ assert.doesNotMatch(editorSource,/storage\\.setItem\\(/);
 });
 
 test('Nexus icon gallery lives in the selected widget inspector and saves the chosen image ID',async()=>{
