@@ -163,8 +163,11 @@ media controls, artwork and live metrics remain available.
 
 ### Shared custom icon sets
 
-Open **Actions & icons** for a button or image, choose a previously imported
-icon set, and apply an icon. To install a new set, upload a ZIP containing
-PNG/JPEG images (at most 48 icons, 512 KiB each, 8 MiB compressed).
-Sets are shared with Mirabox Deck. Existing one-off icon uploads continue to
-work, and active layouts store image IDs, not archive paths.
+Manage reusable packs from **Settings → Devices & Displays → Icon Pack
+Library**. Import, rename, preview, and remove them there; only select
+installed icons inside the Nexus and Deck editors. ZIP imports support
+PNG, JPEG and static SVG icons (up to 48 images, 512 KiB each, 8 MiB ZIP).
+SVG files are safely rasterized into PNG using `rsvg-convert` (install
+`librsvg2-bin` on Linux); SVG markup is never stored for direct display.
+Existing single-image uploads remain supported, and saved layouts store
+stable icon IDs rather than archive paths.
