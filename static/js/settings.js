@@ -21,6 +21,13 @@ $(document).ready(function () {
                 bottomEnd: 'pageLength'
             },
             columns: [
+                {
+                    data: 'VendorId',
+                    title: 'Vendor ID',
+                    render: function(data) {
+                        return '0x' + Number(data).toString(16).toUpperCase().padStart(4, '0');
+                    }
+                },
                 { data: 'ProductId', title: 'Product Id' },
                 {
                     data: 'ProductId',
@@ -38,7 +45,7 @@ $(document).ready(function () {
                         const checked = data ? 'checked' : '';
                         return `
                             <label class="system-toggle compact">
-                                <input type="checkbox" class="device-checkbox" data-id="${row.ProductId}" ${checked}>
+                                <input type="checkbox" class="device-checkbox" data-id="${row.DeviceKey}" ${checked}>
                                 <span class="toggle-track"></span>
                             </label>
                         `;
@@ -198,12 +205,18 @@ $(document).ready(function () {
 
     $('#btnSaveSupportedDevices').on('click', function() {
         const supportedDevices = {};
+        const deckSupportedDevices = {};
         const pf = {};
         dt.rows().every(function() {
             const data = this.data();
-            supportedDevices[data.ProductId] = data.Enabled; // true/false
+            if (data.Family === 'deck') {
+                deckSupportedDevices[data.DeviceKey] = data.Enabled;
+            } else {
+                supportedDevices[data.ProductId] = data.Enabled;
+            }
         });
         pf["supportedDevices"] = supportedDevices;
+        pf["deckSupportedDevices"] = deckSupportedDevices;
         const json = JSON.stringify(pf, null, 2);
 
         $.ajax({
