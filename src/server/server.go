@@ -2915,6 +2915,7 @@ func setRoutes() http.Handler {
 	r.HandleFunc("/api/deck/status", deckStatusAPI)
 	r.HandleFunc("/api/deck/icon", deckIconAPI)
 	r.HandleFunc("/api/icon-sets", iconSetsAPI)
+	r.HandleFunc("/api/icon-sets/preview", iconSetPreviewAPI)
 
 	// GET
 	handleFunc(r, "/api/", http.MethodGet, homePage)

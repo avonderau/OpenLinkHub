@@ -44,3 +44,16 @@ func TestSharedIconSetRejectsUnsafeArchive(t *testing.T){
  }
  if _,err:=importIconSet(t.TempDir(),"",makeIconSetZIP(t,"fine.png"));err==nil{t.Fatal("empty pack name accepted")}
 }
+
+func TestSharedIconSetRenameAndPreviewMetadata(t *testing.T) {
+ root:=t.TempDir()
+ pack,err:=importIconSet(root,"Old name",makeIconSetZIP(t,"media/rewind.png"))
+ if err!=nil{t.Fatal(err)}
+ renamed,err:=renameIconSet(root,pack.ID,"New name")
+ if err!=nil||renamed.Name!="New name"{t.Fatalf("rename: %+v %v",renamed,err)}
+ all,err:=listIconSets(root)
+ if err!=nil||len(all)!=1||all[0].Name!="New name"||all[0].Icons[0].DeckID!=pack.Icons[0].DeckID{
+  t.Fatalf("rename changed stored artwork: %+v %v",all,err)
+ }
+ if _,err:=renameIconSet(root,pack.ID,"\n");err==nil{t.Fatal("empty set name accepted")}
+}

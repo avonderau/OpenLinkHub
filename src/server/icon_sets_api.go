@@ -19,6 +19,7 @@ import (
  "path/filepath"
  "regexp"
  "sort"
+ "strconv"
  "strings"
  "sync"
  "unicode"
@@ -182,6 +183,47 @@ func importIconSet(root,name string,data []byte)(iconSetManifest,error){
  return manifest,nil
 }
 
+
+func renameIconSet(root,id,newName string)(iconSetManifest,error){
+ iconSetImportMu.Lock()
+ defer iconSetImportMu.Unlock()
+ name,err:=cleanIconSetName(newName)
+ if err!=nil{return iconSetManifest{},err}
+ current,err:=readIconSetManifest(root,id)
+ if err!=nil{return iconSetManifest{},err}
+ current.Name=name
+ blob,err:=json.MarshalIndent(current,"","  ")
+ if err!=nil{return iconSetManifest{},err}
+ directory:=iconSetsDir(root)
+ temp,err:=os.CreateTemp(directory,".icon-set-rename-*")
+ if err!=nil{return iconSetManifest{},err}
+ defer os.Remove(temp.Name())
+ if err=temp.Chmod(0600);err!=nil{temp.Close();return iconSetManifest{},err}
+ if _,err=temp.Write(blob);err!=nil{temp.Close();return iconSetManifest{},err}
+ if err=temp.Sync();err!=nil{temp.Close();return iconSetManifest{},err}
+ if err=temp.Close();err!=nil{return iconSetManifest{},err}
+ target,_:=iconSetManifestPath(root,id)
+ if err=os.Rename(temp.Name(),target);err!=nil{return iconSetManifest{},err}
+ return current,nil
+}
+func iconSetPreviewAPI(w http.ResponseWriter,r *http.Request){
+ if r.Method!=http.MethodGet{w.Header().Set("Allow","GET");http.Error(w,"method not allowed",405);return}
+ if !nexusRequestHostAllowed(r){http.Error(w,"host not allowed",403);return}
+ root:=config.GetConfig().ConfigPath
+ if root==""{http.Error(w,"config unavailable",503);return}
+ id:=r.URL.Query().Get("id")
+ manifest,err:=readIconSetManifest(root,id)
+ if err!=nil{http.Error(w,"icon set unavailable",404);return}
+ index,err:=strconv.Atoi(r.URL.Query().Get("index"))
+ if err!=nil||index<0||index>=len(manifest.Icons){http.Error(w,"icon unavailable",404);return}
+ icon,err:=deck.ReadDeckIcon(root,manifest.Icons[index].DeckID)
+ if err!=nil{http.Error(w,"icon unavailable",404);return}
+ w.Header().Set("Content-Type","image/png")
+ w.Header().Set("Cache-Control","private, max-age=300")
+ w.Header().Set("X-Content-Type-Options","nosniff")
+ _,_=w.Write(icon)
+}
+
 func iconSetsAPI(w http.ResponseWriter,r *http.Request){
  if !nexusRequestHostAllowed(r){http.Error(w,"host not allowed",http.StatusForbidden);return}
  root:=config.GetConfig().ConfigPath
@@ -207,6 +249,18 @@ func iconSetsAPI(w http.ResponseWriter,r *http.Request){
   w.Header().Set("Content-Type","application/json")
   w.WriteHeader(http.StatusCreated)
   _=json.NewEncoder(w).Encode(map[string]any{"set":set})
+ case http.MethodPut:
+  if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
+  r.Body=http.MaxBytesReader(w,r.Body,4096)
+  defer r.Body.Close()
+  var request struct {Name string `json:"name"`}
+  dec:=json.NewDecoder(r.Body)
+  dec.DisallowUnknownFields()
+  if err:=dec.Decode(&request);err!=nil{http.Error(w,"invalid pack name",400);return}
+  renamed,err:=renameIconSet(root,r.URL.Query().Get("id"),request.Name)
+  if err!=nil{http.Error(w,"unable to rename pack: "+err.Error(),400);return}
+  w.Header().Set("Content-Type","application/json")
+  _=json.NewEncoder(w).Encode(map[string]any{"set":renamed})
  case http.MethodDelete:
   if !nexusWriteAllowed(r){http.Error(w,"cross-origin write forbidden",403);return}
   id:=r.URL.Query().Get("id")
@@ -219,7 +273,7 @@ func iconSetsAPI(w http.ResponseWriter,r *http.Request){
   // Imported content-addressed images remain for existing saved layouts.
   w.WriteHeader(http.StatusNoContent)
  default:
-  w.Header().Set("Allow","GET, POST, DELETE")
+  w.Header().Set("Allow","GET, POST, PUT, DELETE")
   http.Error(w,"method not allowed",405)
  }
 }
