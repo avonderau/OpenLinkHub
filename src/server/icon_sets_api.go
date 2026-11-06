@@ -33,9 +33,9 @@ import (
 const (
 	maxIconSetZipBytes        = 32 << 20
 	maxIconSetTotalImageBytes = 64 << 20
-	maxIconSetImages          = 2048
+	maxIconSetImages          = 4096
 	maxIconSets               = 24
-	maxIconSetArchiveEntries  = 4096
+	maxIconSetArchiveEntries  = 8192
 )
 
 var iconSetIDPattern = regexp.MustCompile(`^[a-f0-9]{24}$`)
