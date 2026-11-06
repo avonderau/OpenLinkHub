@@ -421,19 +421,14 @@ func FindTtyByUsbId(vendorID, productID uint16) ([]string, error) {
 
 // runUdevadmInfo executes `udevadm info --query=property` on a given device and returns the result.
 func runUdevadmInfo(devicePath string) (string, error) {
-	// Construct the udevadm command to get device properties
-	cmd := exec.Command("udevadm", "info", "--query=property", "--name="+devicePath)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-
-	// Run the command
-	err := cmd.Run()
+	// A misbehaving udevadm should not stall USB device discovery or
+	// allocate arbitrarily large buffers while the daemon enumerates devices.
+	out, err := BoundedCommandOutput(3*time.Second, 128<<10, "udevadm",
+		"info", "--query=property", "--name="+devicePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to run udevadm: %v", err)
+		return "", fmt.Errorf("failed to run udevadm: %w", err)
 	}
-
-	return out.String(), nil
+	return string(out), nil
 }
 
 // GetDeviceUSBPath retrieves the ID_PATH_WITH_USB_REVISION properties from udevadm info output
