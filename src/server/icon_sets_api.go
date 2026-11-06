@@ -35,7 +35,7 @@ const (
 	maxIconSetTotalImageBytes = 64 << 20
 	maxIconSetImages          = 256
 	maxIconSets               = 24
-	maxIconSetArchiveEntries      = 512
+	maxIconSetArchiveEntries  = 512
 )
 
 var iconSetIDPattern = regexp.MustCompile(`^[a-f0-9]{24}$`)
