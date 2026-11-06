@@ -80,7 +80,7 @@
      img.alt='';
      img.loading='lazy';
      const caption=make('span','',icon.name);
-     caption.title=icon.name;
+     caption.title=[icon.name,...(icon.tags||[])].join(' · ');
      tile.append(img,caption);
      tiles.appendChild(tile);
     }
@@ -100,9 +100,10 @@
    const zip=file.files?.[0];
    if (working) return;
    if (!zip || zip.size<1 || zip.size>8*1024*1024) {
-    message('Select a ZIP file smaller than 8 MiB.',true);return;
+    message('Select a ZIP or .streamDeckIconPack file smaller than 8 MiB.',true);return;
    }
-   const label=name.value.trim() || zip.name.replace(/\.zip$/i,'');
+   const streamDeck=/\.streamDeckIconPack$/i.test(zip.name);
+   const label=name.value.trim() || (streamDeck ? '' : zip.name.replace(/\.zip$/i,''));
    working=true;importer.disabled=true;
    try {
     await request('/api/icon-sets?name='+encodeURIComponent(label),{
