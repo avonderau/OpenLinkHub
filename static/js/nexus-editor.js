@@ -296,6 +296,9 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   opacityInput.type='number';opacityInput.min='0';opacityInput.max='100';opacityInput.step='1';
   const initialOpacity=w.settings?.opacity??'100';
   opacitySlider.value=initialOpacity;opacityInput.value=initialOpacity;
+  // Custom track fill extends through the 100% endpoint; the native
+  // Chromium accent track leaves a misleading unfilled thumb-width gap.
+  opacitySlider.style.setProperty('--nexus-opacity-progress',Math.max(0,Math.min(100,Number(initialOpacity)||0))+'%');
   opacitySlider.setAttribute('aria-label','Opacity slider');
   opacityInput.setAttribute('aria-label','Opacity percentage');
   const updateOpacity=value=>{
@@ -304,6 +307,7 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
    const percentage=Math.max(0,Math.min(100,Math.round(n)));
    w.settings??={};w.settings.opacity=String(percentage);
    opacitySlider.value=String(percentage);opacityInput.value=String(percentage);
+   opacitySlider.style.setProperty('--nexus-opacity-progress',percentage+'%');
    const preview=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);
    if(preview)preview.style.opacity=String(percentage/100);
   };
