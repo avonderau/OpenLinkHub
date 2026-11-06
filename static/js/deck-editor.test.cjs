@@ -368,8 +368,8 @@ async function run() {
   label.dispatch('input');
   assert.equal(grid.children[3].dataset.hasCaption,'true',
     'a custom key label creates the same reserved caption region as hardware');
-  assert.equal(grid.children[3].children[2].className,'deck-key-caption');
-  assert.equal(grid.children[3].children[2].textContent,'My app');
+  assert.equal(grid.children[3].children[1].className,'deck-key-caption');
+  assert.equal(grid.children[3].children[1].textContent,'My app');
   label.value = '';
   label.dispatch('input');
   assert.equal(grid.children[3].dataset.hasCaption,undefined,
