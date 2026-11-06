@@ -19,6 +19,34 @@ root, copying X11 credentials, or adding a remote HTTP command endpoint.
 It only accepts validated HTTP(S) URLs and safe desktop-entry IDs from the
 local Nexus daemon. It never accepts shell commands.
 
+## Packaged Linux desktop startup
+
+The Debian and RPM packages install an XDG autostart entry at
+`/etc/xdg/autostart/openlinkhub-nexus-agent.desktop`. It starts the agent in
+an interactive graphical session using a non-root launcher, not in the
+system daemon. The launcher uses the fixed installation/socket paths and
+checks that the session user belongs to the `openlinkhub` group.
+
+**For security, package installation never automatically authorizes all
+local users.** An administrator must explicitly opt in each desktop account:
+
+```sh
+sudo usermod -aG openlinkhub "$(id -un)"
+```
+
+**Log out of the graphical desktop completely and log back in.** Changing
+account groups does not alter the existing session or previously launched
+agents. Check `id -nG` (without a username) in the new session and confirm
+`openlinkhub` appears. A manually configured per-user autostart entry can
+be removed to avoid starting duplicate agents. The system-wide desktop entry
+will take effect on the next login for authorized users.
+
+If the agent appears to run but launch buttons still fail, inspect its
+stderr or launch it directly from a desktop terminal. Failed socket checks,
+connection attempts and peer validation now emit diagnostic messages on
+change, and successful connection emits a confirmation. Verify permissions
+with `namei -l /opt/OpenLinkHub/runtime/nexus-desktop/desktop-launch.sock`.
+
 ## Starting the agent from your desktop
 
 Start the daemon normally, then **from a terminal in the locally logged-in
