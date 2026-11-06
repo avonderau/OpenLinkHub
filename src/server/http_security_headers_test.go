@@ -33,13 +33,13 @@ func TestHTTPResponseHeadersPreventClickjacking(t *testing.T) {
 }
 
 func TestHTTPResponseSecurityHeadersAlsoCoverRejectedRequests(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "http://localhost:27003/api/deck/layout", nil)
+	req := httptest.NewRequest(http.MethodPost, "http://localhost:27003/api/nexus/widget-library", nil)
 	req.Header.Set("Origin", "http://attacker.example")
 	req.Header.Set("Sec-Fetch-Site", "cross-site")
 	w := httptest.NewRecorder()
 	setRoutes().ServeHTTP(w, req)
-	if w.Code != http.StatusNotFound && w.Code != http.StatusForbidden {
-		t.Fatalf("unexpected Deck denial status %d", w.Code)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("unexpected cross-origin denial status %d", w.Code)
 	}
 	if w.Header().Get("X-Frame-Options") != "SAMEORIGIN" {
 		t.Fatal("denied requests must also receive anti-framing headers")
