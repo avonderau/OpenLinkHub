@@ -9,9 +9,15 @@ const source=fs.readFileSync(path.join(__dirname,'icon-pack-settings.js'),'utf8'
 const markup=fs.readFileSync(path.join(root,'web','settings.html'),'utf8');
 const deck=fs.readFileSync(path.join(__dirname,'deck-editor.js'),'utf8');
 const nexus=fs.readFileSync(path.join(__dirname,'nexus-editor.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'static','css','openlinkhub-settings.css'),'utf8');
+
 function fixture(){
  class Element {
-  constructor(){this.children=[];this.listeners={};this.value='';this.files=[];this.classList={toggle(){}};this.disabled=false;this.attributes={};}
+  constructor(tag='div'){
+   this.tag=tag;this.children=[];this.listeners={};this.value='';
+   this.files=[];this.classList={toggle(){}};this.disabled=false;
+   this.attributes={};this.hidden=false;this.textContent='';this.className='';
+  }
   append(...children){this.children.push(...children)}
   appendChild(child){this.children.push(child)}
   replaceChildren(...children){this.children=[...children]}
@@ -23,44 +29,102 @@ function fixture(){
   'olh-icon-pack-import','olh-icon-pack-status'
  ].map(id=>[id,new Element()]));
  const calls=[];
- const sets=[{id:'a'.repeat(24),name:'Media',icons:[{name:'Play',deckId:'b'.repeat(32),nexusId:'set_cc'}]}];
+ const many=Array.from({length:130},(_,i)=>({
+  name:i===129?'Target icon':`Icon ${i}`,tags:i===129?['special']:['generic'],
+  deckId:String(i).padStart(32,'a'),nexusId:'set_'+i
+ }));
+ const sets=[
+  {id:'a'.repeat(24),name:'Media',icons:[{name:'Play',tags:['media'],deckId:'b'.repeat(32),nexusId:'set_cc'}]},
+  {id:'c'.repeat(24),name:'System',icons:many}
+ ];
  const fetch=async(url,opts={})=>{
   calls.push({url,method:opts.method||'GET',body:opts.body});
   const method=opts.method||'GET';
-  if(method==='DELETE'){sets.length=0;return {ok:true,status:204}}
-  if(method==='PUT'){sets[0].name=JSON.parse(opts.body).name;return {ok:true,status:200,json:async()=>({set:sets[0]})}}
-  if(method==='POST'){sets.push({id:'d'.repeat(24),name:'New Pack',icons:[]});return {ok:true,status:201,json:async()=>({set:sets.at(-1)})}}
+  const id=new URL(url,'http://localhost').searchParams.get('id');
+  if(method==='DELETE'){
+   const index=sets.findIndex(s=>s.id===id);
+   if(index<0)throw new Error('missing pack');
+   sets.splice(index,1);
+   return {ok:true,status:204};
+  }
+  if(method==='PUT'){
+   const item=sets.find(s=>s.id===id);
+   item.name=JSON.parse(opts.body).name;
+   return {ok:true,status:200,json:async()=>({set:item})};
+  }
+  if(method==='POST'){
+   sets.push({id:'d'.repeat(24),name:'New Pack',icons:[]});
+   return {ok:true,status:201,json:async()=>({sets:[sets.at(-1)]})};
+  }
   return {ok:true,status:200,json:async()=>({sets:[...sets],svgAvailable:true})};
  };
  const ctx=vm.createContext({
-  document:{readyState:'complete',getElementById:id=>elements[id],createElement:()=>new Element()},
+  document:{readyState:'complete',getElementById:id=>elements[id],createElement:tag=>new Element(tag)},
   window:{confirm:()=>true},fetch
  });
  vm.runInContext(source,ctx);
- return {elements,calls};
+ return {elements,calls,sets};
 }
-const flush=async()=>{for(let i=0;i<8;i++)await Promise.resolve()};
-test('Settings owns icon pack installation and management, not either editor',()=>{
+const flush=async()=>{for(let i=0;i<12;i++)await Promise.resolve()};
+const panes=f=>f.elements['olh-icon-pack-library'].children;
+const packList=f=>panes(f)[0].children[2];
+const detail=f=>panes(f)[1];
+const controls=f=>detail(f).children[1];
+
+test('Settings owns pack installation and management, not editors',()=>{
  assert.match(markup,/id="olh-icon-pack-library"/);
  assert.match(markup,/id="olh-icon-pack-import"/);
  assert.match(markup,/id="olh-settings-devices"/);
+ assert.match(css,/olh-icon-pack-sidebar/);
+ assert.match(css,/olh-icon-pack-detail/);
  assert.doesNotMatch(deck,/method:\s*'POST'\s*,\s*headers:\s*\{\s*'Content-Type':\s*'application\/zip'/);
  assert.doesNotMatch(nexus,/fetch\('\/api\/icon-sets\?name=/);
  assert.match(deck,/\/api\/icon-sets/);
  assert.match(nexus,/\/api\/icon-sets/);
 });
-test('Settings lists, renames and removes packs without touching device layouts',async()=>{
+test('Manager uses left pack picker and right selected-pack details',async()=>{
  const f=fixture();await flush();
- const card=f.elements['olh-icon-pack-library'].children[0];
- assert.ok(card,'imported pack must be visible');
- assert.equal(card.children[0].children[0].value,'Media');
- const name=card.children[0].children[0];
- name.value='Navigation';
- await card.children[2].children[0].listeners.click();await flush();
- assert.equal(f.elements['olh-icon-pack-library'].children[0].children[0].children[0].value,'Navigation');
- assert.equal(f.calls.some(c=>c.method==='PUT'&&JSON.parse(c.body).name==='Navigation'),true);
- const next=f.elements['olh-icon-pack-library'].children[0];
- await next.children[2].children[1].listeners.click();await flush();
- assert.equal(f.calls.some(c=>c.method==='DELETE'),true);
- assert.equal(f.elements['olh-icon-pack-library'].children[0].textContent,'No icon packs imported yet.');
+ assert.equal(panes(f).length,2);
+ assert.equal(packList(f).children.length,2);
+ assert.equal(packList(f).children[0].attributes['aria-current'],'true');
+ assert.equal(controls(f).children[0].value,'Media');
+ assert.equal(detail(f).children[0].children[0].textContent,'Media');
+ await packList(f).children[1].listeners.click();
+ assert.equal(packList(f).children[1].attributes['aria-current'],'true');
+ assert.equal(controls(f).children[0].value,'System');
+ assert.equal(detail(f).children[0].children[1].textContent,'130 icons');
+});
+test('Rename and delete act only on the selected pack',async()=>{
+ const f=fixture();await flush();
+ await packList(f).children[1].listeners.click();
+ controls(f).children[0].value='Navigation';
+ await controls(f).children[1].listeners.click();await flush();
+ assert.equal(f.sets[1].name,'Navigation');
+ assert.equal(f.sets[0].name,'Media');
+ assert.equal(controls(f).children[0].value,'Navigation');
+ await controls(f).children[2].listeners.click();await flush();
+ assert.equal(f.sets.length,1);
+ assert.equal(f.sets[0].name,'Media');
+ assert.equal(controls(f).children[0].value,'Media');
+ assert.ok(f.calls.some(c=>c.method==='PUT'&&c.url.includes('c'.repeat(24))));
+ assert.ok(f.calls.some(c=>c.method==='DELETE'&&c.url.includes('c'.repeat(24))));
+});
+test('Selected pack previews are searchable, lazy, and progressively loaded',async()=>{
+ const f=fixture();await flush();
+ await packList(f).children[1].listeners.click();
+ const search=detail(f).children[2];
+ const summary=detail(f).children[3];
+ const tiles=detail(f).children[4];
+ const more=detail(f).children[5];
+ assert.equal(tiles.children.length,120);
+ assert.equal(more.hidden,false);
+ assert.equal(tiles.children[0].children[0].loading,'lazy');
+ await more.listeners.click();
+ assert.equal(tiles.children.length,130);
+ assert.equal(more.hidden,true);
+ search.value='special';
+ search.listeners.input();
+ assert.equal(tiles.children.length,1);
+ assert.equal(tiles.children[0].children[1].textContent,'Target icon');
+ assert.match(summary.textContent,/1 of 1/);
 });
