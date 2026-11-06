@@ -252,19 +252,6 @@ func nexusWidgetColor(settings map[string]string, key string, fallback color.RGB
 	}
 	return color.RGBA{uint8(n >> 16), uint8(n >> 8), uint8(n), 255}
 }
-func drawNexusButtonBorder(img *image.RGBA, r image.Rectangle, c color.RGBA) {
-	if r.Empty() {
-		return
-	}
-	for x := r.Min.X; x < r.Max.X; x++ {
-		img.Set(x, r.Min.Y, c)
-		img.Set(x, r.Max.Y-1, c)
-	}
-	for y := r.Min.Y; y < r.Max.Y; y++ {
-		img.Set(r.Min.X, y, c)
-		img.Set(r.Max.X-1, y, c)
-	}
-}
 
 // Rounded edges are applied to the background and border, not clipped text.
 func nexusInsideRounded(r image.Rectangle, x, y, radius int) bool {
