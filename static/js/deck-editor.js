@@ -40,7 +40,11 @@
   const deckControlProperty = document.getElementById('deck-control-property');
   const brightnessProperty = document.getElementById('deck-brightness-property');
   const brightnessInput = document.getElementById('deck-key-brightness');
-  const deckControls = new Set(['page-next','page-previous','page-go','brightness-up','brightness-down','brightness-set']);
+  const deckControls = new Set(['page-next','page-previous','page-go','folder-open','folder-back','brightness-up','brightness-down','brightness-set']);
+  const folderTargetProperty = document.getElementById('deck-folder-target-property');
+  const folderTargetInput = document.getElementById('deck-key-folder');
+  const createFolderButton = document.getElementById('deck-create-folder');
+  const pageParentNote = document.getElementById('deck-page-parent');
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
   const macroProperty = document.getElementById('deck-macro-property');
@@ -83,6 +87,15 @@
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
+  const childFolders = () => layout?.pages?.filter(page => page.parentPage === layout.activePage) || [];
+  const pageDepth = page => {
+    let depth = 0;
+    while (page?.parentPage && depth < (layout?.pages?.length || 0)) {
+      page = layout.pages.find(candidate => candidate.id === page.parentPage);
+      depth += 1;
+    }
+    return depth;
+  };
   const validIconID = id => typeof id === 'string' && /^[a-f0-9]{32}$/.test(id);
   const iconURL = id => `${endpoint('icon')}&id=${encodeURIComponent(id)}`;
 
@@ -166,6 +179,8 @@
       'page-next': 'Next Page',
       'page-previous': 'Previous Page',
       'page-go': 'Go to Page',
+      'folder-open': 'Folder',
+      'folder-back': 'Back',
       'brightness-up': 'Brightness +',
       'brightness-down': 'Brightness -',
       'brightness-set': 'Set Brightness',
@@ -182,7 +197,7 @@
     if (!page || selected < 0) return;
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
-    if (key.action !== 'page-go') delete key.targetPage;
+    if (!['page-go','folder-open'].includes(key.action)) delete key.targetPage;
     if (!['macro','media','hotkey','brightness-set','url','application'].includes(key.action)) delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
@@ -216,7 +231,9 @@
       button.setAttribute('aria-pressed', i === selected ? 'true' : 'false');
       const mediaLabel = configured?.action === 'media' ? mediaKeyLabels[configured?.target] : '';
       const brightnessLabel = configured?.action === 'brightness-set' ? 'Brightness '+configured.target+'%' : '';
-      const displayName = configured?.label || mediaLabel || brightnessLabel || actionName(configured?.action) || '—';
+      const folderLabel = configured?.action === 'folder-open'
+        ? layout.pages.find(page => page.id === configured.targetPage)?.name || 'Folder' : '';
+      const displayName = configured?.label || mediaLabel || brightnessLabel || folderLabel || actionName(configured?.action) || '—';
       button.setAttribute('aria-label', `Key ${i + 1}: ${displayName}`);
 
       const number = document.createElement('small');
@@ -233,6 +250,16 @@
         glyph.setAttribute('aria-hidden', 'true');
         button.appendChild(glyph);
         button.dataset.hasMediaIcon = 'true';
+      }
+      if (['folder-open','folder-back'].includes(configured?.action) && !configured?.metric &&
+          !validIconID(configured?.icon)) {
+        const glyph = document.createElement('span');
+        glyph.className = 'deck-media-glyph';
+        glyph.style.maskImage = `url("/static/media-glyphs/${configured.action}.svg")`;
+        glyph.style.webkitMaskImage = glyph.style.maskImage;
+        glyph.setAttribute('aria-hidden', 'true');
+        button.appendChild(glyph);
+        button.dataset.hasFolderIcon = 'true';
       }
       button.append(label);
       if (configured?.metric) {
@@ -266,14 +293,17 @@
     for (const page of layout.pages) {
       const option = document.createElement('option');
       option.value = page.id;
-      option.textContent = page.name;
+      option.textContent = (page.parentPage ? '  '.repeat(pageDepth(page)) + '↳ ' : '') + page.name;
       pageSelect.appendChild(option);
     }
     pageSelect.value = layout.activePage;
     pageNameInput.value = currentPage()?.name || '';
+    const parent = layout.pages.find(page => page.id === currentPage()?.parentPage);
+    pageParentNote.textContent = parent ? `Folder within ${parent.name}` : 'Top-level page';
     pageCounter.textContent = `${layout.pages.length} of 16 pages`;
     addButton.disabled = layout.pages.length >= 16;
-    removeButton.disabled = layout.pages.length <= 1;
+    removeButton.disabled = layout.pages.length <= 1 ||
+      (!currentPage()?.parentPage && layout.pages.filter(page => !page.parentPage).length <= 1);
   }
 
   function updateSelectedSummary(key) {
@@ -368,6 +398,25 @@
     const hasTarget = isDeckControl && deckControlInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
+    const hasFolder = isDeckControl && deckControlInput.value === 'folder-open';
+    folderTargetProperty.hidden = !hasFolder;
+    const folders = childFolders();
+    folderTargetInput.replaceChildren();
+    if (!folders.length) {
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = 'Create a folder to begin';
+      folderTargetInput.appendChild(empty);
+    }
+    for (const folder of folders) {
+      const option = document.createElement('option');
+      option.value = folder.id;
+      option.textContent = folder.name;
+      folderTargetInput.appendChild(option);
+    }
+    folderTargetInput.value = hasFolder ? key?.targetPage || folders[0]?.id || '' : '';
+    folderTargetInput.disabled = !hasFolder || folders.length === 0;
+    createFolderButton.disabled = !hasFolder || !valid || layout.pages.length >= 16;
     const hasShortcut = valid && actionInput.value === 'hotkey';
     shortcutProperty.hidden = !hasShortcut;
     shortcutInput.disabled = !hasShortcut;
