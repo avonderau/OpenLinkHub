@@ -786,11 +786,12 @@ test('Settings pilot preserves actions, localization and all eight section icons
  assert.match(page,/for="keyboardLayout"/,'keyboard layout label targets correct field');
   assert.match(page,/class="olh-settings-shell"/);
  assert.match(page,/class="olh-settings-nav" role="tablist"/);
- assert.equal((page.match(/class="olh-settings-nav-tab"/g)||[]).length,3);
- assert.equal((page.match(/class="olh-settings-tab-panel"/g)||[]).length,3);
+ assert.equal((page.match(/class="olh-settings-nav-tab"/g)||[]).length,4);
+ assert.equal((page.match(/class="olh-settings-tab-panel"/g)||[]).length,4);
  assert.match(page,/id="olh-settings-general" role="tabpanel"/);
  assert.match(page,/id="olh-settings-devices" role="tabpanel"/);
- assert.match(page,/id="olh-settings-security" role="tabpanel"/);
+ assert.match(page,/id="olh-settings-icons" role="tabpanel"/);
+  assert.match(page,/id="olh-settings-security" role="tabpanel"/);
  assert.match(page,/class="olh-page-intro"/);
  assert.match(page,/\{\{ \.Lang "txtSettings" \}\}/,'page heading uses current localization');
  assert.match(page,/src="\/static\/js\/settings\.js(?:\?[^"]*)?"/);
@@ -1032,5 +1033,5 @@ test('Nexus can replace a library icon with built-in artwork and retain image wi
 
 test('icon set imports are managed in Settings, not device editors',()=>{
  assert.doesNotMatch(editorSource,/fetch\('\/api\/icon-sets\?name=/);
- assert.match(editorSource,/href='\/settings#olh-settings-devices'/);
+ assert.match(editorSource,/href='\/settings#olh-settings-icons'/);
 });
