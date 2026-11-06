@@ -1,6 +1,10 @@
 package nexus
 
-import "testing"
+import (
+ "os"
+ "path/filepath"
+ "testing"
+)
 
 func TestParseNvidiaMetrics(t *testing.T){
  result:=parseNvidiaMetrics("2048, 8192, 1650, 124.5\n")
@@ -32,5 +36,24 @@ func TestNvidiaOptionalAndInvalidReadings(t *testing.T){
  }
  for _,index:=range []int{-1,16,999}{
   if got:=ReadNvidiaMetrics(index);len(got)!=0{t.Fatalf("invalid index %d returned metrics",index)}
+ }
+}
+
+func TestReadNvidiaMetricsBoundsSubprocessOutput(t *testing.T) {
+ dir:=t.TempDir()
+ script:=filepath.Join(dir,"nvidia-smi")
+ write:=func(body string){
+  t.Helper()
+  if err:=os.WriteFile(script,[]byte("#!/bin/sh\n"+body+"\n"),0700);err!=nil{t.Fatal(err)}
+ }
+ t.Setenv("PATH",dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+ write("printf '1024, 4096, 1680, 120.5\\n'")
+ metrics:=ReadNvidiaMetrics(0)
+ if metrics["gpu.vram.used_mb"]!=1024||metrics["gpu.clock_mhz"]!=1680{
+  t.Fatalf("bounded NVIDIA telemetry incorrectly rejected: %+v",metrics)
+ }
+ write("printf '%03000d' 1")
+ if got:=ReadNvidiaMetrics(0);len(got)!=0{
+  t.Fatalf("oversized NVIDIA telemetry was accepted: %+v",got)
  }
 }
