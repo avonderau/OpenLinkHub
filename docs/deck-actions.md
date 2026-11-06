@@ -21,8 +21,8 @@ the hardware restores the selected page. If LCD rendering fails after a key
 press, the key event still counts and the saved active page is retained.
 
 Keyboard shortcuts and media controls use the existing Linux virtual keyboard;
-saved macros use the shared bounded macro engine. Standalone launch-app and
-open-website actions are not part of this Deck increment.
+saved macros use the shared bounded macro engine. Website and desktop-application launch actions are also available, using
+the same validated local launcher as the Nexus.
 
 ## Verification
 
@@ -56,3 +56,22 @@ physical device and confirm their assignments persist after restarting the
 installed OpenLinkHub service. Use the service account so Corsair HID devices
 have the expected access permissions; a root-only test may behave differently
 from the production installation.
+
+
+## Open website and launch desktop application
+
+Under **Deck Editor → Key → Button behavior → Button action**:
+
+- Choose **Open website** and enter a full `https://` or `http://` URL (for example `https://example.com`).
+- Choose **Launch desktop application** and enter a desktop-entry ID installed on this Linux host (for example `firefox.desktop` or `org.gnome.Terminal.desktop`). Do not enter a filesystem path, shell command, or arbitrary executable.
+- Click **Save & Apply**, then press the physical Mirabox key. The action runs on the **OpenLinkHub host**, never in the remote browser.
+
+The shared Nexus launcher enforces strict URL and desktop ID validation, a maximum four-second local command timeout, and a single simultaneous launch across Nexus and Deck. Deck executes launch actions asynchronously so the HID input loop remains responsive. A launch failure appears in the Deck connection/status message.
+
+### System service / headless behavior
+
+If OpenLinkHub runs as the packaged `openlinkhub` system service, it cannot launch into your desktop session by itself. Start the optional **Nexus desktop agent** on the *same machine's graphical desktop*, as described in [Nexus desktop launch](nexus-desktop-launch.md). The same agent handles both Nexus and Deck buttons; no second agent or API endpoint is needed. Without a local desktop and a running agent, a launch action will fail safely. Do not add other users to the privileged `openlinkhub` group unless you trust them.
+
+### Regression tests
+
+`go test ./src/devices/deck ./src/devices/nexus -count=1` and `node --test static/js/deck-editor.test.cjs`. On physical hardware, verify that launching a trusted website and an installed desktop entry works, bad IDs are refused when saving, and holding/pressing other keys while a slow launcher runs does not freeze display navigation.
