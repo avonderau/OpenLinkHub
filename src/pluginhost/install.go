@@ -123,6 +123,9 @@ func extractArchive(path, dest string) (string, error) {
 			return "", fmt.Errorf("archive entry %q is not a regular file", f.Name)
 		}
 		target := filepath.Join(dest, filepath.FromSlash(strings.TrimSuffix(name, "/")))
+		if !strings.HasPrefix(target, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return "", fmt.Errorf("unsafe archive entry %q", f.Name)
+		}
 		if mode.IsDir() || strings.HasSuffix(name, "/") {
 			if err := os.MkdirAll(target, 0o700); err != nil {
 				return "", err
