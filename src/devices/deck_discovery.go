@@ -17,8 +17,8 @@ import (
 // Registered Decks continue to use their own HID reconnect loop.
 const (
 	deckEventQueueSize = 32
-	deckEventRetryDelay = 450 * time.Millisecond
-	deckEventRetryCount = 4
+	deckEventRetryDelay = 500 * time.Millisecond
+	deckEventRetryCount = 6
 )
 
 type deckScanDependencies struct {
@@ -139,7 +139,7 @@ func runDeckUSBEvents(
 				timer := time.NewTimer(retryDelay)
 				select {
 				case <-ctx.Done():
-					if !timer.Stop() { <-timer.C }
+					timer.Stop()
 					return
 				case <-timer.C:
 				}
