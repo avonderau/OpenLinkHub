@@ -796,8 +796,7 @@ func GetNVIDIAGpuTemperature(gpuIndex int) float32 {
 		return 0
 	}
 
-	cmd := exec.Command("nvidia-smi", "-i", strconv.Itoa(gpuIndex), "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits")
-	output, err := cmd.Output()
+	output, err := common.BoundedCommandOutput(2*time.Second, 128, "nvidia-smi", "-i", strconv.Itoa(gpuIndex), "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits")
 	if err != nil {
 		return 0
 	}
