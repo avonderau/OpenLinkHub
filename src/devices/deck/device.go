@@ -87,6 +87,16 @@ func deviceID(info *hid.DeviceInfo, m Model) string {
 	return fmt.Sprintf("deck-%04x-%04x-%x", m.VendorID, m.ProductID, digest[:8])
 }
 
+// CandidateDeviceID gives discovery the driver's exact stable registry ID
+// before opening a HID device. Legacy v1 devices intentionally share one
+// logical ID per model, matching their existing reconnect behavior.
+func CandidateDeviceID(info *hid.DeviceInfo, model Model) string {
+	if info == nil || info.VendorID != model.VendorID || info.ProductID != model.ProductID {
+		return ""
+	}
+	return deviceID(info, model)
+}
+
 func Init(info *hid.DeviceInfo) *common.Device {
 	if info == nil {
 		return nil
