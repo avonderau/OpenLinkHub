@@ -296,6 +296,9 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   opacityInput.type='number';opacityInput.min='0';opacityInput.max='100';opacityInput.step='1';
   const initialOpacity=w.settings?.opacity??'100';
   opacitySlider.value=initialOpacity;opacityInput.value=initialOpacity;
+  // Custom track fill extends through the 100% endpoint; the native
+  // Chromium accent track leaves a misleading unfilled thumb-width gap.
+  opacitySlider.style.setProperty('--nexus-opacity-progress',Math.max(0,Math.min(100,Number(initialOpacity)||0))+'%');
   opacitySlider.setAttribute('aria-label','Opacity slider');
   opacityInput.setAttribute('aria-label','Opacity percentage');
   const updateOpacity=value=>{
@@ -304,6 +307,7 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
    const percentage=Math.max(0,Math.min(100,Math.round(n)));
    w.settings??={};w.settings.opacity=String(percentage);
    opacitySlider.value=String(percentage);opacityInput.value=String(percentage);
+   opacitySlider.style.setProperty('--nexus-opacity-progress',percentage+'%');
    const preview=[...nexusElementById('screen').children].find(el=>el.dataset.id===w.id);
    if(preview)preview.style.opacity=String(percentage/100);
   };
@@ -581,6 +585,11 @@ function renderNexusIconProperties(w,panel){
  packSelect.value=installed?.id||'';
  label.append(packSelect);
  library.append(label);
+ const iconSearch=document.createElement('input');
+ iconSearch.type='search';
+ iconSearch.placeholder='Search icon name or tags';
+ iconSearch.setAttribute('aria-label','Search installed pack icons');
+ library.append(iconSearch);
  const gallery=document.createElement('div');
  gallery.className='nexus-icon-gallery';
  gallery.setAttribute('role','group');
@@ -594,7 +603,16 @@ function renderNexusIconProperties(w,panel){
    gallery.append(note);
    return;
   }
-  for(const [index,icon] of (pack.icons||[]).entries()){
+  const query=iconSearch.value.trim().toLocaleLowerCase();
+  const matches=(pack.icons||[]).map((icon,index)=>({icon,index})).filter(({icon})=>
+   !query || icon.name.toLocaleLowerCase().includes(query) || (icon.tags||[]).some(tag=>tag.toLocaleLowerCase().includes(query)));
+  const visible=matches.slice(0,96);
+  if(matches.length>visible.length){
+   const hint=document.createElement('small');
+   hint.textContent='Showing '+visible.length+' of '+matches.length+' matching icons. Refine your search.';
+   gallery.append(hint);
+  }
+  for(const {index,icon} of visible){
    const tile=document.createElement('button');
    tile.type='button';
    tile.className='nexus-icon-tile';
@@ -617,7 +635,8 @@ function renderNexusIconProperties(w,panel){
    gallery.append(tile);
   }
  };
- packSelect.addEventListener('change',fillGallery);
+ packSelect.addEventListener('change',()=>{iconSearch.value='';fillGallery();});
+ iconSearch.addEventListener('input',fillGallery);
  fillGallery();
  library.append(gallery);
  if(w.settings?.customIcon){
@@ -628,7 +647,7 @@ function renderNexusIconProperties(w,panel){
  }
  const settingsLink=document.createElement('a');
  settingsLink.className='nexus-icon-settings-link';
- settingsLink.href='/settings#olh-settings-devices';
+ settingsLink.href='/settings#olh-settings-icons';
  settingsLink.textContent='Manage icon packs in Settings';
  library.append(settingsLink);
  panel.append(library);

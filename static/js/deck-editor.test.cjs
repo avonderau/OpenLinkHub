@@ -42,7 +42,7 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
-    'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
+    'deck-icon-set', 'deck-icon-set-item', 'deck-icon-set-search', 'deck-apply-icon-set',
     'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-selected-hero', 'deck-artwork-preview',
     'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
     'deck-key-control', 'deck-control-property', 'deck-key-brightness', 'deck-brightness-property',
@@ -88,7 +88,10 @@ async function run() {
       }) };
     }
     if (type === '/api/icon-sets') {
-      return { ok: true, status: 200, json: async () => ({ sets: [] }) };
+      return { ok: true, status: 200, json: async () => ({ sets: [{
+        id: 'c'.repeat(24), name: 'Test icons',
+        icons: [{ name: 'Sample arrow', deckId: 'c'.repeat(32), tags: ['navigation'] }]
+      }] }) };
     }
     if (type === '/api/macro/') {
       return { ok: true, status: 200, json: async () => ({
@@ -130,7 +133,19 @@ async function run() {
   assert.match(iconSetMarkup, /id="deck-icon-set"/);
   assert.match(iconSetMarkup, /id="deck-icon-set-item"/);
   assert.doesNotMatch(iconSetMarkup, /id="deck-import-icon-set"|id="deck-icon-set-import"/);
-  assert.ok(iconSetMarkup.includes('/settings#olh-settings-devices'));
+  assert.ok(iconSetMarkup.includes('/settings#olh-settings-icons'));
+  assert.match(iconSetMarkup, /class="deck-icon-set-library" open/);
+  assert.match(iconSetMarkup, /<summary><i class="bi bi-grid-3x3-gap"[^>]*><\/i> Icons<\/summary>/);
+  assert.match(iconSetMarkup, /class="deck-artwork-upload-panel"/);
+  assert.doesNotMatch(iconSetMarkup, /Reusable icon sets/);
+  assert.ok(iconSetMarkup.indexOf('class="deck-icon-set-library" open') < iconSetMarkup.indexOf('id="deck-artwork-preview"'));
+  assert.ok(iconSetMarkup.indexOf('id="deck-artwork-preview"') < iconSetMarkup.indexOf('id="deck-icon-set"'),
+    'inline selected-icon preview must sit immediately before the Icon Set picker');
+  assert.doesNotMatch(iconSetMarkup, /class="deck-artwork-selected"/);
+  assert.doesNotMatch(iconSetMarkup, /<label>Artwork<\/label>/);
+  assert.ok(iconSetMarkup.indexOf('class="deck-icon-set-library" open') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'));
+  assert.ok(iconSetMarkup.indexOf('id="deck-remove-image"') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'),
+    'remove artwork and its selected preview remain accessible even while uploads are collapsed');
   assert.match(fs.readFileSync(path.join(__dirname, 'deck-editor.js'), 'utf8'), /\/api\/icon-sets/);
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
@@ -166,6 +181,9 @@ async function run() {
   assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 3,
     'Source is separate; Refresh and Visualization remain two aligned columns');
   const css = fs.readFileSync(path.join(__dirname, '..', 'css', 'deck-editor.css'), 'utf8');
+  assert.match(css,/\.deck-key\[data-has-image="true"\]\[data-has-caption="true"\]/);
+  assert.match(css,/background-size:auto 74%/);
+  assert.match(css,/height:26%/);
   assert.match(css, /\.deck-metric-options\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\) minmax\(0,1\.15fr\)/,
     'metric options remain on the same row in the narrow inspector');
   assert.ok(!html.includes("Mini graph"), "metric UI must use visualization names");
@@ -320,6 +338,21 @@ async function run() {
   // Image-only keys must survive the editor's assignment filtering and
   // show their artwork in the preview without interpreting a file as HTML.
   grid.children[3].dispatch('click');
+  const iconPack = nodes['deck-icon-set'];
+  const iconChoice = nodes['deck-icon-set-item'];
+  iconPack.value = 'c'.repeat(24);
+  iconPack.dispatch('change');
+  iconChoice.value = 'c'.repeat(32);
+  iconChoice.dispatch('change');
+  assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true',
+    'choosing a library icon previews it before applying');
+  assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /c{32}/);
+  assert.equal(nodes['deck-apply-icon-set'].disabled, false);
+  assert.equal(grid.children[3].dataset.hasImage, undefined,
+    'preview selection must not alter the key until Use selected icon');
+  nodes['deck-apply-icon-set'].dispatch('click');
+  assert.match(grid.children[3].style.backgroundImage, /c{32}/,
+    'applying the chosen icon updates the device layout preview');
   const image = nodes['deck-key-image'];
   image.files = [{ type: 'image/png', size: 150, name: 'icon.png' }];
   await nodes['deck-upload-image'].dispatch('click');
@@ -329,6 +362,18 @@ async function run() {
   assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true');
   assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /\/api\/deck\/icon/);
   assert.ok(grid.children[3].style.backgroundImage.includes('/api/deck/icon'));
+  assert.equal(grid.children[3].dataset.hasCaption,undefined,
+    'icon-only keys must not display a placeholder label on top of artwork');
+  label.value = 'My app';
+  label.dispatch('input');
+  assert.equal(grid.children[3].dataset.hasCaption,'true',
+    'a custom key label creates the same reserved caption region as hardware');
+  assert.equal(grid.children[3].children[1].className,'deck-key-caption');
+  assert.equal(grid.children[3].children[1].textContent,'My app');
+  label.value = '';
+  label.dispatch('input');
+  assert.equal(grid.children[3].dataset.hasCaption,undefined,
+    'removing a label restores full-size icon rendering');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[6].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
 

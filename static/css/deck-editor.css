@@ -298,15 +298,38 @@
 /* Action-specific inspector rows never appear until their action is selected. */
 #deck-hotkey-property[hidden],#deck-media-property[hidden]{display:none!important}
 
-/* Uploaded artwork keeps key outlines and labels legible in the preview. */
+/* Match the Mirabox compositor: unlabeled artwork fills the LCD; labeled
+ * artwork fits proportionally into the upper portion, never behind text.
+ * The device reserves 22 of its typical 85 pixels for the caption. */
 .deck-workspace .deck-key[data-has-image="true"]{
+  background-color:#162639;
   background-position:center;
-  background-size:cover;
+  background-size:contain;
   background-repeat:no-repeat;
-  text-shadow:0 1px 3px rgba(0,0,0,.95);
 }
-.deck-workspace .deck-key[data-has-image="true"] span{color:#fff}
-.deck-workspace .deck-key[data-has-image="true"] small{color:#e6e6e6}
+.deck-workspace .deck-key[data-has-image="true"][data-has-caption="true"]{
+  background-position:center 0;
+  background-size:auto 74%;
+}
+.deck-workspace .deck-key[data-has-image="true"] > small{
+  display:none;
+}
+.deck-workspace .deck-key[data-has-image="true"] > .deck-key-caption{
+  display:none;
+}
+.deck-workspace .deck-key[data-has-image="true"][data-has-caption="true"] > .deck-key-caption{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;height:26%;max-width:none;
+  padding:1px 4px 2px;
+  overflow:hidden;text-overflow:clip;white-space:nowrap;
+  background:#000;color:#fff;
+  font-family:monospace;font-weight:400;
+  font-size:clamp(.52rem,.92vw,.76rem);
+  line-height:1;
+  text-shadow:none;
+}
 .deck-artwork-controls{display:flex;flex-wrap:wrap;gap:8px}
 .deck-workspace .deck-artwork-controls button{margin:0}
 .deck-workspace #deck-key-image{
@@ -409,7 +432,7 @@
   font-variant-ligatures:none;
 }
 
-/* Shared reusable icon packs appear beneath the existing per-key upload. */
+/* Shared icon packs are the primary artwork choice; per-key upload is secondary. */
 .deck-workspace .deck-icon-set-library{
   display:block;margin-top:12px;padding-top:12px;
   border-top:1px solid var(--deck-border);
@@ -624,3 +647,78 @@
 /* Deck command is a conditional Button behavior field, just like Media command. */
 .deck-workspace #deck-control-property[hidden],
 .deck-workspace #deck-brightness-property[hidden]{display:none!important}
+
+
+/* Keep custom artwork upload within Icons, but secondary and collapsed. */
+.deck-workspace .deck-artwork-upload-panel{
+  margin-top:12px;padding-top:11px;
+  border-top:1px solid var(--deck-border);
+}
+.deck-workspace .deck-artwork-upload-panel summary{
+  display:flex;align-items:center;gap:7px;
+  color:var(--deck-muted);font-size:.78rem;font-weight:600;
+  cursor:pointer;
+}
+.deck-workspace .deck-artwork-upload-panel[open] summary{
+  color:var(--deck-ink);
+}
+.deck-workspace .deck-artwork-upload-panel .deck-artwork-upload{
+  padding:11px 0 0;
+}
+.deck-workspace .deck-artwork-upload-panel .deck-artwork-upload label{
+  color:var(--deck-muted);font-size:.76rem;
+}
+.deck-workspace .deck-artwork-upload-panel #deck-upload-image{
+  justify-self:start;
+}
+.deck-workspace .deck-artwork-upload-panel #deck-icon-status{
+  color:var(--deck-muted);font-size:.72rem;
+}
+.deck-workspace .deck-icon-set-library{
+  border:1px solid rgba(213,166,90,.28);
+  border-radius:9px;
+  padding:11px 12px;
+  background:linear-gradient(130deg,rgba(213,166,90,.07),rgba(21,22,24,.24));
+}
+.deck-workspace .deck-icon-set-library summary{
+  color:var(--deck-ink);
+  font-weight:650;
+}
+
+
+/* Compact icon controls: preview belongs inside Icons, alongside Icon Set.
+ * Custom uploads remain available in the same block but collapsed. */
+.deck-workspace .deck-icons-property > .deck-icon-set-library {
+  margin-top:0;
+}
+.deck-workspace .deck-icon-set-top-row {
+  display:grid;
+  grid-template-columns:56px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+  min-width:0;
+}
+.deck-workspace .deck-icon-set-picker{
+  display:grid;
+  gap:5px;
+  min-width:0;
+}
+.deck-workspace .deck-icon-set-picker label{
+  margin:0;
+}
+.deck-workspace .deck-icon-set-top-row .deck-artwork-preview{
+  width:56px;
+  height:56px;
+}
+.deck-workspace .deck-icon-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+}
+.deck-workspace .deck-icon-actions button{
+  min-width:0;
+}
+.deck-workspace .deck-icons-property .deck-artwork-upload-panel{
+  margin-top:4px;
+}

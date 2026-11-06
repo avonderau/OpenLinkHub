@@ -708,3 +708,42 @@
  box-shadow:inset 0 0 0 1px rgba(213,166,90,.42)
 }
 #nexus-panel-widget #properties .nexus-icon-settings-link{color:#d5b985}
+
+/* Browser-native accent-color leaves the final half-thumb visibly unfilled
+ * at 100%, despite the value being 100. Paint the actual percentage from
+ * edge to edge, and retain a separate thumb/focus style. */
+#nexus-panel-widget #properties .nexus-opacity-inline input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  box-sizing:border-box;
+  height:8px;
+  padding:0;
+  border:0;
+  border-radius:999px;
+  cursor:pointer;
+  background:linear-gradient(to right,
+    #d5a65a 0%,#d5a65a var(--nexus-opacity-progress,100%),
+    #55565b var(--nexus-opacity-progress,100%),#55565b 100%);
+}
+#nexus-panel-widget #properties .nexus-opacity-inline input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  box-sizing:border-box;
+  width:16px;height:16px;
+  border:2px solid #e4bb76;
+  border-radius:50%;
+  background:#d5a65a;
+  box-shadow:0 1px 3px rgba(0,0,0,.32);
+}
+#nexus-panel-widget #properties .nexus-opacity-inline input[type=range]::-moz-range-thumb{
+  box-sizing:border-box;
+  width:16px;height:16px;
+  border:2px solid #e4bb76;
+  border-radius:50%;
+  background:#d5a65a;
+  box-shadow:0 1px 3px rgba(0,0,0,.32);
+}
+#nexus-panel-widget #properties .nexus-opacity-inline input[type=range]:focus-visible{
+  outline:2px solid rgba(213,166,90,.85);
+  outline-offset:5px;
+}

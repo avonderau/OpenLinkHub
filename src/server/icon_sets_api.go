@@ -31,24 +31,30 @@ import (
 )
 
 const (
-	maxIconSetZipBytes        = 8 << 20
-	maxIconSetTotalImageBytes = 8 << 20
-	maxIconSetImages          = 48
+	maxIconSetZipBytes        = 32 << 20
+	maxIconSetTotalImageBytes = 64 << 20
+	maxIconSetImages          = 4096
 	maxIconSets               = 24
+	maxIconSetArchiveEntries  = 8192
 )
 
 var iconSetIDPattern = regexp.MustCompile(`^[a-f0-9]{24}$`)
 var iconSetImportMu sync.Mutex
 
 type iconSetEntry struct {
-	Name    string `json:"name"`
-	DeckID  string `json:"deckId"`
-	NexusID string `json:"nexusId"`
+	Name    string   `json:"name"`
+	Tags    []string `json:"tags,omitempty"`
+	DeckID  string   `json:"deckId"`
+	NexusID string   `json:"nexusId"`
 }
 type iconSetManifest struct {
-	ID    string         `json:"id"`
-	Name  string         `json:"name"`
-	Icons []iconSetEntry `json:"icons"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Source      string         `json:"source,omitempty"`
+	Author      string         `json:"author,omitempty"`
+	Version     string         `json:"version,omitempty"`
+	Description string         `json:"description,omitempty"`
+	Icons       []iconSetEntry `json:"icons"`
 }
 
 func iconSetsDir(root string) string { return filepath.Join(root, "database", "icon-sets") }
@@ -67,7 +73,7 @@ func readIconSetManifest(root, id string) (iconSetManifest, error) {
 	if err != nil {
 		return iconSetManifest{}, err
 	}
-	if len(data) > 128*1024 {
+	if len(data) > 512*1024 {
 		return iconSetManifest{}, errors.New("icon set manifest too large")
 	}
 	var result iconSetManifest
@@ -121,8 +127,30 @@ func cleanIconSetName(name string) (string, error) {
 	return name, nil
 }
 
+// nextDefaultIconSetName is called while iconSetImportMu is held, so two
+// simultaneous imports cannot choose the same generated name. Reuse an
+// available number if a previously imported default-named pack was removed.
+func nextDefaultIconSetName(root string) (string, error) {
+	sets, err := listIconSets(root)
+	if err != nil {
+		return "", err
+	}
+	used := make(map[string]bool, len(sets))
+	for _, set := range sets {
+		used[strings.ToLower(set.Name)] = true
+	}
+	for number := 1; number <= maxIconSets+1; number++ {
+		name := fmt.Sprintf("NewPack%d", number)
+		if !used[strings.ToLower(name)] {
+			return name, nil
+		}
+	}
+	return "", errors.New("no available automatic icon pack names")
+}
+
 type pendingIcon struct {
 	Name string
+	Tags []string
 	Data []byte
 }
 
@@ -133,12 +161,8 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 	defer iconSetImportMu.Unlock()
 	var empty iconSetManifest
 	var err error
-	name, err = cleanIconSetName(name)
-	if err != nil {
-		return empty, err
-	}
 	if len(data) == 0 || len(data) > maxIconSetZipBytes {
-		return empty, errors.New("ZIP must be 1-8 MiB")
+		return empty, fmt.Errorf("ZIP must be 1-%d MiB", maxIconSetZipBytes>>20)
 	}
 	digest := sha256.Sum256(data)
 	id := hex.EncodeToString(digest[:12])
@@ -149,86 +173,119 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 	if err != nil {
 		return empty, fmt.Errorf("invalid ZIP: %w", err)
 	}
-	if len(archive.File) > 128 {
+	if len(archive.File) > maxIconSetArchiveEntries {
 		return empty, errors.New("too many files in icon set archive")
 	}
 	pending := []pendingIcon{}
-	countBytes := 0
-	names := map[string]bool{}
-	for _, file := range archive.File {
-		if file.FileInfo().IsDir() {
-			continue
-		}
-		filename := file.Name
-		if strings.Contains(filename, "\\") || strings.HasPrefix(filename, "/") {
-			return empty, errors.New("invalid ZIP path")
-		}
-		for _, segment := range strings.Split(filename, "/") {
-			if segment == ".." || segment == "." {
-				return empty, errors.New("ZIP path traversal is not permitted")
+	var importedStreamDeck *streamDeckPack
+	if len(archive.File) >= 2 {
+		hasManifest, hasIndex := false, false
+		for _, member := range archive.File {
+			if member.Name == "manifest.json" {
+				hasManifest = true
+			}
+			if member.Name == "icons.json" {
+				hasIndex = true
 			}
 		}
-		if !file.Mode().IsRegular() {
-			return empty, errors.New("ZIP must contain regular files")
+		if hasManifest || hasIndex {
+			pack, parseErr := parseStreamDeckPack(archive)
+			if parseErr != nil {
+				return empty, parseErr
+			}
+			importedStreamDeck = &pack
+			pending = pack.Icons
+			if strings.TrimSpace(name) == "" {
+				name = pack.Manifest.Name
+			}
 		}
-		base := path.Base(filename)
-		if strings.HasPrefix(base, ".") || strings.HasPrefix(filename, "__MACOSX/") {
-			continue
-		}
-		extension := strings.ToLower(path.Ext(base))
-		if extension != ".png" && extension != ".jpg" && extension != ".jpeg" && extension != ".svg" {
-			return empty, fmt.Errorf("unsupported icon file %q: use PNG, JPEG or SVG", base)
-		}
-		if len(pending) >= maxIconSetImages {
-			return empty, errors.New("icon set limited to 48 icons")
-		}
-		if file.UncompressedSize64 > deck.MaxDeckIconBytes || countBytes > maxIconSetTotalImageBytes {
-			return empty, errors.New("icon set images exceed quota")
-		}
-		reader, err := file.Open()
+	}
+	// Stream Deck packs supply their name in manifest.json. Legacy image-only
+	// ZIPs without a supplied name receive a unique NewPackN after validation.
+	if name != "" {
+		name, err = cleanIconSetName(name)
 		if err != nil {
 			return empty, err
 		}
-		contents, readErr := io.ReadAll(io.LimitReader(reader, deck.MaxDeckIconBytes+1))
-		closeErr := reader.Close()
-		if readErr != nil {
-			return empty, readErr
-		}
-		if closeErr != nil {
-			return empty, closeErr
-		}
-		if len(contents) == 0 || len(contents) > deck.MaxDeckIconBytes {
-			return empty, errors.New("icon exceeds 512 KiB")
-		}
-		countBytes += len(contents)
-		if countBytes > maxIconSetTotalImageBytes {
-			return empty, errors.New("icon set extracted files exceed quota")
-		}
-		if extension == ".svg" {
-			contents, err = rasterizeIconSVG(contents)
+	}
+	countBytes := 0
+	names := map[string]bool{}
+	if importedStreamDeck == nil {
+		for _, file := range archive.File {
+			if file.FileInfo().IsDir() {
+				continue
+			}
+			filename := file.Name
+			if strings.Contains(filename, "\\") || strings.HasPrefix(filename, "/") {
+				return empty, errors.New("invalid ZIP path")
+			}
+			for _, segment := range strings.Split(filename, "/") {
+				if segment == ".." || segment == "." {
+					return empty, errors.New("ZIP path traversal is not permitted")
+				}
+			}
+			if !file.Mode().IsRegular() {
+				return empty, errors.New("ZIP must contain regular files")
+			}
+			base := path.Base(filename)
+			if strings.HasPrefix(base, ".") || strings.HasPrefix(filename, "__MACOSX/") {
+				continue
+			}
+			extension := strings.ToLower(path.Ext(base))
+			if extension != ".png" && extension != ".jpg" && extension != ".jpeg" && extension != ".svg" {
+				return empty, fmt.Errorf("unsupported icon file %q: use PNG, JPEG or SVG", base)
+			}
+			if len(pending) >= maxIconSetImages {
+				return empty, fmt.Errorf("icon set limited to %d icons", maxIconSetImages)
+			}
+			if file.UncompressedSize64 > deck.MaxDeckIconBytes || countBytes > maxIconSetTotalImageBytes {
+				return empty, errors.New("icon set images exceed quota")
+			}
+			reader, err := file.Open()
 			if err != nil {
-				return empty, fmt.Errorf("invalid SVG %q: %w", base, err)
+				return empty, err
 			}
-		} else {
-			info, format, err := image.DecodeConfig(bytes.NewReader(contents))
-			if err != nil || !((extension == ".png" && format == "png") || (extension != ".png" && format == "jpeg")) || info.Width < 1 || info.Height < 1 || info.Width > 512 || info.Height > 512 {
-				return empty, fmt.Errorf("invalid icon image %q", base)
+			contents, readErr := io.ReadAll(io.LimitReader(reader, deck.MaxDeckIconBytes+1))
+			closeErr := reader.Close()
+			if readErr != nil {
+				return empty, readErr
 			}
-		}
-		title := strings.TrimSpace(strings.TrimSuffix(base, path.Ext(base)))
-		if title == "" || utf8.RuneCountInString(title) > 50 || !utf8.ValidString(title) {
-			return empty, errors.New("invalid icon title")
-		}
-		for _, char := range title {
-			if unicode.IsControl(char) {
-				return empty, errors.New("icon title contains control characters")
+			if closeErr != nil {
+				return empty, closeErr
 			}
+			if len(contents) == 0 || len(contents) > deck.MaxDeckIconBytes {
+				return empty, errors.New("icon exceeds 512 KiB")
+			}
+			countBytes += len(contents)
+			if countBytes > maxIconSetTotalImageBytes {
+				return empty, errors.New("icon set extracted files exceed quota")
+			}
+			if extension == ".svg" {
+				contents, err = rasterizeIconSVG(contents)
+				if err != nil {
+					return empty, fmt.Errorf("invalid SVG %q: %w", base, err)
+				}
+			} else {
+				info, format, err := image.DecodeConfig(bytes.NewReader(contents))
+				if err != nil || !((extension == ".png" && format == "png") || (extension != ".png" && format == "jpeg")) || info.Width < 1 || info.Height < 1 || info.Width > 512 || info.Height > 512 {
+					return empty, fmt.Errorf("invalid icon image %q", base)
+				}
+			}
+			title := strings.TrimSpace(strings.TrimSuffix(base, path.Ext(base)))
+			if title == "" || utf8.RuneCountInString(title) > 50 || !utf8.ValidString(title) {
+				return empty, errors.New("invalid icon title")
+			}
+			for _, char := range title {
+				if unicode.IsControl(char) {
+					return empty, errors.New("icon title contains control characters")
+				}
+			}
+			if names[title] {
+				return empty, fmt.Errorf("duplicate icon title %q", title)
+			}
+			names[title] = true
+			pending = append(pending, pendingIcon{Name: title, Data: contents})
 		}
-		if names[title] {
-			return empty, fmt.Errorf("duplicate icon title %q", title)
-		}
-		names[title] = true
-		pending = append(pending, pendingIcon{Name: title, Data: contents})
 	}
 	if len(pending) == 0 {
 		return empty, errors.New("ZIP has no valid icon images")
@@ -247,7 +304,19 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 	if count >= maxIconSets {
 		return empty, errors.New("icon set library limited to 24 sets")
 	}
+	if name == "" {
+		name, err = nextDefaultIconSetName(root)
+		if err != nil {
+			return empty, err
+		}
+	}
 	manifest := iconSetManifest{ID: id, Name: name, Icons: []iconSetEntry{}}
+	if importedStreamDeck != nil {
+		manifest.Source = "streamdeck"
+		manifest.Author = importedStreamDeck.Manifest.Author
+		manifest.Version = importedStreamDeck.Manifest.Version
+		manifest.Description = importedStreamDeck.Manifest.Description
+	}
 	for _, icon := range pending {
 		deckID, err := deck.SaveDeckIcon(root, icon.Data)
 		if err != nil {
@@ -258,7 +327,7 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 		if _, err := nexus.SaveCustomIcon(filepath.Join(root, "database", "nexus", "icons"), nexusID, icon.Data); err != nil {
 			return empty, err
 		}
-		manifest.Icons = append(manifest.Icons, iconSetEntry{Name: icon.Name, DeckID: deckID, NexusID: nexusID})
+		manifest.Icons = append(manifest.Icons, iconSetEntry{Name: icon.Name, Tags: icon.Tags, DeckID: deckID, NexusID: nexusID})
 	}
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return empty, err
@@ -412,14 +481,14 @@ func iconSetsAPI(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "invalid or oversized ZIP", http.StatusBadRequest)
 			return
 		}
-		set, err := importIconSet(root, r.URL.Query().Get("name"), contents)
+		sets, err := importIconSetBundle(root, r.URL.Query().Get("name"), contents)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]any{"set": set})
+		_ = json.NewEncoder(w).Encode(map[string]any{"sets": sets})
 	case http.MethodPut:
 		if !nexusWriteAllowed(r) {
 			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)

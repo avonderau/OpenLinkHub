@@ -189,3 +189,26 @@ func TestDeckIconPersistsInLayoutAndRendersAfterReconnect(t *testing.T) {
 		t.Fatal("unsafe artwork ID permitted in saved layout")
 	}
 }
+
+func TestDeckArtworkCaptionReservesSpaceForIcon(t *testing.T) {
+	icon := image.NewRGBA(image.Rect(0, 0, 128, 128))
+	for y := 0; y < 128; y++ {
+		for x := 0; x < 128; x++ {
+			icon.Set(x, y, color.RGBA{R: 255, A: 255})
+		}
+	}
+	labeled := renderDeckArtwork(85, icon, "Open")
+	if red := color.RGBAModel.Convert(labeled.At(42, 30)).(color.RGBA); red.R != 255 || red.G != 0 {
+		t.Fatalf("artwork missing from upper icon area: %#v", red)
+	}
+	if bottom := color.RGBAModel.Convert(labeled.At(42, 67)).(color.RGBA); bottom.R != 0 || bottom.G != 0 || bottom.B != 0 {
+		t.Fatalf("artwork overlaps reserved caption band: %#v", bottom)
+	}
+	if margin := color.RGBAModel.Convert(labeled.At(2, 30)).(color.RGBA); margin.R == 255 {
+		t.Fatalf("icon should be proportionally reduced, not stretched across whole width: %#v", margin)
+	}
+	withoutCaption := renderDeckArtwork(85, icon, "")
+	if bottom := color.RGBAModel.Convert(withoutCaption.At(42, 67)).(color.RGBA); bottom.R != 255 {
+		t.Fatalf("unlabeled artwork should continue to use full LCD: %#v", bottom)
+	}
+}

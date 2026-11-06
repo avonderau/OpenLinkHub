@@ -60,9 +60,8 @@ func TestSharedIconSetRejectsUnsafeArchive(t *testing.T) {
 			}
 		})
 	}
-	if _, err := importIconSet(t.TempDir(), "", makeIconSetZIP(t, "fine.png")); err == nil {
-		t.Fatal("empty pack name accepted")
-	}
+	// An image-only ZIP with no manifest now gets a generated name instead
+	// of being rejected for a missing user-supplied title.
 }
 
 func TestSharedIconSetRenameAndPreviewMetadata(t *testing.T) {
@@ -81,5 +80,64 @@ func TestSharedIconSetRenameAndPreviewMetadata(t *testing.T) {
 	}
 	if _, err := renameIconSet(root, pack.ID, "\n"); err == nil {
 		t.Fatal("empty set name accepted")
+	}
+}
+
+func TestLegacyZIPAutomaticNaming(t *testing.T) {
+	root := t.TempDir()
+	first, err := importIconSet(root, "", makeIconSetZIP(t, "one.png"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Name != "NewPack1" {
+		t.Fatalf("expected NewPack1, got %q", first.Name)
+	}
+	second, err := importIconSet(root, "", makeIconSetZIP(t, "two.png"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second.Name != "NewPack2" {
+		t.Fatalf("expected NewPack2, got %q", second.Name)
+	}
+	again, err := importIconSet(root, "", makeIconSetZIP(t, "one.png"))
+	if err != nil || again.ID != first.ID || again.Name != "NewPack1" {
+		t.Fatalf("duplicate import must retain original name: %+v %v", again, err)
+	}
+	if _, err := renameIconSet(root, first.ID, "Custom Name"); err != nil {
+		t.Fatal(err)
+	}
+	third, err := importIconSet(root, "", makeIconSetZIP(t, "three.png"))
+	if err != nil || third.Name != "NewPack1" {
+		t.Fatalf("available default name should be reusable: %+v %v", third, err)
+	}
+}
+
+func TestLegacyZIPNamingDoesNotOverrideEmbeddedManifest(t *testing.T) {
+	manifest, icons := streamDeckFixture()
+	packs, err := importIconSetBundle(t.TempDir(), "", makeStreamDeckZIP(t, manifest, icons, nil))
+	if err != nil || len(packs) != 1 {
+		t.Fatalf("Stream Deck ZIP import: %+v %v", packs, err)
+	}
+	if packs[0].Name != "Sample Pack" {
+		t.Fatalf("embedded manifest name ignored: %q", packs[0].Name)
+	}
+}
+
+func TestLegacyZIPAutomaticNamesSkipExistingNumbers(t *testing.T) {
+	root := t.TempDir()
+	first, err := importIconSet(root, "", makeIconSetZIP(t, "one.png"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := renameIconSet(root, first.ID, "newpack2"); err != nil {
+		t.Fatal(err)
+	}
+	next, err := importIconSet(root, "", makeIconSetZIP(t, "two.png"))
+	if err != nil || next.Name != "NewPack1" {
+		t.Fatalf("should use lowest unused number: %+v %v", next, err)
+	}
+	third, err := importIconSet(root, "", makeIconSetZIP(t, "three.png"))
+	if err != nil || third.Name != "NewPack3" {
+		t.Fatalf("name collision with existing NewPack2: %+v %v", third, err)
 	}
 }
