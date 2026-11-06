@@ -1,0 +1,3 @@
+# Formatting-only commits. Use: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# gofmt fork-owned Go files
+e1e86724c9283a6e221fd36257d4174a1560d457

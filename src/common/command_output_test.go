@@ -62,7 +62,11 @@ func TestBoundedCommandOutputNeverUsesShell(t *testing.T) {
 }
 
 func TestBoundedCommandOutputInvalidLimits(t *testing.T) {
-	for _, tc := range []struct{ d time.Duration; n int; name string }{
+	for _, tc := range []struct {
+		d    time.Duration
+		n    int
+		name string
+	}{
 		{0, 32, "/bin/sh"}, {time.Second, 0, "/bin/sh"}, {time.Second, 32, ""},
 	} {
 		_, err := BoundedCommandOutput(tc.d, tc.n, tc.name)

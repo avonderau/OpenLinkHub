@@ -16,7 +16,7 @@ import (
 // enumerates a specific VID/PID only after a matching USB-add event.
 // Registered Decks continue to use their own HID reconnect loop.
 const (
-	deckEventQueueSize = 32
+	deckEventQueueSize  = 32
 	deckEventRetryDelay = 500 * time.Millisecond
 	deckEventRetryCount = 6
 )
@@ -36,9 +36,9 @@ func liveDeckScanDependencies() deckScanDependencies {
 			return hid.Enumerate(vendor, product, visit)
 		},
 		initialize: deck.Init,
-		enabled: config.DeckEnabled,
-		present: func(serial string) bool { return GetDevice(serial) != nil },
-		register: addDevice,
+		enabled:    config.DeckEnabled,
+		present:    func(serial string) bool { return GetDevice(serial) != nil },
+		register:   addDevice,
 		reportError: func(vendor uint16, err error) {
 			logger.Log(logger.Fields{"vendorId": vendor, "error": err}).
 				Warn("Unable to enumerate Deck devices")
@@ -57,18 +57,28 @@ func scanDeckVendorWith(deps deckScanDependencies, vendor, product uint16) (int,
 	needsRetry := false
 
 	err := deps.enumerate(vendor, product, hid.EnumFunc(func(info *hid.DeviceInfo) error {
-		if info == nil || info.Path == "" { return nil }
-		if info.VendorID != vendor || (product != hid.ProductIDAny && info.ProductID != product) { return nil }
+		if info == nil || info.Path == "" {
+			return nil
+		}
+		if info.VendorID != vendor || (product != hid.ProductIDAny && info.ProductID != product) {
+			return nil
+		}
 		model, supported := deck.LookupModel(info.VendorID, info.ProductID)
-		if !supported { return nil }
-		if !deps.enabled(deck.DeviceKey(info.VendorID, info.ProductID)) { return nil }
+		if !supported {
+			return nil
+		}
+		if !deps.enabled(deck.DeviceKey(info.VendorID, info.ProductID)) {
+			return nil
+		}
 		// Mirabox has multiple interfaces; never claim anything other
 		// than the command interface used by the existing driver.
 		if model.Family == "mirabox" && (info.UsagePage != 0xffa0 || info.Usage != 1) {
 			return nil
 		}
 		serial := deck.CandidateDeviceID(info, model)
-		if serial == "" { return nil }
+		if serial == "" {
+			return nil
+		}
 		matched = true
 		if seen[serial] || deps.present(serial) {
 			seen[serial] = true
@@ -90,7 +100,9 @@ func scanDeckVendorWith(deps deckScanDependencies, vendor, product uint16) (int,
 		return nil
 	}))
 	if err != nil {
-		if deps.reportError != nil { deps.reportError(vendor, err) }
+		if deps.reportError != nil {
+			deps.reportError(vendor, err)
+		}
 		return added, false
 	}
 	return added, matched && !needsRetry
@@ -112,8 +124,8 @@ func initializeDeckDevices() {
 }
 
 type deckUSBEvent struct {
-	vendor uint16
-	product uint16
+	vendor    uint16
+	product   uint16
 	reconcile bool
 }
 
@@ -130,7 +142,9 @@ func runDeckUSBEvents(
 		case <-ctx.Done():
 			return
 		case event := <-events:
-			if ctx.Err() != nil { return }
+			if ctx.Err() != nil {
+				return
+			}
 			if event.reconcile {
 				reconcile()
 				continue
@@ -143,9 +157,13 @@ func runDeckUSBEvents(
 					return
 				case <-timer.C:
 				}
-				if ctx.Err() != nil { return }
+				if ctx.Err() != nil {
+					return
+				}
 				_, settled := scan(event.vendor, event.product)
-				if settled { break }
+				if settled {
+					break
+				}
 			}
 		}
 	}
@@ -154,14 +172,16 @@ func runDeckUSBEvents(
 var deckDiscoveryState struct {
 	sync.Mutex
 	cancel context.CancelFunc
-	done chan struct{}
+	done   chan struct{}
 	events chan deckUSBEvent
 }
 
 func startDeckDiscoveryEvents() {
 	deckDiscoveryState.Lock()
 	defer deckDiscoveryState.Unlock()
-	if deckDiscoveryState.cancel != nil { return }
+	if deckDiscoveryState.cancel != nil {
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -175,7 +195,9 @@ func startDeckDiscoveryEvents() {
 		deps := liveDeckScanDependencies()
 		runDeckUSBEvents(ctx, events, deckEventRetryDelay, deckEventRetryCount,
 			func(vendor, product uint16) (int, bool) {
-				if !config.DeckEnabled(deck.DeviceKey(vendor, product)) { return 0, true }
+				if !config.DeckEnabled(deck.DeviceKey(vendor, product)) {
+					return 0, true
+				}
 				added, settled := scanDeckVendorWith(deps, vendor, product)
 				if added > 0 {
 					logger.Log(logger.Fields{"vendorId": vendor, "productId": product, "newDevices": added}).
@@ -196,10 +218,14 @@ func startDeckDiscoveryEvents() {
 // NotifyDeckUSBAdded is intentionally fast and nonblocking for the existing
 // kernel Netlink USB monitor, including when a HID scan is in progress.
 func NotifyDeckUSBAdded(vendor, product uint16) {
-	if _, ok := deck.LookupModel(vendor, product); !ok { return }
+	if _, ok := deck.LookupModel(vendor, product); !ok {
+		return
+	}
 	deckDiscoveryState.Lock()
 	defer deckDiscoveryState.Unlock()
-	if deckDiscoveryState.cancel == nil { return }
+	if deckDiscoveryState.cancel == nil {
+		return
+	}
 	event := deckUSBEvent{vendor: vendor, product: product}
 	select {
 	case deckDiscoveryState.events <- event:
@@ -216,7 +242,9 @@ func NotifyDeckUSBAdded(vendor, product uint16) {
 func NotifyDeckMonitorReady() {
 	deckDiscoveryState.Lock()
 	defer deckDiscoveryState.Unlock()
-	if deckDiscoveryState.cancel == nil { return }
+	if deckDiscoveryState.cancel == nil {
+		return
+	}
 	select {
 	case deckDiscoveryState.events <- deckUSBEvent{reconcile: true}:
 	default:

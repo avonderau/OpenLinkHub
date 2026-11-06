@@ -19,10 +19,10 @@ func TestHTTPResponseHeadersPreventClickjacking(t *testing.T) {
 			w := httptest.NewRecorder()
 			setRoutes().ServeHTTP(w, req)
 			for key, want := range map[string]string{
-				"X-Frame-Options":       "SAMEORIGIN",
+				"X-Frame-Options":         "SAMEORIGIN",
 				"Content-Security-Policy": "frame-ancestors 'self'",
-				"X-Content-Type-Options": "nosniff",
-				"Referrer-Policy":        "same-origin",
+				"X-Content-Type-Options":  "nosniff",
+				"Referrer-Policy":         "same-origin",
 			} {
 				if got := w.Header().Get(key); got != want {
 					t.Errorf("GET %s: %s = %q, want %q", target, key, got, want)
@@ -59,10 +59,10 @@ func TestHTTPResponseSecurityHeadersCoverAuthShortCircuit(t *testing.T) {
 		t.Fatalf("unexpected auth rejection status: %d", w.Code)
 	}
 	for header, want := range map[string]string{
-		"X-Frame-Options": "SAMEORIGIN",
+		"X-Frame-Options":         "SAMEORIGIN",
 		"Content-Security-Policy": "frame-ancestors 'self'",
-		"X-Content-Type-Options": "nosniff",
-		"Referrer-Policy": "same-origin",
+		"X-Content-Type-Options":  "nosniff",
+		"Referrer-Policy":         "same-origin",
 	} {
 		if got := w.Header().Get(header); got != want {
 			t.Errorf("auth short-circuit missing %s: got %q, want %q", header, got, want)
