@@ -6,6 +6,13 @@
   if (!id || !grid) return;
 
   const keyCount = Number.parseInt(grid.dataset.keys || '0', 10);
+  const columns = Number.parseInt(grid.dataset.columns || '0', 10);
+  const isDisplayOnly = index => grid.dataset.family === 'mirabox' &&
+    index >= 0 && index < keyCount && columns > 0 && (index + 1) % columns === 0;
+  const defaultBackKeyIndex = () => {
+    for (let i = keyCount - 1; i >= 0; i -= 1) if (!isDisplayOnly(i)) return i;
+    return -1;
+  };
   const pageSelect = document.getElementById('deck-page');
   const labelInput = document.getElementById('deck-key-label');
   const artworkInput = document.getElementById('deck-key-image');
@@ -36,6 +43,7 @@
   const metricIndicator = document.getElementById('deck-metric-indicator');
   const actionIndicator = document.getElementById('deck-action-indicator');
   const actionInput = document.getElementById('deck-key-action');
+  const displayOnlyNote = document.getElementById('deck-display-only-note');
   const deckControlInput = document.getElementById('deck-key-control');
   const deckControlProperty = document.getElementById('deck-control-property');
   const brightnessProperty = document.getElementById('deck-brightness-property');
@@ -196,6 +204,13 @@
     const page = currentPage();
     if (!page || selected < 0) return;
     const key = { index: selected, ...assignment(selected), ...patch };
+    if (isDisplayOnly(selected)) {
+      // Passive LCDs may display artwork and metrics, but pressing them
+      // is impossible. Never persist an action or its stale targets.
+      delete key.action;
+      delete key.target;
+      delete key.targetPage;
+    }
     if (!key.action || key.action === 'none') delete key.action;
     if (!['page-go','folder-open'].includes(key.action)) delete key.targetPage;
     if (!['macro','media','hotkey','brightness-set','url','application'].includes(key.action)) delete key.target;
@@ -234,7 +249,11 @@
       const folderLabel = configured?.action === 'folder-open'
         ? layout.pages.find(page => page.id === configured.targetPage)?.name || 'Folder' : '';
       const displayName = configured?.label || mediaLabel || brightnessLabel || folderLabel || actionName(configured?.action) || '—';
-      button.setAttribute('aria-label', `Key ${i + 1}: ${displayName}`);
+      button.setAttribute('aria-label', `${isDisplayOnly(i) ? 'Display' : 'Key'} ${i + 1}: ${displayName}`);
+      if (isDisplayOnly(i)) {
+        button.dataset.displayOnly = 'true';
+        button.title = 'Display-only LCD: labels, artwork and metrics; no button actions';
+      }
 
       const number = document.createElement('small');
       number.textContent = String(i + 1).padStart(2, '0');
@@ -374,11 +393,13 @@
         ? 'Live reading available from this computer.'
         : 'No current reading. Unavailable sensors display —.')
       : '';
-    actionInput.disabled = !valid;
-    actionInput.value = deckControls.has(key?.action) ? 'deck-control' : key?.action || '';
-    actionIndicator.textContent = actionInput.value ? 'Assigned' : 'None';
-    actionIndicator.dataset.active = String(!!actionInput.value);
-    const isDeckControl = valid && actionInput.value === 'deck-control';
+    const passiveLCD = valid && isDisplayOnly(selected);
+    displayOnlyNote.hidden = !passiveLCD;
+    actionInput.disabled = !valid || passiveLCD;
+    actionInput.value = passiveLCD ? '' : (deckControls.has(key?.action) ? 'deck-control' : key?.action || '');
+    actionIndicator.textContent = passiveLCD ? 'Display only' : (actionInput.value ? 'Assigned' : 'None');
+    actionIndicator.dataset.active = String(!passiveLCD && !!actionInput.value);
+    const isDeckControl = valid && !passiveLCD && actionInput.value === 'deck-control';
     deckControlProperty.hidden = !isDeckControl;
     deckControlInput.disabled = !isDeckControl;
     deckControlInput.value = deckControls.has(key?.action) ? key.action : 'page-next';
@@ -416,7 +437,7 @@
     }
     folderTargetInput.value = hasFolder ? key?.targetPage || folders[0]?.id || '' : '';
     folderTargetInput.disabled = !hasFolder || folders.length === 0;
-    createFolderButton.disabled = !hasFolder || !valid || layout.pages.length >= 16;
+    createFolderButton.disabled = !hasFolder || !valid || passiveLCD || layout.pages.length >= 16;
     const hasShortcut = valid && actionInput.value === 'hotkey';
     shortcutProperty.hidden = !hasShortcut;
     shortcutInput.disabled = !hasShortcut;
@@ -455,7 +476,7 @@
     macroStatus.textContent = macroLoadMessage ||
       (macroIDs.length ? 'Select an existing macro. It runs on this computer when pressed.' :
         'No saved macros found. Create one in OpenLinkHub Macros, then Refresh.');
-    selectedText.textContent = valid ? `Key ${selected + 1}` : 'Select a key';
+    selectedText.textContent = valid ? `${passiveLCD ? 'Display' : 'Key'} ${selected + 1}` : 'Select a key';
   }
 
   function selectTab(which) {
@@ -605,6 +626,11 @@
   });
 
   actionInput.addEventListener('change', () => {
+    if (isDisplayOnly(selected)) {
+      setMessage('This Mirabox position is display-only; select a physical button for actions.', 'error');
+      renderInspector();
+      return;
+    }
     const selectedAction = actionInput.value;
     // The UI exposes one "Deck controls" action family; layouts retain
     // the existing concrete page/brightness action IDs for compatibility.
@@ -665,15 +691,17 @@
   });
 
   createFolderButton.addEventListener('click', () => {
-    if (!layout || selected < 0 || layout.pages.length >= 16 ||
+    if (!layout || selected < 0 || isDisplayOnly(selected) || layout.pages.length >= 16 ||
         actionInput.value !== 'deck-control' || deckControlInput.value !== 'folder-open') return;
     const parent = currentPage();
     if (!parent) return;
     let index = 1;
     while (layout.pages.some(page => page.id === `folder-${index}`)) index += 1;
+    const backIndex = defaultBackKeyIndex();
+    if (backIndex < 0) return;
     const folder = {
       id: `folder-${index}`, name: `Folder ${index}`, parentPage: parent.id,
-      keys: [{ index: keyCount - 1, label: '', action: 'folder-back' }],
+      keys: [{ index: backIndex, label: '', action: 'folder-back' }],
     };
     layout.pages.push(folder);
     // The selected key becomes a folder button; all previous metric/button
