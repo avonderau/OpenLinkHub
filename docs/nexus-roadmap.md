@@ -4,6 +4,21 @@ This roadmap covers gaps between the Linux Nexus custom-screen implementation
 and major iCUE Nexus capabilities. It is a planning document, not a claim of
 feature parity or hardware certification.
 
+## Next release — larger custom icon packs (planned)
+
+- Increase per-pack icon capacity from **48 to 256**, and expand ZIP upload
+  capacity from **8 MiB to 32 MiB** and extracted icon data budget from
+  **8 MiB to 64 MiB**. Update archive-entry count and manifest validation.
+- Keep existing file-size (512 KiB per icon), extension/content, SVG
+  rasterization, path-traversal and ZIP-bomb protections in place.
+- Make the icon picker usable at scale with thumbnail lazy loading plus
+  search/filtering across the Nexus and Mirabox/Deck editors.
+- Centralize quotas and update API error messages and documentation.
+- Test 256-icons success, 257-icons rejection, resource limits, malicious
+  archive handling, existing pack compatibility, and picker responsiveness.
+- Ship only after implementation PRs pass Go, browser, security and manual
+  device checks; this entry is a release target, **not implemented yet**.
+
 ## Existing foundation
 
 - Ordinary editable JSON screens, five stock layouts and themes
