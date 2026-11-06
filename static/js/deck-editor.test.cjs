@@ -174,7 +174,9 @@ async function run() {
   // load() fetches data asynchronously and builds the preview.
   await new Promise(resolve => setImmediate(resolve));
   const grid = nodes['deck-key-grid'];
-  assert.equal(grid.children.length, 18, 'all LCD keys should be previewed');
+  assert.equal(grid.children.length, 18, 'all LCD positions should be previewed');
+  assert.match(nodes['deck-key-count'].textContent, /15 buttons · 3 display-only LCDs/,
+    'Mirabox preview must not describe three passive displays as buttons');
   assert.equal(nodes['deck-save'].disabled, false, 'Save & Apply must work even without edits');
   assert.equal(nodes['deck-connection-state'].dataset.connected, 'true');
   assert.equal(nodes['deck-metric-status'].textContent, '', 'empty metric selection has no helper sentence');
