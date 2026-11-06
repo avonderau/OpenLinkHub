@@ -43,8 +43,10 @@ for long-press detection on old units.
 
 Use **Settings → Devices & displays → Supported Devices** to find
 **Mirabox HSV293S** (or another supported Deck model), change the Enabled
-toggle, and click **Save**. The service must be restarted before the
-change takes effect, consistent with the existing Corsair device switches.
+toggle, and click **Save**. New Deck discovery checks the updated
+enable/disable list on each scan. If a device is **already connected**, the
+service must still be restarted to stop controlling that existing device,
+consistent with the existing Corsair device switches.
 
 Deck exclusions are stored by vendor + product ID in `deckExclude` in
 `config.json` (for example, `"5548:6670"`). The legacy `exclude`
