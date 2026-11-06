@@ -36,7 +36,7 @@ the device, and verify the saved page and image restore correctly.
 ### Reusable icon sets
 
 Manage packs under **Settings → Icon Packs → Icon Pack Library**.
-Import a ZIP containing up to 2,048 PNG, JPEG or static SVG icons (up to 512 KiB
+Import a ZIP containing up to 4,096 PNG, JPEG or static SVG icons (up to 512 KiB
 per image, 32 MiB ZIP size and 64 MiB extracted-data limit). Settings supports renaming and removing
 packs and viewing each icon. Deleting a pack keeps previously used artwork
 in saved layouts. In the Deck editor, choose a pack and icon in
