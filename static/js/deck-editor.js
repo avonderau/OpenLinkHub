@@ -633,12 +633,23 @@
   deckControlInput.addEventListener('change', () => {
     if (actionInput.value !== 'deck-control') return;
     const value = deckControlInput.value;
+    if (value === 'folder-back' && !currentPage()?.parentPage) {
+      deckControlInput.value = assignment(selected)?.action || 'page-next';
+      setMessage('Back is available only on a folder page.', 'error');
+      return;
+    }
+    const existing = assignment(selected)?.targetPage;
+    const children = childFolders();
     setKeyProperties({
       action: value,
-      targetPage: value === 'page-go' ? assignment(selected)?.targetPage || layout.activePage : '',
+      targetPage: value === 'page-go' ? existing || layout.activePage :
+        value === 'folder-open' ? (children.some(page => page.id === existing) ? existing : children[0]?.id || '') : '',
       target: value === 'brightness-set' ? '50' : '',
     });
     renderInspector();
+    if (value === 'folder-open' && !children.length) {
+      setMessage('Create a folder to complete this button action.');
+    }
   });
   brightnessInput.addEventListener('change', () => {
     if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'brightness-set') return;
@@ -648,6 +659,39 @@
     if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
   });
+  folderTargetInput.addEventListener('change', () => {
+    if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'folder-open') return;
+    setKeyProperties({ targetPage: folderTargetInput.value });
+  });
+
+  createFolderButton.addEventListener('click', () => {
+    if (!layout || selected < 0 || layout.pages.length >= 16 ||
+        actionInput.value !== 'deck-control' || deckControlInput.value !== 'folder-open') return;
+    const parent = currentPage();
+    if (!parent) return;
+    let index = 1;
+    while (layout.pages.some(page => page.id === `folder-${index}`)) index += 1;
+    const folder = {
+      id: `folder-${index}`, name: `Folder ${index}`, parentPage: parent.id,
+      keys: [{ index: keyCount - 1, label: '', action: 'folder-back' }],
+    };
+    layout.pages.push(folder);
+    // The selected key becomes a folder button; all previous metric/button
+    // targets are cleared instead of being carried into the new folder.
+    setKeyProperties({
+      action: 'folder-open', targetPage: folder.id, target: '',
+      metric: '', label: '', icon: '',
+    });
+    layout.activePage = folder.id;
+    selected = -1;
+    renderPages();
+    renderGrid();
+    renderInspector();
+    selectTab('pages');
+    pageNameInput.focus();
+    setDirty();
+  });
+
   shortcutInput.addEventListener('input', () => {
     if (actionInput.value !== 'hotkey') return;
     setKeyProperties({ target: shortcutInput.value });
@@ -694,7 +738,8 @@
     if (!page) return;
     page.name = pageNameInput.value;
     const option = pageSelect.selectedOptions[0];
-    if (option) option.textContent = page.name;
+    if (option) option.textContent =
+      (page.parentPage ? '  '.repeat(pageDepth(page)) + '↳ ' : '') + page.name;
     setDirty();
     keyCounter.textContent = `${keyCount} LCD keys · ${page.name}`;
   });
@@ -723,20 +768,37 @@
   });
 
   removeButton.addEventListener('click', () => {
-    if (!layout || layout.pages.length <= 1) return;
-    if (!window.confirm('Delete the selected page and all its key labels?')) return;
+    if (!layout || removeButton.disabled) return;
     const deletedPage = layout.activePage;
-    layout.pages = layout.pages.filter(page => page.id !== deletedPage);
+    const fallbackParent = currentPage()?.parentPage;
+    const removed = new Set([deletedPage]);
+    // Removing a parent also removes its descendant folders to avoid
+    // dangling parent pointers and Back navigation to deleted pages.
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const page of layout.pages) {
+        if (page.parentPage && removed.has(page.parentPage) && !removed.has(page.id)) {
+          removed.add(page.id);
+          changed = true;
+        }
+      }
+    }
+    const description = removed.size > 1
+      ? `Delete this page and its ${removed.size - 1} nested folder(s)?`
+      : 'Delete the selected page and all its keys?';
+    if (!window.confirm(description)) return;
+    layout.pages = layout.pages.filter(page => !removed.has(page.id));
     for (const page of layout.pages) {
       for (const key of page.keys) {
-        if (key.action === 'page-go' && key.targetPage === deletedPage) {
+        if (['page-go', 'folder-open'].includes(key.action) && removed.has(key.targetPage)) {
           delete key.action;
           delete key.targetPage;
         }
       }
       page.keys = page.keys.filter(key => key.label || key.action || key.icon || key.metric);
     }
-    layout.activePage = layout.pages[0].id;
+    layout.activePage = layout.pages.some(page => page.id === fallbackParent)
+      ? fallbackParent : layout.pages.find(page => !page.parentPage).id;
     selected = -1;
     renderPages();
     renderGrid();
