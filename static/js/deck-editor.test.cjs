@@ -511,6 +511,17 @@ async function run() {
   assert.equal(nestedLayout.pages.find(page => page.id === 'folder-2').keys
     .find(key => key.index === 17).action, 'folder-back');
 
+  // The parent key preview must show the folder glyph and the updated
+  // destination name, just like the device's default key caption.
+  nodes['deck-page'].value = 'page-2';
+  nodes['deck-page'].dispatch('change');
+  assert.equal(grid.children[7].dataset.hasFolderIcon, 'true');
+  assert.equal(grid.children[7].children[1].style.maskImage,
+    'url("/static/media-glyphs/folder-open.svg")');
+  assert.equal(grid.children[7].children[2].textContent, 'Games');
+  nodes['deck-page'].value = 'folder-1';
+  nodes['deck-page'].dispatch('change');
+
   // Removing a folder with children should recursively clear the folder pages
   // and the parent key link, without removing the surrounding regular page.
   nodes['deck-page'].value = 'folder-1';
