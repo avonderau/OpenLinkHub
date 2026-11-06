@@ -2966,6 +2966,15 @@ func applyHTTPResponseSecurityHeaders(w http.ResponseWriter) {
 	h.Set("Referrer-Policy", "same-origin")
 }
 
+// Authentication can answer login and session checks before setRoutes runs.
+// Wrap it too so unauthorized, login and error replies get the same defenses.
+func withHTTPResponseSecurityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		applyHTTPResponseSecurityHeaders(w)
+		next.ServeHTTP(w, r)
+	})
+}
+
 // setRoutes will set up all routes
 func setRoutes() http.Handler {
 	r := http.NewServeMux()
@@ -3287,7 +3296,7 @@ func Init() {
 				return
 			}
 
-			server.Handler = authentication.Middleware(setRoutes())
+			server.Handler = withHTTPResponseSecurityHeaders(authentication.Middleware(setRoutes()))
 			scheme = "https"
 		}
 
