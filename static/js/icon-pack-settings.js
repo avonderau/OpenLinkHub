@@ -99,8 +99,8 @@
   importer.addEventListener('click',async()=>{
    const zip=file.files?.[0];
    if (working) return;
-   if (!zip || zip.size<1 || zip.size>8*1024*1024) {
-    message('Select a ZIP or .streamDeckIconPack file smaller than 8 MiB.',true);return;
+   if (!zip || zip.size<1 || zip.size>32*1024*1024) {
+    message('Select a ZIP or .streamDeckIconPack file no larger than 32 MiB.',true);return;
    }
    const streamDeck=/\.streamDeckIconPack$/i.test(zip.name);
    const label=name.value.trim() || (streamDeck ? '' : zip.name.replace(/\.zip$/i,''));
