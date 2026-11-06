@@ -302,13 +302,28 @@
   color:var(--olh-muted);font-size:.8rem;line-height:1.5;margin:0 0 14px;
 }
 .olh-settings-page .olh-icon-pack-import{
-  display:grid;grid-template-columns:minmax(140px,1fr) minmax(200px,1.25fr) auto;
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;
   gap:7px 12px;align-items:center;
   padding:12px;border:1px solid var(--olh-line);
   border-radius:10px;background:rgba(12,13,15,.22);
 }
 .olh-settings-page .olh-icon-pack-import label{color:var(--olh-muted);font-size:.76rem}
 .olh-settings-page .olh-icon-pack-import :is(input,button){min-width:0;max-width:100%}
+.olh-settings-page .olh-icon-pack-file-input{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+}
+.olh-settings-page .olh-icon-pack-choose{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  cursor:pointer;margin:0;white-space:nowrap;
+}
+.olh-settings-page .olh-icon-pack-file-input:focus-visible + .olh-icon-pack-choose{
+  outline:2px solid var(--olh-accent,#c79848);outline-offset:3px;
+}
+.olh-settings-page .olh-icon-pack-file-name{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--olh-muted);font-size:.8rem;
+}
 .olh-settings-page .olh-icon-pack-import small{grid-column:1/-1;color:var(--olh-muted);font-size:.73rem}
 .olh-settings-page #olh-icon-pack-status{
   min-height:1.4em;padding:10px 2px 4px;color:var(--olh-muted);font-size:.78rem;
@@ -387,5 +402,7 @@
 }
 @media(max-width:800px){
  .olh-settings-page .olh-icon-pack-import{grid-template-columns:minmax(0,1fr)}
+ .olh-settings-page .olh-icon-pack-choose{justify-self:start}
+ .olh-settings-page .olh-icon-pack-file-name{max-width:100%}
  .olh-settings-page .olh-icon-pack-library{grid-template-columns:minmax(0,1fr)}
 }
