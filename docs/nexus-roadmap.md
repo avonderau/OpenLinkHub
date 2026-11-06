@@ -8,12 +8,18 @@ feature parity or hardware certification.
 
 - Increase per-pack icon capacity from **48 to 256**, and expand ZIP upload
   capacity from **8 MiB to 32 MiB** and extracted icon data budget from
-  **8 MiB to 64 MiB**. Update archive-entry count and manifest validation.
+  **8 MiB to 64 MiB**. Raise the archive-entry cap (currently 128 files,
+  including skipped entries) above 256 so the new icon limit is reachable,
+  and update manifest validation.
+- Decide whether to add a total library storage budget: the library still
+  allows 24 packs, so 64 MiB per pack could mean about 1.5 GiB on disk.
 - Keep existing file-size (512 KiB per icon), extension/content, SVG
   rasterization, path-traversal and ZIP-bomb protections in place.
 - Make the icon picker usable at scale with thumbnail lazy loading plus
   search/filtering across the Nexus and Mirabox/Deck editors.
-- Centralize quotas and update API error messages and documentation.
+- Centralize quotas and update API error messages and documentation,
+  including the 48-icon / 8 MiB limits in `README.md`,
+  `docs/deck-artwork.md` and `docs/nexus-fork.md`.
 - Test 256-icons success, 257-icons rejection, resource limits, malicious
   archive handling, existing pack compatibility, and picker responsiveness.
 - Ship only after implementation PRs pass Go, browser, security and manual
