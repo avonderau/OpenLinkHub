@@ -63,7 +63,7 @@ jobs:
       - name: Race-test hotplug registry and device settings
         env:
           CGO_CFLAGS_ALLOW: -fno-strict-overflow
-        run: go test -race ./src/config ./src/devices -run 'TestDeckHotplug|TestDeckRegistry|TestDeckSettingsSafe' -count=1 -timeout=3m
+        run: go test -race ./src/config ./src/devices -run 'TestDeckHotplug|TestDeckUSB|TestDeckRegistry|TestDeckSettingsSafe' -count=1 -timeout=3m
       - name: Compile device manager
         env:
           CGO_CFLAGS_ALLOW: -fno-strict-overflow
