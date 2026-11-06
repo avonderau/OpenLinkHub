@@ -13,6 +13,7 @@ import (
 
 	"OpenLinkHub/src/common"
 	"OpenLinkHub/src/config"
+	"OpenLinkHub/src/deckplugin"
 	"OpenLinkHub/src/devices/nexus"
 	"OpenLinkHub/src/logger"
 	"github.com/sstallion/go-hid"
@@ -22,7 +23,9 @@ import (
 )
 
 // Device is the native Deck implementation. Mirabox and Elgato Stream Deck
-// keypads get HID input and key-image output through deck_hardware.go. No third-party code executes inside the system daemon.
+// keypads get HID input and key-image output through deck_hardware.go.
+// No third-party code executes inside the system daemon; plugin keys are
+// served by the desktop agent's plugin host (plugin_bridge.go).
 // hidSession isolates the HID handle from reconnect and protocol tests.
 type hidSession interface {
 	Write([]byte) (int, error)
@@ -61,6 +64,9 @@ type Device struct {
 	done              chan struct{}
 	readerDone        chan struct{}
 	once              sync.Once
+	// Plugin keys on the active page, and what each plugin last drew.
+	pluginInstances map[string]deckplugin.Instance
+	pluginKeys      map[string]*pluginKey
 }
 
 type Status struct {
@@ -134,6 +140,7 @@ func Init(info *hid.DeviceInfo) *common.Device {
 			logger.Log(logger.Fields{"error": err, "model": m.Name, "path": info.Path}).Warn("Unable to initialize Deck HID session")
 			return nil
 		}
+		plugins.registerDevice(d, true)
 		d.readerDone = make(chan struct{})
 		go d.listen()
 		go d.metricLoop()
@@ -160,6 +167,8 @@ func (d *Device) Stop() {
 		defer d.mu.Unlock()
 		d.connected = false
 		d.status = "Stopped"
+		d.dropPluginKeysLocked()
+		go plugins.registerDevice(d, false)
 		if d.hidDevice != nil {
 			_ = d.hidDevice.Close()
 			d.hidDevice = nil
@@ -256,6 +265,7 @@ func (d *Device) drawActivePageLocked() error {
 	if page == nil {
 		return errors.New("no active page")
 	}
+	d.syncPluginKeysLocked()
 	keys := make(map[int]KeyConfig, len(page.Keys))
 	for _, key := range page.Keys {
 		keys[key.Index] = key
@@ -289,7 +299,9 @@ func (d *Device) drawKeyLocked(index int, key KeyConfig) error {
 		}
 	}
 	var frame image.Image
-	if key.Metric != "" {
+	if key.Action == "plugin" {
+		frame = d.renderPluginKeyLocked(size, key, artwork)
+	} else if key.Metric != "" {
 		qualified := nexus.QualifiedMetricKey(key.Metric, key.MetricSource)
 		value, available := d.metricValues[qualified]
 		frame = renderDeckMetric(size, key, value, available, d.metricHistory[qualified], artwork)
@@ -443,6 +455,7 @@ func (d *Device) listen() {
 				d.connected = false
 				d.initialized = false
 				d.status = "Disconnected; waiting for Deck to reconnect"
+				d.syncPluginKeysLocked()
 			}
 			d.mu.Unlock()
 			_ = handle.Close()

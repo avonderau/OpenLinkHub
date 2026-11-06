@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"OpenLinkHub/src/deckplugin"
 	"OpenLinkHub/src/devices/nexus"
 )
 
@@ -40,6 +41,8 @@ func keyDisplayLabel(key KeyConfig) string {
 		return "Launch App"
 	case "media":
 		return nexus.DefaultMediaLabel(key.Target)
+	case "plugin":
+		return "Plugin"
 	}
 	return ""
 }
@@ -66,6 +69,13 @@ func (d *Device) handleKeyPress(index int) {
 	}
 	if action == "macro" {
 		d.runDeckMacroAsync(target, run)
+		return
+	}
+	if action == "plugin" {
+		// Release events are not yet read from the hardware, so a press
+		// is reported as a quick down/up pair.
+		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyDown, Context: target})
+		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: target})
 		return
 	}
 	if action == "url" || action == "application" {
@@ -244,6 +254,13 @@ func (d *Device) selectKeyAction(index int) (string, string, func(string, string
 		d.layout = updated
 		d.status = fmt.Sprintf("Deck brightness %d%%", level)
 		return "", "", nil
+	}
+	if chosen.Action == "plugin" {
+		ctx := d.pluginContext(d.layout.Pages[current].ID, index)
+		if _, visible := d.pluginInstances[ctx]; !visible {
+			return "", "", nil
+		}
+		return "plugin", ctx, nil
 	}
 	if chosen.Action == "hotkey" || chosen.Action == "media" || chosen.Action == "macro" || chosen.Action == "url" || chosen.Action == "application" {
 		// Layouts are validated when loaded/saved. Revalidate the HID action

@@ -54,6 +54,7 @@ async function run() {
     'deck-display-only-note',
     'deck-key-shortcut', 'deck-hotkey-property',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
+    'deck-plugin-property', 'deck-key-plugin', 'deck-plugin-status', 'deck-refresh-plugins',
     'deck-key-media', 'deck-media-property',
     'deck-url-property', 'deck-key-url', 'deck-application-property', 'deck-key-application',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',

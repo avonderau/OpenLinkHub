@@ -228,6 +228,7 @@
                     <option value="deck-control">Deck controls</option>
                     <option value="url">Open website</option>
                     <option value="application">Launch desktop application</option>
+                    <option value="plugin">Plugin action (experimental)</option>
                   </select>
                 </div>
                       <div class="deck-property" id="deck-control-property" hidden>
@@ -304,6 +305,14 @@
                     <a href="/macros" target="_blank" rel="noopener noreferrer">Manage macros</a>
                   </div>
                   <small id="deck-macro-status" role="status">Create a macro in OpenLinkHub Macros, then select it here.</small>
+                </div>
+                <div class="deck-property" id="deck-plugin-property" hidden>
+                  <label for="deck-key-plugin">Plugin action</label>
+                  <select class="form-select" id="deck-key-plugin" disabled></select>
+                  <div class="deck-action-links">
+                    <button type="button" class="deck-secondary" id="deck-refresh-plugins"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</button>
+                  </div>
+                  <small id="deck-plugin-status" role="status">Stream Deck and OpenDeck action plugins run in your desktop session through the desktop agent.</small>
                 </div>
                     </div>
                   </section>

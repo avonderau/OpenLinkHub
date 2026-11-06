@@ -74,6 +74,10 @@
   const pageParentNote = document.getElementById('deck-page-parent');
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
+  const pluginProperty = document.getElementById('deck-plugin-property');
+  const pluginInput = document.getElementById('deck-key-plugin');
+  const pluginStatus = document.getElementById('deck-plugin-status');
+  const pluginRefreshButton = document.getElementById('deck-refresh-plugins');
   const macroProperty = document.getElementById('deck-macro-property');
   const macroInput = document.getElementById('deck-key-macro');
   const macroStatus = document.getElementById('deck-macro-status');
@@ -111,6 +115,10 @@
   let metricLive = {};
   let savedMacros = {};
   let macroLoadMessage = '';
+  // Plugin actions reported by the desktop agent's plugin host.
+  let pluginCatalog = [];
+  let pluginHostConnected = false;
+  let pluginLoadMessage = '';
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
@@ -216,7 +224,20 @@
       media: 'Media',
       url: 'Open Website',
       application: 'Launch App',
+      plugin: 'Plugin',
     }[action] || '';
+  }
+
+  function pluginActionName(key) {
+    const plugin = pluginCatalog.find(item => item.uuid === key?.plugin);
+    return plugin?.actions.find(item => item.uuid === key?.pluginAction)?.name || '';
+  }
+
+  function firstPluginAction() {
+    for (const plugin of pluginCatalog) {
+      if (!plugin.error && plugin.actions.length) return { plugin: plugin.uuid, pluginAction: plugin.actions[0].uuid };
+    }
+    return { plugin: '', pluginAction: '' };
   }
 
   function setKeyProperties(patch) {
@@ -233,6 +254,12 @@
     if (!key.action || key.action === 'none') delete key.action;
     if (!['page-go','folder-open'].includes(key.action)) delete key.targetPage;
     if (!['macro','media','hotkey','brightness-set','url','application'].includes(key.action)) delete key.target;
+    if (key.action !== 'plugin') {
+      delete key.plugin;
+      delete key.pluginAction;
+      delete key.pluginSettings;
+    }
+    if (!key.pluginSettings) delete key.pluginSettings;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -267,7 +294,8 @@
       const brightnessLabel = configured?.action === 'brightness-set' ? 'Brightness '+configured.target+'%' : '';
       const folderLabel = configured?.action === 'folder-open'
         ? layout.pages.find(page => page.id === configured.targetPage)?.name || 'Folder' : '';
-      const displayName = configured?.label || mediaLabel || brightnessLabel || folderLabel || actionName(configured?.action) || '—';
+      const pluginLabel = configured?.action === 'plugin' ? pluginActionName(configured) : '';
+      const displayName = configured?.label || mediaLabel || brightnessLabel || folderLabel || pluginLabel || actionName(configured?.action) || '—';
       button.setAttribute('aria-label', `${isDisplayOnly(i) ? 'Display' : 'Key'} ${i + 1}: ${displayName}`);
       if (isDisplayOnly(i)) {
         button.dataset.displayOnly = 'true';
@@ -498,6 +526,35 @@
       macroInput.appendChild(missing);
     }
     macroInput.value = selectedMacro || macroIDs[0] || '';
+    const hasPlugin = valid && actionInput.value === 'plugin';
+    pluginProperty.hidden = !hasPlugin;
+    pluginInput.replaceChildren();
+    let pluginChoices = 0;
+    for (const plugin of pluginCatalog) {
+      for (const action of plugin.actions) {
+        const option = document.createElement('option');
+        option.value = `${plugin.uuid}|${action.uuid}`;
+        option.textContent = plugin.error ? `${plugin.name}: ${action.name} (unavailable)` : `${plugin.name}: ${action.name}`;
+        option.disabled = Boolean(plugin.error);
+        pluginInput.appendChild(option);
+        if (!plugin.error) pluginChoices++;
+      }
+    }
+    const pluginValue = hasPlugin && key?.plugin ? `${key.plugin}|${key.pluginAction}` : '';
+    if (pluginValue && !Array.from(pluginInput.children).some(option => option.value === pluginValue)) {
+      const missing = document.createElement('option');
+      missing.value = pluginValue;
+      missing.textContent = `Missing plugin action ${key.pluginAction}`;
+      pluginInput.appendChild(missing);
+    }
+    pluginInput.value = pluginValue;
+    pluginInput.disabled = !hasPlugin || !pluginChoices;
+    const broken = pluginCatalog.filter(plugin => plugin.error);
+    pluginStatus.textContent = pluginLoadMessage ||
+      (!pluginHostConnected ? 'The desktop agent is not connected. Start it in your desktop session, then Refresh.' :
+        !pluginCatalog.length ? 'No plugins installed. Run OpenLinkHub --install-deck-plugin <file> as your desktop user, then Refresh.' :
+          broken.length ? `Experimental. ${broken.map(plugin => `${plugin.name}: ${plugin.error}`).join('; ')}` :
+            'Experimental. The plugin runs in your desktop session when its key is on screen.');
     macroStatus.textContent = macroLoadMessage ||
       (macroIDs.length ? 'Select an existing macro. It runs on this computer when pressed.' :
         'No saved macros found. Create one in OpenLinkHub Macros, then Refresh.');
@@ -696,6 +753,7 @@
       ...(['url', 'application'].includes(actionInput.value)
         ? { target: assignment(selected)?.action === actionInput.value ? assignment(selected)?.target || '' : '' }
         : {}),
+      ...(actionInput.value === 'plugin' && assignment(selected)?.action !== 'plugin' ? firstPluginAction() : {}),
     });
     renderInspector();
   });
@@ -768,6 +826,15 @@
     if (actionInput.value !== 'hotkey') return;
     setKeyProperties({ target: shortcutInput.value });
   });
+  pluginInput.addEventListener('change', () => {
+    if (actionInput.value !== 'plugin') return;
+    const [plugin, pluginAction] = pluginInput.value.split('|');
+    const current = assignment(selected);
+    const same = current?.plugin === plugin && current?.pluginAction === pluginAction;
+    // Settings belong to one action; a different action starts empty.
+    setKeyProperties({ plugin, pluginAction, ...(same ? {} : { pluginSettings: undefined }) });
+    renderGrid();
+  });
   macroInput.addEventListener('change', () => {
     if (actionInput.value !== 'macro') return;
     setKeyProperties({ target: macroInput.value });
@@ -804,6 +871,37 @@
     }
   }
   macroRefreshButton.addEventListener('click', loadSavedMacros);
+
+  const pluginIDPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+  async function loadPlugins() {
+    pluginRefreshButton.disabled = true;
+    try {
+      const response = await fetch('/api/deck/plugins', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (!payload || typeof payload.connected !== 'boolean' || !Array.isArray(payload.plugins)) {
+        throw new Error('Invalid plugin list');
+      }
+      pluginHostConnected = payload.connected;
+      pluginCatalog = payload.plugins
+        .filter(plugin => plugin && pluginIDPattern.test(plugin.uuid) && Array.isArray(plugin.actions))
+        .map(plugin => ({
+          uuid: plugin.uuid, name: String(plugin.name || plugin.uuid), error: String(plugin.error || ''),
+          actions: plugin.actions.filter(action => action && pluginIDPattern.test(action.uuid))
+            .map(action => ({ uuid: action.uuid, name: String(action.name || action.uuid) })),
+        }));
+      pluginLoadMessage = '';
+    } catch (error) {
+      pluginLoadMessage = `Could not load plugins: ${error.message}`;
+    } finally {
+      pluginRefreshButton.disabled = false;
+      if (layout) {
+        renderGrid();
+        renderInspector();
+      }
+    }
+  }
+  pluginRefreshButton.addEventListener('click', loadPlugins);
 
   pageNameInput.addEventListener('input', () => {
     const page = currentPage();
@@ -967,6 +1065,7 @@
     try {
       layout = normalizeLayout(await api('layout'));
       await loadSavedMacros();
+      await loadPlugins();
       await loadIconSets();
       renderPages();
       renderGrid();

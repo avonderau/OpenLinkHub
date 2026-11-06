@@ -6,6 +6,7 @@ import (
 	"mime"
 	"net/http"
 
+	"OpenLinkHub/src/deckplugin"
 	"OpenLinkHub/src/devices"
 	"OpenLinkHub/src/devices/deck"
 )
@@ -137,4 +138,25 @@ func deckIconAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]string{"id": id})
+}
+
+// deckPluginsAPI lists the plugin actions the desktop agent reported.
+func deckPluginsAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !nexusRequestHostAllowed(r) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	connected, catalog := deck.PluginCatalog()
+	if catalog == nil {
+		catalog = []deckplugin.CatalogPlugin{}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "private, no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_ = json.NewEncoder(w).Encode(map[string]any{"connected": connected, "plugins": catalog})
 }

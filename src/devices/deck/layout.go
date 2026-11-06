@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"OpenLinkHub/src/deckplugin"
 	"OpenLinkHub/src/devices/nexus"
 )
 
@@ -32,6 +33,11 @@ type KeyConfig struct {
 	ShowGraph      bool   `json:"showGraph,omitempty"` // Kept for older saved layouts.
 	MetricStyle    string `json:"metricStyle,omitempty"`
 	MetricColor    string `json:"metricColor,omitempty"`
+	// Plugin keys (Action "plugin") run a Stream Deck/OpenAction plugin
+	// action through the desktop agent's plugin host.
+	Plugin         string          `json:"plugin,omitempty"`
+	PluginAction   string          `json:"pluginAction,omitempty"`
+	PluginSettings json.RawMessage `json:"pluginSettings,omitempty"`
 }
 type Page struct {
 	ID         string      `json:"id"`
@@ -114,7 +120,18 @@ func (l Layout) Validate(m Model) error {
 					return errors.New("key labels cannot contain control characters")
 				}
 			}
+			if key.Action != "plugin" && (key.Plugin != "" || key.PluginAction != "" || len(key.PluginSettings) > 0) {
+				return fmt.Errorf("key %d: plugin settings without a plugin action", key.Index)
+			}
 			switch key.Action {
+			case "plugin":
+				if key.Target != "" || key.TargetPage != "" ||
+					!deckplugin.ValidID(key.Plugin) || !deckplugin.ValidID(key.PluginAction) {
+					return fmt.Errorf("key %d: invalid plugin action", key.Index)
+				}
+				if err := deckplugin.ValidSettings(key.PluginSettings); err != nil {
+					return fmt.Errorf("key %d: %w", key.Index, err)
+				}
 			case "", "none", "page-next", "page-previous":
 				if key.TargetPage != "" || key.Target != "" {
 					return fmt.Errorf("key %d: unexpected action target for %q", key.Index, key.Action)
