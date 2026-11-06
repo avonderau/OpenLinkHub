@@ -3,6 +3,9 @@ package deck
 import (
  "strings"
  "testing"
+ "os"
+ "path/filepath"
+ "encoding/json"
 )
 
 func testNestedFolderLayout(m Model) Layout {
@@ -13,10 +16,10 @@ func testNestedFolderLayout(m Model) Layout {
   }},
   {ID:"games",Name:"Games",ParentPage:"home",Keys:[]KeyConfig{
    {Index:0,Action:"folder-open",TargetPage:"gaming-tools"},
-   {Index:17,Action:"folder-back"},
+   {Index:16,Action:"folder-back"},
   }},
   {ID:"gaming-tools",Name:"Gaming Tools",ParentPage:"games",Keys:[]KeyConfig{
-   {Index:17,Action:"folder-back"},
+   {Index:16,Action:"folder-back"},
   }},
  }}
 }
@@ -29,7 +32,7 @@ func TestNestedFolderNavigationOnPhysicalDeck(t *testing.T) {
  if err:=d.attachSession(handle);err!=nil{t.Fatal(err)}
  before:=countMiraboxOperation(handle.reports,"STP")
  for i,expected:=range []struct{key int;page string}{
-  {0,"games"},{0,"gaming-tools"},{17,"games"},{17,"home"},
+  {0,"games"},{0,"gaming-tools"},{16,"games"},{16,"home"},
  }{
   d.handleKeyPress(expected.key)
   if got:=d.GetStatus().ActivePage;got!=expected.page{
@@ -59,11 +62,11 @@ func TestFolderBackUsesPersistedParentAfterRestart(t *testing.T) {
  restarted.root=d.root
  restarted.Serial=d.Serial
  restarted.layout=stored
- restarted.handleKeyPress(17)
+ restarted.handleKeyPress(16)
  if got:=restarted.GetStatus().ActivePage;got!="games"{
   t.Fatalf("Back after restart navigated to %q, want games",got)
  }
- restarted.handleKeyPress(17)
+ restarted.handleKeyPress(16)
  if got:=restarted.GetStatus().ActivePage;got!="home"{
   t.Fatalf("Back from parent navigated to %q, want home",got)
  }
@@ -136,6 +139,83 @@ func TestFolderDefaultLabelsAndRasterIcons(t *testing.T){
 func TestLegacyDeckLayoutRemainsCompatible(t *testing.T){
  d:=testDevice(t)
  l:=DefaultLayout(d.Model)
- l.Pages=append(l.Pages,Page{ID:"second",Name:"Second",Keys:[]KeyConfig{{Index:17,Action:"page-go",TargetPage:"home"}}})
+ l.Pages=append(l.Pages,Page{ID:"second",Name:"Second",Keys:[]KeyConfig{{Index:16,Action:"page-go",TargetPage:"home"}}})
  if err:=l.Validate(d.Model);err!=nil{t.Fatalf("v1 pages without folder metadata failed: %v",err)}
+}
+
+func TestMiraboxPassiveDisplayCellsOnlySupportVisualContent(t *testing.T) {
+ d:=testDevice(t)
+ for _,index:=range []int{5,11,17} {
+  layout:=DefaultLayout(d.Model)
+  layout.Pages[0].Keys=[]KeyConfig{{Index:index,Label:"CPU",Metric:"cpu.temperature"}}
+  if err:=layout.Validate(d.Model);err!=nil{t.Fatalf("display %d cannot show metrics: %v",index+1,err)}
+  for _,action:=range []string{"page-next","folder-back","media","macro"}{
+   layout.Pages[0].Keys=[]KeyConfig{{Index:index,Action:action}}
+   if err:=layout.Validate(d.Model);err==nil{t.Errorf("display %d accepted action %q",index+1,action)}
+  }
+  d.layout.Pages[0].Keys=[]KeyConfig{{Index:index,Action:"page-next"}}
+  d.handleKeyPress(index)
+  status:=d.GetStatus()
+  if status.ButtonEvents!=0||status.ActivePage!="home"{
+   t.Errorf("passive display %d dispatched a physical action: %+v",index+1,status)
+  }
+ }
+}
+
+func TestMiraboxBackAtPhysicalButtonSeventeen(t *testing.T) {
+ d:=testDevice(t)
+ if got:=d.Model.PreferredBackIndex();got!=16{t.Fatalf("Back index = %d, want 16",got)}
+ l:=testNestedFolderLayout(d.Model)
+ if err:=l.Validate(d.Model);err!=nil{t.Fatal(err)}
+ for _,page:=range l.Pages {
+  if page.ParentPage==""{continue}
+  found:=false
+  for _,key:=range page.Keys{
+   if key.Action=="folder-back" {
+    found=true
+    if key.Index!=16 {t.Errorf("Back on display %d instead of button 17",key.Index+1)}
+   }
+  }
+  if !found{t.Errorf("folder %q has no Back key",page.Name)}
+ }
+}
+
+func TestMiraboxLegacyBackKeyMigratesOffDisplayEighteen(t *testing.T) {
+ d:=testDevice(t)
+ layout:=testNestedFolderLayout(d.Model)
+ for pageIndex:=range layout.Pages {
+  for keyIndex:=range layout.Pages[pageIndex].Keys{
+   if layout.Pages[pageIndex].Keys[keyIndex].Action=="folder-back"{
+    layout.Pages[pageIndex].Keys[keyIndex].Index=17 // old test build
+   }
+  }
+ }
+ // Reproduce an older persisted JSON file that predates display-only validation.
+ data,err:=json.Marshal(layout)
+ if err!=nil{t.Fatal(err)}
+ filename:=layoutFilename(d.root,d.Serial)
+ if err:=os.MkdirAll(filepath.Dir(filename),0700);err!=nil{t.Fatal(err)}
+ if err:=os.WriteFile(filename,data,0600);err!=nil{t.Fatal(err)}
+ migrated,err:=LoadLayout(d.root,d.Serial,d.Model)
+ if err!=nil{t.Fatalf("old layout failed to load: %v",err)}
+ for _,page:=range migrated.Pages {
+  if page.ParentPage==""{continue}
+  for _,key:=range page.Keys {
+   if key.Action=="folder-back" && key.Index!=16 {
+    t.Fatalf("old Back migrated to %d instead of physical button 17",key.Index+1)
+   }
+  }
+ }
+}
+
+func TestMiraboxLegacyDisplayActionsDoNotEraseArtwork(t *testing.T){
+ d:=testDevice(t)
+ l:=DefaultLayout(d.Model)
+ l.Pages[0].Keys=[]KeyConfig{{Index:5,Label:"Status",Action:"page-next",Icon:strings.Repeat("a",32)}}
+ migrateDisplayOnlyActions(&l,d.Model)
+ if err:=l.Validate(d.Model);err!=nil{t.Fatal(err)}
+ k:=l.Pages[0].Keys[0]
+ if k.Label!="Status"||k.Icon!=strings.Repeat("a",32)||k.Action!=""{
+  t.Fatalf("passive display lost content or retained unusable action: %+v",k)
+ }
 }
