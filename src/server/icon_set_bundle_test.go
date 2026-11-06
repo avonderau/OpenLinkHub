@@ -80,3 +80,13 @@ func TestBundleLimitAllowsSampleArchiveEntries(t *testing.T) {
  if maxIconSetImages<1914 {t.Fatalf("sample pack has 1914 icons; limit %d",maxIconSetImages)}
  _ = fmt.Sprintf
 }
+
+func TestStandaloneStreamDeckZIPUsesManifestName(t *testing.T) {
+ manifest,index:=streamDeckFixture()
+ raw:=makeStreamDeckZIP(t,manifest,index,nil)
+ sets,err:=importIconSetBundle(t.TempDir(),"download-file-name",raw)
+ if err!=nil{t.Fatal(err)}
+ if len(sets)!=1 || sets[0].Name!="Sample Pack" {
+  t.Fatalf("expected embedded manifest name, got %+v",sets)
+ }
+}
