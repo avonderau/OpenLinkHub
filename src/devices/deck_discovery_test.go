@@ -316,3 +316,66 @@ func TestDeckRegistryLookupDuringDispatchDoesNotDeadlock(t *testing.T) {
 		t.Fatal("device registry lookup deadlocked inside legacy dispatcher")
 	}
 }
+
+func TestDeckUSBNotificationsFilterUnsupportedHardwareAndQueueReconciliation(t *testing.T) {
+	// Use a private event queue so the Netlink entry points can be tested
+	// without opening a real USB socket or starting background workers.
+	deckDiscoveryState.Lock()
+	if deckDiscoveryState.cancel != nil {
+		deckDiscoveryState.Unlock()
+		t.Fatal("unexpected live discovery worker during test")
+	}
+	queue := make(chan deckUSBEvent, 2)
+	deckDiscoveryState.cancel = func() {}
+	deckDiscoveryState.events = queue
+	deckDiscoveryState.Unlock()
+	t.Cleanup(func() {
+		deckDiscoveryState.Lock()
+		deckDiscoveryState.cancel = nil
+		deckDiscoveryState.events = nil
+		deckDiscoveryState.Unlock()
+	})
+
+	NotifyDeckUSBAdded(0xabcd, 0x1234)
+	if len(queue) != 0 { t.Fatal("unsupported USB device triggered a Deck scan") }
+	NotifyDeckUSBAdded(0x5548, 0x6670)
+	select {
+	case event := <-queue:
+		if event.vendor != 0x5548 || event.product != 0x6670 || event.reconcile {
+			t.Fatalf("unexpected Deck USB notification: %+v", event)
+		}
+	default:
+		t.Fatal("supported USB-add event not queued")
+	}
+	NotifyDeckMonitorReady()
+	select {
+	case event := <-queue:
+		if !event.reconcile { t.Fatalf("monitor-ready event must reconcile: %+v", event) }
+	default:
+		t.Fatal("monitor-ready reconciliation not queued")
+	}
+}
+
+func TestDeckUSBEventScansOnlyNotifiedVIDPID(t *testing.T) {
+	h := newFakeDeckDiscovery()
+	h.enabled[deck.DeviceKey(0x5548, 0x6670)] = true
+	h.enabled[deck.DeviceKey(0x0fd9, 0x0080)] = true
+	h.devices = []*hid.DeviceInfo{
+		deckTestInfo(0x5548, 0x6670, "/dev/hidraw1", "serial-a"),
+		deckTestInfo(0x0fd9, 0x0080, "/dev/hidraw2", "serial-b"),
+	}
+	deps := h.dependencies()
+	enums := 0
+	base := deps.enumerate
+	deps.enumerate = func(vendor, product uint16, visit hid.EnumFunc) error {
+		enums++
+		if vendor != 0x5548 || product != 0x6670 {
+			t.Errorf("event enumerated non-target USB HID devices %04x:%04x", vendor, product)
+		}
+		return base(vendor, product, visit)
+	}
+	added, settled := scanDeckVendorWith(deps, 0x5548, 0x6670)
+	if added != 1 || !settled || enums != 1 || len(h.registered) != 1 {
+		t.Fatalf("event scan added=%d ready=%t enums=%d registered=%d", added, settled, enums, len(h.registered))
+	}
+}
