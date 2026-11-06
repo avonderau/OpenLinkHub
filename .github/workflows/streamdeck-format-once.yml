@@ -15,11 +15,13 @@ jobs:
           go-version-file: go.mod
       - name: Format Go imports and tests
         run: |
+          git fetch origin feature/streamdeck-icon-pack-import
+          git switch -C feature/streamdeck-icon-pack-import origin/feature/streamdeck-icon-pack-import
           gofmt -w src/server/icon_sets_api.go src/server/icon_set_bundle.go src/server/icon_set_bundle_test.go src/server/icon_sets_capacity_test.go src/server/streamdeck_icon_pack.go src/server/streamdeck_icon_pack_test.go src/devices/deck/key_icons.go
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add src/server/*.go src/devices/deck/key_icons.go
             git commit -m "style: gofmt bundled Stream Deck import code"
-            git push
+            git push origin HEAD:feature/streamdeck-icon-pack-import
           fi
