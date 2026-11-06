@@ -44,8 +44,8 @@ async function run() {
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
     'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
     'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-selected-hero', 'deck-artwork-preview',
-    'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator', 'deck-control-indicator',
-    'deck-key-control', 'deck-key-brightness', 'deck-brightness-property',
+    'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
+    'deck-key-control', 'deck-control-property', 'deck-key-brightness', 'deck-brightness-property',
     'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
     'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
@@ -141,8 +141,8 @@ async function run() {
   }
 
   // Contextual inspector hides inactive controls until a physical key is selected.
-  assert.equal((html.match(/class="deck-inspector-section" aria-labelledby=/g) || []).length, 4);
-  for (const heading of ['Appearance', 'Live data', 'Deck controls', 'Button behavior']) {
+  assert.equal((html.match(/class="deck-inspector-section" aria-labelledby=/g) || []).length, 3);
+  for (const heading of ['Appearance', 'Live data', 'Button behavior']) {
     assert.ok(html.includes('>'+heading+'</strong>'), heading + ' card title missing');
   }
   assert.match(html, /id="deck-key-settings" hidden/);
@@ -179,7 +179,9 @@ async function run() {
   assert.equal(nodes['deck-metric-details'].hidden, true);
   assert.equal(nodes['deck-metric-indicator'].textContent, 'Off');
   assert.equal(nodes['deck-action-indicator'].textContent, 'None');
-  assert.equal(nodes['deck-control-indicator'].textContent, 'None');
+  assert.equal(nodes['deck-control-property'].hidden, true);
+  assert.match(html, /<option value="deck-control">Deck controls<\/option>/);
+  assert.doesNotMatch(html, /id="deck-control-heading"/);
 
   grid.children[0].dispatch('click');
   assert.equal(nodes['deck-key-settings'].hidden, false, 'key selection reveals grouped controls');
@@ -194,10 +196,13 @@ async function run() {
   assert.match(nodes['deck-selected-summary'].textContent, /test/);
   const action = nodes['deck-key-action'];
   const deckControl = nodes['deck-key-control'];
-  deckControl.value = 'page-next';
-  deckControl.dispatch('change');
-  assert.equal(nodes['deck-control-indicator'].textContent, 'Assigned');
-  assert.equal(nodes['deck-action-indicator'].textContent, 'None');
+  action.value = 'deck-control';
+  action.dispatch('change');
+  assert.equal(action.value, 'deck-control');
+  assert.equal(deckControl.value, 'page-next');
+  assert.equal(nodes['deck-control-property'].hidden, false,
+    'Deck controls appear as a nested menu just like media');
+  assert.equal(nodes['deck-action-indicator'].textContent, 'Assigned');
   assert.equal(nodes['deck-target-property'].hidden, true, 'next-page action does not need a destination');
   assert.match(nodes['deck-message'].textContent, /Unsaved changes/);
   await nodes['deck-save'].dispatch('click');
@@ -215,9 +220,11 @@ async function run() {
   assert.equal(nodes['deck-key-grid'].children.length, 18);
   grid.children[0].dispatch('click');
   const controls = nodes['deck-key-control'];
+  action.value = 'deck-control';
+  action.dispatch('change');
   controls.value = 'page-go';
   controls.dispatch('change');
-  assert.equal(action.value, '', 'Deck control must not also be a button action');
+  assert.equal(action.value, 'deck-control', 'Deck controls remain the selected action family');
   assert.equal(nodes['deck-target-property'].hidden, false, 'go-to-page shows destination picker');
   const target = nodes['deck-key-target-page'];
   assert.equal(target.children.length, 2, 'all destinations available');
@@ -231,7 +238,7 @@ async function run() {
   // Brightness actions live with navigation under Deck controls.
   controls.value = 'brightness-set';
   controls.dispatch('change');
-  assert.equal(action.value, '');
+  assert.equal(action.value, 'deck-control');
   assert.equal(nodes['deck-brightness-property'].hidden, false);
   assert.equal(nodes['deck-key-brightness'].value, '50');
   nodes['deck-key-brightness'].value = '75';
@@ -252,7 +259,8 @@ async function run() {
   grid.children[1].dispatch('click');
   action.value = 'macro';
   action.dispatch('change');
-  assert.equal(controls.value, '', 'button action replaces prior Deck control');
+  assert.equal(nodes['deck-control-property'].hidden, true,
+    'selecting another button action hides the Deck control submenu');
   assert.equal(nodes['deck-macro-property'].hidden, false);
   assert.equal(nodes['deck-media-property'].hidden, true);
   const macros = nodes['deck-key-macro'];
@@ -270,6 +278,8 @@ async function run() {
   action.dispatch('change');
   assert.equal(nodes['deck-macro-property'].hidden, true);
   assert.equal(nodes['deck-media-property'].hidden, false);
+  assert.equal(nodes['deck-control-property'].hidden, true,
+    'media command and Deck command use the same nested-control pattern');
   const media = nodes['deck-key-media'];
   assert.equal(media.value, 'play-pause');
   for (const command of [
