@@ -156,6 +156,10 @@ func Init() {
 		}
 
 		logger.Log(logger.Fields{}).Info("Starting USB monitor...")
+		// The Deck listener is already running. Reconcile once after Netlink
+		// binds so devices plugged between startup scan and monitor readiness
+		// are not missed; normal operation remains entirely event-driven.
+		devices.NotifyDeckMonitorReady()
 
 		for {
 			buf := make([]byte, bufferSize)
@@ -185,10 +189,14 @@ func Init() {
 					}
 					basePath := sysRoot + devPath
 					vendor := common.ReadFile(basePath + "/idVendor")
+					product := common.ReadFile(basePath + "/idProduct")
 					vid := common.PidVidToUint16(vendor)
+					pid := common.PidVidToUint16(product)
+					// Forward supported Deck arrivals to the same event-driven
+					// USB discovery lifecycle, without sleeping or opening HID
+					// handles on the Netlink monitor goroutine.
+					devices.NotifyDeckUSBAdded(vid, pid)
 					if vid == vendorId || vid == scufVendorId {
-						product := common.ReadFile(basePath + "/idProduct")
-						pid := common.PidVidToUint16(product)
 
 						if slices.Contains(exclude, pid) {
 							continue
