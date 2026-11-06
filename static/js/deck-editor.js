@@ -37,7 +37,7 @@
   const actionIndicator = document.getElementById('deck-action-indicator');
   const actionInput = document.getElementById('deck-key-action');
   const deckControlInput = document.getElementById('deck-key-control');
-  const deckControlIndicator = document.getElementById('deck-control-indicator');
+  const deckControlProperty = document.getElementById('deck-control-property');
   const brightnessProperty = document.getElementById('deck-brightness-property');
   const brightnessInput = document.getElementById('deck-key-brightness');
   const deckControls = new Set(['page-next','page-previous','page-go','brightness-up','brightness-down','brightness-set']);
@@ -338,17 +338,17 @@
         ? 'Live reading available from this computer.'
         : 'No current reading. Unavailable sensors display —.')
       : '';
-    deckControlInput.disabled = !valid;
-    deckControlInput.value = deckControls.has(key?.action) ? key.action : '';
-    deckControlIndicator.textContent = deckControlInput.value ? 'Assigned' : 'None';
-    deckControlIndicator.dataset.active = String(!!deckControlInput.value);
-    brightnessProperty.hidden = !valid || deckControlInput.value !== 'brightness-set';
-    brightnessInput.disabled = brightnessProperty.hidden;
-    brightnessInput.value = deckControlInput.value === 'brightness-set' ? key.target || '50' : '50';
     actionInput.disabled = !valid;
-    actionInput.value = deckControls.has(key?.action) ? '' : key?.action || '';
+    actionInput.value = deckControls.has(key?.action) ? 'deck-control' : key?.action || '';
     actionIndicator.textContent = actionInput.value ? 'Assigned' : 'None';
     actionIndicator.dataset.active = String(!!actionInput.value);
+    const isDeckControl = valid && actionInput.value === 'deck-control';
+    deckControlProperty.hidden = !isDeckControl;
+    deckControlInput.disabled = !isDeckControl;
+    deckControlInput.value = deckControls.has(key?.action) ? key.action : 'page-next';
+    brightnessProperty.hidden = !isDeckControl || deckControlInput.value !== 'brightness-set';
+    brightnessInput.disabled = brightnessProperty.hidden;
+    brightnessInput.value = deckControlInput.value === 'brightness-set' ? key.target || '50' : '50';
     targetPageInput.replaceChildren();
     if (layout) {
       for (const page of layout.pages) {
@@ -359,7 +359,7 @@
       }
     }
     targetPageInput.value = key?.targetPage || layout?.activePage || '';
-    const hasTarget = valid && deckControlInput.value === 'page-go';
+    const hasTarget = isDeckControl && deckControlInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
     const hasShortcut = valid && actionInput.value === 'hotkey';
@@ -542,8 +542,14 @@
   });
 
   actionInput.addEventListener('change', () => {
+    const selectedAction = actionInput.value;
+    // The UI exposes one "Deck controls" action family; layouts retain
+    // the existing concrete page/brightness action IDs for compatibility.
+    const resolvedAction = selectedAction === 'deck-control'
+      ? (deckControls.has(assignment(selected)?.action) ? assignment(selected).action : 'page-next')
+      : selectedAction;
     setKeyProperties({
-      action: actionInput.value,
+      action: resolvedAction,
       ...(actionInput.value === 'media'
         ? { target: assignment(selected)?.action === 'media' ? assignment(selected)?.target || 'play-pause' : 'play-pause' }
         : {}),
@@ -559,6 +565,7 @@
   });
 
   deckControlInput.addEventListener('change', () => {
+    if (actionInput.value !== 'deck-control') return;
     const value = deckControlInput.value;
     setKeyProperties({
       action: value,
@@ -568,11 +575,11 @@
     renderInspector();
   });
   brightnessInput.addEventListener('change', () => {
-    if (deckControlInput.value !== 'brightness-set') return;
+    if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'brightness-set') return;
     setKeyProperties({ target: brightnessInput.value });
   });
   targetPageInput.addEventListener('change', () => {
-    if (deckControlInput.value !== 'page-go') return;
+    if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
   });
   shortcutInput.addEventListener('input', () => {
