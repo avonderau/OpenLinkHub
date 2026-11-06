@@ -98,7 +98,7 @@ func extractArchive(path, dest string) (string, error) {
 	var total uint64
 	for _, f := range r.File {
 		name := strings.ReplaceAll(f.Name, "\\", "/")
-		if name == "" || strings.HasPrefix(name, "/") || strings.Contains(name, "\x00") {
+		if name == "" || !filepath.IsLocal(name) || strings.Contains(name, "\x00") {
 			return "", fmt.Errorf("unsafe archive entry %q", f.Name)
 		}
 		parts := strings.Split(strings.TrimSuffix(name, "/"), "/")
