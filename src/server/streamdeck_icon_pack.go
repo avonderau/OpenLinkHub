@@ -162,7 +162,7 @@ func parseStreamDeckPack(archive *zip.Reader) (streamDeckPack, error) {
 	if err != nil {
 		return output, err
 	}
-	indexBytes, err := readStreamDeckMember(indexFile, 128*1024)
+	indexBytes, err := readStreamDeckMember(indexFile, 1024*1024)
 	if err != nil {
 		return output, err
 	}
