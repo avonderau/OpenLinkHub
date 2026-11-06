@@ -5,6 +5,11 @@ package temperatures
 // License: GPL-3.0 or later
 
 import (
+	"bytes"
+	"context"
+	"errors"
+	"time"
+
 	"OpenLinkHub/src/common"
 	"OpenLinkHub/src/config"
 	"OpenLinkHub/src/dashboard"
@@ -980,21 +985,55 @@ func GetHwMonTemperature(hwmonDevice string) float32 {
 	return float32(math.Round(float64(tempMilliC)/10.0) / 100.0)
 }
 
-// GetExternalBinaryTemperature will return temperature of external binary
+// An external temperature probe is an operator-configured executable, not a
+// shell command. Cap its runtime and output so a broken or malicious program
+// cannot indefinitely stall sensor polling or exhaust process memory.
+const (
+	externalTemperatureTimeout   = 5 * time.Second
+	externalTemperatureMaxOutput = 128
+)
+
+var errExternalTemperatureOutput = errors.New("external temperature output exceeds 128 bytes")
+
+type boundedTemperatureOutput struct {
+	bytes.Buffer
+	cancel context.CancelFunc
+}
+
+func (out *boundedTemperatureOutput) Write(data []byte) (int, error) {
+	if len(data) > externalTemperatureMaxOutput-out.Len() {
+		// exec.Cmd copies stdout asynchronously; abort the child immediately
+		// instead of waiting for an endlessly writing process to exit.
+		out.cancel()
+		return 0, errExternalTemperatureOutput
+	}
+	return out.Buffer.Write(data)
+}
+
+// GetExternalBinaryTemperature returns a valid Celsius reading from an
+// external executable. Missing, timed-out or malformed sensors read as zero.
 func GetExternalBinaryTemperature(filePath string) float32 {
-	cmd := exec.Command(filePath)
-	output, err := cmd.Output()
-	if err != nil {
+	return externalBinaryTemperatureWithTimeout(filePath, externalTemperatureTimeout)
+}
+
+func externalBinaryTemperatureWithTimeout(filePath string, timeout time.Duration) float32 {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	out := &boundedTemperatureOutput{cancel: cancel}
+	cmd := exec.CommandContext(ctx, filePath)
+	cmd.WaitDelay = 250 * time.Millisecond // Also bound inherited output pipes.
+	cmd.Stdout = out
+	if err := cmd.Run(); err != nil {
 		return 0
 	}
 
-	temp := strings.TrimSpace(string(output))
-	tempFloat, err := strconv.ParseFloat(temp, 64)
-	if err != nil {
-		logger.Log(logger.Fields{"file": filePath, "error": err}).Error("Unable to parse binary temperature output")
+	tempFloat, err := strconv.ParseFloat(strings.TrimSpace(out.String()), 64)
+	if err != nil || math.IsNaN(tempFloat) || math.IsInf(tempFloat, 0) ||
+		tempFloat < -100 || tempFloat > 250 {
+		logger.Log(logger.Fields{"file": filePath}).Warn("External temperature executable returned an invalid Celsius reading")
 		return 0
 	}
-
 	return float32(math.Round(tempFloat*100) / 100)
 }
 
