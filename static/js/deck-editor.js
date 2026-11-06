@@ -277,7 +277,12 @@
       const number = document.createElement('small');
       number.textContent = String(i + 1).padStart(2, '0');
       const label = document.createElement('span');
-      label.textContent = displayName;
+      label.className = 'deck-key-caption';
+      const hasArtwork = validIconID(configured?.icon);
+      // Mirabox renders a caption band only when a real label exists.
+      // A standalone image has no placeholder text covering the artwork.
+      const caption = displayName === '—' ? '' : displayName;
+      label.textContent = hasArtwork ? caption : displayName;
       button.append(number);
       if (configured?.action === 'media' && !configured?.metric &&
           !validIconID(configured?.icon) && mediaGlyphs[configured?.target]) {
@@ -309,9 +314,10 @@
         button.appendChild(live);
         button.dataset.hasMetric = 'true';
       }
-      if (validIconID(configured?.icon)) {
-        button.style.backgroundImage = `linear-gradient(180deg, transparent 45%, rgba(0,0,0,.65)), url("${iconURL(configured.icon)}")`;
+      if (hasArtwork) {
+        button.style.backgroundImage = `url("${iconURL(configured.icon)}")`;
         button.dataset.hasImage = 'true';
+        if (caption) button.dataset.hasCaption = 'true';
       }
       button.addEventListener('click', () => {
         selected = i;
