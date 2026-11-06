@@ -12,6 +12,12 @@
   const importer = document.getElementById('olh-icon-pack-import');
   const status = document.getElementById('olh-icon-pack-status');
   let working = false;
+  let importBusy = false;
+  function setImportBusy(busy) {
+   importBusy = busy;
+   importer.setAttribute('aria-busy',String(busy));
+   status.classList.toggle('is-loading',busy);
+  }
   function message(text, error) {
    status.textContent = text;
    status.classList.toggle('is-error', !!error);
@@ -126,7 +132,13 @@
    const loadMore=make('button','system-button olh-icon-pack-load-more','Show more icons');
    loadMore.type='button';
    details.append(loadMore);
+   const loading=make('small','olh-icon-pack-image-loading');
+   loading.setAttribute('role','status');
+   loading.setAttribute('aria-live','polite');
+   details.append(loading);
+   let previewGeneration=0;
    const paintIcons=()=>{
+    const generation=++previewGeneration;
     tiles.replaceChildren();
     const query=iconQuery.trim().toLocaleLowerCase();
     const matching=(selected.icons||[]).map((icon,index)=>({icon,index}))
@@ -134,12 +146,27 @@
        (icon.tags||[]).some(tag=>tag.toLocaleLowerCase().includes(query)));
     const visible=matching.slice(0,visibleIcons);
     summary.textContent='Showing '+visible.length+' of '+matching.length+' matching icons';
-    for (const {icon,index} of visible) {
+    const initialPreviewCount=Math.min(16,visible.length);
+    let settled=0;
+    loading.hidden=initialPreviewCount===0;
+    loading.textContent=initialPreviewCount ? 'Loading icon previews (0/'+initialPreviewCount+')…' : '';
+    for (const [position,{icon,index}] of visible.entries()) {
      const tile=make('div','olh-icon-pack-tile');
      const img=make('img');
-     img.src='/api/icon-sets/preview?id='+encodeURIComponent(selected.id)+'&index='+index;
      img.alt='';
-     img.loading='lazy';
+     img.loading=position<initialPreviewCount?'eager':'lazy';
+     if(position<initialPreviewCount){
+      const finish=()=>{
+       if(generation!==previewGeneration)return;
+       settled++;
+       loading.hidden=settled>=initialPreviewCount;
+       loading.textContent=settled>=initialPreviewCount?'':
+        'Loading icon previews ('+settled+'/'+initialPreviewCount+')…';
+      };
+      img.addEventListener('load',finish,{once:true});
+      img.addEventListener('error',finish,{once:true});
+     }
+     img.src='/api/icon-sets/preview?id='+encodeURIComponent(selected.id)+'&index='+index;
      const caption=make('span','',icon.name);
      caption.title=[icon.name,...(icon.tags||[])].join(' · ');
      tile.append(img,caption);
@@ -174,16 +201,23 @@
     message('Select a ZIP or .streamDeckIconPack file no larger than 32 MiB.',true);return;
    }
    working=true;importer.disabled=true;
+   setImportBusy(true);
+   message('Importing and processing icon images…');
    try {
-    await request('/api/icon-sets',{
+    const imported=await request('/api/icon-sets',{
      method:'POST',headers:{'Content-Type':'application/zip'},body:zip
     });
     file.value='';
     fileName.textContent='No file selected';
-    message('Icon pack imported. Select its icons from the Nexus or Deck editor.');
+    message('Import complete. Loading icon library…');
+    // Refresh the library before reporting completion so large imports
+    // do not appear to have stalled while metadata is being loaded.
     await refresh();
+    const names=Array.isArray(imported?.sets)?imported.sets.map(set=>set.name):[];
+    message(names.length?'Imported '+names.join(', ')+'. Icon previews are loading.':
+      'Icon pack imported. Icon previews are loading.');
    } catch(e){message('Import failed: '+e.message,true);}
-   finally{working=false;importer.disabled=false;}
+   finally{working=false;importer.disabled=false;setImportBusy(false);}
   });
   refresh();
  }
