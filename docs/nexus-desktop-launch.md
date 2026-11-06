@@ -28,7 +28,9 @@ system daemon. The launcher uses the fixed installation/socket paths and
 checks that the session user belongs to the `openlinkhub` group.
 
 **For security, package installation never automatically authorizes all
-local users.** An administrator must explicitly opt in each desktop account:
+local users.** An administrator must explicitly opt in each desktop account.
+The installer prints this command, with the installing user's name filled in,
+when that account is not yet authorized:
 
 ```sh
 sudo usermod -aG openlinkhub "$(id -un)"

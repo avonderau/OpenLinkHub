@@ -68,3 +68,31 @@ if command -v systemctl >/dev/null 2>&1; then
     fi
   fi
 fi
+
+# The Nexus desktop agent runs in each user's graphical session and needs
+# that account in the openlinkhub group. Installation never grants this by
+# itself, so tell the administrator exactly how to opt an account in.
+# SUDO_USER is only used to word the hint; no account is changed here.
+agent_user=${SUDO_USER:-}
+if [ -n "$agent_user" ] && [ "$agent_user" != root ] &&
+  id -nG "$agent_user" 2>/dev/null | tr ' ' '\n' | grep -qx openlinkhub; then
+  cat <<NOTE
+
+OpenLinkHub Nexus: $agent_user is already in the openlinkhub group. The
+desktop agent starts automatically when you log in to the desktop.
+NOTE
+else
+  who=${agent_user:-<desktop user>}
+  [ "$who" = root ] && who='<desktop user>'
+  cat <<NOTE
+
+OpenLinkHub Nexus: to use launch actions (URLs and apps on Nexus/Deck keys),
+authorize your desktop account for the desktop agent:
+
+  sudo usermod -aG openlinkhub $who
+
+Then log out of the desktop completely and log back in. The agent starts
+automatically at login. Check with: id -nG   (openlinkhub should appear)
+See /opt/OpenLinkHub/docs/nexus-desktop-launch.md or the project docs.
+NOTE
+fi
