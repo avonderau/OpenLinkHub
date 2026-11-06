@@ -36,7 +36,7 @@ type Device struct {
 	ProductId      uint16
 	VendorId       uint16
 	Devices        map[int]*Devices `json:"devices"`
-	SharedDevices  func(device *common.Device)
+	SharedDevices  func(device *common.Device) `json:"-"`
 	DeviceList     map[string]*common.Device
 	PairedDevices  map[uint16]any
 	SingleDevice   bool
