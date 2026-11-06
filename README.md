@@ -11,7 +11,7 @@
 - **Live telemetry:** CPU/GPU temperatures and utilization, fan/pump readings, memory, network and disk throughput (subject to host sensor availability).
 - **Automated checks:** Go and Deck tests, Nexus editor UI tests, security checks and upstream compatibility tests.
 
-- **Shared icon-pack library:** import, rename and delete reusable PNG, JPEG and SVG icon packs (up to 2,048 icons per pack, 32 MiB ZIP upload) and Stream Deck `.streamDeckIconPack` archives in **Settings → Devices & Displays**; select their icons in either device editor. SVG import needs the optional Linux `rsvg-convert` utility (`librsvg2-bin`) and converts the artwork to PNG.
+- **Shared icon-pack library:** import, rename and delete reusable PNG, JPEG and SVG icon packs (up to 2,048 icons per pack, 32 MiB ZIP upload) and Stream Deck `.streamDeckIconPack` archives in **Settings → Icon Packs**; select their icons in either device editor. SVG import needs the optional Linux `rsvg-convert` utility (`librsvg2-bin`) and converts the artwork to PNG.
 
 For setup and feature details, see the [Nexus development notes](docs/nexus-fork.md), [Deck metric guide](docs/deck-live-metrics.md), and [Deck action guide](docs/deck-actions.md).
 
