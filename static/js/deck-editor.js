@@ -9,6 +9,11 @@
   const columns = Number.parseInt(grid.dataset.columns || '0', 10);
   const isDisplayOnly = index => grid.dataset.family === 'mirabox' &&
     index >= 0 && index < keyCount && columns > 0 && (index + 1) % columns === 0;
+  const physicalButtonCount = Array.from({ length: keyCount }, (_, i) => i)
+    .filter(index => !isDisplayOnly(index)).length;
+  const keyCountLabel = physicalButtonCount === keyCount
+    ? `${keyCount} LCD keys`
+    : `${physicalButtonCount} buttons · ${keyCount - physicalButtonCount} display-only LCDs`;
   const defaultBackKeyIndex = () => {
     for (let i = keyCount - 1; i >= 0; i -= 1) if (!isDisplayOnly(i)) return i;
     return -1;
@@ -303,7 +308,7 @@
       });
       grid.appendChild(button);
     }
-    keyCounter.textContent = `${keyCount} LCD keys · ${page.name}`;
+    keyCounter.textContent = `${keyCountLabel} · ${page.name}`;
   }
 
   function renderPages() {
@@ -769,7 +774,7 @@
     if (option) option.textContent =
       (page.parentPage ? '  '.repeat(pageDepth(page)) + '↳ ' : '') + page.name;
     setDirty();
-    keyCounter.textContent = `${keyCount} LCD keys · ${page.name}`;
+    keyCounter.textContent = `${keyCountLabel} · ${page.name}`;
   });
 
   pageSelect.addEventListener('change', () => {
