@@ -274,7 +274,7 @@
           !validIconID(configured?.icon)) {
         const glyph = document.createElement('span');
         glyph.className = 'deck-media-glyph';
-        glyph.style.maskImage = `url("/static/media-glyphs/${configured.action}.svg")`;
+        glyph.style.maskImage = `url("/static/media-glyphs/${configured.action}.svg?v=2")`;
         glyph.style.webkitMaskImage = glyph.style.maskImage;
         glyph.setAttribute('aria-hidden', 'true');
         button.appendChild(glyph);
