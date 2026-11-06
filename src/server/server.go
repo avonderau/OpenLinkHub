@@ -2955,6 +2955,17 @@ func handleFunc(mux *http.ServeMux, path, method string, handler func(w http.Res
 	})
 }
 
+// applyHTTPResponseSecurityHeaders prevents clickjacking of the local control
+// panel and MIME sniffing of API/static responses. A framing-only CSP is used
+// because the inherited WebUI relies on inline scripts and styles.
+func applyHTTPResponseSecurityHeaders(w http.ResponseWriter) {
+	h := w.Header()
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("X-Frame-Options", "SAMEORIGIN")
+	h.Set("Content-Security-Policy", "frame-ancestors 'self'")
+	h.Set("Referrer-Policy", "same-origin")
+}
+
 // setRoutes will set up all routes
 func setRoutes() http.Handler {
 	r := http.NewServeMux()
@@ -3187,6 +3198,7 @@ func setRoutes() http.Handler {
 	// listens on loopback. Authenticated HTTPS reverse proxies remain allowed
 	// through the configured dashboard AuthOrigin.
 	return http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		applyHTTPResponseSecurityHeaders(w)
 		if !nexusRequestHostAllowed(request) {
 			http.Error(w, "host not allowed", http.StatusForbidden)
 			return
