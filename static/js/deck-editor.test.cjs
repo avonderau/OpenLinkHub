@@ -181,6 +181,9 @@ async function run() {
   assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 3,
     'Source is separate; Refresh and Visualization remain two aligned columns');
   const css = fs.readFileSync(path.join(__dirname, '..', 'css', 'deck-editor.css'), 'utf8');
+  assert.match(css,/\.deck-key\[data-has-image="true"\]\[data-has-caption="true"\]/);
+  assert.match(css,/background-size:auto 74%/);
+  assert.match(css,/height:26%/);
   assert.match(css, /\.deck-metric-options\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\) minmax\(0,1\.15fr\)/,
     'metric options remain on the same row in the narrow inspector');
   assert.ok(!html.includes("Mini graph"), "metric UI must use visualization names");
@@ -359,6 +362,18 @@ async function run() {
   assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true');
   assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /\/api\/deck\/icon/);
   assert.ok(grid.children[3].style.backgroundImage.includes('/api/deck/icon'));
+  assert.equal(grid.children[3].dataset.hasCaption,undefined,
+    'icon-only keys must not display a placeholder label on top of artwork');
+  label.value = 'My app';
+  label.dispatch('input');
+  assert.equal(grid.children[3].dataset.hasCaption,'true',
+    'a custom key label creates the same reserved caption region as hardware');
+  assert.equal(grid.children[3].children[2].className,'deck-key-caption');
+  assert.equal(grid.children[3].children[2].textContent,'My app');
+  label.value = '';
+  label.dispatch('input');
+  assert.equal(grid.children[3].dataset.hasCaption,undefined,
+    'removing a label restores full-size icon rendering');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[6].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
 
