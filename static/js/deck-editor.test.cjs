@@ -42,7 +42,7 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
-    'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
+    'deck-icon-set', 'deck-icon-set-item', 'deck-icon-set-search', 'deck-apply-icon-set',
     'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-selected-hero', 'deck-artwork-preview',
     'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
     'deck-key-control', 'deck-control-property', 'deck-key-brightness', 'deck-brightness-property',
@@ -88,7 +88,10 @@ async function run() {
       }) };
     }
     if (type === '/api/icon-sets') {
-      return { ok: true, status: 200, json: async () => ({ sets: [] }) };
+      return { ok: true, status: 200, json: async () => ({ sets: [{
+        id: 'c'.repeat(24), name: 'Test icons',
+        icons: [{ name: 'Sample arrow', deckId: 'c'.repeat(32), tags: ['navigation'] }]
+      }] }) };
     }
     if (type === '/api/macro/') {
       return { ok: true, status: 200, json: async () => ({
@@ -135,7 +138,11 @@ async function run() {
   assert.match(iconSetMarkup, /<summary><i class="bi bi-grid-3x3-gap"[^>]*><\/i> Icons<\/summary>/);
   assert.match(iconSetMarkup, /class="deck-artwork-upload-panel"/);
   assert.doesNotMatch(iconSetMarkup, /Reusable icon sets/);
-  assert.ok(iconSetMarkup.indexOf('id="deck-artwork-preview"') < iconSetMarkup.indexOf('class="deck-icon-set-library" open'));
+  assert.ok(iconSetMarkup.indexOf('class="deck-icon-set-library" open') < iconSetMarkup.indexOf('id="deck-artwork-preview"'));
+  assert.ok(iconSetMarkup.indexOf('id="deck-artwork-preview"') < iconSetMarkup.indexOf('id="deck-icon-set"'),
+    'inline selected-icon preview must sit immediately before the Icon Set picker');
+  assert.doesNotMatch(iconSetMarkup, /class="deck-artwork-selected"/);
+  assert.doesNotMatch(iconSetMarkup, /<label>Artwork<\/label>/);
   assert.ok(iconSetMarkup.indexOf('class="deck-icon-set-library" open') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'));
   assert.ok(iconSetMarkup.indexOf('id="deck-remove-image"') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'),
     'remove artwork and its selected preview remain accessible even while uploads are collapsed');
@@ -328,6 +335,21 @@ async function run() {
   // Image-only keys must survive the editor's assignment filtering and
   // show their artwork in the preview without interpreting a file as HTML.
   grid.children[3].dispatch('click');
+  const iconPack = nodes['deck-icon-set'];
+  const iconChoice = nodes['deck-icon-set-item'];
+  iconPack.value = 'c'.repeat(24);
+  iconPack.dispatch('change');
+  iconChoice.value = 'c'.repeat(32);
+  iconChoice.dispatch('change');
+  assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true',
+    'choosing a library icon previews it before applying');
+  assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /c{32}/);
+  assert.equal(nodes['deck-apply-icon-set'].disabled, false);
+  assert.equal(grid.children[3].dataset.hasImage, undefined,
+    'preview selection must not alter the key until Use selected icon');
+  nodes['deck-apply-icon-set'].dispatch('click');
+  assert.match(grid.children[3].style.backgroundImage, /c{32}/,
+    'applying the chosen icon updates the device layout preview');
   const image = nodes['deck-key-image'];
   image.files = [{ type: 'image/png', size: 150, name: 'icon.png' }];
   await nodes['deck-upload-image'].dispatch('click');
