@@ -5,6 +5,10 @@
   const root = document.getElementById('olh-icon-pack-library');
   if (!root) return;
   const file = document.getElementById('olh-icon-pack-file');
+  const fileName = document.getElementById('olh-icon-pack-file-name');
+  file.addEventListener('change',()=>{
+   fileName.textContent=file.files?.[0]?.name || 'No file selected';
+  });
   const importer = document.getElementById('olh-icon-pack-import');
   const status = document.getElementById('olh-icon-pack-status');
   let working = false;
@@ -175,6 +179,7 @@
      method:'POST',headers:{'Content-Type':'application/zip'},body:zip
     });
     file.value='';
+    fileName.textContent='No file selected';
     message('Icon pack imported. Select its icons from the Nexus or Deck editor.');
     await refresh();
    } catch(e){message('Import failed: '+e.message,true);}
