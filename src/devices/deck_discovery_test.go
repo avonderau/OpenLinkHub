@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -39,9 +38,9 @@ func newFakeDeckDiscovery() *fakeDeckDiscovery {
 
 func (h *fakeDeckDiscovery) dependencies() deckScanDependencies {
 	return deckScanDependencies{
-		enumerate: func(vendor uint16, visit hid.EnumFunc) error {
+		enumerate: func(vendor, product uint16, visit hid.EnumFunc) error {
 			for _, device := range h.devices {
-				if device.VendorID == vendor {
+				if device.VendorID == vendor && (product == hid.ProductIDAny || device.ProductID == product) {
 					if err := visit(device); err != nil { return err }
 				}
 			}
@@ -141,31 +140,100 @@ func TestDeckHotplugEnumerationErrorDoesNotRegisterOrStopFutureScans(t *testing.
 	h.enabled[deck.DeviceKey(0x5548,0x6670)] = true
 	h.devices = []*hid.DeviceInfo{deckTestInfo(0x5548,0x6670,"/dev/hidraw5","")}
 	deps := h.dependencies()
-	deps.enumerate = func(uint16,hid.EnumFunc)error{return errors.New("transient USB enumeration failure")}
+	deps.enumerate = func(uint16,uint16,hid.EnumFunc)error{return errors.New("transient USB enumeration failure")}
 	if got:=scanDeckDevicesWith(deps);got!=0{t.Fatalf("registered on failed scan: %d",got)}
 	if got:=scanDeckDevicesWith(h.dependencies());got!=1{t.Fatalf("recovered scan missed device: %d",got)}
 }
 
-func TestDeckHotplugPollerStopsPromptlyAndNoLateScans(t *testing.T) {
+func TestDeckUSBWorkerIsEventDrivenAndStopsCleanly(t *testing.T) {
+	ctx,cancel := context.WithCancel(context.Background())
+	events := make(chan deckUSBEvent, 4)
+	defer cancel()
+	var mu sync.Mutex
+	scans := 0
+	started := make(chan struct{}, 2)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		runDeckUSBEvents(ctx, events, 2*time.Millisecond, 3,
+			func(vendor, product uint16) (int,bool) {
+				mu.Lock()
+				scans++
+				mu.Unlock()
+				started <- struct{}{}
+				return 1,true
+			},
+			func(){ t.Error("unexpected startup reconciliation") },
+		)
+	}()
+	// Unlike the old implementation, an idle worker must do NO enumeration.
+	time.Sleep(22*time.Millisecond)
+	mu.Lock()
+	idle := scans
+	mu.Unlock()
+	if idle != 0 { t.Fatalf("idle worker performed %d HID enumerations",idle) }
+	events <- deckUSBEvent{vendor:0x5548,product:0x6670}
+	select{case <-started:case <-time.After(time.Second):t.Fatal("USB event was not processed")}
+	cancel()
+	select{case <-done:case <-time.After(time.Second):t.Fatal("event worker ignored shutdown")}
+	mu.Lock()
+	before:=scans
+	mu.Unlock()
+	time.Sleep(20*time.Millisecond)
+	mu.Lock()
+	after:=scans
+	mu.Unlock()
+	if after!=before { t.Fatalf("scanner ran after cancellation: %d to %d",before,after) }
+}
+
+func TestDeckUSBWorkerRetriesHIDInterfaceReadinessOnlyAfterAnEvent(t *testing.T) {
 	ctx,cancel:=context.WithCancel(context.Background())
 	defer cancel()
-	var scans atomic.Int32
-	started:=make(chan struct{})
-	var once sync.Once
+	events:=make(chan deckUSBEvent, 1)
 	done:=make(chan struct{})
+	seen:=make(chan int,1)
 	go func(){
 		defer close(done)
-		runDeckDiscoveryPoller(ctx,5*time.Millisecond,func(){
-			scans.Add(1)
-			once.Do(func(){close(started)})
-		})
+		count:=0
+		runDeckUSBEvents(ctx,events,time.Millisecond,4,
+			func(vendor, product uint16)(int,bool){
+				count++
+				if vendor!=0x5548||product!=0x6670{t.Error("incorrect USB VID/PID delivered")}
+				if count==3 {seen<-count;return 1,true}
+				return 0,false
+			},
+			func(){t.Error("unexpected reconciliation")},
+		)
 	}()
-	select{case <-started:case <-time.After(time.Second):t.Fatal("poller never scanned")}
+	events<-deckUSBEvent{vendor:0x5548,product:0x6670}
+	select{
+	case n:=<-seen:
+		if n!=3{t.Fatalf("expected third attempt, got %d",n)}
+	case <-time.After(time.Second):
+		t.Fatal("bounded HID readiness retries never reached a device")
+	}
 	cancel()
-	select{case <-done:case <-time.After(time.Second):t.Fatal("poller ignored shutdown")}
-	before:=scans.Load()
-	time.Sleep(20*time.Millisecond)
-	if after:=scans.Load();after!=before{t.Fatalf("scanner ran after cancellation: %d to %d",before,after)}
+	<-done
+}
+
+func TestDeckUSBMonitorReadyReconcilesExactlyOnce(t *testing.T){
+	ctx,cancel:=context.WithCancel(context.Background())
+	defer cancel()
+	events:=make(chan deckUSBEvent,1)
+	done:=make(chan struct{})
+	reconciled:=make(chan struct{},1)
+	go func(){
+		defer close(done)
+		runDeckUSBEvents(ctx,events,time.Millisecond,3,
+			func(uint16,uint16)(int,bool){t.Error("reconciliation must not execute vendor-specific scan");return 0,true},
+			func(){reconciled<-struct{}{}},
+		)
+	}()
+	events<-deckUSBEvent{reconcile:true}
+	select{case <-reconciled:case <-time.After(time.Second):t.Fatal("startup reconciliation not performed")}
+	select{case <-reconciled: t.Fatal("unexpected repeated reconciliation");case <-time.After(20*time.Millisecond):}
+	cancel()
+	<-done
 }
 
 func TestDeckRegistrySnapshotsAreIndependentDuringRegistration(t *testing.T) {
@@ -196,23 +264,26 @@ func TestDeckHotplugShutdownWaitsForInflightEnumeration(t *testing.T) {
 	defer cancel()
 	entered := make(chan struct{})
 	release := make(chan struct{})
+	events := make(chan deckUSBEvent, 1)
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		runDeckDiscoveryPoller(ctx, time.Millisecond, func() {
+		runDeckUSBEvents(ctx, events, time.Millisecond, 3, func(uint16, uint16)(int,bool) {
 			close(entered)
 			<-release
-		})
+			return 1,true
+		},func(){})
 	}()
+	events <- deckUSBEvent{vendor:0x5548, product:0x6670}
 	select {
 	case <-entered:
 	case <-time.After(time.Second):
-		t.Fatal("scanner never entered enumeration")
+		t.Fatal("scanner never entered HID enumeration")
 	}
 	cancel()
 	select {
 	case <-done:
-		t.Fatal("poller exited before its in-flight HID scan finished")
+		t.Fatal("event worker exited before in-flight HID scan finished")
 	default:
 	}
 	close(release)
