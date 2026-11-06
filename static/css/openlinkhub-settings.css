@@ -406,3 +406,31 @@
  .olh-settings-page .olh-icon-pack-file-name{max-width:100%}
  .olh-settings-page .olh-icon-pack-library{grid-template-columns:minmax(0,1fr)}
 }
+
+
+/* Indeterminate import feedback plus actual first-batch thumbnail progress.
+ * The remaining images are lazily fetched to keep large packs responsive. */
+.olh-settings-page #olh-icon-pack-status.is-loading::before,
+.olh-settings-page .olh-icon-pack-image-loading:not([hidden])::before{
+  content:"";
+  display:inline-block;
+  width:13px;height:13px;
+  margin-right:8px;
+  vertical-align:-2px;
+  border:2px solid var(--olh-line-strong,#555);
+  border-top-color:var(--olh-accent,#d5a65a);
+  border-radius:50%;
+  animation:olh-icon-pack-spin .8s linear infinite;
+}
+.olh-settings-page .olh-icon-pack-image-loading{
+  display:block;margin-top:10px;color:var(--olh-muted);
+  font-size:.78rem;
+}
+.olh-settings-page .olh-icon-pack-image-loading[hidden]{display:none}
+@keyframes olh-icon-pack-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+ .olh-settings-page #olh-icon-pack-status.is-loading::before,
+ .olh-settings-page .olh-icon-pack-image-loading:not([hidden])::before{
+  animation:none;border-style:dotted;
+ }
+}
