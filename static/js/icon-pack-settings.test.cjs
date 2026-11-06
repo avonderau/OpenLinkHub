@@ -127,7 +127,12 @@ test('Selected pack previews are searchable, lazy, and progressively loaded',asy
  const more=detail(f).children[5];
  assert.equal(tiles.children.length,120);
  assert.equal(more.hidden,false);
- assert.equal(tiles.children[0].children[0].loading,'lazy');
+ assert.equal(tiles.children[0].children[0].loading,'eager');
+ assert.equal(tiles.children[16].children[0].loading,'lazy');
+ const loading=detail(f).children[6];
+ assert.match(loading.textContent,/Loading icon previews \(0\/16\)/);
+ for(let i=0;i<16;i++)tiles.children[i].children[0].listeners.load();
+ assert.equal(loading.hidden,true,'first visible batch should hide spinner once loaded');
  await more.listeners.click();
  assert.equal(tiles.children.length,130);
  assert.equal(more.hidden,true);
@@ -160,4 +165,33 @@ test('Choose file shows selected archive name and resets after successful import
  await f.elements['olh-icon-pack-import'].listeners.click();await flush();
  assert.equal(filename.textContent,'No file selected');
  assert.ok(f.calls.some(c=>c.method==='POST'&&c.url==='/api/icon-sets'));
+});
+
+test('Import reports progress while upload is pending and returns to idle',async()=>{
+ const f=fixture();await flush();
+ const file=f.elements['olh-icon-pack-file'];
+ const importer=f.elements['olh-icon-pack-import'];
+ const status=f.elements['olh-icon-pack-status'];
+ file.files=[{name:'large-icons.zip',size:4096}];
+ const operation=importer.listeners.click();
+ assert.match(status.textContent,/Importing and processing icon images/);
+ assert.equal(importer.disabled,true);
+ assert.equal(importer.attributes['aria-busy'],'true');
+ await operation;await flush();
+ assert.equal(importer.disabled,false);
+ assert.equal(importer.attributes['aria-busy'],'false');
+ assert.match(status.textContent,/Imported New Pack/);
+});
+test('A new icon search resets pending load counters',async()=>{
+ const f=fixture();await flush();
+ await packList(f).children[1].listeners.click();
+ const before=detail(f).children[6];
+ assert.match(before.textContent,/0\/16/);
+ const search=detail(f).children[2];
+ search.value='special';
+ search.listeners.input();
+ const after=detail(f).children[6];
+ assert.match(after.textContent,/0\/1/);
+ detail(f).children[4].children[0].children[0].listeners.load();
+ assert.equal(after.hidden,true);
 });
