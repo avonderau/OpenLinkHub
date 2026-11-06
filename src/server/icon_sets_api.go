@@ -33,9 +33,9 @@ import (
 const (
 	maxIconSetZipBytes        = 32 << 20
 	maxIconSetTotalImageBytes = 64 << 20
-	maxIconSetImages          = 256
+	maxIconSetImages          = 2048
 	maxIconSets               = 24
-	maxIconSetArchiveEntries  = 512
+	maxIconSetArchiveEntries  = 4096
 )
 
 var iconSetIDPattern = regexp.MustCompile(`^[a-f0-9]{24}$`)
@@ -450,14 +450,14 @@ func iconSetsAPI(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "invalid or oversized ZIP", http.StatusBadRequest)
 			return
 		}
-		set, err := importIconSet(root, r.URL.Query().Get("name"), contents)
+		sets, err := importIconSetBundle(root, r.URL.Query().Get("name"), contents)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]any{"set": set})
+		_ = json.NewEncoder(w).Encode(map[string]any{"sets": sets})
 	case http.MethodPut:
 		if !nexusWriteAllowed(r) {
 			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
