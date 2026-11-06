@@ -51,6 +51,7 @@ async function run() {
     'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
     'deck-key-action', 'deck-key-target-page', 'deck-target-property',
+    'deck-display-only-note',
     'deck-key-shortcut', 'deck-hotkey-property',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
     'deck-key-media', 'deck-media-property',
@@ -63,6 +64,8 @@ async function run() {
   const nodes = Object.fromEntries(ids.map(id => [id, new FakeElement()]));
   nodes['deck-device-id'].value = 'deck-test';
   nodes['deck-key-grid'].dataset.keys = '18';
+  nodes['deck-key-grid'].dataset.columns = '6';
+  nodes['deck-key-grid'].dataset.family = 'mirabox';
   const received = [];
   const intervals = [];
   let cpuReading = 55.6;
@@ -469,7 +472,7 @@ async function run() {
     'switching to media must not leave an app ID as the media target');
 
   // Build two levels of folders from the selected physical key. The editor
-  // should create a Back key at the last position on each child page.
+  // should create a Back key on physical button 17 (index 16).
   grid.children[7].dispatch('click');
   action.value = 'deck-control';
   action.dispatch('change');
@@ -481,14 +484,14 @@ async function run() {
   assert.equal(nodes['deck-page'].value, 'folder-1');
   assert.equal(nodes['deck-page-parent'].textContent, 'Folder within Page 2');
   assert.equal(nodes['deck-page-name'].value, 'Folder 1');
-  assert.equal(grid.children[17].dataset.hasFolderIcon, 'true');
-  assert.equal(grid.children[17].children[1].style.maskImage,
+  assert.equal(grid.children[16].dataset.hasFolderIcon, 'true');
+  assert.equal(grid.children[16].children[1].style.maskImage,
     'url("/static/media-glyphs/folder-back.svg")');
   await nodes['deck-save'].dispatch('click');
   const firstFolderLayout = received.at(-1);
   const firstFolder = firstFolderLayout.pages.find(page => page.id === 'folder-1');
   assert.equal(firstFolder.parentPage, 'page-2');
-  assert.equal(firstFolder.keys[0].index, 17);
+  assert.equal(firstFolder.keys[0].index, 16);
   assert.equal(firstFolder.keys[0].action, 'folder-back');
   assert.equal(firstFolderLayout.pages.find(page => page.id === 'page-2').keys
     .find(key => key.index === 7).targetPage, 'folder-1');
@@ -509,7 +512,7 @@ async function run() {
   assert.equal(nestedLayout.pages.find(page => page.id === 'folder-1').keys
     .find(key => key.index === 0).targetPage, 'folder-2');
   assert.equal(nestedLayout.pages.find(page => page.id === 'folder-2').keys
-    .find(key => key.index === 17).action, 'folder-back');
+    .find(key => key.index === 16).action, 'folder-back');
 
   // The parent key preview must show the folder glyph and the updated
   // destination name, just like the device's default key caption.
@@ -541,6 +544,37 @@ async function run() {
   controls.dispatch('change');
   assert.match(nodes['deck-message'].textContent, /only on a folder page/);
   assert.notEqual(controls.value, 'folder-back');
+
+  // Mirabox positions 6, 12 and 18 are passive LCDs, not physical keys.
+  // They remain selectable for artwork, labels and live metrics but must
+  // never accept a physical button action.
+  for (const index of [5, 11, 17]) {
+    assert.equal(grid.children[index].dataset.displayOnly, 'true',
+      `position ${index + 1} must be identified as display-only`);
+    grid.children[index].dispatch('click');
+    assert.equal(nodes['deck-key-action'].disabled, true);
+    assert.equal(nodes['deck-display-only-note'].hidden, false);
+    assert.equal(nodes['deck-key-label'].disabled, false);
+    assert.equal(nodes['deck-key-metric'].disabled, false);
+    action.value = 'deck-control';
+    action.dispatch('change');
+    assert.equal(action.value, '', 'passive LCD cannot configure an action');
+  }
+  assert.notEqual(grid.children[16].dataset.displayOnly, 'true',
+    'physical button 17 must still support actions');
+
+  // A passive cell can save text and a metric without an action.
+  grid.children[17].dispatch('click');
+  label.value = 'System';
+  label.dispatch('input');
+  metric.value = 'cpu.temperature';
+  metric.dispatch('change');
+  await nodes['deck-save'].dispatch('click');
+  const passive = received.at(-1).pages.find(page => page.id === 'page-2')
+    .keys.find(key => key.index === 17);
+  assert.equal(passive.label, 'System');
+  assert.equal(passive.metric, 'cpu.temperature');
+  assert.equal(passive.action, undefined);
 
   console.log('Deck Editor interaction test passed');
 }
