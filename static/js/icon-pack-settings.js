@@ -73,7 +73,9 @@
     });
     actions.append(rename,remove);
     const tiles=make('div','olh-icon-pack-thumbnails');
+    const previewLimit=48;
     for (const [index, icon] of (pack.icons || []).entries()) {
+     if (index >= previewLimit) break;
      const tile=make('div','olh-icon-pack-tile');
      const img=make('img');
      img.src='/api/icon-sets/preview?id='+encodeURIComponent(pack.id)+'&index='+index;
@@ -83,6 +85,9 @@
      caption.title=[icon.name,...(icon.tags||[])].join(' · ');
      tile.append(img,caption);
      tiles.appendChild(tile);
+    }
+    if ((pack.icons || []).length > previewLimit) {
+     tiles.appendChild(make('small','olh-icon-pack-description','Showing the first '+previewLimit+' icons. Search and select the full pack in a device editor.'));
     }
     card.append(title,counter,actions,tiles);
     root.appendChild(card);
