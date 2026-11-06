@@ -6,6 +6,7 @@ import (
  "path/filepath"
  "reflect"
  "testing"
+ "sync"
 )
 
 // Deck model exclusions are intentionally independent of legacy PID-only
@@ -30,4 +31,34 @@ func TestDeckSettingsPersistWithoutChangingCorsairExclusions(t *testing.T) {
  UpdateSupportedDeckDevices(map[string]bool{"5548:6670":true})
  if !DeckEnabled("5548:6670")||DeckEnabled("0fd9:0080"){t.Fatal("one vendor-qualified toggle affected another")}
  if !reflect.DeepEqual(configuration.Exclude,[]uint16{0x6670}){t.Fatal("enabling Deck changed legacy exclusions")}
+}
+
+func TestDeckSettingsSafeDuringBackgroundDiscovery(t *testing.T) {
+ previous, previousLocation := configuration, location
+ t.Cleanup(func(){ configuration=previous; location=previousLocation })
+ location=filepath.Join(t.TempDir(),"config.json")
+ configuration=Configuration{DeckExclude:[]string{"5548:6670"}}
+
+ copyOf:=GetConfig()
+ copyOf.DeckExclude[0]="modified-outside-config"
+ if DeckEnabled("5548:6670"){t.Fatal("GetConfig returned mutable exclusion backing slice")}
+
+ var wg sync.WaitGroup
+ for reader:=0;reader<4;reader++{
+  wg.Add(1)
+  go func(){
+   defer wg.Done()
+   for i:=0;i<100;i++{
+    DeckEnabled("5548:6670")
+    _=GetConfig().DeckExclude
+   }
+  }()
+ }
+ for i:=0;i<16;i++{
+  UpdateSupportedDeckDevices(map[string]bool{"5548:6670":i%2==0})
+ }
+ wg.Wait()
+ if !DeckEnabled("5548:6670"){
+  t.Fatal("last Deck settings update was not reflected in discovery")
+ }
 }
