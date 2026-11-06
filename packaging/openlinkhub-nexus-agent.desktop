@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OpenLinkHub Nexus Desktop Agent
+Comment=Connect physical Nexus launch buttons to the signed-in desktop
+Exec=/usr/libexec/openlinkhub-nexus/desktop-agent
+TryExec=/usr/libexec/openlinkhub-nexus/desktop-agent
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

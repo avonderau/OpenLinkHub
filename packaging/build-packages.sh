@@ -18,7 +18,8 @@ for dir in static web database; do test -d "$source_dir/$dir"; done
 
 stage="$work/stage"; app="$stage/opt/OpenLinkHub"
 mkdir -p "$app" "$stage/usr/lib/systemd/system" \
- "$stage/usr/lib/udev/rules.d" "$stage/usr/libexec/openlinkhub-nexus"
+ "$stage/usr/lib/udev/rules.d" "$stage/usr/libexec/openlinkhub-nexus" \
+ "$stage/etc/xdg/autostart"
 install -m 0755 "$source_dir/OpenLinkHub" "$app/OpenLinkHub"
 cp -a "$source_dir/static" "$source_dir/web" "$source_dir/database" "$app/"
 for file in docs README.md LICENSE; do
@@ -27,6 +28,8 @@ done
 install -m 0644 OpenLinkHub.service "$stage/usr/lib/systemd/system/OpenLinkHub.service"
 install -m 0644 99-openlinkhub.rules "$stage/usr/lib/udev/rules.d/99-openlinkhub-nexus.rules"
 install -m 0755 packaging/post-install.sh "$stage/usr/libexec/openlinkhub-nexus/post-install"
+install -m 0755 packaging/nexus-desktop-agent.sh "$stage/usr/libexec/openlinkhub-nexus/desktop-agent"
+install -m 0644 packaging/openlinkhub-nexus-agent.desktop "$stage/etc/xdg/autostart/openlinkhub-nexus-agent.desktop"
 
 deb_stage="$work/deb"; cp -a "$stage" "$deb_stage"; mkdir -p "$deb_stage/DEBIAN"
 cat > "$deb_stage/DEBIAN/control" <<EOF
@@ -43,6 +46,8 @@ Description: OpenLinkHub Nexus and programmable Corsair screens
  Independently maintained OpenLinkHub fork with customizable Nexus
  screens, widgets, live metrics, and touch controls.
 EOF
+# Files under /etc are admin-editable; keep local changes across upgrades.
+echo /etc/xdg/autostart/openlinkhub-nexus-agent.desktop > "$deb_stage/DEBIAN/conffiles"
 cat > "$deb_stage/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -e
@@ -108,6 +113,8 @@ cp -a %{_sourcedir}/payload/. %{buildroot}/
 /usr/lib/systemd/system/OpenLinkHub.service
 /usr/lib/udev/rules.d/99-openlinkhub-nexus.rules
 /usr/libexec/openlinkhub-nexus/post-install
+/usr/libexec/openlinkhub-nexus/desktop-agent
+%config(noreplace) /etc/xdg/autostart/openlinkhub-nexus-agent.desktop
 
 %post
 /usr/libexec/openlinkhub-nexus/post-install
