@@ -9,8 +9,12 @@ list, but the Corsair Nexus touchscreen editor is unchanged.
 - Mirabox HSV293S (`5548:6670`), HSV293SV3 (`6603:1014` /
   `6603:1005`), and Ajazz AKP153 (`5548:6674`): HID detection,
   press diagnostics, static JPEG image uploads, and brightness codec.
-- Elgato Mini, Original, Mk2 and XL variants: **discovery-only**.
-  Input and display output are not implemented yet.
+- Elgato Stream Deck Original (`0fd9:0060`), Original V2 (`0fd9:006d`),
+  Mini (`0fd9:0063`), Mini Mk.2 (`0fd9:0090`), MK.2 (`0fd9:0080`, scissor
+  keys `0fd9:00a5`), XL (`0fd9:006c`) and XL V2 (`0fd9:008f`): key input,
+  key images and brightness through the native driver in
+  `src/devices/deck/elgato_protocol.go`. **Not yet hardware-tested.**
+  See [Elgato Stream Deck driver](#elgato-stream-deck-driver).
 - Separate device page with an adaptive LCD key grid, page creation/removal,
   key-label editor, and Save Layout.
 - Validated, atomically stored JSON layouts in `database/deck/`.
@@ -20,7 +24,6 @@ list, but the Corsair Nexus touchscreen editor is unchanged.
 - Mirabox startup and reconnection replay the active saved page to the LCD.
   Saving a layout batches all key images and flushes once; the API reports
   separately whether configuration was saved and hardware display updated.
-  Elgato labels save as configuration only.
 - HID read errors now close stale handles and trigger a VID/PID/usage-checked
   reconnect attempt about every 1.5 seconds. The same device retains its
   profile and restores its saved images after reconnection.
@@ -31,7 +34,7 @@ list, but the Corsair Nexus touchscreen editor is unchanged.
   periodic USB polling**. A one-time scan after the Netlink socket binds
   covers devices connected during startup. Already-registered devices are
   skipped: a disconnected Deck keeps its existing reconnect loop and saved
-  layout. Elgato devices remain discovery-only. Refresh the browser Devices
+  layout. Refresh the browser Devices
   page to show a newly added device; the service does not need restarting.
 - Editor visuals reuse the shared OpenLinkHub Nexus charcoal/gold gradients,
   icon headers, and file-style Key/Pages tabs.
@@ -65,7 +68,7 @@ hardware-dependent.
 
 - Action execution, macros, folders, icon uploads, metrics and plugin hosting.
   These must be wired through a shared restricted action runtime.
-- The Elgato HID image/input driver, support for Neo, Plus, pedals and encoders.
+- Stream Deck Neo, Plus, Plus XL, Pedal, the module variants, encoders and touch strips.
 - Automatic removal of disconnected devices from the WebUI list is not
   implemented. A previously registered Mirabox remains listed as disconnected
   and its own HID reader waits to reconnect, instead of creating duplicate
@@ -79,10 +82,45 @@ plugin host is added, it must run as the logged-in desktop user and use an
 authenticated, permission-restricted channel rather than executing arbitrary
 plugin commands as the `openlinkhub` daemon.
 
+## Elgato Stream Deck driver
+
+The Elgato driver shares everything above the wire format with Mirabox:
+layouts, pages and folders, actions, artwork, metrics, brightness keys,
+hot-plug and reconnect. `deck_hardware.go` picks the protocol by family.
+
+Three protocol generations are implemented:
+
+| Generation | Models | Key image | Image reports |
+| --- | --- | --- | --- |
+| Original | Original (`0060`) | 72 px BMP, mirrored on both axes | 8191 bytes, image split in two halves; columns are addressed right-to-left |
+| Mini | Mini (`0063`), Mini Mk.2 (`0090`) | 80 px BMP, rotated and mirrored (a transpose) | 1024 bytes, 16-byte header |
+| V2 | Original V2 (`006d`), MK.2 (`0080`, `00a5`), XL (`006c`, `008f`) | 72 or 96 px JPEG, mirrored on both axes | 1024 bytes, 8-byte header |
+
+Reset and brightness use HID feature reports. Elgato reports the state of
+every key in each input report, so the driver fires an action when a key
+changes from released to pressed; holding a key does not repeat it.
+Elgato keys have no display-only positions.
+
+The wire format was written in Go from the reference in
+[rust-elgato-streamdeck](https://github.com/OpenActionAPI/rust-elgato-streamdeck)
+(MPL-2.0), the library OpenDeck uses. No source was copied.
+
+### Elgato hardware acceptance
+
+1. Reload udev rules (above) so the `openlinkhub` user can open
+   `0fd9` hidraw devices, and quit any other Stream Deck software.
+2. Plug in the Stream Deck and refresh Devices. It should show as connected.
+3. Save a layout with labels, artwork and a metric key. Check that every key
+   shows the right image the right way up, in the right position.
+4. Press each corner key and confirm the editor's last-pressed key matches.
+   Hold a key and confirm its action runs once.
+5. Test brightness keys, page and folder navigation, then unplug and replug.
+
 ## Permissions and testing
 
-The existing `99-openlinkhub.rules` file now grants access to the four
-specific Mirabox/Ajazz VID/PID pairs for the OpenLinkHub service user. After
+The existing `99-openlinkhub.rules` file grants the OpenLinkHub service
+user access to the four specific Mirabox/Ajazz VID/PID pairs and the eight
+supported Elgato Stream Deck product IDs. After
 installing updated rules:
 
 ```bash
@@ -92,7 +130,8 @@ sudo systemctl restart OpenLinkHub
 ```
 
 Other Stream Deck applications should not claim the same HID interface while
-testing. Elgato devices are not opened by the initial discovery-only driver.
+testing. Quit Elgato's own app, OpenDeck or any other Stream Deck software
+before OpenLinkHub opens an Elgato device; only one program can own it.
 
 ```bash
 CGO_CFLAGS_ALLOW='-fno-strict-overflow' go test ./src/devices ./src/devices/deck ./src/server -count=1

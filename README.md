@@ -7,7 +7,7 @@
 ## What is different in this fork?
 
 - **Corsair iCUE NEXUS:** editable 640 × 48 custom screens with metrics, text, bars, graphs, clocks, images, buttons, per-widget colors and gradients, and touch/swipe navigation. Uploaded background images can be static or animated GIFs.
-- **Mirabox Deck LCD keys:** editable key pages, custom PNG/JPEG artwork, keyboard shortcuts, saved macros and media actions. Per-key live metrics support **Value only, Line graph, Bar graph, Fuel gauge, and Ring gauge**, including a per-key visualization color picker. Existing graph layouts are preserved.
+- **Mirabox and Elgato Stream Deck LCD keys:** editable key pages, custom PNG/JPEG artwork, keyboard shortcuts, saved macros and media actions. Per-key live metrics support **Value only, Line graph, Bar graph, Fuel gauge, and Ring gauge**, including a per-key visualization color picker. Existing graph layouts are preserved.
 - **Live telemetry:** CPU/GPU temperatures and utilization, fan/pump readings, memory, network and disk throughput (subject to host sensor availability).
 - **Automated checks:** Go and Deck tests, Nexus editor UI tests, security checks and upstream compatibility tests.
 

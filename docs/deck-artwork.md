@@ -19,8 +19,8 @@ alone does not apply an unsaved layout.
 - Images are bounded and decoded once before normalization. SVG, GIF and
   animated output are not included in this first milestone.
 - Disconnected devices can save layouts and restore icon assignments on
-  reconnect. Elgato devices remain discovery-only and cannot display
-  artwork yet.
+  reconnect. Elgato Stream Deck keys receive the same artwork, resized to
+  their native 72, 80 or 96 px keys.
 
 ## Regression coverage
 
