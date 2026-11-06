@@ -1047,7 +1047,7 @@
       return;
     }
     pluginBusy = true;
-    pluginInstallStatus.textContent = `Installing ${file.name}...`;
+    pluginInstallStatus.textContent = `Checking ${file.name}. Confirm the install in the dialog on the OpenLinkHub computer's desktop...`;
     renderPluginManager();
     let result = '';
     try {

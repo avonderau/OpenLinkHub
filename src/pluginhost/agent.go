@@ -128,7 +128,7 @@ func Run(ctx context.Context, socketPath string) error {
 				go func() {
 					manageMu.Lock()
 					defer manageMu.Unlock()
-					result := manage(msg, pluginsDir)
+					result := manage(msg, pluginsDir, ConfirmInstall)
 					scanMu.Lock()
 					rescan()
 					scanMu.Unlock()
@@ -154,7 +154,7 @@ func Run(ctx context.Context, socketPath string) error {
 }
 
 // manage runs one install or remove request from the editor.
-func manage(msg deckplugin.Message, pluginsDir string) deckplugin.Message {
+func manage(msg deckplugin.Message, pluginsDir string, confirm func(*Plugin) error) deckplugin.Message {
 	result := deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request}
 	if !deckplugin.ValidRequest(msg.Request) {
 		result.Error = "invalid request"
@@ -162,7 +162,7 @@ func manage(msg deckplugin.Message, pluginsDir string) deckplugin.Message {
 	}
 	switch msg.Type {
 	case deckplugin.TypeInstall:
-		plugin, err := InstallArchive(msg.Archive, pluginsDir)
+		plugin, err := InstallArchive(msg.Archive, pluginsDir, confirm)
 		if err != nil {
 			result.Error = limitText(err.Error(), 200)
 			return result

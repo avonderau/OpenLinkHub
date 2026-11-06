@@ -416,22 +416,35 @@ func TestManagerInstallsAndRemoves(t *testing.T) {
 		t.Fatal(err)
 	}
 	const request = "0123456789abcdef0123456789abcdef"
-	res := manage(deckplugin.Message{Type: deckplugin.TypeInstall, Request: request, Archive: data}, plugins)
+	// Declined on the desktop: nothing is installed.
+	declined := func(*Plugin) error { return ErrInstallDeclined }
+	if res := manage(deckplugin.Message{Type: deckplugin.TypeInstall, Request: request, Archive: data}, plugins, declined); res.Error == "" {
+		t.Fatal("declined install succeeded")
+	}
+	if entries, _ := os.ReadDir(plugins); len(entries) != 0 {
+		t.Fatalf("declined install left files: %v", entries)
+	}
+	var asked *Plugin
+	agree := func(p *Plugin) error { asked = p; return nil }
+	res := manage(deckplugin.Message{Type: deckplugin.TypeInstall, Request: request, Archive: data}, plugins, agree)
+	if asked == nil || asked.UUID != "com.example.counter" {
+		t.Fatalf("confirmation not asked with the plugin: %+v", asked)
+	}
 	if res.Type != deckplugin.TypeResult || res.Request != request || res.Error != "" || res.Plugin != "com.example.counter" {
 		t.Fatalf("install result %+v", res)
 	}
-	if res := manage(deckplugin.Message{Type: deckplugin.TypeInstall, Request: request, Archive: []byte("not a zip")}, plugins); res.Error == "" {
+	if res := manage(deckplugin.Message{Type: deckplugin.TypeInstall, Request: request, Archive: []byte("not a zip")}, plugins, agree); res.Error == "" {
 		t.Fatal("garbage archive accepted")
 	}
-	if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: "bad", Plugin: "com.example.counter"}, plugins); res.Error == "" {
+	if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: "bad", Plugin: "com.example.counter"}, plugins, agree); res.Error == "" {
 		t.Fatal("invalid request ID accepted")
 	}
 	for _, bad := range []string{"../x", "com.example.other"} {
-		if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: request, Plugin: bad}, plugins); res.Error == "" {
+		if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: request, Plugin: bad}, plugins, agree); res.Error == "" {
 			t.Errorf("removed %q", bad)
 		}
 	}
-	if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: request, Plugin: "com.example.counter"}, plugins); res.Error != "" {
+	if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: request, Plugin: "com.example.counter"}, plugins, agree); res.Error != "" {
 		t.Fatalf("remove: %s", res.Error)
 	}
 	if entries, _ := os.ReadDir(plugins); len(entries) != 0 {
@@ -619,5 +632,13 @@ func TestInspectorSessionRelay(t *testing.T) {
 		if m.Type == deckplugin.TypeSettings && strings.Contains(string(m.Settings), "Paris") {
 			t.Fatal("closed settings page changed the key")
 		}
+	}
+}
+
+func TestInstallQuestionIsPlainText(t *testing.T) {
+	q := installQuestion(&Plugin{Name: "Evil\u202e<b>x</b>\x1b[2J", UUID: "com.example.evil", Version: "1", Author: "<i>me</i>",
+		Actions: []Action{{Name: "A"}, {Name: "B"}}})
+	if strings.ContainsAny(q, "\u202e\x1b") || !strings.Contains(q, "com.example.evil") || !strings.Contains(q, "Actions: A, B") {
+		t.Fatalf("question %q", q)
 	}
 }

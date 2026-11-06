@@ -41,6 +41,12 @@ func xdgDir(env, fallback, leaf string) (string, error) {
 // .streamDeckPlugin (zip) archive or an unpacked *.sdPlugin folder.
 // Hardware plugins and plugins without a usable manifest are refused.
 func Install(source, pluginsDir string) (*Plugin, error) {
+	return install(source, pluginsDir, nil)
+}
+
+// install unpacks into a staging folder and, when confirm is set, asks
+// before the plugin is moved into place.
+func install(source, pluginsDir string, confirm func(*Plugin) error) (*Plugin, error) {
 	if err := os.MkdirAll(pluginsDir, 0o700); err != nil {
 		return nil, err
 	}
@@ -75,6 +81,11 @@ func Install(source, pluginsDir string) (*Plugin, error) {
 	if errors.Is(plugin.Err, ErrDevicePlugin) {
 		return nil, plugin.Err
 	}
+	if confirm != nil {
+		if err := confirm(plugin); err != nil {
+			return nil, err
+		}
+	}
 	target := filepath.Join(pluginsDir, plugin.UUID+".sdPlugin")
 	if err := os.RemoveAll(target); err != nil {
 		return nil, err
@@ -86,7 +97,9 @@ func Install(source, pluginsDir string) (*Plugin, error) {
 }
 
 // InstallArchive installs a plugin archive received from the service.
-func InstallArchive(data []byte, pluginsDir string) (*Plugin, error) {
+// confirm runs after the archive is checked and before the plugin is
+// installed; it must return an error unless the desktop user agreed.
+func InstallArchive(data []byte, pluginsDir string, confirm func(*Plugin) error) (*Plugin, error) {
 	if len(data) == 0 || len(data) > deckplugin.MaxUploadBytes {
 		return nil, errors.New("plugin archive is empty or too large")
 	}
@@ -105,7 +118,7 @@ func InstallArchive(data []byte, pluginsDir string) (*Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Install(tmp.Name(), pluginsDir)
+	return install(tmp.Name(), pluginsDir, confirm)
 }
 
 // Remove uninstalls the plugin with this UUID from pluginsDir.

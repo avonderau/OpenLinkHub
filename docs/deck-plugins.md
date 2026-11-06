@@ -73,7 +73,12 @@ HSV293S and the Ajazz AKP153 only report presses; there a press is sent as
    **Install plugin**.
 
 The editor sends the file to the service, which passes it to the desktop
-agent. The agent installs it as your user. Because a plugin is a program,
+agent. The agent checks the archive, then shows a confirmation dialog on
+your desktop with the plugin's name, author, ID and actions. The plugin is
+installed only if you click **Install** within 90 seconds. This stops any
+other program or user that can reach the WebUI from installing code that
+runs as you. The dialog needs `zenity` or `kdialog`; without either, install
+from a terminal instead. As a second safeguard,
 installs are only accepted from a browser on the computer running
 OpenLinkHub, connecting directly to `127.0.0.1` or `::1`. A remote browser,
 or one that goes through a reverse proxy, can see and remove plugins but
