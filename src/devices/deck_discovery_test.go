@@ -222,3 +222,26 @@ func TestDeckHotplugShutdownWaitsForInflightEnumeration(t *testing.T) {
 		t.Fatal("shutdown did not wait for in-flight scan")
 	}
 }
+
+// A driver method can ask the manager for its own instance while dispatch
+// serialization is held. The registry lock must remain independent to avoid
+// deadlocking this upstream-supported usage.
+type deckRegistryLookupOnCall struct { serial string }
+func (d deckRegistryLookupOnCall) Lookup() bool { return GetDevice(d.serial) != nil }
+
+func TestDeckRegistryLookupDuringDispatchDoesNotDeadlock(t *testing.T) {
+	serial := fmt.Sprintf("deck-reentrant-%d", time.Now().UnixNano())
+	defer deleteDevice(serial)
+	addDevice(&common.Device{Serial:serial, Instance:deckRegistryLookupOnCall{serial:serial}})
+	done:=make(chan bool,1)
+	go func(){
+		vals:=CallDeviceMethod(serial,"Lookup")
+		done<-len(vals)==1 && vals[0].Bool()
+	}()
+	select{
+	case ok:=<-done:
+		if !ok {t.Fatal("dispatch lost registered device")}
+	case <-time.After(time.Second):
+		t.Fatal("device registry lookup deadlocked inside legacy dispatcher")
+	}
+}
