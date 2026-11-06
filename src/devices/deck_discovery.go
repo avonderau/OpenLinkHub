@@ -25,6 +25,7 @@ type deckScanDependencies struct {
 	enabled func(string) bool
 	present func(string) bool
 	register func(*common.Device)
+	reportError func(uint16, error)
 }
 
 func liveDeckScanDependencies() deckScanDependencies {
@@ -36,6 +37,10 @@ func liveDeckScanDependencies() deckScanDependencies {
 		enabled: config.DeckEnabled,
 		present: func(serial string) bool { return GetDevice(serial) != nil },
 		register: addDevice,
+		reportError: func(vendor uint16, err error) {
+			logger.Log(logger.Fields{"vendorId": vendor, "error": err}).
+				Warn("Unable to enumerate Deck devices")
+		},
 	}
 }
 
@@ -68,9 +73,8 @@ func scanDeckDevicesWith(deps deckScanDependencies) int {
 			added++
 			return nil
 		}))
-		if err != nil {
-			logger.Log(logger.Fields{"vendorId": vendor, "error": err}).
-				Warn("Unable to enumerate Deck devices")
+		if err != nil && deps.reportError != nil {
+			deps.reportError(vendor, err)
 		}
 	}
 	return added
