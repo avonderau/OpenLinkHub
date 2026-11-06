@@ -486,7 +486,7 @@ async function run() {
   assert.equal(nodes['deck-page-name'].value, 'Folder 1');
   assert.equal(grid.children[16].dataset.hasFolderIcon, 'true');
   assert.equal(grid.children[16].children[1].style.maskImage,
-    'url("/static/media-glyphs/folder-back.svg")');
+    'url("/static/media-glyphs/folder-back.svg?v=2")');
   await nodes['deck-save'].dispatch('click');
   const firstFolderLayout = received.at(-1);
   const firstFolder = firstFolderLayout.pages.find(page => page.id === 'folder-1');
@@ -520,7 +520,7 @@ async function run() {
   nodes['deck-page'].dispatch('change');
   assert.equal(grid.children[7].dataset.hasFolderIcon, 'true');
   assert.equal(grid.children[7].children[1].style.maskImage,
-    'url("/static/media-glyphs/folder-open.svg")');
+    'url("/static/media-glyphs/folder-open.svg?v=2")');
   assert.equal(grid.children[7].children[2].textContent, 'Games');
   nodes['deck-page'].value = 'folder-1';
   nodes['deck-page'].dispatch('change');
