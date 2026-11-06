@@ -33,6 +33,19 @@
   const iconSetItem = document.getElementById('deck-icon-set-item');
   const iconSetSearch = document.getElementById('deck-icon-set-search');
   const iconSetApply = document.getElementById('deck-apply-icon-set');
+  // A library selection is preview-only until the user assigns it.
+  // Reset that preview when changing keys to avoid showing another key's icon.
+  let iconPreviewCandidate = '';
+  function updateArtworkPreview() {
+    const assigned = selected >= 0 ? assignment(selected)?.icon : '';
+    const icon = validIconID(iconPreviewCandidate) ? iconPreviewCandidate : assigned;
+    const hasIcon = validIconID(icon);
+    artworkPreview.dataset.hasArtwork = String(hasIcon);
+    artworkPreview.style.backgroundImage = hasIcon ? `url("${iconURL(icon)}")` : '';
+    artworkPreview.setAttribute('aria-label', validIconID(iconPreviewCandidate)
+      ? 'Selected library icon preview (not applied yet)'
+      : 'Selected key artwork preview');
+  }
   let iconSets = [];
   const metricInput = document.getElementById('deck-key-metric');
   const metricSourceSelect = document.getElementById('deck-metric-source');
@@ -302,6 +315,7 @@
       }
       button.addEventListener('click', () => {
         selected = i;
+        iconPreviewCandidate = '';
         renderGrid();
         renderInspector();
         selectTab('key');
@@ -346,8 +360,7 @@
     emptySelection.hidden = valid;
     selectedHero.hidden = !valid;
     if (valid) updateSelectedSummary(key);
-    artworkPreview.dataset.hasArtwork = String(validIconID(key?.icon));
-    artworkPreview.style.backgroundImage = validIconID(key?.icon) ? `url("${iconURL(key.icon)}")` : '';
+    updateArtworkPreview();
     labelInput.disabled = !valid;
     labelInput.value = key?.label || '';
     labelInput.placeholder = key?.action === 'media' ? (mediaKeyLabels[key.target] || '') : '';
@@ -567,6 +580,7 @@
         return;
       }
       setKeyProperties({ icon: result.id });
+      iconPreviewCandidate = '';
       renderInspector();
       setMessage('Artwork uploaded. Save & Apply to update the Mirabox LCD.', 'success');
     } catch (error) {
@@ -619,17 +633,32 @@
       setMessage('Icon packs are unavailable. Check Settings.', 'error');
     }
   }
-  iconSetSelect.addEventListener('change', () => { if(iconSetSearch) iconSetSearch.value=''; refreshIconSetPicker(); });
-  iconSetSearch?.addEventListener('input', refreshIconSetPicker);
-  iconSetItem.addEventListener('change', refreshIconSetPicker);
+  iconSetSelect.addEventListener('change', () => {
+    iconPreviewCandidate = '';
+    if(iconSetSearch) iconSetSearch.value='';
+    refreshIconSetPicker();
+    updateArtworkPreview();
+  });
+  iconSetSearch?.addEventListener('input', () => {
+    iconPreviewCandidate = '';
+    refreshIconSetPicker();
+    updateArtworkPreview();
+  });
+  iconSetItem.addEventListener('change', () => {
+    iconPreviewCandidate = validIconID(iconSetItem.value) ? iconSetItem.value : '';
+    iconSetApply.disabled = selected < 0 || !validIconID(iconSetItem.value);
+    updateArtworkPreview();
+  });
   iconSetApply.addEventListener('click', () => {
     if (!validIconID(iconSetItem.value) || selected < 0) return;
     setKeyProperties({ icon: iconSetItem.value });
+    iconPreviewCandidate = '';
     renderInspector();
     setMessage('Icon set artwork assigned. Save & Apply to update the LCD.', 'success');
   });
   removeArtworkButton.addEventListener('click', () => {
     setKeyProperties({ icon: '' });
+    iconPreviewCandidate = '';
     artworkInput.value = '';
     renderInspector();
   });
