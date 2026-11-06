@@ -206,9 +206,10 @@ func Stop() {
 
 // StopDirty will stop the device without closing the file handles. Used when device is unplugged
 func StopDirty(deviceId string, productId uint16) {
-	device, ok := devices[deviceId]
+	registered := GetDevices()
+	device, ok := registered[deviceId]
 	if !ok {
-		device, ok = devices[strconv.Itoa(int(productId))]
+		device, ok = registered[strconv.Itoa(int(productId))]
 		if !ok {
 			return
 		}
@@ -231,7 +232,7 @@ func StopDirty(deviceId string, productId uint16) {
 
 // StopDirtyDevPath will stop the device by devPath without closing the file handles.
 func StopDirtyDevPath(devPath string) {
-	for _, v := range devices {
+	for _, v := range GetDevices() {
 		if v.DevicePath == devPath {
 			res := CallDeviceMethod(v.Serial, "StopDirty")
 			if res != nil {
@@ -286,8 +287,8 @@ func GetSupportedDevices() interface{} {
 
 // GetRgbProfiles will return a list of all RGB profiles for every device
 func GetRgbProfiles() map[string]interface{} {
-	profiles := make(map[string]interface{}, len(devices))
-	for _, device := range devices {
+	profiles := make(map[string]interface{}, len(GetDevices()))
+	for _, device := range GetDevices() {
 		res := CallDeviceMethod(device.Serial, "GetRgbProfiles")
 		if res != nil {
 			val := res[0]
@@ -321,7 +322,7 @@ func ControlDeviceRgb(mode bool) {
 // UpdateGlobalRgbProfile will update device RGB profile
 func UpdateGlobalRgbProfile(profile string) uint8 {
 	channelId := -1
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		CallDeviceMethod(device.Serial, "UpdateRgbProfile", channelId, profile)
 	}
 	return 1
@@ -335,7 +336,7 @@ func UpdateAllDevicesStaticColor(color rgb.Color) uint8 {
 		EndColor:   color,
 		Brightness: 1.0,
 	}
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		CallDeviceMethod(device.Serial, "UpdateRgbProfileData", "static", profile)
 		CallDeviceMethod(device.Serial, "UpdateRgbProfile", channelId, "static")
 	}
@@ -344,7 +345,7 @@ func UpdateAllDevicesStaticColor(color rgb.Color) uint8 {
 
 // ResetSpeedProfiles will reset the speed profile on each available device
 func ResetSpeedProfiles(profile string) {
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		if device.ProductType == common.ProductTypeLinkHub ||
 			device.ProductType == common.ProductTypeCC ||
 			device.ProductType == common.ProductTypeCCXT ||
@@ -361,7 +362,7 @@ func ResetSpeedProfiles(profile string) {
 // GetDevicesLedData will return led data for all devices
 func GetDevicesLedData() interface{} {
 	var leds []interface{}
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		res := CallDeviceMethod(device.Serial, "GetDeviceLedData")
 		if res != nil && len(res) > 0 {
 			val := res[0]
@@ -374,7 +375,7 @@ func GetDevicesLedData() interface{} {
 // GetTemperatureProbes will return a list of temperature probes
 func GetTemperatureProbes() interface{} {
 	var probes []interface{}
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		if device.ProductType == common.ProductTypeLinkHub ||
 			device.ProductType == common.ProductTypeCC ||
 			device.ProductType == common.ProductTypeCCXT ||
@@ -400,7 +401,7 @@ func UpdateDeviceMetrics() {
 	metrics.PopulateDefault()
 	metrics.PopulateStorage()
 
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		CallDeviceMethod(device.Serial, "UpdateDeviceMetrics")
 	}
 }
@@ -443,7 +444,7 @@ func CallDeviceMethod(deviceId string, methodName string, args ...interface{}) [
 		return nil
 	}
 
-	method := reflect.ValueOf(GetDevice(device.Serial)).MethodByName(methodName)
+	method := reflect.ValueOf(device.Instance).MethodByName(methodName)
 	if !method.IsValid() {
 		return nil
 	}
@@ -463,6 +464,8 @@ func GetProducts() map[string]Device {
 
 // GetDevice will return a device by device serial
 func GetDevice(deviceId string) interface{} {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if device, ok := devices[deviceId]; ok {
 		return device.Instance
 	}
@@ -470,8 +473,17 @@ func GetDevice(deviceId string) interface{} {
 }
 
 // GetDevices will return all available devices
+// GetDevices returns a snapshot of the registry. A Deck can be registered
+// after startup, so returning the live map would race HTTP handlers and
+// metrics loops that iterate over devices.
 func GetDevices() map[string]*common.Device {
-	return devices
+	mutex.Lock()
+	defer mutex.Unlock()
+	snapshot := make(map[string]*common.Device, len(devices))
+	for id, device := range devices {
+		snapshot[id] = device
+	}
+	return snapshot
 }
 
 // GetMouse will return all available mouse devices
@@ -492,7 +504,7 @@ func GetMouse() map[string]string {
 // GetDevicesEx will return all available devices with partial data
 func GetDevicesEx() map[string]*common.Device {
 	out := make(map[string]*common.Device)
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		out[device.Serial] = &common.Device{
 			ProductType: 0,
 			Product:     device.Product,
