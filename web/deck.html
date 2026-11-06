@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-controls-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-controls-nested-2">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -199,17 +199,29 @@
                 </div>
                     </div>
                   </section>
-                  <section class="deck-inspector-section" aria-labelledby="deck-control-heading">
+                  <section class="deck-inspector-section" aria-labelledby="deck-behavior-heading">
                     <header class="deck-inspector-section-header">
-                      <span class="deck-inspector-section-symbol"><i class="bi bi-sliders" aria-hidden="true"></i></span>
-                      <strong id="deck-control-heading">Deck controls</strong>
-                      <span class="deck-section-status" id="deck-control-indicator" data-active="false">None</span>
+                      <span class="deck-inspector-section-symbol"><i class="bi bi-lightning-charge" aria-hidden="true"></i></span>
+                      <strong id="deck-behavior-heading">Button behavior</strong>
+                      <span class="deck-section-status" id="deck-action-indicator" data-active="false">None</span>
                     </header>
                     <div class="deck-inspector-section-body">
-                      <div class="deck-property">
-                        <label for="deck-key-control">Deck control</label>
+                <div class="deck-property">
+                  <label for="deck-key-action">Button action</label>
+                  <select class="form-select" id="deck-key-action" disabled>
+                    <option value="">No action</option>
+
+
+
+                    <option value="hotkey">Keyboard shortcut</option>
+                    <option value="macro">Run saved macro</option>
+                    <option value="media">Media control</option>
+                    <option value="deck-control">Deck controls</option>
+                  </select>
+                </div>
+                      <div class="deck-property" id="deck-control-property" hidden>
+                        <label for="deck-key-control">Deck command</label>
                         <select class="form-select" id="deck-key-control" disabled>
-                          <option value="">No control</option>
                           <option value="page-go">Go to page</option>
                           <option value="page-previous">Previous page</option>
                           <option value="page-next">Next page</option>
@@ -232,28 +244,6 @@
                           <option value="100">100%</option>
                         </select>
                       </div>
-                      <small class="deck-control-help">Deck controls adjust the physical Mirabox or change its active page. Selecting a control replaces a button action, and vice versa.</small>
-                    </div>
-                  </section>
-                  <section class="deck-inspector-section" aria-labelledby="deck-behavior-heading">
-                    <header class="deck-inspector-section-header">
-                      <span class="deck-inspector-section-symbol"><i class="bi bi-lightning-charge" aria-hidden="true"></i></span>
-                      <strong id="deck-behavior-heading">Button behavior</strong>
-                      <span class="deck-section-status" id="deck-action-indicator" data-active="false">None</span>
-                    </header>
-                    <div class="deck-inspector-section-body">
-                <div class="deck-property">
-                  <label for="deck-key-action">Button action</label>
-                  <select class="form-select" id="deck-key-action" disabled>
-                    <option value="">No action</option>
-
-
-
-                    <option value="hotkey">Keyboard shortcut</option>
-                    <option value="macro">Run saved macro</option>
-                    <option value="media">Media control</option>
-                  </select>
-                </div>
                 <div class="deck-property" id="deck-hotkey-property" hidden>
                   <label for="deck-key-shortcut">Keyboard shortcut</label>
                   <input class="form-control" id="deck-key-shortcut" type="text" maxlength="80"
@@ -311,7 +301,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=deck-controls-1"></script>
+<script src="/static/js/deck-editor.js?v=deck-controls-nested-2"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
