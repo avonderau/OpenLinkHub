@@ -25,7 +25,7 @@ function fixture(){
   addEventListener(type,fn){this.listeners[type]=fn}
  }
  const elements=Object.fromEntries([
-  'olh-icon-pack-library','olh-icon-pack-name','olh-icon-pack-file',
+  'olh-icon-pack-library','olh-icon-pack-file',
   'olh-icon-pack-import','olh-icon-pack-status'
  ].map(id=>[id,new Element()]));
  const calls=[];
@@ -74,6 +74,7 @@ const controls=f=>detail(f).children[1];
 test('Settings owns pack installation and management, not editors',()=>{
  assert.match(markup,/id="olh-icon-pack-library"/);
  assert.match(markup,/id="olh-icon-pack-import"/);
+ assert.doesNotMatch(markup,/id="olh-icon-pack-name"/);
  assert.match(markup,/id="olh-settings-devices"/);
  assert.match(css,/olh-icon-pack-sidebar/);
  assert.match(css,/olh-icon-pack-detail/);
@@ -127,4 +128,16 @@ test('Selected pack previews are searchable, lazy, and progressively loaded',asy
  assert.equal(tiles.children.length,1);
  assert.equal(tiles.children[0].children[1].textContent,'Target icon');
  assert.match(summary.textContent,/1 of 1/);
+});
+
+test('Import omits name parameter so the backend chooses embedded or NewPackN name',async()=>{
+ const f=fixture();await flush();
+ const file=f.elements['olh-icon-pack-file'];
+ file.files=[{name:'icons.zip',size:1024}];
+ await f.elements['olh-icon-pack-import'].listeners.click();await flush();
+ const post=f.calls.find(call=>call.method==='POST');
+ assert.ok(post,'import should POST a ZIP');
+ assert.equal(post.url,'/api/icon-sets');
+ assert.equal(post.body.name,'icons.zip');
+ assert.equal(file.value,'');
 });
