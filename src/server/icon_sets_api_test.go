@@ -60,9 +60,8 @@ func TestSharedIconSetRejectsUnsafeArchive(t *testing.T) {
 			}
 		})
 	}
-	if _, err := importIconSet(t.TempDir(), "", makeIconSetZIP(t, "fine.png")); err == nil {
-		t.Fatal("empty pack name accepted")
-	}
+	// An image-only ZIP with no manifest now gets a generated name instead
+	// of being rejected for a missing user-supplied title.
 }
 
 func TestSharedIconSetRenameAndPreviewMetadata(t *testing.T) {
