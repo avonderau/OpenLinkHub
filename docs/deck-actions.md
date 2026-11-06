@@ -85,7 +85,7 @@ up to the existing 16-page limit. Layout version 1 remains compatible.
 1. Select a **key** on the parent page.
 2. Choose **Deck controls → Open folder**.
 3. Click **Create folder**. The editor makes a child page, links the selected
-   key to it, and automatically adds a **Back** key at the last LCD position.
+   key to it, and automatically adds a **Back** key at physical button **17**.
 4. Rename the folder in the **Pages** tab and assign buttons to its empty keys.
    To create another level, select a key inside that folder and repeat.
 5. Click **Save & Apply** before testing the physical Deck.
@@ -112,3 +112,23 @@ same; the last remaining top-level page cannot be removed.
 - Verify custom folder artwork, macros, media keys, brightness buttons and
   normal page navigation are unchanged.
 - Delete Games in the editor and confirm its nested pages and links are removed.
+
+
+### Mirabox display-only cells (physical layout)
+
+On the supported **3×6 Mirabox-style hardware**, LCD positions **6, 12 and 18**
+(the rightmost LCD in each row) are **not pressable buttons**. They remain
+available for images, labels and live metrics, and the Deck Editor marks
+them `LCD` with a dashed border. Button actions cannot be assigned to
+these three cells.
+
+The automatic folder **Back** action is on physical button **17**
+(zero-based key index `16`), not on display-only position 18. The Go
+device model and HID event decoder both enforce this distinction; other
+families such as Elgato retain their own button geometry.
+
+Previously saved layouts that put Back on display 18 are migrated when
+loaded: Back moves to button 17 when free, or the closest free physical
+button if it is occupied. Artwork and metric assignments on passive
+displays remain intact. A corrected in-process left arrow and matching
+preview SVG replace the earlier malformed Back glyph.
