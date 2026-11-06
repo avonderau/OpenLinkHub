@@ -24,13 +24,20 @@ list, but the Corsair Nexus touchscreen editor is unchanged.
 - HID read errors now close stale handles and trigger a VID/PID/usage-checked
   reconnect attempt about every 1.5 seconds. The same device retains its
   profile and restores its saved images after reconnection.
+- **Automatic hot-plug:** a 3-second periodic scan of the supported Deck
+  vendor/product IDs discovers a new Mirabox or Ajazz after the service
+  started, without restarting it. It uses the same HID interface filter and
+  initialization as startup. Already-registered devices are skipped: a
+  disconnected Deck keeps its existing reconnect loop and saved layout.
+  Elgato devices remain discovery-only. Refresh the browser Devices page to
+  show a newly added device; the service itself does not need restarting.
 - Editor visuals reuse the shared OpenLinkHub Nexus charcoal/gold gradients,
   icon headers, and file-style Key/Pages tabs.
 
-The Mirabox-family reference plugin uses an **18-position, 3x6 layout**.
-The physical key placement, key orientation and any special positions must
-still be verified on real hardware. The old protocol cannot report true
-key-release events. There is no support for long-press detection on old units.
+The Mirabox-family devices use an **18-position, 3x6 layout**, with
+15 physical buttons and 3 display-only LCD positions (6, 12 and 18).
+The old protocol cannot report true key-release events. There is no support
+for long-press detection on old units.
 
 ## Enable or disable Deck support in Settings
 
@@ -55,9 +62,10 @@ hardware-dependent.
 - Action execution, macros, folders, icon uploads, metrics and plugin hosting.
   These must be wired through a shared restricted action runtime.
 - The Elgato HID image/input driver, support for Neo, Plus, pedals and encoders.
-- First-time plug-in **after** service startup is not yet registered.
-  Reconnection is implemented for Mirabox units already discovered at
-  startup. USB device-list add/remove for brand-new devices is still future work.
+- Automatic removal of disconnected devices from the WebUI list is not
+  implemented. A previously registered Mirabox remains listed as disconnected
+  and its own HID reader waits to reconnect, instead of creating duplicate
+  registry entries.
 - Hardware validation, cross-platform support and multiple identical legacy
   Mirabox units. Legacy units often share a fake serial number.
 - Plugin-process sandboxing and OpenAction/Stream Deck SDK compatibility.
@@ -83,10 +91,28 @@ Other Stream Deck applications should not claim the same HID interface while
 testing. Elgato devices are not opened by the initial discovery-only driver.
 
 ```bash
-CGO_CFLAGS_ALLOW='-fno-strict-overflow' go test ./src/devices/deck ./src/server -count=1
+CGO_CFLAGS_ALLOW='-fno-strict-overflow' go test ./src/devices ./src/devices/deck ./src/server -count=1
 node --check static/js/deck-editor.js
 node --test static/js/deck-editor.test.cjs
 ```
+
+### Manual hot-plug acceptance
+
+1. Start OpenLinkHub with the Mirabox **unplugged** and visit Devices.
+2. Plug in a supported Mirabox. After the next 3-second scan, refresh the
+   Devices page and confirm the Deck is present; do not restart the service.
+3. Open the editor and verify the saved layout, LCD artwork, metrics and
+   physical actions work.
+4. Unplug and replug the same Deck. It should reconnect without appearing
+   twice or overwriting its layout.
+5. If available, connect a second **different supported VID/PID model** and
+   check that both appear. Identical legacy v1 models may share a fixed ID;
+   this was a pre-existing hardware limitation.
+6. Stop OpenLinkHub. The discovery loop must terminate before HID teardown.
+
+The background scanner does not initialize new Corsair hardware, open
+unsupported HID interfaces, or run third-party plugins. Existing Corsair
+discovery remains upstream-owned.
 
 ### Reference implementations and licensing
 
