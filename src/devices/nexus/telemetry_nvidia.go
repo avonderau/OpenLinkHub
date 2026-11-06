@@ -1,8 +1,7 @@
 package nexus
 
 import (
- "context"
- "os/exec"
+ "OpenLinkHub/src/common"
  "strconv"
  "strings"
  "time"
@@ -38,12 +37,9 @@ func parseNvidiaMetrics(csv string)MetricSnapshot{
 // and only when a configured NVIDIA GPU is present.
 func ReadNvidiaMetrics(index int)MetricSnapshot{
  if index<0||index>15{return MetricSnapshot{}}
- ctx,cancel:=context.WithTimeout(context.Background(),800*time.Millisecond)
- defer cancel()
- command:=exec.CommandContext(ctx,"nvidia-smi","-i",strconv.Itoa(index),
+ output,err:=common.BoundedCommandOutput(800*time.Millisecond,1024,"nvidia-smi","-i",strconv.Itoa(index),
   "--query-gpu=memory.used,memory.total,clocks.gr,power.draw",
   "--format=csv,noheader,nounits")
- output,err:=command.Output()
- if err!=nil||len(output)>1024{return MetricSnapshot{}}
+ if err!=nil{return MetricSnapshot{}}
  return parseNvidiaMetrics(string(output))
 }
