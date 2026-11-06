@@ -13,7 +13,8 @@ list, but the Corsair Nexus touchscreen editor is unchanged.
   Mini (`0fd9:0063`), Mini Mk.2 (`0fd9:0090`), MK.2 (`0fd9:0080`, scissor
   keys `0fd9:00a5`), XL (`0fd9:006c`) and XL V2 (`0fd9:008f`): key input,
   key images and brightness through the native driver in
-  `src/devices/deck/elgato_protocol.go`. **Not yet hardware-tested.**
+  `src/devices/deck/elgato_protocol.go`. **Experimental: not yet tested on
+  physical Elgato hardware.**
   See [Elgato Stream Deck driver](#elgato-stream-deck-driver).
 - Separate device page with an adaptive LCD key grid, page creation/removal,
   key-label editor, and Save Layout.
@@ -83,6 +84,11 @@ authenticated, permission-restricted channel rather than executing arbitrary
 plugin commands as the `openlinkhub` daemon.
 
 ## Elgato Stream Deck driver
+
+> **Experimental.** This driver was written from protocol references and
+> unit tests only; it has not been run on a physical Stream Deck. Key
+> images may appear rotated or in the wrong position. Please report what
+> you see on real hardware.
 
 The Elgato driver shares everything above the wire format with Mirabox:
 layouts, pages and folders, actions, artwork, metrics, brightness keys,

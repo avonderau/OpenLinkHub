@@ -117,6 +117,9 @@ func Init(info *hid.DeviceInfo) *common.Device {
 		l = DefaultLayout(m)
 	}
 	d.layout = l
+	if m.Family == "elgato" {
+		logger.Log(logger.Fields{"model": m.Name}).Warn("Elgato Stream Deck support is experimental and has not been tested on physical hardware")
+	}
 	if m.Family == "mirabox" || m.Family == "elgato" {
 		handle, err := hid.OpenPath(info.Path)
 		if err != nil {
@@ -227,7 +230,7 @@ func (d *Device) UpdateLayout(layout Layout) (LayoutResult, error) {
 		result.Message = "Saved locally, but device display update failed: " + err.Error()
 		return result, nil
 	}
-	d.status = "Connected; layout applied to display"
+	d.status = "Connected; layout applied to display" + experimentalNote(d.Model)
 	result.Applied = true
 	result.Message = "Saved and applied to Deck display."
 	return result, nil
@@ -348,7 +351,7 @@ func (d *Device) attachSession(handle hidSession) error {
 		d.status = "Connected; display update failed: " + err.Error()
 		logger.Log(logger.Fields{"error": err, "model": d.Model.Name}).Warn("Deck display image transfer failed")
 	} else {
-		d.status = "Connected; layout applied to display"
+		d.status = "Connected; layout applied to display" + experimentalNote(d.Model)
 	}
 	return nil
 }
@@ -456,4 +459,13 @@ func (d *Device) listen() {
 			d.handleKeyPress(key)
 		}
 	}
+}
+
+// experimentalNote marks status text for the Elgato driver, which has not
+// been tested on physical hardware yet.
+func experimentalNote(m Model) string {
+	if m.Family == "elgato" {
+		return " (experimental Elgato driver)"
+	}
+	return ""
 }
