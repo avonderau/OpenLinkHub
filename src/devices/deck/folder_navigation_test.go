@@ -219,3 +219,18 @@ func TestMiraboxLegacyDisplayActionsDoNotEraseArtwork(t *testing.T){
   t.Fatalf("passive display lost content or retained unusable action: %+v",k)
  }
 }
+
+func TestBackArrowPointsLeftOnPhysicalLCDArtwork(t *testing.T) {
+ arrow:=renderDeckFolderKey(96,KeyConfig{Action:"folder-back"})
+ blank:=renderKeyLabel(96,"")
+ differs:=func(x,y int)bool {
+  ar,ag,ab,aa:=arrow.At(x,y).RGBA()
+  br,bg,bb,ba:=blank.At(x,y).RGBA()
+  return ar!=br||ag!=bg||ab!=bb||aa!=ba
+ }
+ // Scale 48x48 glyph into the centered 76x76 area. The arrow tip is
+ // at (7,24) and the shaft runs horizontally to the right.
+ if !differs(22,48) {t.Fatal("left arrow tip is missing")}
+ if differs(22,29) {t.Fatal("left arrow points diagonally/has old vertical strip")}
+ if !differs(65,48) {t.Fatal("arrow shaft is missing")}
+}
