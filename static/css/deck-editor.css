@@ -143,7 +143,8 @@
   -webkit-mask-size:contain;
   pointer-events:none;
 }
-.deck-key[data-has-media-icon="true"] span{font-size:clamp(.56rem,.7vw,.68rem)}
+.deck-key[data-has-media-icon="true"] span,
+.deck-key[data-has-folder-icon="true"] span{font-size:clamp(.56rem,.7vw,.68rem)}
 .deck-key:hover{border-color:rgba(213,166,90,.6);background:linear-gradient(145deg,#393633,#242326)}
 .deck-key[aria-pressed="true"]{
   border-color:#e2b86f;
