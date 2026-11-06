@@ -42,12 +42,17 @@ var iconSetImportMu sync.Mutex
 
 type iconSetEntry struct {
 	Name    string `json:"name"`
+	Tags    []string `json:"tags,omitempty"`
 	DeckID  string `json:"deckId"`
 	NexusID string `json:"nexusId"`
 }
 type iconSetManifest struct {
 	ID    string         `json:"id"`
 	Name  string         `json:"name"`
+	Source string         `json:"source,omitempty"`
+	Author string         `json:"author,omitempty"`
+	Version string        `json:"version,omitempty"`
+	Description string    `json:"description,omitempty"`
 	Icons []iconSetEntry `json:"icons"`
 }
 
@@ -123,6 +128,7 @@ func cleanIconSetName(name string) (string, error) {
 
 type pendingIcon struct {
 	Name string
+	Tags []string
 	Data []byte
 }
 
@@ -133,10 +139,6 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 	defer iconSetImportMu.Unlock()
 	var empty iconSetManifest
 	var err error
-	name, err = cleanIconSetName(name)
-	if err != nil {
-		return empty, err
-	}
 	if len(data) == 0 || len(data) > maxIconSetZipBytes {
 		return empty, errors.New("ZIP must be 1-8 MiB")
 	}
@@ -153,8 +155,26 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 		return empty, errors.New("too many files in icon set archive")
 	}
 	pending := []pendingIcon{}
+	var importedStreamDeck *streamDeckPack
+	if len(archive.File) >= 2 {
+		hasManifest, hasIndex := false, false
+		for _, member := range archive.File {
+			if member.Name == "manifest.json" { hasManifest = true }
+			if member.Name == "icons.json" { hasIndex = true }
+		}
+		if hasManifest || hasIndex {
+			pack, parseErr := parseStreamDeckPack(archive)
+			if parseErr != nil { return empty, parseErr }
+			importedStreamDeck = &pack
+			pending = pack.Icons
+			if strings.TrimSpace(name) == "" { name = pack.Manifest.Name }
+		}
+	}
+	name, err = cleanIconSetName(name)
+	if err != nil { return empty, err }
 	countBytes := 0
 	names := map[string]bool{}
+	if importedStreamDeck == nil {
 	for _, file := range archive.File {
 		if file.FileInfo().IsDir() {
 			continue
@@ -230,6 +250,7 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 		names[title] = true
 		pending = append(pending, pendingIcon{Name: title, Data: contents})
 	}
+	}
 	if len(pending) == 0 {
 		return empty, errors.New("ZIP has no valid icon images")
 	}
@@ -248,6 +269,12 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 		return empty, errors.New("icon set library limited to 24 sets")
 	}
 	manifest := iconSetManifest{ID: id, Name: name, Icons: []iconSetEntry{}}
+	if importedStreamDeck != nil {
+		manifest.Source = "streamdeck"
+		manifest.Author = importedStreamDeck.Manifest.Author
+		manifest.Version = importedStreamDeck.Manifest.Version
+		manifest.Description = importedStreamDeck.Manifest.Description
+	}
 	for _, icon := range pending {
 		deckID, err := deck.SaveDeckIcon(root, icon.Data)
 		if err != nil {
@@ -258,7 +285,7 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 		if _, err := nexus.SaveCustomIcon(filepath.Join(root, "database", "nexus", "icons"), nexusID, icon.Data); err != nil {
 			return empty, err
 		}
-		manifest.Icons = append(manifest.Icons, iconSetEntry{Name: icon.Name, DeckID: deckID, NexusID: nexusID})
+		manifest.Icons = append(manifest.Icons, iconSetEntry{Name: icon.Name, Tags: icon.Tags, DeckID: deckID, NexusID: nexusID})
 	}
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return empty, err
