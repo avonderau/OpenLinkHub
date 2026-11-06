@@ -49,6 +49,10 @@
   const macroRefreshButton = document.getElementById('deck-refresh-macros');
   const mediaInput = document.getElementById('deck-key-media');
   const mediaProperty = document.getElementById('deck-media-property');
+  const urlProperty = document.getElementById('deck-url-property');
+  const urlInput = document.getElementById('deck-key-url');
+  const applicationProperty = document.getElementById('deck-application-property');
+  const applicationInput = document.getElementById('deck-key-application');
   const targetPageInput = document.getElementById('deck-key-target-page');
   const targetProperty = document.getElementById('deck-target-property');
   const pageNameInput = document.getElementById('deck-page-name');
@@ -168,6 +172,8 @@
       hotkey: 'Shortcut',
       macro: 'Run Macro',
       media: 'Media',
+      url: 'Open Website',
+      application: 'Launch App',
     }[action] || '';
   }
 
@@ -177,7 +183,7 @@
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
     if (key.action !== 'page-go') delete key.targetPage;
-    if (key.action !== 'macro' && key.action !== 'media' && key.action !== 'hotkey' && key.action !== 'brightness-set') delete key.target;
+    if (!['macro','media','hotkey','brightness-set','url','application'].includes(key.action)) delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -370,6 +376,14 @@
     mediaProperty.hidden = !hasMedia;
     mediaInput.disabled = !hasMedia;
     mediaInput.value = hasMedia ? key?.target || 'play-pause' : 'play-pause';
+    const hasURL = valid && actionInput.value === 'url';
+    urlProperty.hidden = !hasURL;
+    urlInput.disabled = !hasURL;
+    urlInput.value = hasURL ? key?.target || '' : '';
+    const hasApplication = valid && actionInput.value === 'application';
+    applicationProperty.hidden = !hasApplication;
+    applicationInput.disabled = !hasApplication;
+    applicationInput.value = hasApplication ? key?.target || '' : '';
     const hasMacro = valid && actionInput.value === 'macro';
     macroProperty.hidden = !hasMacro;
     macroInput.disabled = !hasMacro || !Object.keys(savedMacros).length;
@@ -560,6 +574,9 @@
       ...(actionInput.value === 'hotkey'
         ? { target: assignment(selected)?.action === 'hotkey' ? assignment(selected)?.target || '' : '' }
         : {}),
+      ...(['url', 'application'].includes(actionInput.value)
+        ? { target: assignment(selected)?.action === actionInput.value ? assignment(selected)?.target || '' : '' }
+        : {}),
     });
     renderInspector();
   });
@@ -594,6 +611,13 @@
     if (actionInput.value !== 'media') return;
     setKeyProperties({ target: mediaInput.value });
     renderInspector(); // Update the default label placeholder for this command.
+  });
+
+  urlInput.addEventListener('input', () => {
+    if (actionInput.value === 'url') setKeyProperties({ target: urlInput.value });
+  });
+  applicationInput.addEventListener('input', () => {
+    if (actionInput.value === 'application') setKeyProperties({ target: applicationInput.value });
   });
 
   async function loadSavedMacros() {

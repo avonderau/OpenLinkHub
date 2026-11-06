@@ -53,6 +53,7 @@ async function run() {
     'deck-key-shortcut', 'deck-hotkey-property',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
     'deck-key-media', 'deck-media-property',
+    'deck-url-property', 'deck-key-url', 'deck-application-property', 'deck-key-application',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
     'deck-remove-page', 'deck-message', 'deck-key-count', 'deck-page-count',
     'deck-connection-state', 'deck-tab-key', 'deck-tab-pages',
@@ -427,6 +428,44 @@ async function run() {
   assert.equal(combined.find(key => key.index === 1).action, 'hotkey');
   assert.equal(combined.find(key => key.index === 5).action, 'macro');
   assert.equal(combined.find(key => key.index === 5).target, '7');
+
+  // Website and desktop-entry actions use the same Button behavior picker;
+  // selecting either one must expose only its own target field.
+  grid.children[6].dispatch('click');
+  action.value = 'url';
+  action.dispatch('change');
+  assert.equal(nodes['deck-url-property'].hidden, false);
+  assert.equal(nodes['deck-application-property'].hidden, true);
+  assert.equal(nodes['deck-key-url'].disabled, false);
+  const url = nodes['deck-key-url'];
+  url.value = 'https://example.com/launch?q=1';
+  url.dispatch('input');
+  await nodes['deck-save'].dispatch('click');
+  const website = received.at(-1).pages[1].keys.find(key => key.index === 6);
+  assert.equal(website.action, 'url');
+  assert.equal(website.target, 'https://example.com/launch?q=1');
+
+  action.value = 'application';
+  action.dispatch('change');
+  assert.equal(nodes['deck-url-property'].hidden, true);
+  assert.equal(nodes['deck-application-property'].hidden, false);
+  assert.equal(nodes['deck-key-application'].disabled, false);
+  assert.equal(nodes['deck-key-application'].value, '',
+    'switching from URL never reuses a URL as a desktop app ID');
+  nodes['deck-key-application'].value = 'org.gnome.Terminal.desktop';
+  nodes['deck-key-application'].dispatch('input');
+  await nodes['deck-save'].dispatch('click');
+  const application = received.at(-1).pages[1].keys.find(key => key.index === 6);
+  assert.equal(application.action, 'application');
+  assert.equal(application.target, 'org.gnome.Terminal.desktop');
+
+  action.value = 'media';
+  action.dispatch('change');
+  assert.equal(nodes['deck-url-property'].hidden, true);
+  assert.equal(nodes['deck-application-property'].hidden, true);
+  await nodes['deck-save'].dispatch('click');
+  assert.equal(received.at(-1).pages[1].keys.find(key => key.index === 6).target, 'play-pause',
+    'switching to media must not leave an app ID as the media target');
 
   console.log('Deck Editor interaction test passed');
 }

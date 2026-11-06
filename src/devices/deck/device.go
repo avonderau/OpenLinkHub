@@ -49,6 +49,7 @@ type Device struct {
  eventCount uint64
  initialized bool
  macroRunning bool
+ launchRunning bool
  metricValues map[string]float64
  metricHistory map[string][]float64
  metricUpdated map[string]time.Time

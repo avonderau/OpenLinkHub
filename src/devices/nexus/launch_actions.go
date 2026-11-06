@@ -69,6 +69,25 @@ func runNexusLaunchAction(action,target string)error{
  return nil
 }
 
+// ValidateDeckLaunchAction reuses the exact URL and desktop-entry rules
+// enforced by Nexus; Deck buttons must never accept shell commands.
+func ValidateDeckLaunchAction(action, target string) error {
+ return validateNexusLaunchAction(action, target)
+}
+
+// ExecuteDeckLaunchAction uses the same restricted desktop-launch bridge and
+// global concurrency limit as Nexus. Call it off the Deck HID reader goroutine.
+func ExecuteDeckLaunchAction(action, target string) error {
+ if err := validateNexusLaunchAction(action, target); err != nil { return err }
+ select {
+ case launchSlot <- struct{}{}:
+  defer func(){ <-launchSlot }()
+ default:
+  return errors.New("desktop launcher is busy")
+ }
+ return dispatchNexusLaunchAction(action, target)
+}
+
 // Prevent repeated touches from creating unlimited launcher processes. The
 // HID reader must not block while a desktop application is starting.
 var launchSlot=make(chan struct{},1)
