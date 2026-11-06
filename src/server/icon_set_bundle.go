@@ -34,6 +34,9 @@ func importIconSetBundle(root, name string, data []byte) ([]iconSetManifest,erro
   if strings.HasSuffix(strings.ToLower(dir),".sdiconpack"){prefixes[dir+"/"]=true}
  }
  if len(prefixes)==0 {
+  for _,member:=range archive.File {
+   if member.Name=="manifest.json" {name="";break}
+  }
   pack,err:=importIconSet(root,name,data)
   if err!=nil{return nil,err}
   return []iconSetManifest{pack},nil
