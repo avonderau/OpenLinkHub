@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type MemoryUsage struct {
@@ -164,11 +165,7 @@ func (si *SystemInfo) getKernelData() {
 		return
 	}
 
-	cmd := exec.Command("uname", "-m")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	err = cmd.Run()
+	out, err := common.BoundedCommandOutput(2*time.Second, 256, "uname", "-m")
 	if err != nil {
 		logger.Log(logger.Fields{"error": err}).Error("Unable to read kernel architecture")
 		return
@@ -176,23 +173,20 @@ func (si *SystemInfo) getKernelData() {
 
 	si.Kernel = &KernelData{
 		OsType:       strings.TrimSpace(string(f)),
-		Architecture: out.String(),
+		Architecture: string(out),
 	}
 }
 
 // getGpuData will return GPU data
 func (si *SystemInfo) getGpuData() {
-	cmd := exec.Command("lspci")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
+	out, err := common.BoundedCommandOutput(3*time.Second, 128<<10, "lspci")
 	if err != nil {
 		logger.Log(logger.Fields{"error": err}).Error("Error running lspci")
 		return
 	}
 
 	// Parse the output to find NVIDIA GPUs
-	scanner := bufio.NewScanner(&out)
+	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
 		line := scanner.Text()
 		gpus := make(map[int]GpuData)
@@ -312,8 +306,7 @@ func (si *SystemInfo) getCpuData() {
 // GetNVIDIAGpuModel will return NVIDIA gpu model
 func GetNVIDIAGpuModel(index int) string {
 	model := ""
-	cmd := exec.Command("nvidia-smi", "-i", strconv.Itoa(index), "--query-gpu=gpu_name", "--format=csv,noheader,nounits")
-	output, err := cmd.Output()
+	output, err := common.BoundedCommandOutput(2*time.Second, 512, "nvidia-smi", "-i", strconv.Itoa(index), "--query-gpu=gpu_name", "--format=csv,noheader,nounits")
 	if err != nil {
 		return ""
 	}
@@ -325,8 +318,7 @@ func GetAMDGpuModel() string {
 	if !isAmdsmiFound {
 		return ""
 	}
-	cmd := exec.Command(amdsmi, "static", "-g", strconv.Itoa(gpuIndex), "--asic", "--json")
-	jsonOutput, err := cmd.Output()
+	jsonOutput, err := common.BoundedCommandOutput(3*time.Second, 64<<10, amdsmi, "static", "-g", strconv.Itoa(gpuIndex), "--asic", "--json")
 	if err != nil {
 		logger.Log(logger.Fields{"error": err}).Error("Unable to process amd-smi")
 		return ""
@@ -339,13 +331,15 @@ func GetAMDGpuModel() string {
 		return ""
 	}
 
+	if len(gpuInfo.GPUData) == 0 {
+		return ""
+	}
 	return gpuInfo.GPUData[0].Asic.MarketName
 }
 
 // GetNVIDIAUtilization will return NVIDIA gpu utilization
 func getNVIDIAUtilization(index int) int {
-	cmd := exec.Command("nvidia-smi", "-i", strconv.Itoa(index), "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits")
-	output, err := cmd.Output()
+	output, err := common.BoundedCommandOutput(2*time.Second, 128, "nvidia-smi", "-i", strconv.Itoa(index), "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits")
 	if err != nil {
 		return 0
 	}
@@ -497,8 +491,7 @@ func getAMDUtilization() float64 {
 	if !isAmdsmiFound {
 		return 0
 	}
-	cmd := exec.Command(amdsmi, "metric", "-g", strconv.Itoa(gpuIndex), "-u", "--json")
-	jsonOutput, err := cmd.Output()
+	jsonOutput, err := common.BoundedCommandOutput(3*time.Second, 64<<10, amdsmi, "metric", "-g", strconv.Itoa(gpuIndex), "-u", "--json")
 	if err != nil {
 		logger.Log(logger.Fields{"error": err}).Error("Unable to process amd-smi")
 		return 0
