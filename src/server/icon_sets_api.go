@@ -127,6 +127,27 @@ func cleanIconSetName(name string) (string, error) {
 	return name, nil
 }
 
+// nextDefaultIconSetName is called while iconSetImportMu is held, so two
+// simultaneous imports cannot choose the same generated name. Reuse an
+// available number if a previously imported default-named pack was removed.
+func nextDefaultIconSetName(root string) (string, error) {
+	sets, err := listIconSets(root)
+	if err != nil {
+		return "", err
+	}
+	used := make(map[string]bool, len(sets))
+	for _, set := range sets {
+		used[strings.ToLower(set.Name)] = true
+	}
+	for number := 1; number <= maxIconSets+1; number++ {
+		name := fmt.Sprintf("NewPack%d", number)
+		if !used[strings.ToLower(name)] {
+			return name, nil
+		}
+	}
+	return "", errors.New("no available automatic icon pack names")
+}
+
 type pendingIcon struct {
 	Name string
 	Tags []string
@@ -179,9 +200,13 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 			}
 		}
 	}
-	name, err = cleanIconSetName(name)
-	if err != nil {
-		return empty, err
+	// Stream Deck packs supply their name in manifest.json. Legacy image-only
+	// ZIPs without a supplied name receive a unique NewPackN after validation.
+	if name != "" {
+		name, err = cleanIconSetName(name)
+		if err != nil {
+			return empty, err
+		}
 	}
 	countBytes := 0
 	names := map[string]bool{}
@@ -278,6 +303,12 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 	}
 	if count >= maxIconSets {
 		return empty, errors.New("icon set library limited to 24 sets")
+	}
+	if name == "" {
+		name, err = nextDefaultIconSetName(root)
+		if err != nil {
+			return empty, err
+		}
 	}
 	manifest := iconSetManifest{ID: id, Name: name, Icons: []iconSetEntry{}}
 	if importedStreamDeck != nil {
