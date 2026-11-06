@@ -4,6 +4,53 @@ This roadmap covers gaps between the Linux Nexus custom-screen implementation
 and major iCUE Nexus capabilities. It is a planning document, not a claim of
 feature parity or hardware certification.
 
+## Next release — larger custom icon packs (planned)
+
+- Increase per-pack icon capacity from **48 to 256**, and expand ZIP upload
+  capacity from **8 MiB to 32 MiB** and extracted icon data budget from
+  **8 MiB to 64 MiB**. Raise the archive-entry cap (currently 128 files,
+  including skipped entries) above 256 so the new icon limit is reachable,
+  and update manifest validation.
+- Add native **Elgato Stream Deck icon-pack import** (`.streamDeckIconPack`)
+  through the existing icon library, without introducing a separate manager.
+  Recognize the documented `manifest.json`, `icons.json`, `icons/` and pack
+  artwork/license structure; map pack name, author, version, description,
+  individual icon names and searchable tags. Preserve current custom ZIP
+  packs and their import/export behavior. Document format differences and
+  unsupported formats explicitly.
+- Support the documented static SVG/PNG/JPEG and animated GIF/WebP assets where
+  the safe import/rendering pipeline permits. Normalize to each target device's
+  dimensions without assuming identical Nexus/Deck animation capabilities;
+  verify the browser preview and physical display independently. Do not promise
+  animated WebP or GIF playback on a device until implemented and tested.
+- Define and enforce a **total library storage quota** before raising limits:
+  24 packs at 64 MiB each could consume about 1.5 GiB. Decide whether
+  animated image assets need a separate bounded per-file size allowance;
+  Elgato recommends keeping animated icons around or below 1 MB, while the
+  current custom-icon limit is 512 KiB.
+- Validate all imported paths, ZIP entries and metadata against traversal,
+  symlinks, duplicates, unsupported extensions/contents, malicious SVG,
+  decompression bombs, oversized frames, malformed JSON and resource abuse.
+  Never execute code from an imported icon pack. Preserve author/license
+  metadata and avoid embedding third-party artwork in the application.
+- Add real-world and generated `.streamDeckIconPack` fixtures covering valid
+  packs, broken manifests, missing icons, path/ZIP abuse, metadata escaping,
+  duplicate names and archive quotas. Test tag/name search, import preview,
+  native pack regressions and Nexus/Mirabox/Deck device rendering.
+  Reference: https://docs.elgato.com/stream-deck/icons/api/ and
+  https://docs.elgato.com/stream-deck/icons/getting-started/ .
+- Keep existing file-size (512 KiB per icon), extension/content, SVG
+  rasterization, path-traversal and ZIP-bomb protections in place.
+- Make the icon picker usable at scale with thumbnail lazy loading plus
+  search/filtering across the Nexus and Mirabox/Deck editors.
+- Centralize quotas and update API error messages and documentation,
+  including the 48-icon / 8 MiB limits in `README.md`,
+  `docs/deck-artwork.md` and `docs/nexus-fork.md`.
+- Test 256-icons success, 257-icons rejection, resource limits, malicious
+  archive handling, existing pack compatibility, and picker responsiveness.
+- Ship only after implementation PRs pass Go, browser, security and manual
+  device checks; this entry is a release target, **not implemented yet**.
+
 ## Existing foundation
 
 - Ordinary editable JSON screens, five stock layouts and themes
