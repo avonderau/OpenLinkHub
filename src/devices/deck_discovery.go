@@ -124,6 +124,7 @@ func scanDeckDevicesWith(deps deckScanDependencies) int {
 }
 
 func initializeDeckDevices() {
+	deck.StartPluginBridge()
 	scanDeckDevicesWith(liveDeckScanDependencies())
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"OpenLinkHub/src/deckplugin"
 	"OpenLinkHub/src/devices/nexus"
 )
 
@@ -40,6 +41,8 @@ func keyDisplayLabel(key KeyConfig) string {
 		return "Launch App"
 	case "media":
 		return nexus.DefaultMediaLabel(key.Target)
+	case "plugin":
+		return "Plugin"
 	}
 	return ""
 }
@@ -68,6 +71,25 @@ func (d *Device) handleKeyPress(index int) {
 		d.runDeckMacroAsync(target, run)
 		return
 	}
+	if action == "plugin" {
+		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyDown, Context: target})
+		if !d.Model.SupportsKeyRelease() {
+			// This Deck only reports presses, so a press is a quick
+			// down/up pair and hold actions cannot work.
+			plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: target})
+			return
+		}
+		d.mu.Lock()
+		if d.pluginHeld == nil {
+			d.pluginHeld = map[int]string{}
+		}
+		if previous, held := d.pluginHeld[index]; held && previous != target {
+			plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: previous})
+		}
+		d.pluginHeld[index] = target
+		d.mu.Unlock()
+		return
+	}
 	if action == "url" || action == "application" {
 		d.runDeckLaunchAsync(action, target, run)
 		return
@@ -79,6 +101,27 @@ func (d *Device) handleKeyPress(index int) {
 		d.mu.Lock()
 		d.status = fmt.Sprintf("Button action failed: %v", err)
 		d.mu.Unlock()
+	}
+}
+
+// handleKeyRelease sends keyUp to the plugin key that was pressed, even if
+// the page changed while it was held.
+func (d *Device) handleKeyRelease(index int) {
+	d.mu.Lock()
+	ctx, held := d.pluginHeld[index]
+	delete(d.pluginHeld, index)
+	d.mu.Unlock()
+	if held {
+		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: ctx})
+	}
+}
+
+// releasePluginKeysLocked lets go of every held plugin key, for example
+// when the Deck disconnects in the middle of a press.
+func (d *Device) releasePluginKeysLocked() {
+	for index, ctx := range d.pluginHeld {
+		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: ctx})
+		delete(d.pluginHeld, index)
 	}
 }
 
@@ -244,6 +287,13 @@ func (d *Device) selectKeyAction(index int) (string, string, func(string, string
 		d.layout = updated
 		d.status = fmt.Sprintf("Deck brightness %d%%", level)
 		return "", "", nil
+	}
+	if chosen.Action == "plugin" {
+		ctx := d.pluginContext(d.layout.Pages[current].ID, index)
+		if _, visible := d.pluginInstances[ctx]; !visible {
+			return "", "", nil
+		}
+		return "plugin", ctx, nil
 	}
 	if chosen.Action == "hotkey" || chosen.Action == "media" || chosen.Action == "macro" || chosen.Action == "url" || chosen.Action == "application" {
 		// Layouts are validated when loaded/saved. Revalidate the HID action

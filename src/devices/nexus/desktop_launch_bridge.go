@@ -118,9 +118,22 @@ func nexusDesktopPeerUID(conn net.Conn) (uint32, error) {
 	return creds.Uid, nil
 }
 func startNexusDesktopLaunchBroker(path string) (*nexusDesktopLaunchBroker, error) {
+	listener, err := ListenDesktopAgentSocket(path)
+	if err != nil {
+		return nil, err
+	}
+	b := &nexusDesktopLaunchBroker{listener: listener, path: path}
+	go b.accept()
+	return b, nil
+}
+
+// ListenDesktopAgentSocket creates a daemon-owned, group-accessible Unix
+// socket for a desktop agent, with the same ownership and permission checks
+// as the launch socket. The Deck plugin bridge uses it too.
+func ListenDesktopAgentSocket(path string) (net.Listener, error) {
 	// Linux AF_UNIX sun_path is 108 bytes including the terminating NUL.
 	if len(path) > 107 {
-		return nil, errors.New("Nexus launcher socket path exceeds Linux Unix socket limit (107 bytes)")
+		return nil, errors.New("desktop agent socket path exceeds Linux Unix socket limit (107 bytes)")
 	}
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0750); err != nil {
@@ -175,9 +188,35 @@ func startNexusDesktopLaunchBroker(path string) (*nexusDesktopLaunchBroker, erro
 		os.Remove(path)
 		return nil, err
 	}
-	b := &nexusDesktopLaunchBroker{listener: listener, path: path}
-	go b.accept()
-	return b, nil
+	return listener, nil
+}
+
+// DialDesktopAgentSocket connects a desktop agent to a daemon socket after
+// checking the socket's permissions and the peer's identity.
+func DialDesktopAgentSocket(path string) (net.Conn, error) {
+	expectedOwner, err := verifyNexusDesktopSocket(path)
+	if err != nil {
+		return nil, fmt.Errorf("socket verification: %w", err)
+	}
+	conn, err := net.DialTimeout("unix", path, 500*time.Millisecond)
+	if err != nil {
+		return nil, fmt.Errorf("socket connection: %w", err)
+	}
+	peer, err := nexusDesktopPeerUID(conn)
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("peer verification: %w", err)
+	}
+	if peer != expectedOwner {
+		conn.Close()
+		return nil, fmt.Errorf("peer verification: unexpected socket owner UID %d (expected %d)", peer, expectedOwner)
+	}
+	return conn, nil
+}
+
+// DesktopAgentSocketDir is the runtime directory that holds the agent sockets.
+func DesktopAgentSocketDir(root string) string {
+	return filepath.Dir(nexusDesktopLaunchSocketPath(root))
 }
 func (b *nexusDesktopLaunchBroker) accept() {
 	for {

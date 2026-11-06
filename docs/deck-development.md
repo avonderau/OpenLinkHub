@@ -76,12 +76,12 @@ hardware-dependent.
   registry entries.
 - Hardware validation, cross-platform support and multiple identical legacy
   Mirabox units. Legacy units often share a fake serial number.
-- Plugin-process sandboxing and OpenAction/Stream Deck SDK compatibility.
+- Plugin-process sandboxing beyond running as the desktop user.
 
-No external plugin code is executed in the system service. When an action
-plugin host is added, it must run as the logged-in desktop user and use an
-authenticated, permission-restricted channel rather than executing arbitrary
-plugin commands as the `openlinkhub` daemon.
+No external plugin code is executed in the system service. Experimental
+action-plugin support runs plugins in the desktop agent as the logged-in
+user, over an authenticated, permission-restricted socket; see
+[Deck plugins](deck-plugins.md).
 
 ## Elgato Stream Deck driver
 

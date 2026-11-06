@@ -101,6 +101,15 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		// Deck plugin settings pages run sandboxed, so their requests cannot
+		// carry the Strict session cookie. An unguessable ticket that only a
+		// signed-in editor can obtain authorizes them instead.
+		if r.Method == http.MethodGet && (strings.HasPrefix(r.URL.Path, "/api/deck/plugin-ui/") ||
+			strings.HasPrefix(r.URL.Path, "/api/deck/plugin-socket/")) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		cookie, err := r.Cookie("openlinkhub_session")
 		if err != nil || !a.validSession(cookie.Value) {
 			if r.Method == http.MethodGet &&

@@ -40,6 +40,7 @@ Priority: optional
 Architecture: amd64
 Maintainer: OpenLinkHub Nexus <https://github.com/avonderau/OpenLinkHub-Nexus>
 Depends: libc6 (>= 2.38), libudev1, libpipewire-0.3-0, systemd, udev, adduser
+Recommends: zenity | kdialog, librsvg2-bin
 Conflicts: openlinkhub
 Homepage: https://github.com/avonderau/OpenLinkHub-Nexus
 Description: OpenLinkHub Nexus and programmable Corsair screens
@@ -82,6 +83,8 @@ License:        GPL-3.0-or-later
 URL:            https://github.com/avonderau/OpenLinkHub-Nexus
 BuildArch:      x86_64
 Requires:       systemd, shadow-utils
+Recommends:     (zenity or kdialog)
+Recommends:     librsvg2-tools
 Conflicts:      OpenLinkHub
 %global debug_package %{nil}
 # Retain the byte-identical, already-reviewed executable from the release.

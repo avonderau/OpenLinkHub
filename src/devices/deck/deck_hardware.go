@@ -55,25 +55,39 @@ func finishHardwareFrame(session hidSession, m Model) error {
 }
 
 // hardwareKeyPresses returns the keys newly pressed by one input report.
-// Mirabox sends one event per report. Elgato sends the full key state, so
-// presses are the keys that changed from released to pressed; the caller
-// keeps that state between reports.
 func hardwareKeyPresses(m Model, report []byte, previous []bool) (presses []int, state []bool) {
+	presses, _, state = hardwareKeyEvents(m, report, previous)
+	return presses, state
+}
+
+// hardwareKeyEvents returns the keys pressed and released by one input
+// report. Mirabox sends one event per report (protocol 1 only presses).
+// Elgato sends the full key state, so presses and releases are the keys
+// that changed; the caller keeps that state between reports.
+func hardwareKeyEvents(m Model, report []byte, previous []bool) (presses, releases []int, state []bool) {
 	if m.Family == "elgato" {
 		states, ok := ElgatoKeyStates(m, report)
 		if !ok {
-			return nil, previous
+			return nil, nil, previous
 		}
 		for i, down := range states {
-			if down && (i >= len(previous) || !previous[i]) && m.CanPress(i) {
+			was := i < len(previous) && previous[i]
+			if !m.CanPress(i) || down == was {
+				continue
+			}
+			if down {
 				presses = append(presses, i)
+			} else {
+				releases = append(releases, i)
 			}
 		}
-		return presses, states
+		return presses, releases, states
 	}
 	key, pressed, ok := MiraboxKeyEvent(m, report)
 	if ok && pressed {
 		presses = append(presses, key)
+	} else if ok && m.SupportsKeyRelease() {
+		releases = append(releases, key)
 	}
-	return presses, previous
+	return presses, releases, previous
 }

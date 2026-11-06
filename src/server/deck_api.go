@@ -2,10 +2,13 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"mime"
+	"net"
 	"net/http"
 
+	"OpenLinkHub/src/deckplugin"
 	"OpenLinkHub/src/devices"
 	"OpenLinkHub/src/devices/deck"
 )
@@ -137,4 +140,99 @@ func deckIconAPI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]string{"id": id})
+}
+
+// deckPluginsAPI is the Deck plugin manager: GET lists the plugins the
+// desktop agent reported, POST installs an uploaded archive and DELETE
+// removes one (?plugin=<uuid>).
+func deckPluginsAPI(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodPost && r.Method != http.MethodDelete {
+		w.Header().Set("Allow", "GET, POST, DELETE")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if !nexusRequestHostAllowed(r) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	switch r.Method {
+	case http.MethodGet:
+		connected, catalog := deck.PluginCatalog()
+		if catalog == nil {
+			catalog = []deckplugin.CatalogPlugin{}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"connected": connected, "plugins": catalog,
+			"canInstall": deckPluginInstallAllowed(r), "maxUploadBytes": deckplugin.MaxUploadBytes})
+		return
+	case http.MethodPost:
+		if !nexusWriteAllowed(r) {
+			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
+			return
+		}
+		// A plugin is a program that runs as the desktop user, so it can
+		// only be installed from a browser on this computer.
+		if !deckPluginInstallAllowed(r) {
+			http.Error(w, "plugins can only be installed from a browser on this computer", http.StatusForbidden)
+			return
+		}
+		mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+		if err != nil || (mediaType != "application/zip" && mediaType != "application/octet-stream" &&
+			mediaType != "application/x-zip-compressed") {
+			http.Error(w, "plugin archive (.streamDeckPlugin or .zip) required", http.StatusUnsupportedMediaType)
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, deckplugin.MaxUploadBytes)
+		defer r.Body.Close()
+		archive, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "plugin archive is too large or the upload failed", http.StatusRequestEntityTooLarge)
+			return
+		}
+		uuid, err := deck.InstallPlugin(archive)
+		if err != nil {
+			deckPluginError(w, err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]string{"plugin": uuid})
+	case http.MethodDelete:
+		if !nexusWriteAllowed(r) {
+			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
+			return
+		}
+		if err := deck.RemovePlugin(r.URL.Query().Get("plugin")); err != nil {
+			deckPluginError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func deckPluginError(w http.ResponseWriter, err error) {
+	status := http.StatusBadRequest
+	if errors.Is(err, deck.ErrPluginHostOffline) {
+		status = http.StatusServiceUnavailable
+	}
+	http.Error(w, err.Error(), status)
+}
+
+// deckPluginInstallAllowed accepts direct loopback requests only. Requests
+// relayed by a reverse proxy carry forwarding headers and are refused,
+// because the proxy itself connects from loopback.
+func deckPluginInstallAllowed(r *http.Request) bool {
+	for _, h := range []string{"Forwarded", "X-Forwarded-For", "X-Forwarded-Host", "X-Real-Ip"} {
+		if r.Header.Get(h) != "" {
+			return false
+		}
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return false
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
