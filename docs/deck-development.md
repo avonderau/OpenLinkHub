@@ -24,13 +24,15 @@ list, but the Corsair Nexus touchscreen editor is unchanged.
 - HID read errors now close stale handles and trigger a VID/PID/usage-checked
   reconnect attempt about every 1.5 seconds. The same device retains its
   profile and restores its saved images after reconnection.
-- **Automatic hot-plug:** a 3-second periodic scan of the supported Deck
-  vendor/product IDs discovers a new Mirabox or Ajazz after the service
-  started, without restarting it. It uses the same HID interface filter and
-  initialization as startup. Already-registered devices are skipped: a
-  disconnected Deck keeps its existing reconnect loop and saved layout.
-  Elgato devices remain discovery-only. Refresh the browser Devices page to
-  show a newly added device; the service itself does not need restarting.
+- **Automatic hot-plug:** OpenLinkHub's existing Linux Netlink USB monitor
+  notifies the Deck manager when a supported VID/PID connects. Only then does
+  a dedicated worker enumerate that HID device, with up to six short 500 ms
+  readiness attempts if udev is still creating its interface. There is **no
+  periodic USB polling**. A one-time scan after the Netlink socket binds
+  covers devices connected during startup. Already-registered devices are
+  skipped: a disconnected Deck keeps its existing reconnect loop and saved
+  layout. Elgato devices remain discovery-only. Refresh the browser Devices
+  page to show a newly added device; the service does not need restarting.
 - Editor visuals reuse the shared OpenLinkHub Nexus charcoal/gold gradients,
   icon headers, and file-style Key/Pages tabs.
 
@@ -43,8 +45,8 @@ for long-press detection on old units.
 
 Use **Settings → Devices & displays → Supported Devices** to find
 **Mirabox HSV293S** (or another supported Deck model), change the Enabled
-toggle, and click **Save**. New Deck discovery checks the updated
-enable/disable list on each scan. If a device is **already connected**, the
+toggle, and click **Save**. The next Deck USB connection event consults the
+updated enable/disable list. If a device is **already connected**, the
 service must still be restarted to stop controlling that existing device,
 consistent with the existing Corsair device switches.
 
@@ -101,8 +103,9 @@ node --test static/js/deck-editor.test.cjs
 ### Manual hot-plug acceptance
 
 1. Start OpenLinkHub with the Mirabox **unplugged** and visit Devices.
-2. Plug in a supported Mirabox. After the next 3-second scan, refresh the
-   Devices page and confirm the Deck is present; do not restart the service.
+2. Plug in a supported Mirabox. The Netlink USB-add event triggers discovery;
+   allow a few seconds for the HID interface to become ready, then refresh
+   Devices and confirm the Deck is present without restarting the service.
 3. Open the editor and verify the saved layout, LCD artwork, metrics and
    physical actions work.
 4. Unplug and replug the same Deck. It should reconnect without appearing
@@ -110,11 +113,12 @@ node --test static/js/deck-editor.test.cjs
 5. If available, connect a second **different supported VID/PID model** and
    check that both appear. Identical legacy v1 models may share a fixed ID;
    this was a pre-existing hardware limitation.
-6. Stop OpenLinkHub. The discovery loop must terminate before HID teardown.
+6. Stop OpenLinkHub. The Deck event worker must exit and finish any
+   in-flight HID enumeration before the HID library is shut down.
 
-The background scanner does not initialize new Corsair hardware, open
-unsupported HID interfaces, or run third-party plugins. Existing Corsair
-discovery remains upstream-owned.
+The event-driven Deck worker does not initialize new Corsair hardware, open
+unsupported HID interfaces, or run third-party plugins. The existing
+Corsair/SCUF Netlink monitor retains its established behavior.
 
 ### Reference implementations and licensing
 
