@@ -67,6 +67,13 @@ func (d *Device) navigateCustomScreen(next bool) {
 	} else {
 		d.customScreens.ActiveScreenID = d.customScreens.PreviousScreen()
 	}
+	d.saveActiveScreenLocked()
+}
+
+// saveActiveScreenLocked keeps the screen a person picked on the touchscreen
+// after a restart, whether they swiped or pressed a navigation button.
+// Caller holds d.mutex.
+func (d *Device) saveActiveScreenLocked() {
 	_ = SaveScreens(d.customScreenPath(), d.customScreens)
 }
 func (d *Device) collectCustomTelemetry(now time.Time) MetricSnapshot {
@@ -373,6 +380,7 @@ func (d *Device) executeTouchAction(action, target string) {
 		for _, s := range d.customScreens.Screens {
 			if s.ID == target {
 				d.customScreens.ActiveScreenID = target
+				d.saveActiveScreenLocked()
 				break
 			}
 		}
@@ -408,5 +416,6 @@ func (d *Device) navigateScreenAction(next bool) {
 	} else {
 		d.customScreens.ActiveScreenID = d.customScreens.PreviousScreen()
 	}
+	d.saveActiveScreenLocked()
 	d.lastCycle = time.Now()
 }

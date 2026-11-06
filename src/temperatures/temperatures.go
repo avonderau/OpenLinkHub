@@ -16,6 +16,7 @@ import (
 	"OpenLinkHub/src/logger"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -367,6 +368,24 @@ func upgradeGraphProfiles() {
 			profile.Points = data
 			profiles[name] = profile
 		}
+	}
+}
+
+// GetSupportedTemperatureSensors returns all supported temperature sensors
+func GetSupportedTemperatureSensors() interface{} {
+	return map[int]string{
+		0:  "CPU",
+		1:  "GPU",
+		2:  "Liquid Temperature (AIO)",
+		3:  "Storage Temperature",
+		4:  "Temperature Probe",
+		5:  "CPU + GPU",
+		6:  "External HWMON",
+		7:  "External binary",
+		8:  "Multi GPU",
+		9:  "Global Temperature Probe",
+		10: "PSU",
+		11: "Multi GPUs",
 	}
 }
 
@@ -1007,6 +1026,13 @@ func (out *boundedTemperatureOutput) Write(data []byte) (int, error) {
 		return 0, errExternalTemperatureOutput
 	}
 	return out.Buffer.Write(data)
+}
+
+// ReadFrom shadows bytes.Buffer.ReadFrom. exec.Cmd copies stdout with
+// io.Copy, which prefers ReaderFrom and would otherwise bypass the size
+// check in Write and buffer unlimited output.
+func (out *boundedTemperatureOutput) ReadFrom(r io.Reader) (int64, error) {
+	return io.Copy(struct{ io.Writer }{out}, r)
 }
 
 // GetExternalBinaryTemperature returns a valid Celsius reading from an

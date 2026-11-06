@@ -90,7 +90,11 @@ func scanDeckVendorWith(deps deckScanDependencies, vendor, product uint16) (int,
 			return nil
 		}
 		if device.Serial != serial {
-			// Do not register an incorrectly identified handle.
+			// Do not register an incorrectly identified handle, and release
+			// it so the retry can open the device again.
+			if stopper, ok := device.Instance.(interface{ Stop() }); ok {
+				stopper.Stop()
+			}
 			needsRetry = true
 			return nil
 		}

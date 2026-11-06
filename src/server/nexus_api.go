@@ -104,12 +104,12 @@ func nexusUploadMediaType(value string) bool {
 func nexusScreensAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPut {
 		w.Header().Set("Allow", "GET, PUT")
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	d, ok := nexusDevice(r)
 	if !ok {
-		http.Error(w, "Nexus device not found", 404)
+		http.Error(w, "Nexus device not found", http.StatusNotFound)
 		return
 	}
 	if r.Method == http.MethodGet {
@@ -120,11 +120,11 @@ func nexusScreensAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !nexusWriteAllowed(r) {
-		http.Error(w, "cross-origin write forbidden", 403)
+		http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
 		return
 	}
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
-		http.Error(w, "JSON required", 415)
+		http.Error(w, "JSON required", http.StatusUnsupportedMediaType)
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, nexus.MaxScreenConfigBytes)
@@ -133,15 +133,15 @@ func nexusScreensAPI(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&cfg); err != nil {
-		http.Error(w, "invalid JSON: "+err.Error(), 400)
+		http.Error(w, "invalid JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	if err := dec.Decode(new(any)); err != io.EOF {
-		http.Error(w, "unexpected trailing JSON", 400)
+		http.Error(w, "unexpected trailing JSON", http.StatusBadRequest)
 		return
 	}
 	if err := d.SetCustomScreens(cfg); err != nil {
-		http.Error(w, err.Error(), 400)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -152,12 +152,12 @@ func nexusScreensAPI(w http.ResponseWriter, r *http.Request) {
 func nexusTelemetryAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET")
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	d, ok := nexusDevice(r)
 	if !ok {
-		http.Error(w, "Nexus device not found", 404)
+		http.Error(w, "Nexus device not found", http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -168,19 +168,19 @@ func nexusTelemetryAPI(w http.ResponseWriter, r *http.Request) {
 func nexusBackgroundAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost && r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET, POST")
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	d, ok := nexusDevice(r)
 	if !ok {
-		http.Error(w, "Nexus device not found", 404)
+		http.Error(w, "Nexus device not found", http.StatusNotFound)
 		return
 	}
 	id := r.URL.Query().Get("id")
 	if r.Method == http.MethodGet {
 		path, err := d.CustomBackgroundPath(id)
 		if err != nil {
-			http.Error(w, "background not found", 404)
+			http.Error(w, "background not found", http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Cache-Control", "private, no-store")
@@ -189,7 +189,7 @@ func nexusBackgroundAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !nexusWriteAllowed(r) {
-		http.Error(w, "cross-origin write forbidden", 403)
+		http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
 		return
 	}
 	if !nexusUploadMediaType(r.Header.Get("Content-Type")) {
@@ -200,11 +200,11 @@ func nexusBackgroundAPI(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	content, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "image too large or unreadable", 400)
+		http.Error(w, "image too large or unreadable", http.StatusBadRequest)
 		return
 	}
 	if _, err = d.SaveCustomBackground(id, content); err != nil {
-		http.Error(w, err.Error(), 400)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -214,19 +214,19 @@ func nexusBackgroundAPI(w http.ResponseWriter, r *http.Request) {
 func nexusCustomIconAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost && r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET, POST")
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	d, ok := nexusDevice(r)
 	if !ok {
-		http.Error(w, "Nexus device not found", 404)
+		http.Error(w, "Nexus device not found", http.StatusNotFound)
 		return
 	}
 	id := r.URL.Query().Get("id")
 	if r.Method == http.MethodGet {
 		path, err := d.CustomIconPath(id)
 		if err != nil {
-			http.Error(w, "icon not found", 404)
+			http.Error(w, "icon not found", http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Cache-Control", "private, no-store")
@@ -235,7 +235,7 @@ func nexusCustomIconAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !nexusWriteAllowed(r) {
-		http.Error(w, "cross-origin write forbidden", 403)
+		http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
 		return
 	}
 	if !nexusUploadMediaType(r.Header.Get("Content-Type")) {
@@ -246,11 +246,11 @@ func nexusCustomIconAPI(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	content, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "icon too large or unreadable", 400)
+		http.Error(w, "icon too large or unreadable", http.StatusBadRequest)
 		return
 	}
 	if _, err := d.SaveCustomIcon(id, content); err != nil {
-		http.Error(w, err.Error(), 400)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
