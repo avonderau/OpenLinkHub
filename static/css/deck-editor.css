@@ -601,6 +601,6 @@
   .deck-workspace .deck-artwork-controls{grid-template-columns:minmax(0,1fr)}
 }
 
-/* Deck-only page navigation and physical brightness controls. */
+/* Deck command is a conditional Button behavior field, just like Media command. */
+.deck-workspace #deck-control-property[hidden],
 .deck-workspace #deck-brightness-property[hidden]{display:none!important}
-.deck-workspace .deck-control-help{display:block;margin-top:10px;color:var(--deck-muted);font-size:.71rem;line-height:1.45}
