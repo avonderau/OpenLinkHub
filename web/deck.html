@@ -92,36 +92,41 @@
                   <input class="form-control" id="deck-key-label" type="text" maxlength="48" autocomplete="off"
                          placeholder="e.g. CPU Temp" disabled>
                 </div>
-                <div class="deck-property">
-                  <label for="deck-key-image">Artwork</label>
-                  <div class="deck-artwork-row">
+                <div class="deck-property deck-artwork-property">
+                  <label>Artwork</label>
+                  <div class="deck-artwork-selected">
                     <span class="deck-artwork-preview" id="deck-artwork-preview" aria-label="Selected key artwork preview">
                       <i class="bi bi-image" aria-hidden="true"></i>
                     </span>
-                    <div class="deck-artwork-upload">
-                      <input id="deck-key-image" type="file" accept="image/png,image/jpeg" disabled>
-                  <div class="deck-artwork-controls">
-                    <button type="button" id="deck-upload-image" class="deck-secondary" disabled>
-                      <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Upload artwork
-                    </button>
-                    <button type="button" id="deck-remove-image" class="deck-secondary" disabled>
-                      <i class="bi bi-x-circle" aria-hidden="true"></i> Remove artwork
-                    </button>
-                  </div>
+                    <div class="deck-artwork-selected-details">
+                      <small>Selected key artwork</small>
+                      <button type="button" id="deck-remove-image" class="deck-secondary" disabled>
+                        <i class="bi bi-x-circle" aria-hidden="true"></i> Remove artwork
+                      </button>
                     </div>
                   </div>
-                  <small id="deck-icon-status" role="status">PNG or JPEG, maximum 512 KiB and 512 × 512 px. Artwork is stored privately on this computer.</small>
-                  <details class="deck-icon-set-library">
-                    <summary>Reusable icon sets</summary>
+                  <details class="deck-icon-set-library" open>
+                    <summary><i class="bi bi-grid-3x3-gap" aria-hidden="true"></i> Icons</summary>
                     <div class="deck-icon-set-controls">
-                    <label for="deck-icon-set">Icon set</label>
-                    <select id="deck-icon-set" class="form-select"><option value="">Select icon set</option></select>
-                    <label for="deck-icon-set-search">Search icon names or tags</label>
-                    <input id="deck-icon-set-search" class="form-control" type="search" placeholder="Search icons in this pack">
-                    <label for="deck-icon-set-item">Icon</label>
-                    <select id="deck-icon-set-item" class="form-select" disabled><option value="">Select icon</option></select>
-                    <button type="button" id="deck-apply-icon-set" class="deck-secondary" disabled>Use selected icon</button>
-                    <small>Import and manage icon packs in <a href="/settings#olh-settings-icons">Settings</a>.</small>
+                      <label for="deck-icon-set">Icon set</label>
+                      <select id="deck-icon-set" class="form-select"><option value="">Select icon set</option></select>
+                      <label for="deck-icon-set-search">Search icon names or tags</label>
+                      <input id="deck-icon-set-search" class="form-control" type="search" placeholder="Search icons in this pack">
+                      <label for="deck-icon-set-item">Icon</label>
+                      <select id="deck-icon-set-item" class="form-select" disabled><option value="">Select icon</option></select>
+                      <button type="button" id="deck-apply-icon-set" class="deck-secondary" disabled>Use selected icon</button>
+                      <small>Import and manage icon packs in <a href="/settings#olh-settings-icons">Settings</a>.</small>
+                    </div>
+                  </details>
+                  <details class="deck-artwork-upload-panel">
+                    <summary><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Upload custom artwork</summary>
+                    <div class="deck-artwork-upload">
+                      <label for="deck-key-image">PNG or JPEG image</label>
+                      <input id="deck-key-image" type="file" accept="image/png,image/jpeg" disabled>
+                      <button type="button" id="deck-upload-image" class="deck-secondary" disabled>
+                        <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Upload artwork
+                      </button>
+                      <small id="deck-icon-status" role="status">PNG or JPEG, maximum 512 KiB and 512 × 512 px. Artwork is stored privately on this computer.</small>
                     </div>
                   </details>
                 </div>
