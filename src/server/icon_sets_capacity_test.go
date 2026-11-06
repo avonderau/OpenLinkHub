@@ -48,10 +48,10 @@ func TestStreamDeckCapacity256Icons(t *testing.T) {
 	}
 }
 
-func TestStreamDeckCapacityRejects2049Icons(t *testing.T) {
-	_, err := importIconSet(t.TempDir(), "", capacityPackFixture(t, 2049))
+func TestStreamDeckCapacityRejects4097Icons(t *testing.T) {
+	_, err := importIconSet(t.TempDir(), "", capacityPackFixture(t, 4097))
 	if err == nil {
-		t.Fatal("2049-icon archive was accepted")
+		t.Fatal("4097-icon archive was accepted")
 	}
 }
 
@@ -76,8 +76,8 @@ func TestStreamDeckArchiveEntryCap(t *testing.T) {
 }
 
 func TestIconPackZIPBudget(t *testing.T) {
-	if maxIconSetImages != 2048 || maxIconSetZipBytes != 32<<20 ||
-		maxIconSetTotalImageBytes != 64<<20 {
+	if maxIconSetImages != 4096 || maxIconSetZipBytes != 32<<20 ||
+		maxIconSetTotalImageBytes != 64<<20 || maxIconSetArchiveEntries != 8192 {
 		t.Fatal("unexpected icon pack capacity limits")
 	}
 }
