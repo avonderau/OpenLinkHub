@@ -424,14 +424,14 @@ async function run() {
   assert.equal(shortcutSaved.target, 'Ctrl+Alt+T');
 
   // A different key can still run a shared macro in the same layout.
-  grid.children[5].dispatch('click');
+  grid.children[8].dispatch('click');
   action.value = 'macro';
   action.dispatch('change');
   await nodes['deck-save'].dispatch('click');
   const combined = received.at(-1).pages[1].keys;
   assert.equal(combined.find(key => key.index === 1).action, 'hotkey');
-  assert.equal(combined.find(key => key.index === 5).action, 'macro');
-  assert.equal(combined.find(key => key.index === 5).target, '7');
+  assert.equal(combined.find(key => key.index === 8).action, 'macro');
+  assert.equal(combined.find(key => key.index === 8).target, '7');
 
   // Website and desktop-entry actions use the same Button behavior picker;
   // selecting either one must expose only its own target field.
