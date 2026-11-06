@@ -46,6 +46,8 @@ Description: OpenLinkHub Nexus and programmable Corsair screens
  Independently maintained OpenLinkHub fork with customizable Nexus
  screens, widgets, live metrics, and touch controls.
 EOF
+# Files under /etc are admin-editable; keep local changes across upgrades.
+echo /etc/xdg/autostart/openlinkhub-nexus-agent.desktop > "$deb_stage/DEBIAN/conffiles"
 cat > "$deb_stage/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -e
@@ -112,7 +114,7 @@ cp -a %{_sourcedir}/payload/. %{buildroot}/
 /usr/lib/udev/rules.d/99-openlinkhub-nexus.rules
 /usr/libexec/openlinkhub-nexus/post-install
 /usr/libexec/openlinkhub-nexus/desktop-agent
-/etc/xdg/autostart/openlinkhub-nexus-agent.desktop
+%config(noreplace) /etc/xdg/autostart/openlinkhub-nexus-agent.desktop
 
 %post
 /usr/libexec/openlinkhub-nexus/post-install

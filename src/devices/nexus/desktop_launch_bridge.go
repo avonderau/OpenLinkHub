@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -22,9 +23,20 @@ import (
 const nexusDesktopSocketName = "desktop-launch.sock"
 
 type nexusDesktopLaunchEvent struct {
-	Action string `json:"action"`
-	Target string `json:"target"`
+	Action string `json:"action,omitempty"`
+	Target string `json:"target,omitempty"`
+	// Status is set only on broker handshake lines, never on launch events.
+	Status string `json:"status,omitempty"`
 }
+
+// Handshake statuses sent to each agent right after it connects. Only one
+// agent may own the launcher at a time, so touches cannot hop between
+// desktop sessions when several authorized users or duplicate agents run.
+const (
+	nexusDesktopStatusReady = "ready"
+	nexusDesktopStatusBusy  = "busy"
+)
+
 type nexusDesktopLaunchBroker struct {
 	mu       sync.Mutex
 	listener net.Listener
@@ -175,11 +187,40 @@ func (b *nexusDesktopLaunchBroker) accept() {
 		}
 		b.mu.Lock()
 		if b.client != nil {
-			b.client.Close()
+			// Keep the agent that is already connected. Replacing it would make
+			// two agents evict each other every retry, sending touches to
+			// whichever desktop session happened to reconnect last.
+			b.mu.Unlock()
+			writeNexusDesktopStatus(conn, nexusDesktopStatusBusy)
+			conn.Close()
+			continue
+		}
+		if writeNexusDesktopStatus(conn, nexusDesktopStatusReady) != nil {
+			b.mu.Unlock()
+			conn.Close()
+			continue
 		}
 		b.client = conn
 		b.mu.Unlock()
+		go b.watchClient(conn)
 	}
+}
+
+func writeNexusDesktopStatus(conn net.Conn, status string) error {
+	conn.SetWriteDeadline(time.Now().Add(500 * time.Millisecond))
+	return json.NewEncoder(conn).Encode(nexusDesktopLaunchEvent{Status: status})
+}
+
+// Agents never write to the socket, so a completed read means the agent
+// disconnected. Free the slot right away so another agent can take over.
+func (b *nexusDesktopLaunchBroker) watchClient(conn net.Conn) {
+	io.Copy(io.Discard, conn)
+	b.mu.Lock()
+	if b.client == conn {
+		b.client = nil
+	}
+	b.mu.Unlock()
+	conn.Close()
 }
 func (b *nexusDesktopLaunchBroker) send(action, target string) error {
 	if err := validateNexusLaunchAction(action, target); err != nil {
@@ -279,8 +320,6 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 			}
 			continue
 		}
-		lastFailure = ""
-		fmt.Fprintln(os.Stderr, "Nexus desktop agent connected to local service")
 		done := make(chan struct{})
 		go func() {
 			select {
@@ -295,6 +334,15 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 			var event nexusDesktopLaunchEvent
 			if json.Unmarshal(scanner.Bytes(), &event) != nil {
 				continue
+			}
+			if event.Status == nexusDesktopStatusReady {
+				lastFailure = ""
+				fmt.Fprintln(os.Stderr, "Nexus desktop agent connected to local service")
+				continue
+			}
+			if event.Status == nexusDesktopStatusBusy {
+				reportFailure("connection refused", errors.New("another Nexus desktop agent is already connected; launches go to that session"))
+				break
 			}
 			if validateNexusLaunchAction(event.Action, event.Target) != nil {
 				continue

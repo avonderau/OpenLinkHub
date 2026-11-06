@@ -12,6 +12,9 @@ test "$(dpkg-deb --field "$deb" Architecture)" = amd64
 test "$(rpm -qp --queryformat '%{NAME}' "$rpm")" = openlinkhub-nexus
 test "$(rpm -qp --queryformat '%{VERSION}' "$rpm")" = "$version"
 test "$(rpm -qp --queryformat '%{ARCH}' "$rpm")" = x86_64
+autostart=/etc/xdg/autostart/openlinkhub-nexus-agent.desktop
+dpkg-deb --ctrl-tarfile "$deb" | tar -xO ./conffiles | grep -Fxq "$autostart"
+rpm -qp --configfiles "$rpm" | grep -Fxq "$autostart"
 
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/source" "$work/deb" "$work/rpm"

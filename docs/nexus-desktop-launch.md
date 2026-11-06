@@ -37,15 +37,30 @@ sudo usermod -aG openlinkhub "$(id -un)"
 **Log out of the graphical desktop completely and log back in.** Changing
 account groups does not alter the existing session or previously launched
 agents. Check `id -nG` (without a username) in the new session and confirm
-`openlinkhub` appears. A manually configured per-user autostart entry can
-be removed to avoid starting duplicate agents. The system-wide desktop entry
-will take effect on the next login for authorized users.
+`openlinkhub` appears. The system-wide desktop entry will take effect on the
+next login for authorized users.
 
-If the agent appears to run but launch buttons still fail, inspect its
-stderr or launch it directly from a desktop terminal. Failed socket checks,
-connection attempts and peer validation now emit diagnostic messages on
-change, and successful connection emits a confirmation. Verify permissions
-with `namei -l /opt/OpenLinkHub/runtime/nexus-desktop/desktop-launch.sock`.
+The service accepts one desktop agent at a time. The first agent to connect
+receives every launch; any other agent (a second logged-in authorized user,
+or a leftover manually configured per-user autostart entry) is refused and
+keeps retrying, taking over only after the first agent disconnects. Remove
+old per-user autostart entries so they do not compete with the packaged one.
+
+To turn the packaged autostart off for one account, create
+`~/.config/autostart/openlinkhub-nexus-agent.desktop` containing
+`[Desktop Entry]` and `Hidden=true`. Edits an administrator makes to the
+file in `/etc/xdg/autostart` are kept across package upgrades.
+
+If the agent appears to run but launch buttons still fail, read its log.
+An autostarted agent writes to the user journal on systemd desktops
+(`journalctl --user -b | grep "Nexus desktop agent"`) or to
+`~/.xsession-errors` on some X11 sessions. You can also run
+`/usr/libexec/openlinkhub-nexus/desktop-agent` from a desktop terminal to
+see its output directly. Failed socket checks, connection attempts, peer
+validation and refusals because another agent is connected are reported
+when they change, and a successful connection prints a confirmation. Verify
+permissions with
+`namei -l /opt/OpenLinkHub/runtime/nexus-desktop/desktop-launch.sock`.
 
 ## Starting the agent from your desktop
 
