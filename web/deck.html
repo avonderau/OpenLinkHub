@@ -217,6 +217,8 @@
                     <option value="macro">Run saved macro</option>
                     <option value="media">Media control</option>
                     <option value="deck-control">Deck controls</option>
+                    <option value="url">Open website</option>
+                    <option value="application">Launch desktop application</option>
                   </select>
                 </div>
                       <div class="deck-property" id="deck-control-property" hidden>
@@ -260,6 +262,18 @@
                     <option value="volume-down">Volume down</option>
                     <option value="volume-mute">Mute</option>
                   </select>
+                </div>
+                <div class="deck-property" id="deck-url-property" hidden>
+                  <label for="deck-key-url">Website URL</label>
+                  <input class="form-control" id="deck-key-url" type="url" maxlength="256"
+                         placeholder="https://example.com" autocomplete="off" spellcheck="false" disabled>
+                  <small>Only http:// or https:// links. Opens on the computer hosting OpenLinkHub.</small>
+                </div>
+                <div class="deck-property" id="deck-application-property" hidden>
+                  <label for="deck-key-application">Desktop application ID</label>
+                  <input class="form-control" id="deck-key-application" type="text" maxlength="128"
+                         placeholder="firefox.desktop" autocomplete="off" spellcheck="false" disabled>
+                  <small>Enter an installed desktop-entry ID (for example firefox.desktop), not a command or path. A system service needs the local Nexus desktop agent.</small>
                 </div>
                 <div class="deck-property" id="deck-macro-property" hidden>
                   <label for="deck-key-macro">Saved OpenLinkHub macro</label>
