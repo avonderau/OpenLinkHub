@@ -1,0 +1,37 @@
+name: Fork Go formatting
+# Fork-owned Go files (those that do not exist in upstream OpenLinkHub) must
+# be gofmt-clean. Upstream files are left as they are so upstream merges stay
+# quiet.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gofmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Fetch upstream main
+        run: |
+          git remote add upstream https://github.com/jurkovic-nikola/OpenLinkHub.git
+          git fetch --depth=1 upstream main
+      - name: Check fork-owned files with gofmt
+        run: |
+          git ls-tree -r --name-only upstream/main | sort > upstream-files.txt
+          git ls-files '*.go' | sort > fork-files.txt
+          comm -23 fork-files.txt upstream-files.txt > fork-owned.txt
+          echo "Checking $(wc -l < fork-owned.txt) fork-owned Go files"
+          unformatted=$(xargs -r gofmt -l < fork-owned.txt)
+          if [ -n "$unformatted" ]; then
+            echo "These fork-owned files need gofmt -w:"
+            echo "$unformatted"
+            exit 1
+          fi

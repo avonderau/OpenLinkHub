@@ -51,7 +51,7 @@ func TestCustomNexusLCDColorMatchesRenderedRedButton(t *testing.T) {
 		t.Fatalf("preview should display pure red, got %v", red)
 	}
 	bytes := encodeCustomNexusLCDFrame(frame)
-	offset := (40*ScreenWidth + 50)*4
+	offset := (40*ScreenWidth + 50) * 4
 	if bytes[offset] != 0 || bytes[offset+1] != 0 || bytes[offset+2] != 255 || bytes[offset+3] != 255 {
 		t.Fatalf("LCD should receive BGR red, got %v", bytes[offset:offset+4])
 	}

@@ -121,14 +121,14 @@ func drawDeckHistoryBars(dst *image.RGBA, history []float64, metric string, ink 
 			continue
 		}
 		if x1 >= right {
-			x1 = right-1
+			x1 = right - 1
 		}
 		fraction := math.Max(0, math.Min(1, value/maximum))
 		height := int(math.Round(fraction * float64(bottom-top)))
 		if height == 0 && value > 0 {
 			height = 1
 		}
-		for y := bottom-height; y < bottom; y++ {
+		for y := bottom - height; y < bottom; y++ {
 			for x := x0; x <= x1; x++ {
 				dst.SetRGBA(x, y, ink)
 			}
@@ -153,7 +153,7 @@ func drawDeckFuelGauge(dst *image.RGBA, fraction float64, available bool, accent
 		if available && i < filled {
 			ink = accent
 		}
-		for y := size-20; y < size-7; y++ {
+		for y := size - 20; y < size-7; y++ {
 			for x := x0; x <= x1; x++ {
 				dst.SetRGBA(x, y, ink)
 			}
@@ -174,15 +174,15 @@ func drawDeckRingGauge(dst *image.RGBA, fraction float64, available bool, accent
 		return
 	}
 	cx, cy, radius := deckRingGeometry(size)
-	for y := cy-radius; y <= cy+radius; y++ {
-		for x := cx-radius; x <= cx+radius; x++ {
+	for y := cy - radius; y <= cy+radius; y++ {
+		for x := cx - radius; x <= cx+radius; x++ {
 			distance := math.Hypot(float64(x-cx), float64(y-cy))
 			if distance < float64(radius-4) || distance > float64(radius) {
 				continue
 			}
 			theta := math.Atan2(float64(y-cy), float64(x-cx)) + math.Pi/2
 			if theta < 0 {
-				theta += 2*math.Pi
+				theta += 2 * math.Pi
 			}
 			ink := color.RGBA{R: 52, G: 64, B: 76, A: 255}
 			if available && theta <= 2*math.Pi*fraction {
@@ -202,7 +202,7 @@ func drawDeckRingValue(dst *image.RGBA, value string, accent color.RGBA) {
 		return
 	}
 	cx, cy, radius := deckRingGeometry(size)
-	innerWidth := 2*(radius-5)
+	innerWidth := 2 * (radius - 5)
 	parts := strings.SplitN(value, " ", 2)
 	if len(parts) == 2 && parts[1] != "" {
 		drawDeckRingText(dst, parts[0], cx, cy-1, innerWidth, color.White)
@@ -227,7 +227,7 @@ func drawDeckRingText(dst *image.RGBA, text string, cx, baseline, maxWidth int, 
 	drawer := font.Drawer{
 		Dst: dst, Src: image.NewUniform(ink),
 		Face: basicfont.Face7x13,
-		Dot: fixed.P(cx-width/2, baseline),
+		Dot:  fixed.P(cx-width/2, baseline),
 	}
 	drawer.DrawString(label)
 }
