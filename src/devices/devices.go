@@ -172,7 +172,8 @@ type Product struct {
 }
 
 var (
-	mutex               sync.Mutex
+	mutex               sync.Mutex // Serialize legacy device method calls.
+	registryMutex       sync.RWMutex // Protect map lookups during Deck hotplug discovery.
 	cls                 *cluster.Device
 	expectedPermissions = []os.FileMode{os.FileMode(0600), os.FileMode(0660)}
 	vendorId            = uint16(6940)  // Corsair
@@ -408,15 +409,15 @@ func UpdateDeviceMetrics() {
 
 // deleteDevice will remove device from device list
 func deleteDevice(serial string) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	registryMutex.Lock()
+	defer registryMutex.Unlock()
 	delete(devices, serial)
 }
 
 // deleteDeviceLookup will remove device deviceList lookup table
 func deleteDeviceLookup(deviceLookup string) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	registryMutex.Lock()
+	defer registryMutex.Unlock()
 	delete(deviceList, deviceLookup)
 }
 
@@ -426,9 +427,9 @@ func addDevice(device *common.Device) {
 		return
 	}
 
-	mutex.Lock()
+	registryMutex.Lock()
 	devices[device.Serial] = device
-	mutex.Unlock()
+	registryMutex.Unlock()
 
 	CallDeviceMethod(device.Serial, "SetDispatcher", Dispatch)
 }
@@ -438,7 +439,9 @@ func CallDeviceMethod(deviceId string, methodName string, args ...interface{}) [
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	registryMutex.RLock()
 	device, ok := devices[deviceId]
+	registryMutex.RUnlock()
 	if !ok {
 		logger.Log(logger.Fields{"deviceId": deviceId}).Warn("Device not found")
 		return nil
@@ -464,8 +467,8 @@ func GetProducts() map[string]Device {
 
 // GetDevice will return a device by device serial
 func GetDevice(deviceId string) interface{} {
-	mutex.Lock()
-	defer mutex.Unlock()
+	registryMutex.RLock()
+	defer registryMutex.RUnlock()
 	if device, ok := devices[deviceId]; ok {
 		return device.Instance
 	}
@@ -477,8 +480,8 @@ func GetDevice(deviceId string) interface{} {
 // after startup, so returning the live map would race HTTP handlers and
 // metrics loops that iterate over devices.
 func GetDevices() map[string]*common.Device {
-	mutex.Lock()
-	defer mutex.Unlock()
+	registryMutex.RLock()
+	defer registryMutex.RUnlock()
 	snapshot := make(map[string]*common.Device, len(devices))
 	for id, device := range devices {
 		snapshot[id] = device
@@ -488,8 +491,8 @@ func GetDevices() map[string]*common.Device {
 
 // GetMouse will return all available mouse devices
 func GetMouse() map[string]string {
-	mutex.Lock()
-	defer mutex.Unlock()
+	registryMutex.RLock()
+	defer registryMutex.RUnlock()
 
 	val := make(map[string]string)
 
@@ -1012,12 +1015,12 @@ func init(){
 // instances receive screen-selection notifications; other devices are untouched.
 func init(){
  appmonitor.SetNexusApplicationObserver(func(id string,active bool){
-  mutex.Lock()
+  registryMutex.RLock()
   serials:=make([]string,0)
   for serial,device:=range devices{
    if _,ok:=device.Instance.(*nexus.Device);ok{serials=append(serials,serial)}
   }
-  mutex.Unlock()
+  registryMutex.RUnlock()
   for _,serial:=range serials{CallDeviceMethod(serial,"SetNexusApplicationActive",id,active)}
  })
 }
