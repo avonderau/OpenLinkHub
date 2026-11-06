@@ -16,6 +16,7 @@ import (
 	"OpenLinkHub/src/logger"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -1025,6 +1026,13 @@ func (out *boundedTemperatureOutput) Write(data []byte) (int, error) {
 		return 0, errExternalTemperatureOutput
 	}
 	return out.Buffer.Write(data)
+}
+
+// ReadFrom shadows bytes.Buffer.ReadFrom. exec.Cmd copies stdout with
+// io.Copy, which prefers ReaderFrom and would otherwise bypass the size
+// check in Write and buffer unlimited output.
+func (out *boundedTemperatureOutput) ReadFrom(r io.Reader) (int64, error) {
+	return io.Copy(struct{ io.Writer }{out}, r)
 }
 
 // GetExternalBinaryTemperature returns a valid Celsius reading from an
