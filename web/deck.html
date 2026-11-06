@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-plugins-2">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-plugins-3">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -312,9 +312,18 @@
                   <label for="deck-key-plugin">Plugin action</label>
                   <select class="form-select" id="deck-key-plugin" disabled></select>
                   <div class="deck-action-links">
+                    <button type="button" class="deck-secondary" id="deck-plugin-settings" disabled><i class="bi bi-gear" aria-hidden="true"></i> Plugin settings</button>
                     <button type="button" class="deck-secondary" id="deck-refresh-plugins"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</button>
                   </div>
                   <small id="deck-plugin-status" role="status">Stream Deck and OpenDeck action plugins run in your desktop session through the desktop agent.</small>
+                  <div class="deck-plugin-inspector" id="deck-plugin-inspector" hidden>
+                    <div class="deck-plugin-inspector-header">
+                      <strong>Plugin settings</strong>
+                      <button type="button" class="deck-secondary" id="deck-plugin-inspector-close" aria-label="Close plugin settings"><i class="bi bi-x-lg" aria-hidden="true"></i> Close</button>
+                    </div>
+                    <div id="deck-plugin-inspector-frame"></div>
+                    <small>Changes save to the key as you make them.</small>
+                  </div>
                 </div>
                     </div>
                   </section>
@@ -370,7 +379,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=deck-plugins-2"></script>
+<script src="/static/js/deck-editor.js?v=deck-plugins-3"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

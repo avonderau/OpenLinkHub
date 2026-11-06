@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -31,6 +32,7 @@ type manifestAction struct {
 	Icon        string          `json:"Icon"`
 	States      []manifestState `json:"States"`
 	Controllers []string        `json:"Controllers"`
+	Inspector   string          `json:"PropertyInspectorPath"`
 }
 
 // manifest holds the fields we use from a Stream Deck SDK manifest and the
@@ -45,6 +47,7 @@ type manifest struct {
 	CodePathLin     string            `json:"CodePathLin"`
 	CodePaths       map[string]string `json:"CodePaths"`
 	DeviceNamespace string            `json:"DeviceNamespace"`
+	Inspector       string            `json:"PropertyInspectorPath"`
 	Actions         []manifestAction  `json:"Actions"`
 }
 
@@ -54,6 +57,9 @@ type Action struct {
 	Name    string
 	Tooltip string
 	States  []manifestState
+	// Inspector is the action's settings page (property inspector),
+	// relative to the plugin folder in slash form, or "" for none.
+	Inspector string
 }
 
 // Plugin is one installed plugin folder.
@@ -121,6 +127,48 @@ func pluginPath(dir, rel string) (string, error) {
 		return "", fmt.Errorf("plugin path %q leaves the plugin folder", rel)
 	}
 	return resolved, nil
+}
+
+// inspectorPath keeps a settings page only if it is an HTML file inside
+// the plugin folder.
+func inspectorPath(dir, rel string) string {
+	clean := deckplugin.CleanInspectorPath(rel)
+	ext := strings.ToLower(path.Ext(clean))
+	if clean == "" || (ext != ".html" && ext != ".htm") {
+		return ""
+	}
+	full, err := pluginPath(dir, clean)
+	if err != nil {
+		return ""
+	}
+	if info, err := os.Stat(full); err != nil || !info.Mode().IsRegular() {
+		return ""
+	}
+	return clean
+}
+
+// ReadPluginFile reads one file of a plugin's settings page.
+func ReadPluginFile(dir, rel string) ([]byte, error) {
+	clean := deckplugin.CleanInspectorPath(rel)
+	if clean == "" {
+		return nil, errors.New("invalid file path")
+	}
+	full, err := pluginPath(dir, clean)
+	if err != nil {
+		return nil, errors.New("file not found")
+	}
+	info, err := os.Stat(full)
+	if err != nil || !info.Mode().IsRegular() {
+		return nil, errors.New("file not found")
+	}
+	if info.Size() > deckplugin.MaxFileBytes {
+		return nil, errors.New("file too large")
+	}
+	data, err := os.ReadFile(full)
+	if err != nil || len(data) > deckplugin.MaxFileBytes {
+		return nil, errors.New("file not found")
+	}
+	return data, nil
 }
 
 // resolveCommand picks how to start the plugin on Linux: an OpenAction
@@ -213,7 +261,12 @@ func loadPlugin(dir string, lookPath func(string) (string, error)) (*Plugin, err
 		if name == "" {
 			name = a.UUID
 		}
-		p.Actions = append(p.Actions, Action{UUID: a.UUID, Name: name, Tooltip: limitText(a.Tooltip, 160), States: a.States})
+		inspector := a.Inspector
+		if inspector == "" {
+			inspector = m.Inspector
+		}
+		p.Actions = append(p.Actions, Action{UUID: a.UUID, Name: name, Tooltip: limitText(a.Tooltip, 160), States: a.States,
+			Inspector: inspectorPath(dir, inspector)})
 		if len(p.Actions) == deckplugin.MaxCatalogItems {
 			break
 		}
@@ -295,7 +348,8 @@ func catalog(plugins []*Plugin) []deckplugin.CatalogPlugin {
 			entry.Error = p.Err.Error()
 		}
 		for _, a := range p.Actions {
-			entry.Actions = append(entry.Actions, deckplugin.CatalogAction{UUID: a.UUID, Name: a.Name, Tooltip: a.Tooltip})
+			entry.Actions = append(entry.Actions, deckplugin.CatalogAction{UUID: a.UUID, Name: a.Name, Tooltip: a.Tooltip,
+				Inspector: a.Inspector})
 		}
 		out = append(out, entry)
 		if len(out) == deckplugin.MaxCatalogItems {

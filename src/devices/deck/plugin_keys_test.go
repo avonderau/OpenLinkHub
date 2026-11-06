@@ -6,7 +6,9 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"net"
 	"testing"
+	"time"
 
 	"OpenLinkHub/src/deckplugin"
 )
@@ -181,5 +183,112 @@ func TestPluginManagerRequests(t *testing.T) {
 	}
 	if err := RemovePlugin("../bad"); err == nil {
 		t.Fatal("invalid ID sent")
+	}
+}
+
+func TestPluginInspectorTicketsAndRelay(t *testing.T) {
+	out := capturePluginMessages(t)
+	d := testDevice(t)
+	d.layout = pluginLayout()
+	if err := d.attachSession(new(fakeDeckSession)); err != nil {
+		t.Fatal(err)
+	}
+	ctx := d.pluginContext("home", 7)
+	plugins.mu.Lock()
+	plugins.client = &net.UnixConn{}
+	plugins.catalog = []deckplugin.CatalogPlugin{{UUID: "com.example.counter", Name: "Counter",
+		Actions: []deckplugin.CatalogAction{{UUID: "com.example.counter.increment", Name: "Inc", Inspector: "ui/pi.html"}}}}
+	plugins.mu.Unlock()
+	t.Cleanup(func() {
+		plugins.mu.Lock()
+		plugins.client, plugins.catalog = nil, nil
+		plugins.mu.Unlock()
+	})
+	if _, err := d.OpenPluginInspector(0); err == nil {
+		t.Fatal("ticket issued for a key without a plugin")
+	}
+	ticket, err := d.OpenPluginInspector(7)
+	if err != nil || ticket.Inspector != "ui/pi.html" || ticket.Context != ctx || string(ticket.Settings) != `{"count":1}` {
+		t.Fatalf("ticket %+v %v", ticket, err)
+	}
+	if _, ok := LookupInspectorTicket("not-a-ticket"); ok {
+		t.Fatal("bad ticket accepted")
+	}
+	got, ok := LookupInspectorTicket(ticket.ID)
+	if !ok {
+		t.Fatal("ticket not found")
+	}
+
+	// Files come from the agent for the ticket's plugin only.
+	go func() {
+		msg := nextBlocking(out, deckplugin.TypeFile)
+		if msg.Plugin != "com.example.counter" || msg.Path != "ui/app.js" {
+			plugins.handle(deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request, Error: "wrong file"})
+			return
+		}
+		plugins.handle(deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request, Data: []byte("js")})
+	}()
+	data, err := PluginInspectorFile(got, "ui/./app.js")
+	if err != nil || string(data) != "js" {
+		t.Fatalf("file %q %v", data, err)
+	}
+	if _, err := PluginInspectorFile(got, "../secret"); err == nil {
+		t.Fatal("escaping path requested")
+	}
+
+	delivered := make(chan string, 4)
+	closed := make(chan bool, 1)
+	session, err := AttachPluginInspector(got, func(f json.RawMessage) { delivered <- string(f) }, func() { closed <- true })
+	if err != nil {
+		t.Fatal(err)
+	}
+	open := nextBlocking(out, deckplugin.TypeInspectorOpen)
+	if open.Context != ctx || !deckplugin.ValidSession(open.Session) {
+		t.Fatalf("open %+v", open)
+	}
+	session.Send(json.RawMessage(`{"event":"getSettings"}`))
+	session.Send(json.RawMessage(`not json`))
+	if m := nextBlocking(out, deckplugin.TypeInspector); m.Session != open.Session || string(m.Payload) != `{"event":"getSettings"}` {
+		t.Fatalf("relay %+v", m)
+	}
+	plugins.handle(deckplugin.Message{Type: deckplugin.TypeInspector, Session: open.Session, Payload: json.RawMessage(`{"event":"didReceiveSettings"}`)})
+	plugins.handle(deckplugin.Message{Type: deckplugin.TypeInspector, Session: "ffffffffffffffffffffffffffffffff", Payload: json.RawMessage(`{}`)})
+	if f := <-delivered; f != `{"event":"didReceiveSettings"}` {
+		t.Fatalf("delivered %s", f)
+	}
+	session.Close()
+	if nextBlocking(out, deckplugin.TypeInspectorClose).Session != open.Session || !<-closed {
+		t.Fatal("close not relayed")
+	}
+}
+
+func nextBlocking(out chan deckplugin.Message, kind string) deckplugin.Message {
+	timeout := time.After(5 * time.Second)
+	for {
+		select {
+		case m := <-out:
+			if m.Type == kind {
+				return m
+			}
+		case <-timeout:
+			return deckplugin.Message{}
+		}
+	}
+}
+
+func TestEditorSaveKeepsPluginSettings(t *testing.T) {
+	current := pluginLayout()
+	next := cloneLayout(current)
+	next.Pages[0].Keys[0].PluginSettings = nil // the editor's older copy
+	keepPluginSettings(&next, current)
+	if string(next.Pages[0].Keys[0].PluginSettings) != `{"count":1}` {
+		t.Fatalf("settings lost: %s", next.Pages[0].Keys[0].PluginSettings)
+	}
+	changed := cloneLayout(current)
+	changed.Pages[0].Keys[0].PluginAction = "com.example.counter.reset"
+	changed.Pages[0].Keys[0].PluginSettings = nil
+	keepPluginSettings(&changed, current)
+	if changed.Pages[0].Keys[0].PluginSettings != nil {
+		t.Fatal("settings carried to a different action")
 	}
 }

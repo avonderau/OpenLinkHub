@@ -79,6 +79,10 @@
   const pluginStatus = document.getElementById('deck-plugin-status');
   const pluginRefreshButton = document.getElementById('deck-refresh-plugins');
   const pluginManagerRefresh = document.getElementById('deck-plugin-manager-refresh');
+  const pluginSettingsButton = document.getElementById('deck-plugin-settings');
+  const pluginInspector = document.getElementById('deck-plugin-inspector');
+  const pluginInspectorFrame = document.getElementById('deck-plugin-inspector-frame');
+  const pluginInspectorClose = document.getElementById('deck-plugin-inspector-close');
   const pluginHostStatus = document.getElementById('deck-plugin-host');
   const pluginCount = document.getElementById('deck-plugin-count');
   const pluginFileInput = document.getElementById('deck-plugin-file');
@@ -131,6 +135,8 @@
   let pluginCanInstall = false;
   let pluginMaxUpload = 0;
   let pluginBusy = false;
+  // The key whose plugin settings page is open, if any.
+  let inspectorKey = -1;
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
@@ -561,6 +567,11 @@
     }
     pluginInput.value = pluginValue;
     pluginInput.disabled = !hasPlugin || !pluginChoices;
+    const pluginAction = hasPlugin ? pluginCatalog.find(plugin => plugin.uuid === key?.plugin)
+      ?.actions.find(action => action.uuid === key?.pluginAction) : null;
+    pluginSettingsButton.disabled = !pluginAction?.hasSettings || !pluginHostConnected;
+    pluginSettingsButton.title = pluginAction && !pluginAction.hasSettings ? 'This plugin action has no settings page' : '';
+    if (inspectorKey !== -1 && (inspectorKey !== selected || !hasPlugin)) closePluginInspector();
     const broken = pluginCatalog.filter(plugin => plugin.error);
     pluginStatus.textContent = pluginLoadMessage ||
       (!pluginHostConnected ? 'The desktop agent is not connected. Start it in your desktop session, then Refresh.' :
@@ -904,7 +915,7 @@
           uuid: plugin.uuid, name: String(plugin.name || plugin.uuid), error: String(plugin.error || ''),
           version: String(plugin.version || ''), author: String(plugin.author || ''),
           actions: plugin.actions.filter(action => action && pluginIDPattern.test(action.uuid))
-            .map(action => ({ uuid: action.uuid, name: String(action.name || action.uuid) })),
+            .map(action => ({ uuid: action.uuid, name: String(action.name || action.uuid), hasSettings: Boolean(action.inspector) })),
         }));
       pluginLoadMessage = '';
     } catch (error) {
@@ -921,6 +932,45 @@
   }
   pluginRefreshButton.addEventListener('click', loadPlugins);
   pluginManagerRefresh.addEventListener('click', loadPlugins);
+
+  function closePluginInspector() {
+    inspectorKey = -1;
+    pluginInspectorFrame.replaceChildren();
+    pluginInspector.hidden = true;
+  }
+
+  // A plugin settings page is plugin code: it runs in a sandboxed frame with
+  // an opaque origin, served and relayed by OpenLinkHub.
+  pluginSettingsButton.addEventListener('click', async () => {
+    if (selected < 0) return;
+    if (dirty) {
+      setMessage('Save & Apply first, so the plugin knows about this key, then open its settings.', 'error');
+      return;
+    }
+    const index = selected;
+    pluginSettingsButton.disabled = true;
+    try {
+      const response = await fetch(`/api/deck/plugin-inspector?serial=${encodeURIComponent(id)}&key=${index}`,
+        { method: 'POST', cache: 'no-store' });
+      if (!response.ok) throw new Error((await response.text()).trim() || `HTTP ${response.status}`);
+      const payload = await response.json();
+      if (typeof payload?.url !== 'string' || !payload.url.startsWith('/api/deck/plugin-ui/')) throw new Error('Invalid settings page');
+      if (selected !== index) return;
+      const frame = document.createElement('iframe');
+      frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups allow-modals');
+      frame.setAttribute('referrerpolicy', 'no-referrer');
+      frame.setAttribute('title', 'Plugin settings');
+      frame.src = payload.url;
+      pluginInspectorFrame.replaceChildren(frame);
+      pluginInspector.hidden = false;
+      inspectorKey = index;
+    } catch (error) {
+      setMessage(`Cannot open plugin settings: ${error.message}`, 'error');
+    } finally {
+      renderInspector();
+    }
+  });
+  pluginInspectorClose.addEventListener('click', closePluginInspector);
 
   // Keys on any page that use a plugin, so removal can warn about them.
   function pluginKeyCount(uuid) {

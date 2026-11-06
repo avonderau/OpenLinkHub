@@ -4,9 +4,7 @@ Deck keys can run **action plugins** written for the Elgato Stream Deck SDK
 or OpenDeck's OpenAction API. A plugin key shows whatever the plugin draws
 (its image and title) and tells the plugin when it is pressed.
 
-This is an early, experimental feature. Property inspectors (a plugin's own
-settings page) are not supported yet, so plugins that need configuration
-before they do anything will not be useful.
+This is an early, experimental feature.
 
 ## How it works
 
@@ -44,10 +42,18 @@ host offline" and every other Deck action keeps working.
 
 Supported plugin messages: `setTitle`, `setImage`, `setState`,
 `setSettings`, `getSettings`, `setGlobalSettings`, `getGlobalSettings`,
-`openUrl` (http and https only), `logMessage`, `showAlert` and `showOk`.
-Plugins receive `willAppear`, `willDisappear`, `keyDown`, `keyUp`,
-`didReceiveSettings`, `didReceiveGlobalSettings`, `deviceDidConnect` and
+`sendToPropertyInspector`, `openUrl` (http and https only), `logMessage`,
+`showAlert` and `showOk`. Plugins receive `willAppear`, `willDisappear`,
+`keyDown`, `keyUp`, `didReceiveSettings`, `didReceiveGlobalSettings`,
+`sendToPlugin`, `propertyInspectorDidAppear`,
+`propertyInspectorDidDisappear`, `deviceDidConnect` and
 `deviceDidDisconnect`.
+
+Settings pages can send `setSettings`, `getSettings`, `sendToPlugin`,
+`setGlobalSettings`, `getGlobalSettings`, `openUrl` and `logMessage`, and
+receive `didReceiveSettings`, `didReceiveGlobalSettings` and
+`sendToPropertyInspector`. A page is started the way the Stream Deck app
+starts it, with `connectElgatoStreamDeckSocket` (or `connectSocket`).
 
 Key release is not read from the hardware yet, so a press is sent as
 `keyDown` immediately followed by `keyUp`; hold and long-press actions do
@@ -110,8 +116,34 @@ only plugins you trust, preferably open-source ones.
    installed plugin is missing.
 3. Pick the plugin action and click **Save & Apply**.
 
-Settings that a plugin saves for a key are stored in that key's layout, so
-they survive restarts. Global plugin settings are stored in
+## Plugin settings
+
+Many plugins have their own settings page (Stream Deck calls it a property
+inspector), for example to pick a city or sign in to a service. To open it:
+
+1. Put the plugin action on a key and click **Save & Apply**. The key's page
+   must be the one the Deck is showing, so the plugin is running for it.
+2. Select the key and click **Plugin settings** under the plugin action.
+
+The page opens inside the editor. Changes are saved to the key as you make
+them; you do not need to click Save & Apply again. **Plugin settings** is
+greyed out for actions that have no settings page.
+
+The settings page is plugin code, so it is isolated:
+
+- It runs in a sandboxed frame with its own opaque origin. It cannot read
+  the WebUI, use your sign-in session, or call OpenLinkHub's APIs.
+- Its files are served from the plugin folder by the desktop agent, under a
+  random link that only works for that one key and expires after 30 minutes
+  without use.
+- It talks to its plugin through OpenLinkHub, which relays its messages to
+  the desktop agent. The agent applies them only to that key and to that
+  plugin's global settings. This works from any browser that can open the
+  editor, including a remote one.
+
+Settings that a plugin or its settings page saves for a key are stored in
+that key's layout, so they survive restarts and are kept when you save the
+layout from the editor. Global plugin settings are stored in
 `~/.local/state/OpenLinkHub/deck-plugins/global-settings/`.
 
 ## Troubleshooting

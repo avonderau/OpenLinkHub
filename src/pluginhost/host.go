@@ -51,6 +51,8 @@ type Host struct {
 	stopped   bool
 	images    *imageLoader
 	launch    func(*process) error
+	// inspectors maps a settings-page session to the key it edits.
+	inspectors map[string]string
 }
 
 type instance struct {
@@ -75,7 +77,7 @@ type process struct {
 func NewHost(stateDir string, send func(deckplugin.Message)) *Host {
 	h := &Host{plugins: map[string]*Plugin{}, instances: map[string]*instance{},
 		running: map[string]*process{}, byToken: map[string]*process{},
-		send: send, stateDir: stateDir, images: newImageLoader()}
+		send: send, stateDir: stateDir, images: newImageLoader(), inspectors: map[string]string{}}
 	h.launch = h.startProcess
 	return h
 }
@@ -172,6 +174,7 @@ func (h *Host) Reset() {
 		}
 	}
 	h.devices = nil
+	h.inspectors = map[string]string{}
 }
 
 // HandleServiceMessage applies one message from the OpenLinkHub service.
@@ -210,6 +213,12 @@ func (h *Host) HandleServiceMessage(msg deckplugin.Message) {
 			h.notifyLocked(inst, "willDisappear", nil)
 			delete(h.instances, msg.Context)
 		}
+	case deckplugin.TypeInspectorOpen:
+		h.openInspectorLocked(msg.Session, msg.Context)
+	case deckplugin.TypeInspectorClose:
+		h.closeInspectorLocked(msg.Session)
+	case deckplugin.TypeInspector:
+		h.inspectorEventLocked(msg.Session, msg.Payload)
 	case deckplugin.TypeKeyDown, deckplugin.TypeKeyUp:
 		if inst := h.instances[msg.Context]; inst != nil {
 			h.notifyLocked(inst, msg.Type, nil)
@@ -439,10 +448,10 @@ func (h *Host) handlePluginEvent(p *process, data []byte) {
 	switch ev.Event {
 	case "setGlobalSettings":
 		h.saveGlobalSettings(p.plugin, ev.Payload)
+		h.toPluginInspectorsLocked(p.plugin.UUID, globalSettingsEvent(h.loadGlobalSettings(p.plugin)))
 		return
 	case "getGlobalSettings":
-		p.sendJSON(map[string]any{"event": "didReceiveGlobalSettings",
-			"payload": map[string]json.RawMessage{"settings": h.loadGlobalSettings(p.plugin)}})
+		p.sendJSON(globalSettingsEvent(h.loadGlobalSettings(p.plugin)))
 		return
 	case "openUrl":
 		var payload struct {
@@ -519,6 +528,13 @@ func (h *Host) handlePluginEvent(p *process, data []byte) {
 		}
 		inst.Settings = append(json.RawMessage(nil), ev.Payload...)
 		h.send(deckplugin.Message{Type: deckplugin.TypeSettings, Context: inst.Context, Settings: inst.Settings})
+		h.toInspectorsLocked(inst.Context, instanceEvent(inst, "didReceiveSettings", nil))
+	case "sendToPropertyInspector":
+		if len(ev.Payload) > deckplugin.MaxInspectorFrame {
+			return
+		}
+		h.toInspectorsLocked(inst.Context, map[string]any{"event": "sendToPropertyInspector",
+			"action": inst.Action, "context": inst.Context, "payload": rawOrEmpty(ev.Payload)})
 	case "getSettings":
 		p.sendJSON(instanceEvent(inst, "didReceiveSettings", nil))
 	case "showAlert":
@@ -679,3 +695,151 @@ func (p *process) kill() {
 }
 
 var errUnsupportedImage = errors.New("unsupported image")
+
+func globalSettingsEvent(settings json.RawMessage) map[string]any {
+	return map[string]any{"event": "didReceiveGlobalSettings",
+		"payload": map[string]json.RawMessage{"settings": settings}}
+}
+
+func rawOrEmpty(raw json.RawMessage) json.RawMessage {
+	if len(raw) == 0 || !json.Valid(raw) {
+		return json.RawMessage("{}")
+	}
+	return raw
+}
+
+const maxInspectorSessions = 32
+
+// openInspectorLocked starts a settings-page session for one key on screen.
+func (h *Host) openInspectorLocked(session, ctx string) {
+	if !deckplugin.ValidSession(session) || !deckplugin.ValidContext(ctx) || len(h.inspectors) >= maxInspectorSessions {
+		return
+	}
+	inst := h.instances[ctx]
+	if inst == nil {
+		return
+	}
+	h.inspectors[session] = ctx
+	h.notifyEventLocked(inst, map[string]any{"event": "propertyInspectorDidAppear",
+		"action": inst.Action, "context": inst.Context, "device": inst.Device})
+}
+
+func (h *Host) closeInspectorLocked(session string) {
+	ctx, ok := h.inspectors[session]
+	if !ok {
+		return
+	}
+	delete(h.inspectors, session)
+	if inst := h.instances[ctx]; inst != nil {
+		h.notifyEventLocked(inst, map[string]any{"event": "propertyInspectorDidDisappear",
+			"action": inst.Action, "context": inst.Context, "device": inst.Device})
+	}
+}
+
+// inspectorEventLocked applies one message from a settings page. The page
+// can only touch its own key and its plugin's global settings, whatever
+// context it claims.
+func (h *Host) inspectorEventLocked(session string, data json.RawMessage) {
+	ctx, ok := h.inspectors[session]
+	if !ok || len(data) > deckplugin.MaxInspectorFrame {
+		return
+	}
+	inst := h.instances[ctx]
+	if inst == nil {
+		return
+	}
+	plugin := h.plugins[inst.Plugin]
+	var ev pluginEvent
+	if plugin == nil || json.Unmarshal(data, &ev) != nil {
+		return
+	}
+	reply := func(msg any) {
+		raw, err := json.Marshal(msg)
+		if err == nil && len(raw) <= deckplugin.MaxInspectorFrame {
+			h.send(deckplugin.Message{Type: deckplugin.TypeInspector, Session: session, Payload: raw})
+		}
+	}
+	switch ev.Event {
+	case "setSettings":
+		if deckplugin.ValidSettings(ev.Payload) != nil {
+			return
+		}
+		inst.Settings = append(json.RawMessage(nil), ev.Payload...)
+		h.send(deckplugin.Message{Type: deckplugin.TypeSettings, Context: inst.Context, Settings: inst.Settings})
+		h.notifyLocked(inst, "didReceiveSettings", nil)
+	case "getSettings":
+		reply(instanceEvent(inst, "didReceiveSettings", nil))
+	case "sendToPlugin":
+		h.notifyEventLocked(inst, map[string]any{"event": "sendToPlugin", "action": inst.Action,
+			"context": inst.Context, "payload": rawOrEmpty(ev.Payload)})
+	case "setGlobalSettings":
+		h.saveGlobalSettings(plugin, ev.Payload)
+		if p := h.running[plugin.UUID]; p != nil && !p.failed {
+			p.sendJSON(globalSettingsEvent(h.loadGlobalSettings(plugin)))
+		}
+	case "getGlobalSettings":
+		reply(globalSettingsEvent(h.loadGlobalSettings(plugin)))
+	case "openUrl":
+		var payload struct {
+			URL string `json:"url"`
+		}
+		if json.Unmarshal(ev.Payload, &payload) == nil {
+			go openURL(payload.URL)
+		}
+	case "logMessage":
+		var payload struct {
+			Message string `json:"message"`
+		}
+		if json.Unmarshal(ev.Payload, &payload) == nil {
+			fmt.Fprintf(os.Stderr, "Deck plugin %s settings page: %s\n", plugin.UUID, limitText(payload.Message, 512))
+		}
+	}
+}
+
+func (h *Host) notifyEventLocked(inst *instance, event map[string]any) {
+	if p := h.running[inst.Plugin]; p != nil && !p.failed {
+		p.sendJSON(event)
+	}
+}
+
+// toInspectorsLocked sends a message to every settings page open on ctx.
+func (h *Host) toInspectorsLocked(ctx string, msg any) {
+	raw, err := json.Marshal(msg)
+	if err != nil || len(raw) > deckplugin.MaxInspectorFrame {
+		return
+	}
+	for session, c := range h.inspectors {
+		if c == ctx {
+			h.send(deckplugin.Message{Type: deckplugin.TypeInspector, Session: session, Payload: raw})
+		}
+	}
+}
+
+func (h *Host) toPluginInspectorsLocked(uuid string, msg any) {
+	for _, ctx := range h.inspectorContextsLocked(uuid) {
+		h.toInspectorsLocked(ctx, msg)
+	}
+}
+
+func (h *Host) inspectorContextsLocked(uuid string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, ctx := range h.inspectors {
+		if inst := h.instances[ctx]; inst != nil && inst.Plugin == uuid && !seen[ctx] {
+			seen[ctx] = true
+			out = append(out, ctx)
+		}
+	}
+	return out
+}
+
+// PluginFile reads a settings-page file of an installed plugin.
+func (h *Host) PluginFile(uuid, rel string) ([]byte, error) {
+	h.mu.Lock()
+	plugin := h.plugins[uuid]
+	h.mu.Unlock()
+	if plugin == nil {
+		return nil, errors.New("plugin is not installed")
+	}
+	return ReadPluginFile(plugin.Dir, rel)
+}

@@ -222,6 +222,7 @@ func (d *Device) UpdateLayout(layout Layout) (LayoutResult, error) {
 	// brightness values during Save & Apply, even when the older browser
 	// snapshot has a nonzero setting from an earlier key press.
 	layout.Brightness = d.layout.Brightness
+	keepPluginSettings(&layout, d.layout)
 	if err := SaveLayout(d.root, d.Serial, d.Model, layout); err != nil {
 		return LayoutResult{}, err
 	}

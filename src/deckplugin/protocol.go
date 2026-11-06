@@ -13,7 +13,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 	"regexp"
+	"strings"
 )
 
 // SocketName is the agent socket, next to the launch socket.
@@ -33,6 +35,12 @@ const (
 	// MaxServiceMessageBytes is the agent's read limit: a base64-encoded
 	// upload plus room for the JSON around it.
 	MaxServiceMessageBytes = MaxUploadBytes/3*4 + 64<<10
+	// MaxFileBytes bounds one settings-page file the agent sends back.
+	MaxFileBytes = 1 << 20
+	// MaxInspectorFrame bounds one settings-page WebSocket message.
+	MaxInspectorFrame = 64 << 10
+	// MaxInspectorPath bounds a settings-page path in a manifest.
+	MaxInspectorPath = 256
 )
 
 // Message types, service to agent.
@@ -44,6 +52,11 @@ const (
 	TypeKeyUp     = "keyUp"     // Context
 	TypeInstall   = "install"   // Request, Archive: install a plugin
 	TypeRemove    = "remove"    // Request, Plugin: uninstall a plugin
+	TypeFile      = "file"      // Request, Plugin, Path: read a settings-page file
+	// Settings pages (property inspectors). The service relays the page's
+	// WebSocket messages; the agent applies them to the session's key only.
+	TypeInspectorOpen  = "inspectorOpen"  // Session, Context
+	TypeInspectorClose = "inspectorClose" // Session
 )
 
 // Message types, agent to service.
@@ -55,7 +68,10 @@ const (
 	TypeSettings = "settings" // Context, Settings
 	TypeAlert    = "alert"    // Context
 	TypeOK       = "ok"       // Context
-	TypeResult   = "result"   // Request, Plugin, Error: install/remove outcome
+	TypeResult   = "result"   // Request, Plugin, Error, Data: request outcome
+	// TypeInspector carries one settings-page message (Session, Payload), in
+	// both directions.
+	TypeInspector = "inspector"
 )
 
 var idPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
@@ -118,6 +134,8 @@ type CatalogAction struct {
 	UUID    string `json:"uuid"`
 	Name    string `json:"name"`
 	Tooltip string `json:"tooltip,omitempty"`
+	// Inspector is the settings page, relative to the plugin folder.
+	Inspector string `json:"inspector,omitempty"`
 }
 
 type CatalogPlugin struct {
@@ -142,8 +160,28 @@ type Message struct {
 	State     int             `json:"state,omitempty"`
 	Settings  json.RawMessage `json:"settings,omitempty"`
 	// Request pairs an install or remove with its result.
-	Request string `json:"request,omitempty"`
-	Plugin  string `json:"plugin,omitempty"`
-	Archive []byte `json:"archive,omitempty"`
-	Error   string `json:"error,omitempty"`
+	Request string          `json:"request,omitempty"`
+	Plugin  string          `json:"plugin,omitempty"`
+	Archive []byte          `json:"archive,omitempty"`
+	Error   string          `json:"error,omitempty"`
+	Path    string          `json:"path,omitempty"`
+	Data    []byte          `json:"data,omitempty"`
+	Session string          `json:"session,omitempty"`
+	Payload json.RawMessage `json:"payload,omitempty"`
+}
+
+// ValidSession reports whether s is a settings-page session ID.
+func ValidSession(s string) bool { return requestPattern.MatchString(s) }
+
+// CleanInspectorPath validates a settings-page path relative to a plugin
+// folder and returns it in slash form, or "" when it is unsafe.
+func CleanInspectorPath(p string) string {
+	if p == "" || len(p) > MaxInspectorPath || strings.ContainsAny(p, "\\\x00?#") || path.IsAbs(p) {
+		return ""
+	}
+	clean := path.Clean(p)
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
+		return ""
+	}
+	return clean
 }

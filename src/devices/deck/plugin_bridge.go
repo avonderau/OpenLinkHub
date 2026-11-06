@@ -31,10 +31,12 @@ type pluginBridge struct {
 	devices  map[*Device]bool
 	// pending holds install/remove requests waiting for the agent's result.
 	pending map[string]chan deckplugin.Message
+	// inspectors are the open settings pages, by session.
+	inspectors map[string]*InspectorSession
 }
 
 var plugins = &pluginBridge{contexts: map[string]*Device{}, devices: map[*Device]bool{},
-	pending: map[string]chan deckplugin.Message{}}
+	pending: map[string]chan deckplugin.Message{}, inspectors: map[string]*InspectorSession{}}
 var pluginBridgeOnce sync.Once
 
 // StartPluginBridge opens the plugin socket beside the Nexus launch socket.
@@ -124,6 +126,13 @@ func (b *pluginBridge) read(conn net.Conn) {
 			delete(b.pending, id)
 		}
 	}
+	var sessions []*InspectorSession
+	if b.client == nil {
+		for id, s := range b.inspectors {
+			sessions = append(sessions, s)
+			delete(b.inspectors, id)
+		}
+	}
 	devices := make([]*Device, 0, len(b.devices))
 	for d := range b.devices {
 		devices = append(devices, d)
@@ -131,6 +140,9 @@ func (b *pluginBridge) read(conn net.Conn) {
 	b.mu.Unlock()
 	for _, d := range devices {
 		d.clearPluginState("Plugin host offline")
+	}
+	for _, s := range sessions {
+		s.once.Do(s.closed)
 	}
 }
 
@@ -160,7 +172,16 @@ func (b *pluginBridge) handle(msg deckplugin.Message) {
 		delete(b.pending, msg.Request)
 		b.mu.Unlock()
 		if ch != nil {
-			ch <- deckplugin.Message{Type: msg.Type, Plugin: msg.Plugin, Error: trimRunes(msg.Error, 200)}
+			ch <- deckplugin.Message{Type: msg.Type, Plugin: msg.Plugin, Error: trimRunes(msg.Error, 200), Data: msg.Data}
+		}
+		return
+	}
+	if msg.Type == deckplugin.TypeInspector {
+		b.mu.Lock()
+		s := b.inspectors[msg.Session]
+		b.mu.Unlock()
+		if s != nil && len(msg.Payload) <= deckplugin.MaxInspectorFrame && json.Valid(msg.Payload) {
+			s.deliver(msg.Payload)
 		}
 		return
 	}
@@ -177,6 +198,7 @@ func (b *pluginBridge) handle(msg deckplugin.Message) {
 			for _, a := range p.Actions {
 				if deckplugin.ValidID(a.UUID) {
 					a.Name, a.Tooltip = trimRunes(a.Name, 64), trimRunes(a.Tooltip, 160)
+					a.Inspector = deckplugin.CleanInspectorPath(a.Inspector)
 					actions = append(actions, a)
 				}
 			}
@@ -213,9 +235,15 @@ var ErrPluginHostOffline = errors.New("the desktop agent is not connected; start
 
 // request sends an install or remove to the agent and waits for its result.
 func (b *pluginBridge) request(msg deckplugin.Message, timeout time.Duration) (string, error) {
+	result, err := b.requestResult(msg, timeout)
+	return result.Plugin, err
+}
+
+// requestResult sends a request to the agent and waits for its result.
+func (b *pluginBridge) requestResult(msg deckplugin.Message, timeout time.Duration) (deckplugin.Message, error) {
 	var raw [16]byte
 	if _, err := rand.Read(raw[:]); err != nil {
-		return "", err
+		return deckplugin.Message{}, err
 	}
 	msg.Request = hex.EncodeToString(raw[:])
 	ch := make(chan deckplugin.Message, 1)
@@ -224,7 +252,7 @@ func (b *pluginBridge) request(msg deckplugin.Message, timeout time.Duration) (s
 	b.mu.Lock()
 	if b.out == nil {
 		b.mu.Unlock()
-		return "", ErrPluginHostOffline
+		return deckplugin.Message{}, ErrPluginHostOffline
 	}
 	b.pending[msg.Request] = ch
 	out := b.out
@@ -235,23 +263,23 @@ func (b *pluginBridge) request(msg deckplugin.Message, timeout time.Duration) (s
 	default:
 		delete(b.pending, msg.Request)
 		b.mu.Unlock()
-		return "", errors.New("the desktop agent is busy; try again")
+		return deckplugin.Message{}, errors.New("the desktop agent is busy; try again")
 	}
 	b.mu.Unlock()
 	select {
 	case result, ok := <-ch:
 		if !ok {
-			return "", ErrPluginHostOffline
+			return deckplugin.Message{}, ErrPluginHostOffline
 		}
 		if result.Error != "" {
-			return "", errors.New(result.Error)
+			return deckplugin.Message{}, errors.New(result.Error)
 		}
-		return result.Plugin, nil
+		return result, nil
 	case <-timer.C:
 		b.mu.Lock()
 		delete(b.pending, msg.Request)
 		b.mu.Unlock()
-		return "", errors.New("the desktop agent did not answer in time")
+		return deckplugin.Message{}, errors.New("the desktop agent did not answer in time")
 	}
 }
 

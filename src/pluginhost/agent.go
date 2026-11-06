@@ -109,6 +109,20 @@ func Run(ctx context.Context, socketPath string) error {
 				continue
 			}
 			switch msg.Type {
+			case deckplugin.TypeFile:
+				go func() {
+					result := deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request}
+					if !deckplugin.ValidRequest(msg.Request) {
+						return
+					}
+					data, err := host.PluginFile(msg.Plugin, msg.Path)
+					if err != nil {
+						result.Error = err.Error()
+					} else {
+						result.Data = data
+					}
+					send(result)
+				}()
 			case deckplugin.TypeInstall, deckplugin.TypeRemove:
 				// Unpacking can take a moment; keep key presses flowing.
 				go func() {

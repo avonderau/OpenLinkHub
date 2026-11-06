@@ -748,3 +748,10 @@
 .deck-workspace .deck-plugin-list-header button,
 .deck-workspace .deck-plugin-item button{margin:0;padding:4px 10px;font-size:.77rem}
 .deck-workspace .deck-plugin-install button{margin-top:8px;font-size:.8rem}
+.deck-plugin-inspector{margin-top:12px;border:1px solid var(--deck-border);border-radius:9px;overflow:hidden;background:#2d2d2d}
+.deck-plugin-inspector[hidden]{display:none}
+.deck-plugin-inspector-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:rgba(0,0,0,.25)}
+.deck-plugin-inspector-header strong{font-size:.8rem}
+.deck-workspace .deck-plugin-inspector-header button{margin:0;padding:3px 9px;font-size:.74rem}
+.deck-plugin-inspector iframe{display:block;width:100%;height:360px;border:0;background:#2d2d2d}
+.deck-plugin-inspector small{display:block;padding:6px 10px;color:var(--deck-muted);font-size:.72rem}

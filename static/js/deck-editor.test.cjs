@@ -57,6 +57,7 @@ async function run() {
     'deck-plugin-property', 'deck-key-plugin', 'deck-plugin-status', 'deck-refresh-plugins',
     'deck-tab-plugins', 'deck-panel-plugins', 'deck-plugin-manager-refresh', 'deck-plugin-host',
     'deck-plugin-count', 'deck-plugin-file', 'deck-plugin-install', 'deck-plugin-install-status', 'deck-plugin-list',
+    'deck-plugin-settings', 'deck-plugin-inspector', 'deck-plugin-inspector-frame', 'deck-plugin-inspector-close',
     'deck-key-media', 'deck-media-property',
     'deck-url-property', 'deck-key-url', 'deck-application-property', 'deck-key-application',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',

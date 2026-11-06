@@ -7,6 +7,7 @@ import (
 	"image/draw"
 	_ "image/jpeg"
 	_ "image/png"
+	"strconv"
 	"unicode/utf8"
 
 	"OpenLinkHub/src/deckplugin"
@@ -295,4 +296,28 @@ func (d *Device) renderPluginKeyLocked(size int, key KeyConfig, artwork image.Im
 		return canvas
 	}
 	return drawDeckKeyCaption(canvas, title)
+}
+
+// keepPluginSettings carries settings a plugin or its settings page saved
+// into an editor save. The editor has no settings of its own for plugin
+// keys and may hold an older copy; a key whose plugin action changed
+// starts with what the editor sent (normally nothing).
+func keepPluginSettings(next *Layout, current Layout) {
+	saved := map[string]KeyConfig{}
+	for _, page := range current.Pages {
+		for _, key := range page.Keys {
+			if key.Action == "plugin" {
+				saved[page.ID+"\x00"+strconv.Itoa(key.Index)] = key
+			}
+		}
+	}
+	for pi := range next.Pages {
+		for ki := range next.Pages[pi].Keys {
+			key := &next.Pages[pi].Keys[ki]
+			old, ok := saved[next.Pages[pi].ID+"\x00"+strconv.Itoa(key.Index)]
+			if ok && key.Action == "plugin" && key.Plugin == old.Plugin && key.PluginAction == old.PluginAction {
+				key.PluginSettings = append(json.RawMessage(nil), old.PluginSettings...)
+			}
+		}
+	}
 }

@@ -481,3 +481,143 @@ func TestSetPluginsRestartsChangedPlugins(t *testing.T) {
 		t.Fatalf("expected a restart after an update, got %d launches", count())
 	}
 }
+
+func TestInspectorPathsAndFiles(t *testing.T) {
+	root := t.TempDir()
+	manifest := `{"UUID":"com.example.pi","Name":"PI","CodePath":"bin/plugin.js","PropertyInspectorPath":"ui/plugin.html",
+ "Actions":[{"UUID":"com.example.pi.a","Name":"A","States":[{}]},
+            {"UUID":"com.example.pi.b","Name":"B","PropertyInspectorPath":"ui/b.html","States":[{}]},
+            {"UUID":"com.example.pi.c","Name":"C","PropertyInspectorPath":"../../etc/passwd","States":[{}]},
+            {"UUID":"com.example.pi.d","Name":"D","PropertyInspectorPath":"ui/missing.html","States":[{}]}]}`
+	dir := writePlugin(t, root, "com.example.pi.sdPlugin", manifest, map[string]string{
+		"bin/plugin.js": "//", "ui/plugin.html": "<html></html>", "ui/b.html": "<p>b</p>", "ui/app.js": "1",
+	})
+	os.Symlink("/etc/hostname", filepath.Join(dir, "ui", "leak.txt"))
+	p, err := loadPlugin(dir, fakeNode)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{"com.example.pi.a": "ui/plugin.html", "com.example.pi.b": "ui/b.html",
+		"com.example.pi.c": "", "com.example.pi.d": ""}
+	for _, a := range p.Actions {
+		if a.Inspector != want[a.UUID] {
+			t.Errorf("%s inspector %q", a.UUID, a.Inspector)
+		}
+	}
+	if data, err := ReadPluginFile(dir, "ui/app.js"); err != nil || string(data) != "1" {
+		t.Fatalf("read: %q %v", data, err)
+	}
+	for _, bad := range []string{"../x", "/etc/passwd", "ui/leak.txt", "ui", "ui/app.js?x", ""} {
+		if _, err := ReadPluginFile(dir, bad); err == nil {
+			t.Errorf("read %q", bad)
+		}
+	}
+}
+
+func TestInspectorSessionRelay(t *testing.T) {
+	events := make(chan map[string]any, 32)
+	var plugin *websocket.Conn
+	ready := make(chan struct{})
+	h, rec, _ := testHost(t, func(h *Host, p *process) error {
+		go func() {
+			conn, err := dialHost(t, h, nil)
+			if err != nil {
+				return
+			}
+			plugin = conn
+			conn.WriteJSON(map[string]string{"event": registerEvent, "uuid": p.token})
+			close(ready)
+			for {
+				var ev map[string]any
+				if conn.ReadJSON(&ev) != nil {
+					return
+				}
+				events <- ev
+			}
+		}()
+		return nil
+	})
+	next := func(name string) map[string]any {
+		t.Helper()
+		for {
+			select {
+			case ev := <-events:
+				if ev["event"] == name {
+					return ev
+				}
+			case <-time.After(5 * time.Second):
+				t.Fatalf("no %s event", name)
+			}
+		}
+	}
+	h.HandleServiceMessage(deckplugin.Message{Type: deckplugin.TypeAppear, Instances: []deckplugin.Instance{{
+		Context: testContext, Plugin: "com.example.counter", Action: "com.example.counter.increment", Device: "deck-1"}}})
+	<-ready
+	next("willAppear")
+	const session = "0123456789abcdef0123456789abcdef"
+	// A session for a key that is not on screen is ignored.
+	h.HandleServiceMessage(deckplugin.Message{Type: deckplugin.TypeInspectorOpen, Session: "ffffffffffffffffffffffffffffffff", Context: "ffffffffffffffffffffffff"})
+	h.HandleServiceMessage(deckplugin.Message{Type: deckplugin.TypeInspectorOpen, Session: session, Context: testContext})
+	if ev := next("propertyInspectorDidAppear"); ev["context"] != testContext {
+		t.Fatalf("appear %v", ev)
+	}
+	pi := func(raw string) {
+		h.HandleServiceMessage(deckplugin.Message{Type: deckplugin.TypeInspector, Session: session, Payload: json.RawMessage(raw)})
+	}
+	toPage := func(match func(map[string]any) bool) map[string]any {
+		t.Helper()
+		var out map[string]any
+		rec.wait(t, func(m deckplugin.Message) bool {
+			if m.Type != deckplugin.TypeInspector || m.Session != session {
+				return false
+			}
+			var ev map[string]any
+			if json.Unmarshal(m.Payload, &ev) != nil || !match(ev) {
+				return false
+			}
+			out = ev
+			return true
+		})
+		return out
+	}
+	pi(`{"event":"registerPropertyInspector","uuid":"` + testContext + `"}`)
+	// The page claims another key's context; it still edits its own key only.
+	pi(`{"event":"setSettings","context":"ffffffffffffffffffffffff","payload":{"city":"Berlin"}}`)
+	rec.wait(t, func(m deckplugin.Message) bool {
+		return m.Type == deckplugin.TypeSettings && m.Context == testContext && string(m.Settings) == `{"city":"Berlin"}`
+	})
+	if ev := next("didReceiveSettings"); ev["context"] != testContext {
+		t.Fatalf("plugin settings %v", ev)
+	}
+	pi(`{"event":"getSettings","context":"` + testContext + `"}`)
+	toPage(func(ev map[string]any) bool {
+		p, _ := ev["payload"].(map[string]any)
+		s, _ := p["settings"].(map[string]any)
+		return ev["event"] == "didReceiveSettings" && s["city"] == "Berlin"
+	})
+	pi(`{"event":"sendToPlugin","action":"x","context":"` + testContext + `","payload":{"refresh":true}}`)
+	if ev := next("sendToPlugin"); ev["payload"].(map[string]any)["refresh"] != true || ev["action"] != "com.example.counter.increment" {
+		t.Fatalf("sendToPlugin %v", ev)
+	}
+	plugin.WriteJSON(map[string]any{"event": "sendToPropertyInspector", "context": testContext, "payload": map[string]any{"cities": 3}})
+	toPage(func(ev map[string]any) bool {
+		p, _ := ev["payload"].(map[string]any)
+		return ev["event"] == "sendToPropertyInspector" && p["cities"] == 3.0
+	})
+	pi(`{"event":"setGlobalSettings","payload":{"key":"k"}}`)
+	if ev := next("didReceiveGlobalSettings"); ev["payload"].(map[string]any)["settings"].(map[string]any)["key"] != "k" {
+		t.Fatalf("global %v", ev)
+	}
+	h.HandleServiceMessage(deckplugin.Message{Type: deckplugin.TypeInspectorClose, Session: session})
+	next("propertyInspectorDidDisappear")
+	// A closed session can no longer edit the key.
+	pi(`{"event":"setSettings","payload":{"city":"Paris"}}`)
+	time.Sleep(50 * time.Millisecond)
+	rec.mu.Lock()
+	defer rec.mu.Unlock()
+	for _, m := range rec.msgs {
+		if m.Type == deckplugin.TypeSettings && strings.Contains(string(m.Settings), "Paris") {
+			t.Fatal("closed settings page changed the key")
+		}
+	}
+}
