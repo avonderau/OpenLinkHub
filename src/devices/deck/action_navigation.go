@@ -20,6 +20,8 @@ func keyDisplayLabel(key KeyConfig) string {
  case "brightness-set":return "Brightness "+key.Target+"%"
  case "hotkey":return "Hotkey"
  case "macro":return "Run Macro"
+ case "url":return "Open Website"
+ case "application":return "Launch App"
  case "media":return nexus.DefaultMediaLabel(key.Target)
  }
  return ""
@@ -44,12 +46,37 @@ func(d *Device)handleKeyPress(index int){
   d.runDeckMacroAsync(target,run)
   return
  }
+ if action=="url"||action=="application"{
+  d.runDeckLaunchAsync(action,target,run)
+  return
+ }
  if run==nil{run=executeDeckInputAction}
  if err:=run(action,target);err!=nil{
   d.mu.Lock()
   d.status=fmt.Sprintf("Button action failed: %v",err)
   d.mu.Unlock()
  }
+}
+
+// A launch may block for up to four seconds while xdg-open/gtk-launch runs.
+// Dispatch only from physical key presses and never hold the HID mutex during
+// the desktop action. Avoid overlapping launches on the same Deck.
+func (d *Device) runDeckLaunchAsync(action,target string,runner func(string,string)error){
+ d.mu.Lock()
+ if d.launchRunning{d.mu.Unlock();return}
+ select{case <-d.done:d.mu.Unlock();return;default:}
+ d.launchRunning=true
+ d.mu.Unlock()
+ go func(){
+  defer func(){d.mu.Lock();d.launchRunning=false;d.mu.Unlock()}()
+  select{case <-d.done:return;default:}
+  if runner==nil{runner=nexus.ExecuteDeckLaunchAction}
+  if err:=runner(action,target);err!=nil{
+   d.mu.Lock()
+   d.status=fmt.Sprintf("Desktop launch failed: %v",err)
+   d.mu.Unlock()
+  }
+ }()
 }
 
 // A saved macro can run for up to 15 seconds. Never block the HID reader,
@@ -145,7 +172,7 @@ func(d *Device)selectKeyAction(index int)(string,string,func(string,string)error
   d.status=fmt.Sprintf("Deck brightness %d%%",level)
   return "","",nil
  }
- if chosen.Action=="hotkey"||chosen.Action=="media"||chosen.Action=="macro" {
+ if chosen.Action=="hotkey"||chosen.Action=="media"||chosen.Action=="macro"||chosen.Action=="url"||chosen.Action=="application" {
   // Layouts are validated when loaded/saved. Revalidate the HID action
   // before dispatch, so malformed memory or stale settings cannot run.
   if chosen.TargetPage!="" {return "","",nil}
@@ -156,6 +183,8 @@ func(d *Device)selectKeyAction(index int)(string,string,func(string,string)error
    if !nexus.ValidDeckMediaAction(chosen.Target){return "","",nil}
   case "macro":
    if !nexus.ValidateDeckSavedMacroID(chosen.Target){return "","",nil}
+  case "url","application":
+   if nexus.ValidateDeckLaunchAction(chosen.Action,chosen.Target)!=nil{return "","",nil}
   }
   return chosen.Action,chosen.Target,d.inputActionRunner
  }
