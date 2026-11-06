@@ -15,6 +15,8 @@ func keyDisplayLabel(key KeyConfig) string {
  case "page-next":return "Next Page"
  case "page-previous":return "Prev Page"
  case "page-go":return "Go to Page"
+ case "folder-open":return "Folder"
+ case "folder-back":return "Back"
  case "brightness-up":return "Brightness +"
  case "brightness-down":return "Brightness -"
  case "brightness-set":return "Brightness "+key.Target+"%"
@@ -196,6 +198,19 @@ func(d *Device)selectKeyAction(index int)(string,string,func(string,string)error
  case "page-go":
   for i:=range d.layout.Pages{
    if d.layout.Pages[i].ID==chosen.TargetPage{next=i;break}
+  }
+ case "folder-open":
+  for i:=range d.layout.Pages{
+   if d.layout.Pages[i].ID==chosen.TargetPage && d.layout.Pages[i].ParentPage==d.layout.Pages[current].ID {
+    next=i;break
+   }
+  }
+ case "folder-back":
+  if chosen.Target!="" || chosen.TargetPage!="" {return "","",nil}
+  parent:=d.layout.Pages[current].ParentPage
+  if parent=="" {return "","",nil}
+  for i:=range d.layout.Pages{
+   if d.layout.Pages[i].ID==parent{next=i;break}
   }
  default:return "","",nil
  }
