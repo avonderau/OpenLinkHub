@@ -25,7 +25,7 @@ func (d *Device) metricLoop() {
 
 func (d *Device) refreshMetricKeys(now time.Time) {
 	d.mu.RLock()
-	if !d.connected || d.Model.Family != "mirabox" {
+	if !d.connected {
 		d.mu.RUnlock()
 		return
 	}
@@ -113,7 +113,7 @@ func (d *Device) refreshMetricKeys(now time.Time) {
 		updatedCount++
 	}
 	if updatedCount > 0 {
-		if err := MiraboxFlush(d.hidDevice, d.Model); err != nil {
+		if err := finishHardwareFrame(d.hidDevice, d.Model); err != nil {
 			d.status = "Metric LCD refresh failed: " + err.Error()
 		} else {
 			d.status = "Connected; live metrics refreshed"

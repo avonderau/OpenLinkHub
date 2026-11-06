@@ -50,8 +50,15 @@ func TestNexusDesktopBrokerForwardsOnlyValidatedLocalLaunches(t *testing.T) {
 	if err := conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
 		t.Fatal(err)
 	}
+	decoder := json.NewDecoder(bufio.NewReader(conn))
 	var event nexusDesktopLaunchEvent
-	if err := json.NewDecoder(bufio.NewReader(conn)).Decode(&event); err != nil {
+	if err := decoder.Decode(&event); err != nil {
+		t.Fatal(err)
+	}
+	if event.Status != nexusDesktopStatusReady {
+		t.Fatalf("expected ready handshake, got %+v", event)
+	}
+	if err := decoder.Decode(&event); err != nil {
 		t.Fatal(err)
 	}
 	if event.Action != "url" || event.Target != "https://example.com/path?q=test" {
@@ -62,6 +69,70 @@ func TestNexusDesktopBrokerForwardsOnlyValidatedLocalLaunches(t *testing.T) {
 	}
 	if err := broker.send("application", "../../bin/sh"); err == nil {
 		t.Fatal("unsafe application should be rejected")
+	}
+}
+
+// A second agent must be refused instead of evicting the first one, so touches
+// stay with one desktop session; the slot frees once the first agent leaves.
+func TestNexusDesktopBrokerKeepsFirstAgentAndRefusesSecond(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nexus", "desktop-launch.sock")
+	broker, err := startNexusDesktopLaunchBroker(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer broker.close()
+	readStatus := func(conn net.Conn) (*json.Decoder, string) {
+		t.Helper()
+		if err := conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+			t.Fatal(err)
+		}
+		decoder := json.NewDecoder(conn)
+		var event nexusDesktopLaunchEvent
+		if err := decoder.Decode(&event); err != nil {
+			t.Fatal(err)
+		}
+		return decoder, event.Status
+	}
+	first, err := net.DialTimeout("unix", path, time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer first.Close()
+	firstDecoder, status := readStatus(first)
+	if status != nexusDesktopStatusReady {
+		t.Fatalf("first agent not accepted: %q", status)
+	}
+	second, err := net.DialTimeout("unix", path, time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer second.Close()
+	if _, status := readStatus(second); status != nexusDesktopStatusBusy {
+		t.Fatalf("second agent should be refused, got %q", status)
+	}
+	if err := broker.send("url", "https://example.com/first"); err != nil {
+		t.Fatal(err)
+	}
+	var event nexusDesktopLaunchEvent
+	if err := firstDecoder.Decode(&event); err != nil || event.Target != "https://example.com/first" {
+		t.Fatalf("first agent lost its launches: %+v %v", event, err)
+	}
+	first.Close()
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		third, err := net.DialTimeout("unix", path, time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, status := readStatus(third)
+		third.Close()
+		if status == nexusDesktopStatusReady {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("slot never freed after first agent disconnected")
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 

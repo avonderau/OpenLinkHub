@@ -26,6 +26,7 @@ var models = []Model{
 	{Name: "Elgato Stream Deck Mini", Family: "elgato", VendorID: 0x0fd9, ProductID: 0x0063, Rows: 2, Columns: 3, KeyPixels: 80},
 	{Name: "Elgato Stream Deck Mini Mk2", Family: "elgato", VendorID: 0x0fd9, ProductID: 0x0090, Rows: 2, Columns: 3, KeyPixels: 80},
 	{Name: "Elgato Stream Deck MK.2", Family: "elgato", VendorID: 0x0fd9, ProductID: 0x0080, Rows: 3, Columns: 5, KeyPixels: 72},
+	{Name: "Elgato Stream Deck MK.2 (scissor keys)", Family: "elgato", VendorID: 0x0fd9, ProductID: 0x00a5, Rows: 3, Columns: 5, KeyPixels: 72},
 	{Name: "Elgato Stream Deck XL", Family: "elgato", VendorID: 0x0fd9, ProductID: 0x006c, Rows: 4, Columns: 8, KeyPixels: 96},
 	{Name: "Elgato Stream Deck XL V2", Family: "elgato", VendorID: 0x0fd9, ProductID: 0x008f, Rows: 4, Columns: 8, KeyPixels: 96},
 }

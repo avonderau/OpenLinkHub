@@ -42,7 +42,7 @@ async function run() {
   const ids = [
     'deck-device-id', 'deck-key-grid', 'deck-page', 'deck-key-label',
     'deck-key-image', 'deck-upload-image', 'deck-remove-image', 'deck-icon-status',
-    'deck-icon-set', 'deck-icon-set-item', 'deck-apply-icon-set',
+    'deck-icon-set', 'deck-icon-set-item', 'deck-icon-set-search', 'deck-apply-icon-set',
     'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-selected-hero', 'deck-artwork-preview',
     'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
     'deck-key-control', 'deck-control-property', 'deck-key-brightness', 'deck-brightness-property',
@@ -54,6 +54,10 @@ async function run() {
     'deck-display-only-note',
     'deck-key-shortcut', 'deck-hotkey-property',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
+    'deck-plugin-property', 'deck-key-plugin', 'deck-plugin-status', 'deck-refresh-plugins',
+    'deck-tab-plugins', 'deck-panel-plugins', 'deck-plugin-manager-refresh', 'deck-plugin-host',
+    'deck-plugin-count', 'deck-plugin-file', 'deck-plugin-install', 'deck-plugin-install-status', 'deck-plugin-list',
+    'deck-plugin-settings', 'deck-plugin-inspector', 'deck-plugin-inspector-frame', 'deck-plugin-inspector-close',
     'deck-key-media', 'deck-media-property',
     'deck-url-property', 'deck-key-url', 'deck-application-property', 'deck-key-application',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
@@ -67,6 +71,7 @@ async function run() {
   nodes['deck-key-grid'].dataset.columns = '6';
   nodes['deck-key-grid'].dataset.family = 'mirabox';
   const received = [];
+  const pluginCalls = [];
   const intervals = [];
   let cpuReading = 55.6;
   const documentListeners = {};
@@ -88,12 +93,25 @@ async function run() {
       }) };
     }
     if (type === '/api/icon-sets') {
-      return { ok: true, status: 200, json: async () => ({ sets: [] }) };
+      return { ok: true, status: 200, json: async () => ({ sets: [{
+        id: 'c'.repeat(24), name: 'Test icons',
+        icons: [{ name: 'Sample arrow', deckId: 'c'.repeat(32), tags: ['navigation'] }]
+      }] }) };
     }
     if (type === '/api/macro/') {
       return { ok: true, status: 200, json: async () => ({
         status: 1,
         data: { '7': { id: 7, name: 'Window Manager' }, '12': { id: 12, name: 'Editor Macro' } },
+      }) };
+    }
+    if (type === '/api/deck/plugins') {
+      pluginCalls.push({ url, method: options.method || 'GET', body: options.body });
+      if (options.method === 'POST') return { ok: true, status: 201, json: async () => ({ plugin: 'com.example.counter' }) };
+      if (options.method === 'DELETE') return { ok: true, status: 204, json: async () => null };
+      return { ok: true, status: 200, json: async () => ({
+        connected: true, canInstall: true, maxUploadBytes: 1024,
+        plugins: [{ uuid: 'com.example.counter', name: 'Counter', version: '1.0', author: 'Example',
+          actions: [{ uuid: 'com.example.counter.increment', name: 'Increment' }] }],
       }) };
     }
     if (type === '/api/deck/icon' && options.method === 'POST') {
@@ -130,7 +148,19 @@ async function run() {
   assert.match(iconSetMarkup, /id="deck-icon-set"/);
   assert.match(iconSetMarkup, /id="deck-icon-set-item"/);
   assert.doesNotMatch(iconSetMarkup, /id="deck-import-icon-set"|id="deck-icon-set-import"/);
-  assert.ok(iconSetMarkup.includes('/settings#olh-settings-devices'));
+  assert.ok(iconSetMarkup.includes('/settings#olh-settings-icons'));
+  assert.match(iconSetMarkup, /class="deck-icon-set-library" open/);
+  assert.match(iconSetMarkup, /<summary><i class="bi bi-grid-3x3-gap"[^>]*><\/i> Icons<\/summary>/);
+  assert.match(iconSetMarkup, /class="deck-artwork-upload-panel"/);
+  assert.doesNotMatch(iconSetMarkup, /Reusable icon sets/);
+  assert.ok(iconSetMarkup.indexOf('class="deck-icon-set-library" open') < iconSetMarkup.indexOf('id="deck-artwork-preview"'));
+  assert.ok(iconSetMarkup.indexOf('id="deck-artwork-preview"') < iconSetMarkup.indexOf('id="deck-icon-set"'),
+    'inline selected-icon preview must sit immediately before the Icon Set picker');
+  assert.doesNotMatch(iconSetMarkup, /class="deck-artwork-selected"/);
+  assert.doesNotMatch(iconSetMarkup, /<label>Artwork<\/label>/);
+  assert.ok(iconSetMarkup.indexOf('class="deck-icon-set-library" open') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'));
+  assert.ok(iconSetMarkup.indexOf('id="deck-remove-image"') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'),
+    'remove artwork and its selected preview remain accessible even while uploads are collapsed');
   assert.match(fs.readFileSync(path.join(__dirname, 'deck-editor.js'), 'utf8'), /\/api\/icon-sets/);
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
@@ -166,6 +196,9 @@ async function run() {
   assert.equal((html.match(/class="deck-metric-option"/g) || []).length, 3,
     'Source is separate; Refresh and Visualization remain two aligned columns');
   const css = fs.readFileSync(path.join(__dirname, '..', 'css', 'deck-editor.css'), 'utf8');
+  assert.match(css,/\.deck-key\[data-has-image="true"\]\[data-has-caption="true"\]/);
+  assert.match(css,/background-size:auto 74%/);
+  assert.match(css,/height:26%/);
   assert.match(css, /\.deck-metric-options\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\) minmax\(0,1\.15fr\)/,
     'metric options remain on the same row in the narrow inspector');
   assert.ok(!html.includes("Mini graph"), "metric UI must use visualization names");
@@ -320,6 +353,21 @@ async function run() {
   // Image-only keys must survive the editor's assignment filtering and
   // show their artwork in the preview without interpreting a file as HTML.
   grid.children[3].dispatch('click');
+  const iconPack = nodes['deck-icon-set'];
+  const iconChoice = nodes['deck-icon-set-item'];
+  iconPack.value = 'c'.repeat(24);
+  iconPack.dispatch('change');
+  iconChoice.value = 'c'.repeat(32);
+  iconChoice.dispatch('change');
+  assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true',
+    'choosing a library icon previews it before applying');
+  assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /c{32}/);
+  assert.equal(nodes['deck-apply-icon-set'].disabled, false);
+  assert.equal(grid.children[3].dataset.hasImage, undefined,
+    'preview selection must not alter the key until Use selected icon');
+  nodes['deck-apply-icon-set'].dispatch('click');
+  assert.match(grid.children[3].style.backgroundImage, /c{32}/,
+    'applying the chosen icon updates the device layout preview');
   const image = nodes['deck-key-image'];
   image.files = [{ type: 'image/png', size: 150, name: 'icon.png' }];
   await nodes['deck-upload-image'].dispatch('click');
@@ -329,6 +377,18 @@ async function run() {
   assert.equal(nodes['deck-artwork-preview'].dataset.hasArtwork, 'true');
   assert.match(nodes['deck-artwork-preview'].style.backgroundImage, /\/api\/deck\/icon/);
   assert.ok(grid.children[3].style.backgroundImage.includes('/api/deck/icon'));
+  assert.equal(grid.children[3].dataset.hasCaption,undefined,
+    'icon-only keys must not display a placeholder label on top of artwork');
+  label.value = 'My app';
+  label.dispatch('input');
+  assert.equal(grid.children[3].dataset.hasCaption,'true',
+    'a custom key label creates the same reserved caption region as hardware');
+  assert.equal(grid.children[3].children[1].className,'deck-key-caption');
+  assert.equal(grid.children[3].children[1].textContent,'My app');
+  label.value = '';
+  label.dispatch('input');
+  assert.equal(grid.children[3].dataset.hasCaption,undefined,
+    'removing a label restores full-size icon rendering');
   await nodes['deck-save'].dispatch('click');
   assert.equal(received[6].pages[1].keys.find(key => key.index === 3).icon, 'a'.repeat(32));
 
@@ -577,6 +637,36 @@ async function run() {
   assert.equal(passive.label, 'System');
   assert.equal(passive.metric, 'cpu.temperature');
   assert.equal(passive.action, undefined);
+
+  // Plugins tab: list, install and remove.
+  nodes['deck-tab-plugins'].dispatch('click');
+  assert.equal(nodes['deck-panel-plugins'].hidden, false);
+  assert.equal(nodes['deck-panel-key'].hidden, true);
+  assert.equal(nodes['deck-plugin-host'].dataset.connected, 'true');
+  assert.equal(nodes['deck-plugin-count'].textContent, '1 plugin installed');
+  const listed = nodes['deck-plugin-list'].children;
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].children[0].children[0].textContent, 'Counter 1.0');
+  const fileInput = nodes['deck-plugin-file'];
+  assert.equal(fileInput.disabled, false);
+  assert.equal(nodes['deck-plugin-install'].disabled, true, 'install needs a chosen file');
+  fileInput.files = [{ name: 'big.streamDeckPlugin', size: 4096 }];
+  fileInput.dispatch('change');
+  await nodes['deck-plugin-install'].dispatch('click');
+  assert.match(nodes['deck-plugin-install-status'].textContent, /too large/);
+  const upload = { name: 'counter.streamDeckPlugin', size: 10 };
+  fileInput.files = [upload];
+  fileInput.dispatch('change');
+  assert.equal(nodes['deck-plugin-install'].disabled, false);
+  await nodes['deck-plugin-install'].dispatch('click');
+  const post = pluginCalls.find(call => call.method === 'POST');
+  assert.ok(post && post.body === upload, 'the chosen file is uploaded as the request body');
+  assert.match(nodes['deck-plugin-install-status'].textContent, /Installed com\.example\.counter/);
+  const removeButton = nodes['deck-plugin-list'].children[0].children[1];
+  await removeButton.dispatch('click');
+  const del = pluginCalls.find(call => call.method === 'DELETE');
+  assert.ok(del && del.url.endsWith('?plugin=com.example.counter'));
+  assert.match(nodes['deck-plugin-install-status'].textContent, /Removed Counter/);
 
   console.log('Deck Editor interaction test passed');
 }

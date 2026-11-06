@@ -31,7 +31,21 @@
   const selectedHero = document.getElementById('deck-selected-hero');
   const iconSetSelect = document.getElementById('deck-icon-set');
   const iconSetItem = document.getElementById('deck-icon-set-item');
+  const iconSetSearch = document.getElementById('deck-icon-set-search');
   const iconSetApply = document.getElementById('deck-apply-icon-set');
+  // A library selection is preview-only until the user assigns it.
+  // Reset that preview when changing keys to avoid showing another key's icon.
+  let iconPreviewCandidate = '';
+  function updateArtworkPreview() {
+    const assigned = selected >= 0 ? assignment(selected)?.icon : '';
+    const icon = validIconID(iconPreviewCandidate) ? iconPreviewCandidate : assigned;
+    const hasIcon = validIconID(icon);
+    artworkPreview.dataset.hasArtwork = String(hasIcon);
+    artworkPreview.style.backgroundImage = hasIcon ? `url("${iconURL(icon)}")` : '';
+    artworkPreview.setAttribute('aria-label', validIconID(iconPreviewCandidate)
+      ? 'Selected library icon preview (not applied yet)'
+      : 'Selected key artwork preview');
+  }
   let iconSets = [];
   const metricInput = document.getElementById('deck-key-metric');
   const metricSourceSelect = document.getElementById('deck-metric-source');
@@ -60,6 +74,21 @@
   const pageParentNote = document.getElementById('deck-page-parent');
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
+  const pluginProperty = document.getElementById('deck-plugin-property');
+  const pluginInput = document.getElementById('deck-key-plugin');
+  const pluginStatus = document.getElementById('deck-plugin-status');
+  const pluginRefreshButton = document.getElementById('deck-refresh-plugins');
+  const pluginManagerRefresh = document.getElementById('deck-plugin-manager-refresh');
+  const pluginSettingsButton = document.getElementById('deck-plugin-settings');
+  const pluginInspector = document.getElementById('deck-plugin-inspector');
+  const pluginInspectorFrame = document.getElementById('deck-plugin-inspector-frame');
+  const pluginInspectorClose = document.getElementById('deck-plugin-inspector-close');
+  const pluginHostStatus = document.getElementById('deck-plugin-host');
+  const pluginCount = document.getElementById('deck-plugin-count');
+  const pluginFileInput = document.getElementById('deck-plugin-file');
+  const pluginInstallButton = document.getElementById('deck-plugin-install');
+  const pluginInstallStatus = document.getElementById('deck-plugin-install-status');
+  const pluginList = document.getElementById('deck-plugin-list');
   const macroProperty = document.getElementById('deck-macro-property');
   const macroInput = document.getElementById('deck-key-macro');
   const macroStatus = document.getElementById('deck-macro-status');
@@ -84,10 +113,12 @@
   const tabs = {
     key: document.getElementById('deck-tab-key'),
     pages: document.getElementById('deck-tab-pages'),
+    plugins: document.getElementById('deck-tab-plugins'),
   };
   const panels = {
     key: document.getElementById('deck-panel-key'),
     pages: document.getElementById('deck-panel-pages'),
+    plugins: document.getElementById('deck-panel-plugins'),
   };
 
   let layout = null;
@@ -97,6 +128,15 @@
   let metricLive = {};
   let savedMacros = {};
   let macroLoadMessage = '';
+  // Plugin actions reported by the desktop agent's plugin host.
+  let pluginCatalog = [];
+  let pluginHostConnected = false;
+  let pluginLoadMessage = '';
+  let pluginCanInstall = false;
+  let pluginMaxUpload = 0;
+  let pluginBusy = false;
+  // The key whose plugin settings page is open, if any.
+  let inspectorKey = -1;
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
@@ -202,7 +242,20 @@
       media: 'Media',
       url: 'Open Website',
       application: 'Launch App',
+      plugin: 'Plugin',
     }[action] || '';
+  }
+
+  function pluginActionName(key) {
+    const plugin = pluginCatalog.find(item => item.uuid === key?.plugin);
+    return plugin?.actions.find(item => item.uuid === key?.pluginAction)?.name || '';
+  }
+
+  function firstPluginAction() {
+    for (const plugin of pluginCatalog) {
+      if (!plugin.error && plugin.actions.length) return { plugin: plugin.uuid, pluginAction: plugin.actions[0].uuid };
+    }
+    return { plugin: '', pluginAction: '' };
   }
 
   function setKeyProperties(patch) {
@@ -219,6 +272,12 @@
     if (!key.action || key.action === 'none') delete key.action;
     if (!['page-go','folder-open'].includes(key.action)) delete key.targetPage;
     if (!['macro','media','hotkey','brightness-set','url','application'].includes(key.action)) delete key.target;
+    if (key.action !== 'plugin') {
+      delete key.plugin;
+      delete key.pluginAction;
+      delete key.pluginSettings;
+    }
+    if (!key.pluginSettings) delete key.pluginSettings;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -253,7 +312,8 @@
       const brightnessLabel = configured?.action === 'brightness-set' ? 'Brightness '+configured.target+'%' : '';
       const folderLabel = configured?.action === 'folder-open'
         ? layout.pages.find(page => page.id === configured.targetPage)?.name || 'Folder' : '';
-      const displayName = configured?.label || mediaLabel || brightnessLabel || folderLabel || actionName(configured?.action) || '—';
+      const pluginLabel = configured?.action === 'plugin' ? pluginActionName(configured) : '';
+      const displayName = configured?.label || mediaLabel || brightnessLabel || folderLabel || pluginLabel || actionName(configured?.action) || '—';
       button.setAttribute('aria-label', `${isDisplayOnly(i) ? 'Display' : 'Key'} ${i + 1}: ${displayName}`);
       if (isDisplayOnly(i)) {
         button.dataset.displayOnly = 'true';
@@ -263,7 +323,12 @@
       const number = document.createElement('small');
       number.textContent = String(i + 1).padStart(2, '0');
       const label = document.createElement('span');
-      label.textContent = displayName;
+      label.className = 'deck-key-caption';
+      const hasArtwork = validIconID(configured?.icon);
+      // Mirabox renders a caption band only when a real label exists.
+      // A standalone image has no placeholder text covering the artwork.
+      const caption = displayName === '—' ? '' : displayName;
+      label.textContent = hasArtwork ? caption : displayName;
       button.append(number);
       if (configured?.action === 'media' && !configured?.metric &&
           !validIconID(configured?.icon) && mediaGlyphs[configured?.target]) {
@@ -295,12 +360,14 @@
         button.appendChild(live);
         button.dataset.hasMetric = 'true';
       }
-      if (validIconID(configured?.icon)) {
-        button.style.backgroundImage = `linear-gradient(180deg, transparent 45%, rgba(0,0,0,.65)), url("${iconURL(configured.icon)}")`;
+      if (hasArtwork) {
+        button.style.backgroundImage = `url("${iconURL(configured.icon)}")`;
         button.dataset.hasImage = 'true';
+        if (caption) button.dataset.hasCaption = 'true';
       }
       button.addEventListener('click', () => {
         selected = i;
+        iconPreviewCandidate = '';
         renderGrid();
         renderInspector();
         selectTab('key');
@@ -345,8 +412,7 @@
     emptySelection.hidden = valid;
     selectedHero.hidden = !valid;
     if (valid) updateSelectedSummary(key);
-    artworkPreview.dataset.hasArtwork = String(validIconID(key?.icon));
-    artworkPreview.style.backgroundImage = validIconID(key?.icon) ? `url("${iconURL(key.icon)}")` : '';
+    updateArtworkPreview();
     labelInput.disabled = !valid;
     labelInput.value = key?.label || '';
     labelInput.placeholder = key?.action === 'media' ? (mediaKeyLabels[key.target] || '') : '';
@@ -478,6 +544,40 @@
       macroInput.appendChild(missing);
     }
     macroInput.value = selectedMacro || macroIDs[0] || '';
+    const hasPlugin = valid && actionInput.value === 'plugin';
+    pluginProperty.hidden = !hasPlugin;
+    pluginInput.replaceChildren();
+    let pluginChoices = 0;
+    for (const plugin of pluginCatalog) {
+      for (const action of plugin.actions) {
+        const option = document.createElement('option');
+        option.value = `${plugin.uuid}|${action.uuid}`;
+        option.textContent = plugin.error ? `${plugin.name}: ${action.name} (unavailable)` : `${plugin.name}: ${action.name}`;
+        option.disabled = Boolean(plugin.error);
+        pluginInput.appendChild(option);
+        if (!plugin.error) pluginChoices++;
+      }
+    }
+    const pluginValue = hasPlugin && key?.plugin ? `${key.plugin}|${key.pluginAction}` : '';
+    if (pluginValue && !Array.from(pluginInput.children).some(option => option.value === pluginValue)) {
+      const missing = document.createElement('option');
+      missing.value = pluginValue;
+      missing.textContent = `Missing plugin action ${key.pluginAction}`;
+      pluginInput.appendChild(missing);
+    }
+    pluginInput.value = pluginValue;
+    pluginInput.disabled = !hasPlugin || !pluginChoices;
+    const pluginAction = hasPlugin ? pluginCatalog.find(plugin => plugin.uuid === key?.plugin)
+      ?.actions.find(action => action.uuid === key?.pluginAction) : null;
+    pluginSettingsButton.disabled = !pluginAction?.hasSettings || !pluginHostConnected;
+    pluginSettingsButton.title = pluginAction && !pluginAction.hasSettings ? 'This plugin action has no settings page' : '';
+    if (inspectorKey !== -1 && (inspectorKey !== selected || !hasPlugin)) closePluginInspector();
+    const broken = pluginCatalog.filter(plugin => plugin.error);
+    pluginStatus.textContent = pluginLoadMessage ||
+      (!pluginHostConnected ? 'The desktop agent is not connected. Start it in your desktop session, then Refresh.' :
+        !pluginCatalog.length ? 'No plugins installed. Install one from the Plugins tab.' :
+          broken.length ? `Experimental. ${broken.map(plugin => `${plugin.name}: ${plugin.error}`).join('; ')}` :
+            'Experimental. The plugin runs in your desktop session when its key is on screen.');
     macroStatus.textContent = macroLoadMessage ||
       (macroIDs.length ? 'Select an existing macro. It runs on this computer when pressed.' :
         'No saved macros found. Create one in OpenLinkHub Macros, then Refresh.');
@@ -566,6 +666,7 @@
         return;
       }
       setKeyProperties({ icon: result.id });
+      iconPreviewCandidate = '';
       renderInspector();
       setMessage('Artwork uploaded. Save & Apply to update the Mirabox LCD.', 'success');
     } catch (error) {
@@ -595,7 +696,9 @@
     const placeholder = document.createElement('option');
     placeholder.value = ''; placeholder.textContent = 'Select icon';
     iconSetItem.appendChild(placeholder);
-    for (const icon of pack?.icons || []) {
+    const query=(iconSetSearch?.value || '').trim().toLocaleLowerCase();
+    const matches=(pack?.icons || []).filter(icon=>!query || icon.name.toLocaleLowerCase().includes(query) || (icon.tags||[]).some(tag=>tag.toLocaleLowerCase().includes(query)));
+    for (const icon of matches.slice(0,150)) {
       const option = document.createElement('option');
       option.value = icon.deckId;
       option.textContent = icon.name;
@@ -616,16 +719,32 @@
       setMessage('Icon packs are unavailable. Check Settings.', 'error');
     }
   }
-  iconSetSelect.addEventListener('change', refreshIconSetPicker);
-  iconSetItem.addEventListener('change', refreshIconSetPicker);
+  iconSetSelect.addEventListener('change', () => {
+    iconPreviewCandidate = '';
+    if(iconSetSearch) iconSetSearch.value='';
+    refreshIconSetPicker();
+    updateArtworkPreview();
+  });
+  iconSetSearch?.addEventListener('input', () => {
+    iconPreviewCandidate = '';
+    refreshIconSetPicker();
+    updateArtworkPreview();
+  });
+  iconSetItem.addEventListener('change', () => {
+    iconPreviewCandidate = validIconID(iconSetItem.value) ? iconSetItem.value : '';
+    iconSetApply.disabled = selected < 0 || !validIconID(iconSetItem.value);
+    updateArtworkPreview();
+  });
   iconSetApply.addEventListener('click', () => {
     if (!validIconID(iconSetItem.value) || selected < 0) return;
     setKeyProperties({ icon: iconSetItem.value });
+    iconPreviewCandidate = '';
     renderInspector();
     setMessage('Icon set artwork assigned. Save & Apply to update the LCD.', 'success');
   });
   removeArtworkButton.addEventListener('click', () => {
     setKeyProperties({ icon: '' });
+    iconPreviewCandidate = '';
     artworkInput.value = '';
     renderInspector();
   });
@@ -657,6 +776,7 @@
       ...(['url', 'application'].includes(actionInput.value)
         ? { target: assignment(selected)?.action === actionInput.value ? assignment(selected)?.target || '' : '' }
         : {}),
+      ...(actionInput.value === 'plugin' && assignment(selected)?.action !== 'plugin' ? firstPluginAction() : {}),
     });
     renderInspector();
   });
@@ -729,6 +849,15 @@
     if (actionInput.value !== 'hotkey') return;
     setKeyProperties({ target: shortcutInput.value });
   });
+  pluginInput.addEventListener('change', () => {
+    if (actionInput.value !== 'plugin') return;
+    const [plugin, pluginAction] = pluginInput.value.split('|');
+    const current = assignment(selected);
+    const same = current?.plugin === plugin && current?.pluginAction === pluginAction;
+    // Settings belong to one action; a different action starts empty.
+    setKeyProperties({ plugin, pluginAction, ...(same ? {} : { pluginSettings: undefined }) });
+    renderGrid();
+  });
   macroInput.addEventListener('change', () => {
     if (actionInput.value !== 'macro') return;
     setKeyProperties({ target: macroInput.value });
@@ -765,6 +894,195 @@
     }
   }
   macroRefreshButton.addEventListener('click', loadSavedMacros);
+
+  const pluginIDPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+  async function loadPlugins() {
+    pluginRefreshButton.disabled = true;
+    pluginManagerRefresh.disabled = true;
+    try {
+      const response = await fetch('/api/deck/plugins', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (!payload || typeof payload.connected !== 'boolean' || !Array.isArray(payload.plugins)) {
+        throw new Error('Invalid plugin list');
+      }
+      pluginHostConnected = payload.connected;
+      pluginCanInstall = payload.canInstall === true;
+      pluginMaxUpload = Number.isFinite(payload.maxUploadBytes) ? payload.maxUploadBytes : 0;
+      pluginCatalog = payload.plugins
+        .filter(plugin => plugin && pluginIDPattern.test(plugin.uuid) && Array.isArray(plugin.actions))
+        .map(plugin => ({
+          uuid: plugin.uuid, name: String(plugin.name || plugin.uuid), error: String(plugin.error || ''),
+          version: String(plugin.version || ''), author: String(plugin.author || ''),
+          actions: plugin.actions.filter(action => action && pluginIDPattern.test(action.uuid))
+            .map(action => ({ uuid: action.uuid, name: String(action.name || action.uuid), hasSettings: Boolean(action.inspector) })),
+        }));
+      pluginLoadMessage = '';
+    } catch (error) {
+      pluginLoadMessage = `Could not load plugins: ${error.message}`;
+    } finally {
+      pluginRefreshButton.disabled = false;
+      pluginManagerRefresh.disabled = false;
+      renderPluginManager();
+      if (layout) {
+        renderGrid();
+        renderInspector();
+      }
+    }
+  }
+  pluginRefreshButton.addEventListener('click', loadPlugins);
+  pluginManagerRefresh.addEventListener('click', loadPlugins);
+
+  function closePluginInspector() {
+    inspectorKey = -1;
+    pluginInspectorFrame.replaceChildren();
+    pluginInspector.hidden = true;
+  }
+
+  // A plugin settings page is plugin code: it runs in a sandboxed frame with
+  // an opaque origin, served and relayed by OpenLinkHub.
+  pluginSettingsButton.addEventListener('click', async () => {
+    if (selected < 0) return;
+    if (dirty) {
+      setMessage('Save & Apply first, so the plugin knows about this key, then open its settings.', 'error');
+      return;
+    }
+    const index = selected;
+    pluginSettingsButton.disabled = true;
+    try {
+      const response = await fetch(`/api/deck/plugin-inspector?serial=${encodeURIComponent(id)}&key=${index}`,
+        { method: 'POST', cache: 'no-store' });
+      if (!response.ok) throw new Error((await response.text()).trim() || `HTTP ${response.status}`);
+      const payload = await response.json();
+      if (typeof payload?.url !== 'string' || !payload.url.startsWith('/api/deck/plugin-ui/')) throw new Error('Invalid settings page');
+      if (selected !== index) return;
+      const frame = document.createElement('iframe');
+      frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups allow-modals');
+      frame.setAttribute('referrerpolicy', 'no-referrer');
+      frame.setAttribute('title', 'Plugin settings');
+      frame.src = payload.url;
+      pluginInspectorFrame.replaceChildren(frame);
+      pluginInspector.hidden = false;
+      inspectorKey = index;
+    } catch (error) {
+      setMessage(`Cannot open plugin settings: ${error.message}`, 'error');
+    } finally {
+      renderInspector();
+    }
+  });
+  pluginInspectorClose.addEventListener('click', closePluginInspector);
+
+  // Keys on any page that use a plugin, so removal can warn about them.
+  function pluginKeyCount(uuid) {
+    let count = 0;
+    for (const page of layout?.pages || []) {
+      for (const key of page.keys || []) {
+        if (key.action === 'plugin' && key.plugin === uuid) count++;
+      }
+    }
+    return count;
+  }
+
+  function renderPluginManager() {
+    pluginHostStatus.dataset.connected = String(pluginHostConnected);
+    pluginHostStatus.textContent = pluginLoadMessage ||
+      (pluginHostConnected ? 'Desktop agent connected. Plugins run in your desktop session.' :
+        'The desktop agent is not connected. Start it in your desktop session to install or run plugins.');
+    const ready = pluginHostConnected && pluginCanInstall && !pluginBusy;
+    pluginFileInput.disabled = !ready;
+    pluginInstallButton.disabled = !ready || !pluginFileInput.files?.length;
+    if (!pluginBusy) {
+      pluginInstallStatus.textContent = !pluginCanInstall
+        ? 'For safety, plugins can only be installed from a browser on the computer running OpenLinkHub.'
+        : 'A .streamDeckPlugin or .zip file. A plugin is a program that runs as your desktop user, so install only plugins you trust.';
+    }
+    pluginCount.textContent = pluginCatalog.length === 1 ? '1 plugin installed' : `${pluginCatalog.length} plugins installed`;
+    const items = pluginCatalog.map(plugin => {
+      const item = document.createElement('li');
+      item.className = 'deck-plugin-item';
+      const text = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = plugin.version ? `${plugin.name} ${plugin.version}` : plugin.name;
+      const detail = document.createElement('small');
+      const actions = plugin.actions.length === 1 ? '1 action' : `${plugin.actions.length} actions`;
+      detail.textContent = [plugin.author, actions, plugin.uuid].filter(Boolean).join(' · ');
+      text.append(name, detail);
+      if (plugin.error) {
+        const error = document.createElement('small');
+        error.className = 'deck-plugin-error';
+        error.textContent = plugin.error;
+        text.append(error);
+      }
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'deck-secondary deck-danger';
+      remove.textContent = 'Remove';
+      remove.disabled = !pluginHostConnected || pluginBusy;
+      remove.setAttribute('aria-label', `Remove ${plugin.name}`);
+      remove.addEventListener('click', () => removePlugin(plugin));
+      item.append(text, remove);
+      return item;
+    });
+    if (!items.length) {
+      const empty = document.createElement('li');
+      empty.className = 'deck-plugin-empty';
+      empty.textContent = pluginHostConnected ? 'No plugins installed yet.' : 'Plugins appear here when the desktop agent is connected.';
+      items.push(empty);
+    }
+    pluginList.replaceChildren(...items);
+  }
+
+  async function pluginRequest(url, options) {
+    const response = await fetch(url, { cache: 'no-store', ...options });
+    if (!response.ok) throw new Error((await response.text()).trim() || `HTTP ${response.status}`);
+    return response.status === 204 ? null : response.json();
+  }
+
+  pluginFileInput.addEventListener('change', renderPluginManager);
+  pluginInstallButton.addEventListener('click', async () => {
+    const file = pluginFileInput.files?.[0];
+    if (!file || pluginBusy) return;
+    if (pluginMaxUpload && file.size > pluginMaxUpload) {
+      pluginInstallStatus.textContent = `That file is too large. The limit is ${Math.floor(pluginMaxUpload / 1048576)} MiB.`;
+      return;
+    }
+    pluginBusy = true;
+    pluginInstallStatus.textContent = `Checking ${file.name}. Confirm the install in the dialog on the OpenLinkHub computer's desktop...`;
+    renderPluginManager();
+    let result = '';
+    try {
+      const body = await pluginRequest('/api/deck/plugins', {
+        method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file,
+      });
+      const installed = String(body?.plugin || file.name);
+      result = `Installed ${installed}. Choose Plugin action on a key to use it.`;
+      pluginFileInput.value = '';
+    } catch (error) {
+      result = `Install failed: ${error.message}`;
+    }
+    pluginBusy = false;
+    await loadPlugins();
+    pluginInstallStatus.textContent = result;
+  });
+
+  async function removePlugin(plugin) {
+    if (pluginBusy) return;
+    const used = pluginKeyCount(plugin.uuid);
+    const warning = used ? ` ${used === 1 ? '1 key uses' : `${used} keys use`} it and will show "Plugin missing".` : '';
+    if (!window.confirm(`Remove ${plugin.name}?${warning}`)) return;
+    pluginBusy = true;
+    renderPluginManager();
+    let result = '';
+    try {
+      await pluginRequest(`/api/deck/plugins?plugin=${encodeURIComponent(plugin.uuid)}`, { method: 'DELETE' });
+      result = `Removed ${plugin.name}.`;
+    } catch (error) {
+      result = `Could not remove ${plugin.name}: ${error.message}`;
+    }
+    pluginBusy = false;
+    await loadPlugins();
+    pluginInstallStatus.textContent = result;
+  }
 
   pageNameInput.addEventListener('input', () => {
     const page = currentPage();
@@ -928,6 +1246,7 @@
     try {
       layout = normalizeLayout(await api('layout'));
       await loadSavedMacros();
+      await loadPlugins();
       await loadIconSets();
       renderPages();
       renderGrid();

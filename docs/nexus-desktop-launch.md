@@ -19,6 +19,49 @@ root, copying X11 credentials, or adding a remote HTTP command endpoint.
 It only accepts validated HTTP(S) URLs and safe desktop-entry IDs from the
 local Nexus daemon. It never accepts shell commands.
 
+## Packaged Linux desktop startup
+
+The Debian and RPM packages install an XDG autostart entry at
+`/etc/xdg/autostart/openlinkhub-nexus-agent.desktop`. It starts the agent in
+an interactive graphical session using a non-root launcher, not in the
+system daemon. The launcher uses the fixed installation/socket paths and
+checks that the session user belongs to the `openlinkhub` group.
+
+**For security, package installation never automatically authorizes all
+local users.** An administrator must explicitly opt in each desktop account:
+
+```sh
+sudo usermod -aG openlinkhub "$(id -un)"
+```
+
+**Log out of the graphical desktop completely and log back in.** Changing
+account groups does not alter the existing session or previously launched
+agents. Check `id -nG` (without a username) in the new session and confirm
+`openlinkhub` appears. The system-wide desktop entry will take effect on the
+next login for authorized users.
+
+The service accepts one desktop agent at a time. The first agent to connect
+receives every launch; any other agent (a second logged-in authorized user,
+or a leftover manually configured per-user autostart entry) is refused and
+keeps retrying, taking over only after the first agent disconnects. Remove
+old per-user autostart entries so they do not compete with the packaged one.
+
+To turn the packaged autostart off for one account, create
+`~/.config/autostart/openlinkhub-nexus-agent.desktop` containing
+`[Desktop Entry]` and `Hidden=true`. Edits an administrator makes to the
+file in `/etc/xdg/autostart` are kept across package upgrades.
+
+If the agent appears to run but launch buttons still fail, read its log.
+An autostarted agent writes to the user journal on systemd desktops
+(`journalctl --user -b | grep "Nexus desktop agent"`) or to
+`~/.xsession-errors` on some X11 sessions. You can also run
+`/usr/libexec/openlinkhub-nexus/desktop-agent` from a desktop terminal to
+see its output directly. Failed socket checks, connection attempts, peer
+validation and refusals because another agent is connected are reported
+when they change, and a successful connection prints a confirmation. Verify
+permissions with
+`namei -l /opt/OpenLinkHub/runtime/nexus-desktop/desktop-launch.sock`.
+
 ## Starting the agent from your desktop
 
 Start the daemon normally, then **from a terminal in the locally logged-in

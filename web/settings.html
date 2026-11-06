@@ -35,6 +35,7 @@
             <!-- Nexus Settings categories: preserve upstream IDs, controls and API bindings. -->
             <div class="olh-settings-shell"><div class="olh-settings-nav" role="tablist" aria-label="Settings categories"><button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-general" aria-controls="olh-settings-general" aria-selected="true" tabindex="0"><i class="bi bi-sliders2" aria-hidden="true"></i><span>General</span></button>
 <button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-devices" aria-controls="olh-settings-devices" aria-selected="false" tabindex="-1"><i class="bi bi-pc-display" aria-hidden="true"></i><span>Devices &amp; Displays</span></button>
+<button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-icons" aria-controls="olh-settings-icons" aria-selected="false" tabindex="-1"><i class="bi bi-images" aria-hidden="true"></i><span>Icon Packs</span></button>
 <button class="olh-settings-nav-tab" type="button" role="tab" id="olh-settings-tab-security" aria-controls="olh-settings-security" aria-selected="false" tabindex="-1"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Security &amp; Backup</span></button></div><div class="olh-settings-tab-panels"><section class="olh-settings-tab-panel" id="olh-settings-general" role="tabpanel" aria-labelledby="olh-settings-tab-general" tabindex="0"><div class="olh-settings-section-intro"><div><h2>General preferences</h2><p>Dashboard appearance, lighting schedules and audio options.</p></div><span class="olh-settings-save-hint"><i class="bi bi-info-circle" aria-hidden="true"></i>Some changes apply immediately; others use Save</span></div><div class="olh-settings-category-grid olh-settings-general-grid"><div class="card system-card text-center">
             <div class="card-header olh-section-header">
                 <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
@@ -322,6 +323,7 @@
             </div>
         </div>
                     </div>
+        </section><section class="olh-settings-tab-panel" id="olh-settings-icons" role="tabpanel" aria-labelledby="olh-settings-tab-icons" tabindex="0" hidden><div class="olh-settings-section-intro"><div><h2>Icon pack management</h2><p>Import, browse, rename and remove reusable icon libraries.</p></div></div>
         <div class="card system-card olh-icon-pack-card">
           <div class="card-header olh-section-header">
             <span class="olh-section-icon" aria-hidden="true"><i class="bi bi-images"></i></span>
@@ -330,12 +332,11 @@
           <div class="card-body text-left">
             <p class="olh-icon-pack-description">Import and manage reusable icons here. Choose installed icons inside the Nexus or Mirabox editor.</p>
             <div class="olh-icon-pack-import">
-              <label for="olh-icon-pack-name">Pack name</label>
-              <input id="olh-icon-pack-name" type="text" class="form-control" maxlength="60" placeholder="e.g. Media and navigation">
-              <label for="olh-icon-pack-file">ZIP containing PNG, JPEG or SVG icons</label>
-              <input id="olh-icon-pack-file" type="file" accept=".zip,application/zip">
+              <input id="olh-icon-pack-file" class="olh-icon-pack-file-input" type="file" accept=".zip,.streamDeckIconPack,application/zip" aria-describedby="olh-icon-pack-file-name">
+              <label for="olh-icon-pack-file" class="system-button olh-icon-pack-choose"><i class="bi bi-folder2-open" aria-hidden="true"></i> Choose file</label>
+              <span id="olh-icon-pack-file-name" class="olh-icon-pack-file-name" role="status" aria-live="polite">No file selected</span>
               <button id="olh-icon-pack-import" class="system-button" type="button"><i class="bi bi-upload" aria-hidden="true"></i> Import icon pack</button>
-              <small>Up to 48 icons per pack, 512 KiB per image and 8 MiB per ZIP. SVG images are converted to PNG.</small>
+              <small>Up to 4,096 icons per pack, 512 KiB per image, 32 MiB per archive, and 64 MiB of extracted files.</small>
             </div>
             <p id="olh-icon-pack-status" role="status" aria-live="polite"></p>
             <div id="olh-icon-pack-library" class="olh-icon-pack-library" aria-label="Installed icon packs"></div>

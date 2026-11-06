@@ -4,11 +4,20 @@
  function initialize() {
   const root = document.getElementById('olh-icon-pack-library');
   if (!root) return;
-  const name = document.getElementById('olh-icon-pack-name');
   const file = document.getElementById('olh-icon-pack-file');
+  const fileName = document.getElementById('olh-icon-pack-file-name');
+  file.addEventListener('change',()=>{
+   fileName.textContent=file.files?.[0]?.name || 'No file selected';
+  });
   const importer = document.getElementById('olh-icon-pack-import');
   const status = document.getElementById('olh-icon-pack-status');
   let working = false;
+  let importBusy = false;
+  function setImportBusy(busy) {
+   importBusy = busy;
+   importer.setAttribute('aria-busy',String(busy));
+   status.classList.toggle('is-loading',busy);
+  }
   function message(text, error) {
    status.textContent = text;
    status.classList.toggle('is-error', !!error);
@@ -27,66 +36,155 @@
    if (text !== undefined) el.textContent = text;
    return el;
   };
+  let selectedPackId = '';
+  let iconQuery = '';
+  let visibleIcons = 120;
+  const previewBatch = 120;
   function showPacks(packs) {
    root.replaceChildren();
    if (!packs.length) {
+    selectedPackId = '';
     root.appendChild(make('p','olh-icon-pack-description','No icon packs imported yet.'));
     return;
    }
+   if (!packs.some(pack=>pack.id===selectedPackId)) selectedPackId=packs[0].id;
+   const selected=packs.find(pack=>pack.id===selectedPackId);
+   const sidebar=make('nav','olh-icon-pack-sidebar');
+   sidebar.setAttribute('aria-label','Installed icon packs');
+   const heading=make('div','olh-icon-pack-sidebar-title','Installed packs');
+   const count=make('small','olh-icon-pack-description',packs.length+' pack(s)');
+   sidebar.append(heading,count);
+   const packList=make('div','olh-icon-pack-list');
    for (const pack of packs) {
-    const card = make('article','olh-icon-pack-item');
-    const title = make('div','olh-icon-pack-item-title');
-    const edit = make('input');
-    edit.type = 'text';
-    edit.value = pack.name;
-    edit.maxLength = 60;
-    edit.setAttribute('aria-label','Pack name for ' + pack.name);
-    title.appendChild(edit);
-    const counter = make('small','olh-icon-pack-description',(pack.icons || []).length + ' icon(s)');
-    const actions = make('div','olh-icon-pack-item-actions');
-    const rename = make('button','system-button','Save name');
-    rename.type='button';
-    rename.addEventListener('click',async()=>{
-     if (working || !edit.value.trim()) return;
-     working=true;rename.disabled=true;
-     try {
-      await request('/api/icon-sets?id='+encodeURIComponent(pack.id),{
-       method:'PUT',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({name:edit.value.trim()})
-      });
-      message('Icon pack renamed.');
-      await refresh();
-     } catch(e){ message(e.message,true); }
-     finally {working=false;rename.disabled=false;}
+    const entry=make('button','olh-icon-pack-option');
+    entry.type='button';
+    entry.setAttribute('aria-current',String(pack.id===selectedPackId));
+    entry.append(make('span','olh-icon-pack-option-name',pack.name));
+    entry.append(make('small','olh-icon-pack-option-count',(pack.icons||[]).length+' icons'));
+    entry.addEventListener('click',()=>{
+     if (working || selectedPackId===pack.id) return;
+     selectedPackId=pack.id;
+     iconQuery='';
+     visibleIcons=previewBatch;
+     showPacks(packs);
     });
-    const remove = make('button','system-button danger','Delete pack');
-    remove.type='button';
-    remove.addEventListener('click',async()=>{
-     if (working || !window.confirm('Delete icon pack "'+pack.name+'"? Icons already used in layouts will be retained.')) return;
-     working=true;remove.disabled=true;
-     try {
-      await request('/api/icon-sets?id='+encodeURIComponent(pack.id),{method:'DELETE'});
-      message('Icon pack deleted. Icons already used in layouts remain available.');
-      await refresh();
-     } catch(e){message(e.message,true);}
-     finally {working=false;remove.disabled=false;}
-    });
-    actions.append(rename,remove);
-    const tiles=make('div','olh-icon-pack-thumbnails');
-    for (const [index, icon] of (pack.icons || []).entries()) {
+    packList.append(entry);
+   }
+   sidebar.append(packList);
+   const details=make('section','olh-icon-pack-detail');
+   details.setAttribute('aria-label','Selected icon pack');
+   const headingRow=make('div','olh-icon-pack-detail-heading');
+   headingRow.append(make('h3','olh-icon-pack-detail-title',selected.name));
+   headingRow.append(make('small','olh-icon-pack-description',(selected.icons||[]).length+' icons'));
+   details.append(headingRow);
+   const toolbar=make('div','olh-icon-pack-item-title');
+   const edit=make('input','form-control');
+   edit.type='text';
+   edit.value=selected.name;
+   edit.maxLength=60;
+   edit.setAttribute('aria-label','Pack name for '+selected.name);
+   const rename=make('button','system-button','Save name');
+   rename.type='button';
+   rename.addEventListener('click',async()=>{
+    if (working || !edit.value.trim()) return;
+    working=true;rename.disabled=true;
+    try {
+     await request('/api/icon-sets?id='+encodeURIComponent(selected.id),{
+      method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:edit.value.trim()})
+     });
+     message('Icon pack renamed.');
+     await refresh();
+    } catch(e){message(e.message,true);}
+    finally {working=false;rename.disabled=false;}
+   });
+   const remove=make('button','system-button danger','Delete pack');
+   remove.type='button';
+   remove.addEventListener('click',async()=>{
+    if (working || !window.confirm('Delete icon pack "'+selected.name+'"? Icons already used in layouts will be retained.')) return;
+    working=true;remove.disabled=true;
+    try {
+     await request('/api/icon-sets?id='+encodeURIComponent(selected.id),{method:'DELETE'});
+     selectedPackId='';
+     iconQuery='';
+     visibleIcons=previewBatch;
+     message('Icon pack deleted. Icons already used in layouts remain available.');
+     await refresh();
+    } catch(e){message(e.message,true);}
+    finally {working=false;remove.disabled=false;}
+   });
+   toolbar.append(edit,rename,remove);
+   details.append(toolbar);
+   if (selected.author || selected.version) {
+    details.append(make('small','olh-icon-pack-description',
+      [selected.author,selected.version && 'Version '+selected.version].filter(Boolean).join(' · ')));
+   }
+   const search=make('input','form-control olh-icon-pack-search');
+   search.type='search';
+   search.value=iconQuery;
+   search.placeholder='Search icon names and tags';
+   search.setAttribute('aria-label','Search icons in '+selected.name);
+   details.append(search);
+   const summary=make('small','olh-icon-pack-description');
+   details.append(summary);
+   const tiles=make('div','olh-icon-pack-thumbnails');
+   details.append(tiles);
+   const loadMore=make('button','system-button olh-icon-pack-load-more','Show more icons');
+   loadMore.type='button';
+   details.append(loadMore);
+   const loading=make('small','olh-icon-pack-image-loading');
+   loading.setAttribute('role','status');
+   loading.setAttribute('aria-live','polite');
+   details.append(loading);
+   let previewGeneration=0;
+   const paintIcons=()=>{
+    const generation=++previewGeneration;
+    tiles.replaceChildren();
+    const query=iconQuery.trim().toLocaleLowerCase();
+    const matching=(selected.icons||[]).map((icon,index)=>({icon,index}))
+     .filter(({icon})=>!query || icon.name.toLocaleLowerCase().includes(query) ||
+       (icon.tags||[]).some(tag=>tag.toLocaleLowerCase().includes(query)));
+    const visible=matching.slice(0,visibleIcons);
+    summary.textContent='Showing '+visible.length+' of '+matching.length+' matching icons';
+    const initialPreviewCount=Math.min(16,visible.length);
+    let settled=0;
+    loading.hidden=initialPreviewCount===0;
+    loading.textContent=initialPreviewCount ? 'Loading icon previews (0/'+initialPreviewCount+')…' : '';
+    for (const [position,{icon,index}] of visible.entries()) {
      const tile=make('div','olh-icon-pack-tile');
      const img=make('img');
-     img.src='/api/icon-sets/preview?id='+encodeURIComponent(pack.id)+'&index='+index;
      img.alt='';
-     img.loading='lazy';
+     img.loading=position<initialPreviewCount?'eager':'lazy';
+     if(position<initialPreviewCount){
+      const finish=()=>{
+       if(generation!==previewGeneration)return;
+       settled++;
+       loading.hidden=settled>=initialPreviewCount;
+       loading.textContent=settled>=initialPreviewCount?'':
+        'Loading icon previews ('+settled+'/'+initialPreviewCount+')…';
+      };
+      img.addEventListener('load',finish,{once:true});
+      img.addEventListener('error',finish,{once:true});
+     }
+     img.src='/api/icon-sets/preview?id='+encodeURIComponent(selected.id)+'&index='+index;
      const caption=make('span','',icon.name);
-     caption.title=icon.name;
+     caption.title=[icon.name,...(icon.tags||[])].join(' · ');
      tile.append(img,caption);
-     tiles.appendChild(tile);
+     tiles.append(tile);
     }
-    card.append(title,counter,actions,tiles);
-    root.appendChild(card);
-   }
+    loadMore.hidden=visible.length>=matching.length;
+   };
+   search.addEventListener('input',()=>{
+    iconQuery=search.value;
+    visibleIcons=previewBatch;
+    paintIcons();
+   });
+   loadMore.addEventListener('click',()=>{
+    visibleIcons+=previewBatch;
+    paintIcons();
+   });
+   paintIcons();
+   root.append(sidebar,details);
   }
   async function refresh() {
    try {
@@ -99,20 +197,27 @@
   importer.addEventListener('click',async()=>{
    const zip=file.files?.[0];
    if (working) return;
-   if (!zip || zip.size<1 || zip.size>8*1024*1024) {
-    message('Select a ZIP file smaller than 8 MiB.',true);return;
+   if (!zip || zip.size<1 || zip.size>32*1024*1024) {
+    message('Select a ZIP or .streamDeckIconPack file no larger than 32 MiB.',true);return;
    }
-   const label=name.value.trim() || zip.name.replace(/\.zip$/i,'');
    working=true;importer.disabled=true;
+   setImportBusy(true);
+   message('Importing and processing icon images…');
    try {
-    await request('/api/icon-sets?name='+encodeURIComponent(label),{
+    const imported=await request('/api/icon-sets',{
      method:'POST',headers:{'Content-Type':'application/zip'},body:zip
     });
-    name.value='';file.value='';
-    message('Icon pack imported. Select its icons from the Nexus or Deck editor.');
+    file.value='';
+    fileName.textContent='No file selected';
+    message('Import complete. Loading icon library…');
+    // Refresh the library before reporting completion so large imports
+    // do not appear to have stalled while metadata is being loaded.
     await refresh();
+    const names=Array.isArray(imported?.sets)?imported.sets.map(set=>set.name):[];
+    message(names.length?'Imported '+names.join(', ')+'. Icon previews are loading.':
+      'Icon pack imported. Icon previews are loading.');
    } catch(e){message('Import failed: '+e.message,true);}
-   finally{working=false;importer.disabled=false;}
+   finally{working=false;importer.disabled=false;setImportBusy(false);}
   });
   refresh();
  }

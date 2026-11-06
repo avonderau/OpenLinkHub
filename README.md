@@ -7,13 +7,13 @@
 ## What is different in this fork?
 
 - **Corsair iCUE NEXUS:** editable 640 × 48 custom screens with metrics, text, bars, graphs, clocks, images, buttons, per-widget colors and gradients, and touch/swipe navigation. Uploaded background images can be static or animated GIFs.
-- **Mirabox Deck LCD keys:** editable key pages, custom PNG/JPEG artwork, keyboard shortcuts, saved macros and media actions. Per-key live metrics support **Value only, Line graph, Bar graph, Fuel gauge, and Ring gauge**, including a per-key visualization color picker. Existing graph layouts are preserved.
+- **Mirabox and Elgato Stream Deck LCD keys (Elgato: experimental, not hardware-tested):** editable key pages, custom PNG/JPEG artwork, keyboard shortcuts, saved macros and media actions. Per-key live metrics support **Value only, Line graph, Bar graph, Fuel gauge, and Ring gauge**, including a per-key visualization color picker. Existing graph layouts are preserved.
 - **Live telemetry:** CPU/GPU temperatures and utilization, fan/pump readings, memory, network and disk throughput (subject to host sensor availability).
 - **Automated checks:** Go and Deck tests, Nexus editor UI tests, security checks and upstream compatibility tests.
 
-- **Shared icon-pack library:** import, rename and delete reusable PNG, JPEG and SVG icon packs in **Settings → Devices & Displays**; select their icons in either device editor. SVG import needs the optional Linux `rsvg-convert` utility (`librsvg2-bin`) and converts the artwork to PNG.
+- **Shared icon-pack library:** import, rename and delete reusable PNG, JPEG and SVG icon packs (up to 4,096 icons per pack, 32 MiB ZIP upload) and Stream Deck `.streamDeckIconPack` archives in **Settings → Icon Packs**; select their icons in either device editor. SVG import needs the optional Linux `rsvg-convert` utility (`librsvg2-bin`) and converts the artwork to PNG.
 
-For setup and feature details, see the [Nexus development notes](docs/nexus-fork.md), [Deck metric guide](docs/deck-live-metrics.md), and [Deck action guide](docs/deck-actions.md).
+For setup and feature details, see the [Nexus development notes](docs/nexus-fork.md), [Deck plugins (experimental)](docs/deck-plugins.md), [Deck metric guide](docs/deck-live-metrics.md), and [Deck action guide](docs/deck-actions.md).
 
 **Development status:** The features described here refer to the repository's development code; published release assets may lag behind `main`. Nexus and Deck customization remains under active development, and physical-device actions and desktop integration should be tested on real hardware. For **Open URL** and **Launch Application** buttons when OpenLinkHub runs as a background service, see the [local Nexus desktop agent setup](docs/nexus-desktop-launch.md). These buttons open on the computer hosting OpenLinkHub, not on a separate WebUI client. Do not assume all upstream installation packages include these features.
 

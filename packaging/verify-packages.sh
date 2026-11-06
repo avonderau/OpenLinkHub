@@ -12,6 +12,9 @@ test "$(dpkg-deb --field "$deb" Architecture)" = amd64
 test "$(rpm -qp --queryformat '%{NAME}' "$rpm")" = openlinkhub-nexus
 test "$(rpm -qp --queryformat '%{VERSION}' "$rpm")" = "$version"
 test "$(rpm -qp --queryformat '%{ARCH}' "$rpm")" = x86_64
+autostart=/etc/xdg/autostart/openlinkhub-nexus-agent.desktop
+dpkg-deb --ctrl-tarfile "$deb" | tar -xO ./conffiles | grep -Fxq "$autostart"
+rpm -qp --configfiles "$rpm" | grep -Fxq "$autostart"
 
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/source" "$work/deb" "$work/rpm"
@@ -24,6 +27,10 @@ for root in "$work/deb" "$work/rpm"; do
   test -f "$root/usr/lib/systemd/system/OpenLinkHub.service"
   test -f "$root/usr/lib/udev/rules.d/99-openlinkhub-nexus.rules"
   test -f "$root/usr/libexec/openlinkhub-nexus/post-install"
+  test -x "$root/usr/libexec/openlinkhub-nexus/desktop-agent"
+  test -f "$root/etc/xdg/autostart/openlinkhub-nexus-agent.desktop"
+  grep -Fq "Exec=/usr/libexec/openlinkhub-nexus/desktop-agent" "$root/etc/xdg/autostart/openlinkhub-nexus-agent.desktop"
+  sh -n "$root/usr/libexec/openlinkhub-nexus/desktop-agent"
   test -d "$root/opt/OpenLinkHub/static"
   test -d "$root/opt/OpenLinkHub/web"
   test -d "$root/opt/OpenLinkHub/database"

@@ -13,6 +13,7 @@ import (
 
 	"OpenLinkHub/src/common"
 	"OpenLinkHub/src/config"
+	"OpenLinkHub/src/deckplugin"
 	"OpenLinkHub/src/devices/nexus"
 	"OpenLinkHub/src/logger"
 	"github.com/sstallion/go-hid"
@@ -21,9 +22,10 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-// Device is the first native Deck implementation. Mirabox gets HID input and
-// static key-image output; Elgato is discovery-only until its protocol driver
-// is implemented. No third-party code executes inside the system daemon.
+// Device is the native Deck implementation. Mirabox and Elgato Stream Deck
+// keypads get HID input and key-image output through deck_hardware.go.
+// No third-party code executes inside the system daemon; plugin keys are
+// served by the desktop agent's plugin host (plugin_bridge.go).
 // hidSession isolates the HID handle from reconnect and protocol tests.
 type hidSession interface {
 	Write([]byte) (int, error)
@@ -62,6 +64,11 @@ type Device struct {
 	done              chan struct{}
 	readerDone        chan struct{}
 	once              sync.Once
+	// Plugin keys on the active page, and what each plugin last drew.
+	// pluginHeld maps a pressed plugin key to its context until release.
+	pluginHeld      map[int]string
+	pluginInstances map[string]deckplugin.Instance
+	pluginKeys      map[string]*pluginKey
 }
 
 type Status struct {
@@ -110,7 +117,7 @@ func Init(info *hid.DeviceInfo) *common.Device {
 		Product: m.Name, Serial: id, Manufacturer: m.Family, Model: m,
 		Template: "deck.html", root: config.GetConfig().ConfigPath,
 		pressedKey: -1, done: make(chan struct{}),
-		status: "Detected; native Elgato driver not implemented yet",
+		status: "Detected",
 	}
 	l, err := LoadLayout(d.root, id, m)
 	if err != nil {
@@ -118,7 +125,10 @@ func Init(info *hid.DeviceInfo) *common.Device {
 		l = DefaultLayout(m)
 	}
 	d.layout = l
-	if m.Family == "mirabox" {
+	if m.Family == "elgato" {
+		logger.Log(logger.Fields{"model": m.Name}).Warn("Elgato Stream Deck support is experimental and has not been tested on physical hardware")
+	}
+	if m.Family == "mirabox" || m.Family == "elgato" {
 		handle, err := hid.OpenPath(info.Path)
 		if err != nil {
 			logger.Log(logger.Fields{"error": err, "model": m.Name, "path": info.Path}).Warn("Unable to open Deck HID device")
@@ -132,6 +142,7 @@ func Init(info *hid.DeviceInfo) *common.Device {
 			logger.Log(logger.Fields{"error": err, "model": m.Name, "path": info.Path}).Warn("Unable to initialize Deck HID session")
 			return nil
 		}
+		plugins.registerDevice(d, true)
 		d.readerDone = make(chan struct{})
 		go d.listen()
 		go d.metricLoop()
@@ -158,6 +169,8 @@ func (d *Device) Stop() {
 		defer d.mu.Unlock()
 		d.connected = false
 		d.status = "Stopped"
+		d.dropPluginKeysLocked()
+		go plugins.registerDevice(d, false)
 		if d.hidDevice != nil {
 			_ = d.hidDevice.Close()
 			d.hidDevice = nil
@@ -176,7 +189,7 @@ func (d *Device) GetStatus() Status {
 	return Status{Connected: d.connected, Status: d.status, LastPressedKey: d.pressedKey,
 		ButtonEvents: d.eventCount, ActivePage: d.layout.ActivePage,
 		Metrics: copyDeckMetrics(nexus.MetricSnapshot(d.metricValues)), MetricSampledAt: sampledAt,
-		KeyOutputSupported: d.hidDevice != nil && d.Model.Family == "mirabox"}
+		KeyOutputSupported: d.hidDevice != nil}
 }
 
 func cloneLayout(l Layout) Layout {
@@ -211,6 +224,7 @@ func (d *Device) UpdateLayout(layout Layout) (LayoutResult, error) {
 	// brightness values during Save & Apply, even when the older browser
 	// snapshot has a nonzero setting from an earlier key press.
 	layout.Brightness = d.layout.Brightness
+	keepPluginSettings(&layout, d.layout)
 	if err := SaveLayout(d.root, d.Serial, d.Model, layout); err != nil {
 		return LayoutResult{}, err
 	}
@@ -218,10 +232,6 @@ func (d *Device) UpdateLayout(layout Layout) (LayoutResult, error) {
 	// A new metric or refresh interval must become due immediately after save.
 	d.metricUpdated = nil
 	result := LayoutResult{Saved: true}
-	if d.Model.Family != "mirabox" {
-		result.Message = "Saved. Elgato image output is not available yet."
-		return result, nil
-	}
 	if d.hidDevice == nil || !d.connected {
 		d.status = "Disconnected; layout saved and queued for reconnect"
 		result.Message = "Saved locally; display will sync after reconnect."
@@ -232,9 +242,9 @@ func (d *Device) UpdateLayout(layout Layout) (LayoutResult, error) {
 		result.Message = "Saved locally, but device display update failed: " + err.Error()
 		return result, nil
 	}
-	d.status = "Connected; layout applied to display"
+	d.status = "Connected; layout applied to display" + experimentalNote(d.Model)
 	result.Applied = true
-	result.Message = "Saved and applied to Mirabox display."
+	result.Message = "Saved and applied to Deck display."
 	return result, nil
 }
 
@@ -242,7 +252,7 @@ func (d *Device) drawActivePageLocked() error {
 	if d.hidDevice == nil {
 		return errors.New("Deck not connected")
 	}
-	if !d.initialized {
+	if !d.initialized && d.Model.Family == "mirabox" {
 		if err := MiraboxInitialize(d.hidDevice, d.Model); err != nil {
 			return err
 		}
@@ -258,6 +268,7 @@ func (d *Device) drawActivePageLocked() error {
 	if page == nil {
 		return errors.New("no active page")
 	}
+	d.syncPluginKeysLocked()
 	keys := make(map[int]KeyConfig, len(page.Keys))
 	for _, key := range page.Keys {
 		keys[key.Index] = key
@@ -267,7 +278,7 @@ func (d *Device) drawActivePageLocked() error {
 			return err
 		}
 	}
-	return MiraboxFlush(d.hidDevice, d.Model)
+	return finishHardwareFrame(d.hidDevice, d.Model)
 }
 
 // drawKeyLocked is shared by full-page transfers and selective metric refreshes.
@@ -291,7 +302,9 @@ func (d *Device) drawKeyLocked(index int, key KeyConfig) error {
 		}
 	}
 	var frame image.Image
-	if key.Metric != "" {
+	if key.Action == "plugin" {
+		frame = d.renderPluginKeyLocked(size, key, artwork)
+	} else if key.Metric != "" {
 		qualified := nexus.QualifiedMetricKey(key.Metric, key.MetricSource)
 		value, available := d.metricValues[qualified]
 		frame = renderDeckMetric(size, key, value, available, d.metricHistory[qualified], artwork)
@@ -304,11 +317,7 @@ func (d *Device) drawKeyLocked(index int, key KeyConfig) error {
 	} else {
 		frame = renderKeyLabel(size, keyDisplayLabel(key))
 	}
-	jpegData, err := MiraboxKeyImage(d.Model, index, frame)
-	if err != nil {
-		return err
-	}
-	return MiraboxWriteKeyJPEG(d.hidDevice, d.Model, index, jpegData)
+	return writeHardwareKey(d.hidDevice, d.Model, index, frame)
 }
 func renderKeyLabel(size int, label string) image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
@@ -334,7 +343,7 @@ func renderKeyLabel(size int, label string) image.Image {
 // attachSession initializes a new handle and replays the saved layout.
 // A display-write failure must not make a healthy HID input connection disappear.
 func (d *Device) attachSession(handle hidSession) error {
-	if err := initializeMiraboxSession(handle, d.Model); err != nil {
+	if err := initializeHardwareSession(handle, d.Model); err != nil {
 		return err
 	}
 	d.mu.Lock()
@@ -345,8 +354,8 @@ func (d *Device) attachSession(handle hidSession) error {
 	default:
 	}
 	if d.layout.Brightness != 0 {
-		// Replay persisted brightness after Mirabox's 50% startup default.
-		if err := MiraboxBrightness(handle, d.Model, uint8(d.layout.Brightness)); err != nil {
+		// Replay persisted brightness after the 50% startup default.
+		if err := setHardwareBrightness(handle, d.Model, uint8(d.layout.Brightness)); err != nil {
 			return fmt.Errorf("restore brightness: %w", err)
 		}
 	}
@@ -357,18 +366,24 @@ func (d *Device) attachSession(handle hidSession) error {
 		d.status = "Connected; display update failed: " + err.Error()
 		logger.Log(logger.Fields{"error": err, "model": d.Model.Name}).Warn("Deck display image transfer failed")
 	} else {
-		d.status = "Connected; layout applied to display"
+		d.status = "Connected; layout applied to display" + experimentalNote(d.Model)
 	}
 	return nil
 }
 
 // matchesReconnectCandidate filters interface and model identity. Stable
 // Mirabox v1 IDs intentionally cannot distinguish two identical legacy units.
+// Mirabox exposes several HID interfaces and only 0xffa0/1 is the command
+// interface; Elgato keypads expose a single interface.
 func (d *Device) matchesReconnectCandidate(info *hid.DeviceInfo) bool {
-	return info != nil && info.Path != "" &&
-		info.VendorID == d.Model.VendorID && info.ProductID == d.Model.ProductID &&
-		info.UsagePage == 0xffa0 && info.Usage == 1 &&
-		deviceID(info, d.Model) == d.Serial
+	if info == nil || info.Path == "" ||
+		info.VendorID != d.Model.VendorID || info.ProductID != d.Model.ProductID {
+		return false
+	}
+	if d.Model.Family == "mirabox" && (info.UsagePage != 0xffa0 || info.Usage != 1) {
+		return false
+	}
+	return deviceID(info, d.Model) == d.Serial
 }
 
 // findReconnectCandidate deliberately matches VID, PID, interface usage and
@@ -412,6 +427,8 @@ func (d *Device) tryReconnect() {
 func (d *Device) listen() {
 	defer close(d.readerDone)
 	buffer := make([]byte, 512)
+	// Elgato reports the whole key state; remember it to find new presses.
+	var keyStates []bool
 	for {
 		select {
 		case <-d.done:
@@ -440,20 +457,35 @@ func (d *Device) listen() {
 				d.hidDevice = nil
 				d.connected = false
 				d.initialized = false
-				d.status = "Disconnected; waiting for Mirabox to reconnect"
+				d.status = "Disconnected; waiting for Deck to reconnect"
+				d.releasePluginKeysLocked()
+				d.syncPluginKeysLocked()
 			}
 			d.mu.Unlock()
 			_ = handle.Close()
+			keyStates = nil
 			logger.Log(logger.Fields{"error": err, "serial": d.Serial}).Warn("Deck HID disconnected; retrying")
 			continue
 		}
 		if n <= 0 {
 			continue
 		}
-		key, pressed, ok := MiraboxKeyEvent(d.Model, buffer[:n])
-		if !ok || !pressed {
-			continue
+		var presses, releases []int
+		presses, releases, keyStates = hardwareKeyEvents(d.Model, buffer[:n], keyStates)
+		for _, key := range presses {
+			d.handleKeyPress(key)
 		}
-		d.handleKeyPress(key)
+		for _, key := range releases {
+			d.handleKeyRelease(key)
+		}
 	}
+}
+
+// experimentalNote marks status text for the Elgato driver, which has not
+// been tested on physical hardware yet.
+func experimentalNote(m Model) string {
+	if m.Family == "elgato" {
+		return " (experimental Elgato driver)"
+	}
+	return ""
 }

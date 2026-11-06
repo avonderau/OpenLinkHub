@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -22,9 +23,20 @@ import (
 const nexusDesktopSocketName = "desktop-launch.sock"
 
 type nexusDesktopLaunchEvent struct {
-	Action string `json:"action"`
-	Target string `json:"target"`
+	Action string `json:"action,omitempty"`
+	Target string `json:"target,omitempty"`
+	// Status is set only on broker handshake lines, never on launch events.
+	Status string `json:"status,omitempty"`
 }
+
+// Handshake statuses sent to each agent right after it connects. Only one
+// agent may own the launcher at a time, so touches cannot hop between
+// desktop sessions when several authorized users or duplicate agents run.
+const (
+	nexusDesktopStatusReady = "ready"
+	nexusDesktopStatusBusy  = "busy"
+)
+
 type nexusDesktopLaunchBroker struct {
 	mu       sync.Mutex
 	listener net.Listener
@@ -106,9 +118,22 @@ func nexusDesktopPeerUID(conn net.Conn) (uint32, error) {
 	return creds.Uid, nil
 }
 func startNexusDesktopLaunchBroker(path string) (*nexusDesktopLaunchBroker, error) {
+	listener, err := ListenDesktopAgentSocket(path)
+	if err != nil {
+		return nil, err
+	}
+	b := &nexusDesktopLaunchBroker{listener: listener, path: path}
+	go b.accept()
+	return b, nil
+}
+
+// ListenDesktopAgentSocket creates a daemon-owned, group-accessible Unix
+// socket for a desktop agent, with the same ownership and permission checks
+// as the launch socket. The Deck plugin bridge uses it too.
+func ListenDesktopAgentSocket(path string) (net.Listener, error) {
 	// Linux AF_UNIX sun_path is 108 bytes including the terminating NUL.
 	if len(path) > 107 {
-		return nil, errors.New("Nexus launcher socket path exceeds Linux Unix socket limit (107 bytes)")
+		return nil, errors.New("desktop agent socket path exceeds Linux Unix socket limit (107 bytes)")
 	}
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0750); err != nil {
@@ -163,9 +188,35 @@ func startNexusDesktopLaunchBroker(path string) (*nexusDesktopLaunchBroker, erro
 		os.Remove(path)
 		return nil, err
 	}
-	b := &nexusDesktopLaunchBroker{listener: listener, path: path}
-	go b.accept()
-	return b, nil
+	return listener, nil
+}
+
+// DialDesktopAgentSocket connects a desktop agent to a daemon socket after
+// checking the socket's permissions and the peer's identity.
+func DialDesktopAgentSocket(path string) (net.Conn, error) {
+	expectedOwner, err := verifyNexusDesktopSocket(path)
+	if err != nil {
+		return nil, fmt.Errorf("socket verification: %w", err)
+	}
+	conn, err := net.DialTimeout("unix", path, 500*time.Millisecond)
+	if err != nil {
+		return nil, fmt.Errorf("socket connection: %w", err)
+	}
+	peer, err := nexusDesktopPeerUID(conn)
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("peer verification: %w", err)
+	}
+	if peer != expectedOwner {
+		conn.Close()
+		return nil, fmt.Errorf("peer verification: unexpected socket owner UID %d (expected %d)", peer, expectedOwner)
+	}
+	return conn, nil
+}
+
+// DesktopAgentSocketDir is the runtime directory that holds the agent sockets.
+func DesktopAgentSocketDir(root string) string {
+	return filepath.Dir(nexusDesktopLaunchSocketPath(root))
 }
 func (b *nexusDesktopLaunchBroker) accept() {
 	for {
@@ -175,11 +226,40 @@ func (b *nexusDesktopLaunchBroker) accept() {
 		}
 		b.mu.Lock()
 		if b.client != nil {
-			b.client.Close()
+			// Keep the agent that is already connected. Replacing it would make
+			// two agents evict each other every retry, sending touches to
+			// whichever desktop session happened to reconnect last.
+			b.mu.Unlock()
+			writeNexusDesktopStatus(conn, nexusDesktopStatusBusy)
+			conn.Close()
+			continue
+		}
+		if writeNexusDesktopStatus(conn, nexusDesktopStatusReady) != nil {
+			b.mu.Unlock()
+			conn.Close()
+			continue
 		}
 		b.client = conn
 		b.mu.Unlock()
+		go b.watchClient(conn)
 	}
+}
+
+func writeNexusDesktopStatus(conn net.Conn, status string) error {
+	conn.SetWriteDeadline(time.Now().Add(500 * time.Millisecond))
+	return json.NewEncoder(conn).Encode(nexusDesktopLaunchEvent{Status: status})
+}
+
+// Agents never write to the socket, so a completed read means the agent
+// disconnected. Free the slot right away so another agent can take over.
+func (b *nexusDesktopLaunchBroker) watchClient(conn net.Conn) {
+	io.Copy(io.Discard, conn)
+	b.mu.Lock()
+	if b.client == conn {
+		b.client = nil
+	}
+	b.mu.Unlock()
+	conn.Close()
 }
 func (b *nexusDesktopLaunchBroker) send(action, target string) error {
 	if err := validateNexusLaunchAction(action, target); err != nil {
@@ -236,6 +316,14 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 	if execute == nil {
 		return errors.New("missing desktop launcher")
 	}
+	lastFailure := ""
+	reportFailure := func(stage string, err error) {
+		message := fmt.Sprintf("%s: %v", stage, err)
+		if message != lastFailure {
+			fmt.Fprintf(os.Stderr, "Nexus desktop agent connection failed: %s\n", message)
+			lastFailure = message
+		}
+	}
 	for {
 		if ctx.Err() != nil {
 			return nil
@@ -244,6 +332,7 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 		// local users. A disconnected service is retried without executing events.
 		expectedOwner, err := verifyNexusDesktopSocket(socketPath)
 		if err != nil {
+			reportFailure("socket verification", err)
 			if waitNexusAgentRetry(ctx) != nil {
 				return nil
 			}
@@ -251,6 +340,7 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 		}
 		conn, err := net.DialTimeout("unix", socketPath, 500*time.Millisecond)
 		if err != nil {
+			reportFailure("socket connection", err)
 			if waitNexusAgentRetry(ctx) != nil {
 				return nil
 			}
@@ -258,6 +348,11 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 		}
 		peer, err := nexusDesktopPeerUID(conn)
 		if err != nil || peer != expectedOwner {
+			if err != nil {
+				reportFailure("peer verification", err)
+			} else {
+				reportFailure("peer verification", fmt.Errorf("unexpected socket owner UID %d (expected %d)", peer, expectedOwner))
+			}
 			conn.Close()
 			if waitNexusAgentRetry(ctx) != nil {
 				return nil
@@ -279,6 +374,15 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 			if json.Unmarshal(scanner.Bytes(), &event) != nil {
 				continue
 			}
+			if event.Status == nexusDesktopStatusReady {
+				lastFailure = ""
+				fmt.Fprintln(os.Stderr, "Nexus desktop agent connected to local service")
+				continue
+			}
+			if event.Status == nexusDesktopStatusBusy {
+				reportFailure("connection refused", errors.New("another Nexus desktop agent is already connected; launches go to that session"))
+				break
+			}
 			if validateNexusLaunchAction(event.Action, event.Target) != nil {
 				continue
 			}
@@ -287,6 +391,9 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 			}
 		}
 		close(done)
+		if err := scanner.Err(); err != nil && ctx.Err() == nil {
+			reportFailure("connection lost", err)
+		}
 		conn.Close()
 		if waitNexusAgentRetry(ctx) != nil {
 			return nil
