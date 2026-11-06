@@ -190,3 +190,35 @@ func TestDeckRegistrySnapshotsAreIndependentDuringRegistration(t *testing.T) {
 	if GetDevice(serial)==nil{t.Fatal("caller mutated live registry through snapshot")}
 	wg.Wait()
 }
+
+func TestDeckHotplugShutdownWaitsForInflightEnumeration(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		runDeckDiscoveryPoller(ctx, time.Millisecond, func() {
+			close(entered)
+			<-release
+		})
+	}()
+	select {
+	case <-entered:
+	case <-time.After(time.Second):
+		t.Fatal("scanner never entered enumeration")
+	}
+	cancel()
+	select {
+	case <-done:
+		t.Fatal("poller exited before its in-flight HID scan finished")
+	default:
+	}
+	close(release)
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("shutdown did not wait for in-flight scan")
+	}
+}
