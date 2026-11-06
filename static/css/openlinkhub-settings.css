@@ -315,15 +315,61 @@
 }
 .olh-settings-page #olh-icon-pack-status.is-error{color:#ebaf9d}
 .olh-settings-page .olh-icon-pack-library{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;
+  display:grid;grid-template-columns:minmax(200px,260px) minmax(0,1fr);
+  gap:14px;align-items:start;
 }
+.olh-settings-page .olh-icon-pack-sidebar,
+.olh-settings-page .olh-icon-pack-detail{
+  min-width:0;padding:14px;border:1px solid var(--olh-line-strong);
+  border-radius:10px;background:rgba(12,13,15,.22);
+}
+.olh-settings-page .olh-icon-pack-sidebar-title{
+  color:var(--olh-text);font-weight:650;margin-bottom:3px;
+}
+.olh-settings-page .olh-icon-pack-list{
+  display:flex;flex-direction:column;gap:5px;
+  max-height:580px;overflow-y:auto;margin-top:10px;
+}
+.olh-settings-page .olh-icon-pack-option{
+  display:flex;flex-direction:column;align-items:stretch;gap:3px;
+  width:100%;padding:10px 11px;text-align:left;cursor:pointer;
+  border:1px solid var(--olh-line);border-radius:8px;
+  color:var(--olh-text);background:rgba(12,13,15,.22);
+}
+.olh-settings-page .olh-icon-pack-option:hover,
+.olh-settings-page .olh-icon-pack-option:focus-visible{
+  border-color:var(--olh-line-strong);background:rgba(128,128,128,.12);
+}
+.olh-settings-page .olh-icon-pack-option[aria-current="true"]{
+  border-color:var(--olh-accent,#c79848);
+  background:rgba(199,152,72,.13);
+}
+.olh-settings-page .olh-icon-pack-option-name{
+  font-size:.83rem;overflow-wrap:anywhere;
+}
+.olh-settings-page .olh-icon-pack-option-count{color:var(--olh-muted);font-size:.72rem}
+.olh-settings-page .olh-icon-pack-detail-heading{
+  display:flex;align-items:baseline;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;margin-bottom:12px;
+}
+.olh-settings-page .olh-icon-pack-detail-title{
+  margin:0;color:var(--olh-text);font-size:1rem;font-weight:650;
+}
+.olh-settings-page .olh-icon-pack-search{
+  width:100%;margin:8px 0 10px;
+}
+.olh-settings-page .olh-icon-pack-load-more{
+  margin-top:12px;
+}
+.olh-settings-page .olh-icon-pack-load-more[hidden]{display:none}
+
 .olh-settings-page .olh-icon-pack-item{
   padding:12px;border:1px solid var(--olh-line-strong);border-radius:10px;
   background:rgba(12,13,15,.22);
 }
-.olh-settings-page .olh-icon-pack-item-title{display:flex;gap:9px;align-items:center;margin-bottom:9px}
+.olh-settings-page .olh-icon-pack-item-title{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:9px}
 .olh-settings-page .olh-icon-pack-item-title input{
-  flex:1;min-width:0;max-width:100%;padding:7px 9px;
+  flex:1 1 180px;min-width:0;padding:7px 9px;
 }
 .olh-settings-page .olh-icon-pack-item-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 .olh-settings-page .olh-icon-pack-item-actions button{font-size:.77rem;padding:7px 10px}
