@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-launch-actions-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-folders-1">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -227,6 +227,8 @@
                           <option value="page-go">Go to page</option>
                           <option value="page-previous">Previous page</option>
                           <option value="page-next">Next page</option>
+                          <option value="folder-open">Open folder</option>
+                          <option value="folder-back">Back to parent folder</option>
                           <option value="brightness-up">Brightness up (+10%)</option>
                           <option value="brightness-down">Brightness down (−10%)</option>
                           <option value="brightness-set">Set brightness</option>
@@ -235,6 +237,16 @@
                       <div class="deck-property" id="deck-target-property" hidden>
                         <label for="deck-key-target-page">Destination page</label>
                         <select class="form-select" id="deck-key-target-page" disabled></select>
+                      </div>
+                      <div class="deck-property" id="deck-folder-target-property" hidden>
+                        <label for="deck-key-folder">Folder destination</label>
+                        <select class="form-select" id="deck-key-folder" disabled></select>
+                        <div class="deck-action-links">
+                          <button type="button" class="deck-secondary" id="deck-create-folder" disabled>
+                            <i class="bi bi-folder-plus" aria-hidden="true"></i> Create folder
+                          </button>
+                        </div>
+                        <small>Folders are child pages with a Back key. Save &amp; Apply when finished.</small>
                       </div>
                       <div class="deck-property" id="deck-brightness-property" hidden>
                         <label for="deck-key-brightness">Brightness level</label>
@@ -295,6 +307,7 @@
                 </div>
                 <div class="deck-property">
                   <label for="deck-page-name">Page name</label>
+                  <small id="deck-page-parent">Top-level page</small>
                   <input type="text" class="form-control" id="deck-page-name" maxlength="64" autocomplete="off">
                   <div class="deck-page-actions">
                     <button id="deck-add-page" class="deck-secondary" type="button"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add Page</button>
@@ -315,7 +328,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=deck-launch-actions-1"></script>
+<script src="/static/js/deck-editor.js?v=deck-folders-1"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
