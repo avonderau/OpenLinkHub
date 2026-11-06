@@ -27,7 +27,7 @@ import (
 const (
 	MaxDeckIconBytes     = 512 * 1024
 	maxDeckIconDimension = 512
-	maxDeckIconFiles     = 256
+	maxDeckIconFiles     = 8192
 	deckIconPixels       = 128
 )
 
