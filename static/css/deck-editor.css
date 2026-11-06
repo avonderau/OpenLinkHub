@@ -678,3 +678,41 @@
   color:var(--deck-ink);
   font-weight:650;
 }
+
+
+/* Compact icon controls: preview belongs inside Icons, alongside Icon Set.
+ * Custom uploads remain available in the same block but collapsed. */
+.deck-workspace .deck-icons-property > .deck-icon-set-library {
+  margin-top:0;
+}
+.deck-workspace .deck-icon-set-top-row {
+  display:grid;
+  grid-template-columns:56px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+  min-width:0;
+}
+.deck-workspace .deck-icon-set-picker{
+  display:grid;
+  gap:5px;
+  min-width:0;
+}
+.deck-workspace .deck-icon-set-picker label{
+  margin:0;
+}
+.deck-workspace .deck-icon-set-top-row .deck-artwork-preview{
+  width:56px;
+  height:56px;
+}
+.deck-workspace .deck-icon-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:7px;
+}
+.deck-workspace .deck-icon-actions button{
+  min-width:0;
+}
+.deck-workspace .deck-icons-property .deck-artwork-upload-panel{
+  margin-top:4px;
+}
