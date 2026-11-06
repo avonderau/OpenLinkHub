@@ -184,17 +184,32 @@ func (d *Device) ReadIcon(id string) ([]byte, error) {
 	return ReadDeckIcon(d.root, id)
 }
 
-// Background with letterboxing, then the uploaded image and optional label.
+// Render artwork into the upper portion of the key whenever a caption is
+// present. Keeping a dedicated 22px band prevents text obscuring the image.
+// The no-caption path intentionally retains full-size artwork.
 func renderDeckArtwork(size int, icon image.Image, label string) image.Image {
-	canvas := renderKeyLabel(size, "")
+	canvas := renderKeyLabel(size, "").(*image.RGBA)
 	if icon != nil {
-		xdraw.CatmullRom.Scale(canvas.(*image.RGBA), canvas.Bounds(), icon, icon.Bounds(), draw.Over, nil)
+		artworkBounds := canvas.Bounds()
+		if strings.TrimSpace(label) != "" {
+			artworkBounds.Max.Y = size - 22
+		}
+		if artworkBounds.Dy() > 0 {
+			src := icon.Bounds()
+			scale := min(float64(artworkBounds.Dx())/float64(src.Dx()),
+				float64(artworkBounds.Dy())/float64(src.Dy()))
+			width := max(1, int(float64(src.Dx())*scale))
+			height := max(1, int(float64(src.Dy())*scale))
+			left := artworkBounds.Min.X + (artworkBounds.Dx()-width)/2
+			top := artworkBounds.Min.Y + (artworkBounds.Dy()-height)/2
+			target := image.Rect(left, top, left+width, top+height)
+			xdraw.CatmullRom.Scale(canvas, target, icon, src, draw.Over, nil)
+		}
 	}
-	if label == "" {
+	if strings.TrimSpace(label) == "" {
 		return canvas
 	}
-	// Keep text legible against a photograph without treating it as markup.
-	return drawDeckKeyCaption(canvas.(*image.RGBA), label)
+	return drawDeckKeyCaption(canvas, label)
 }
 
 func drawDeckKeyCaption(img *image.RGBA, label string) image.Image {
@@ -207,8 +222,7 @@ func drawDeckKeyCaption(img *image.RGBA, label string) image.Image {
 		return img
 	}
 	band := image.Rect(0, size-22, size, size)
-	draw.DrawMask(img, band, image.NewUniform(color.Black), image.Point{},
-		image.NewUniform(color.Alpha{A: 180}), image.Point{}, draw.Over)
+	draw.Draw(img, band, image.NewUniform(color.RGBA{A: 255}), image.Point{}, draw.Src)
 	width := font.MeasureString(basicfont.Face7x13, string(text)).Ceil()
 	drawer := font.Drawer{
 		Dst: img, Src: image.NewUniform(color.White), Face: basicfont.Face7x13,
