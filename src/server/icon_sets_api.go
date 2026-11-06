@@ -31,10 +31,11 @@ import (
 )
 
 const (
-	maxIconSetZipBytes        = 8 << 20
-	maxIconSetTotalImageBytes = 8 << 20
-	maxIconSetImages          = 48
+	maxIconSetZipBytes        = 32 << 20
+	maxIconSetTotalImageBytes = 64 << 20
+	maxIconSetImages          = 256
 	maxIconSets               = 24
+	maxIconSetArchiveEntries      = 512
 )
 
 var iconSetIDPattern = regexp.MustCompile(`^[a-f0-9]{24}$`)
@@ -72,7 +73,7 @@ func readIconSetManifest(root, id string) (iconSetManifest, error) {
 	if err != nil {
 		return iconSetManifest{}, err
 	}
-	if len(data) > 128*1024 {
+	if len(data) > 512*1024 {
 		return iconSetManifest{}, errors.New("icon set manifest too large")
 	}
 	var result iconSetManifest
@@ -140,7 +141,7 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 	var empty iconSetManifest
 	var err error
 	if len(data) == 0 || len(data) > maxIconSetZipBytes {
-		return empty, errors.New("ZIP must be 1-8 MiB")
+		return empty, fmt.Errorf("ZIP must be 1-%d MiB", maxIconSetZipBytes>>20)
 	}
 	digest := sha256.Sum256(data)
 	id := hex.EncodeToString(digest[:12])
@@ -151,7 +152,7 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 	if err != nil {
 		return empty, fmt.Errorf("invalid ZIP: %w", err)
 	}
-	if len(archive.File) > 128 {
+	if len(archive.File) > maxIconSetArchiveEntries {
 		return empty, errors.New("too many files in icon set archive")
 	}
 	pending := []pendingIcon{}
@@ -210,7 +211,7 @@ func importIconSet(root, name string, data []byte) (iconSetManifest, error) {
 				return empty, fmt.Errorf("unsupported icon file %q: use PNG, JPEG or SVG", base)
 			}
 			if len(pending) >= maxIconSetImages {
-				return empty, errors.New("icon set limited to 48 icons")
+				return empty, fmt.Errorf("icon set limited to %d icons", maxIconSetImages)
 			}
 			if file.UncompressedSize64 > deck.MaxDeckIconBytes || countBytes > maxIconSetTotalImageBytes {
 				return empty, errors.New("icon set images exceed quota")
