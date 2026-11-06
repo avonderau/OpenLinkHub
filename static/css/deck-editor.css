@@ -298,15 +298,38 @@
 /* Action-specific inspector rows never appear until their action is selected. */
 #deck-hotkey-property[hidden],#deck-media-property[hidden]{display:none!important}
 
-/* Uploaded artwork keeps key outlines and labels legible in the preview. */
+/* Match the Mirabox compositor: unlabeled artwork fills the LCD; labeled
+ * artwork fits proportionally into the upper portion, never behind text.
+ * The device reserves 22 of its typical 85 pixels for the caption. */
 .deck-workspace .deck-key[data-has-image="true"]{
+  background-color:#162639;
   background-position:center;
-  background-size:cover;
+  background-size:contain;
   background-repeat:no-repeat;
-  text-shadow:0 1px 3px rgba(0,0,0,.95);
 }
-.deck-workspace .deck-key[data-has-image="true"] span{color:#fff}
-.deck-workspace .deck-key[data-has-image="true"] small{color:#e6e6e6}
+.deck-workspace .deck-key[data-has-image="true"][data-has-caption="true"]{
+  background-position:center 0;
+  background-size:auto 74%;
+}
+.deck-workspace .deck-key[data-has-image="true"] > small{
+  display:none;
+}
+.deck-workspace .deck-key[data-has-image="true"] > .deck-key-caption{
+  display:none;
+}
+.deck-workspace .deck-key[data-has-image="true"][data-has-caption="true"] > .deck-key-caption{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;height:26%;max-width:none;
+  padding:1px 4px 2px;
+  overflow:hidden;text-overflow:clip;white-space:nowrap;
+  background:#000;color:#fff;
+  font-family:monospace;font-weight:400;
+  font-size:clamp(.52rem,.92vw,.76rem);
+  line-height:1;
+  text-shadow:none;
+}
 .deck-artwork-controls{display:flex;flex-wrap:wrap;gap:8px}
 .deck-workspace .deck-artwork-controls button{margin:0}
 .deck-workspace #deck-key-image{
