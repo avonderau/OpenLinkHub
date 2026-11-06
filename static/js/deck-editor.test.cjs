@@ -130,7 +130,15 @@ async function run() {
   assert.match(iconSetMarkup, /id="deck-icon-set"/);
   assert.match(iconSetMarkup, /id="deck-icon-set-item"/);
   assert.doesNotMatch(iconSetMarkup, /id="deck-import-icon-set"|id="deck-icon-set-import"/);
-  assert.ok(iconSetMarkup.includes('/settings#olh-settings-devices'));
+  assert.ok(iconSetMarkup.includes('/settings#olh-settings-icons'));
+  assert.match(iconSetMarkup, /class="deck-icon-set-library" open/);
+  assert.match(iconSetMarkup, /<summary><i class="bi bi-grid-3x3-gap"[^>]*><\/i> Icons<\/summary>/);
+  assert.match(iconSetMarkup, /class="deck-artwork-upload-panel"/);
+  assert.doesNotMatch(iconSetMarkup, /Reusable icon sets/);
+  assert.ok(iconSetMarkup.indexOf('id="deck-artwork-preview"') < iconSetMarkup.indexOf('class="deck-icon-set-library" open'));
+  assert.ok(iconSetMarkup.indexOf('class="deck-icon-set-library" open') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'));
+  assert.ok(iconSetMarkup.indexOf('id="deck-remove-image"') < iconSetMarkup.indexOf('class="deck-artwork-upload-panel"'),
+    'remove artwork and its selected preview remain accessible even while uploads are collapsed');
   assert.match(fs.readFileSync(path.join(__dirname, 'deck-editor.js'), 'utf8'), /\/api\/icon-sets/);
   // Nonessential helper copy should stay out of the Deck inspector.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'web', 'deck.html'), 'utf8');
