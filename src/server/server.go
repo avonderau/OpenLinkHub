@@ -2962,6 +2962,7 @@ func setRoutes() http.Handler {
 	r.Handle("/static/", http.StripPrefix("/static/", fs))
 	// OpenLinkHub Nexus custom-layout endpoints.
 	r.HandleFunc("/api/nexus/screens", nexusScreensAPI)
+	r.HandleFunc("/api/nexus/widget-library", nexusWidgetLibraryAPI)
 	r.HandleFunc("/api/nexus/telemetry", nexusTelemetryAPI)
 	r.HandleFunc("/api/nexus/background", nexusBackgroundAPI)
 	r.HandleFunc("/api/nexus/icon", nexusCustomIconAPI)

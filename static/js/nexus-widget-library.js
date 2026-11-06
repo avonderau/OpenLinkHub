@@ -1,6 +1,6 @@
 'use strict';
-// Reusable Nexus widgets are deliberately browser-local. No user scripts,
-// shell commands or remote services are involved.
+// Shared widget schema helpers and one-time migration support for legacy
+// browser-local entries. New library writes use the OpenLinkHub server API.
 globalThis.NexusWidgetLibrary=(()=>{
  const storageKey='openlinkhub:nexus:widgets:v1';
  const limit=50;

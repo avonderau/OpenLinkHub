@@ -692,8 +692,10 @@
 #nexus-panel-widget .nexus-url-test-link[hidden]{display:none!important}
 
 
-/* Shared icon choices sit beneath Appearance in the same inspector grid. */
-#nexus-panel-widget #properties>.nexus-icons-section{grid-column:1/-1}
+/* For touch widgets, Icon and Actions share one inspector row. The existing
+ * container-query/mobile rules stack them when either column is too narrow. */
+#nexus-panel-widget #properties>.nexus-icons-section{grid-column:1;grid-row:3}
+#nexus-panel-widget #properties>.nexus-actions-section{grid-column:2;grid-row:3}
 #nexus-panel-widget #properties .nexus-icon-row{display:flex;flex-direction:column;gap:12px}
 #nexus-panel-widget #properties .nexus-icon-library{border-top:1px solid #414246;padding-top:12px}
 #nexus-panel-widget #properties .nexus-icon-gallery .nexus-icon-tile{
