@@ -236,6 +236,14 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 	if execute == nil {
 		return errors.New("missing desktop launcher")
 	}
+	lastFailure := ""
+	reportFailure := func(stage string, err error) {
+		message := fmt.Sprintf("%s: %v", stage, err)
+		if message != lastFailure {
+			fmt.Fprintf(os.Stderr, "Nexus desktop agent connection failed: %s\n", message)
+			lastFailure = message
+		}
+	}
 	for {
 		if ctx.Err() != nil {
 			return nil
@@ -244,6 +252,7 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 		// local users. A disconnected service is retried without executing events.
 		expectedOwner, err := verifyNexusDesktopSocket(socketPath)
 		if err != nil {
+			reportFailure("socket verification", err)
 			if waitNexusAgentRetry(ctx) != nil {
 				return nil
 			}
@@ -251,6 +260,7 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 		}
 		conn, err := net.DialTimeout("unix", socketPath, 500*time.Millisecond)
 		if err != nil {
+			reportFailure("socket connection", err)
 			if waitNexusAgentRetry(ctx) != nil {
 				return nil
 			}
@@ -258,12 +268,19 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 		}
 		peer, err := nexusDesktopPeerUID(conn)
 		if err != nil || peer != expectedOwner {
+			if err != nil {
+				reportFailure("peer verification", err)
+			} else {
+				reportFailure("peer verification", fmt.Errorf("unexpected socket owner UID %d (expected %d)", peer, expectedOwner))
+			}
 			conn.Close()
 			if waitNexusAgentRetry(ctx) != nil {
 				return nil
 			}
 			continue
 		}
+		lastFailure = ""
+		fmt.Fprintln(os.Stderr, "Nexus desktop agent connected to local service")
 		done := make(chan struct{})
 		go func() {
 			select {
@@ -287,6 +304,9 @@ func runNexusDesktopLaunchAgent(ctx context.Context, socketPath string, execute 
 			}
 		}
 		close(done)
+		if err := scanner.Err(); err != nil && ctx.Err() == nil {
+			reportFailure("connection lost", err)
+		}
 		conn.Close()
 		if waitNexusAgentRetry(ctx) != nil {
 			return nil
