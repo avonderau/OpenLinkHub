@@ -14,7 +14,7 @@ alone does not apply an unsaved layout.
 - The image preview is loaded through a same-origin API that validates the
   device ID and icon ID, not an arbitrary filesystem path.
 - Files are private to `database/deck/icons/` with restrictive permissions,
-  deduplicated by SHA-256, and limited to 256 stored images even when
+  deduplicated by SHA-256, and limited to 8192 stored images even when
   multiple uploads arrive simultaneously; repeated images do not consume slots.
 - Images are bounded and decoded once before normalization. SVG, GIF and
   animated output are not included in this first milestone.
@@ -36,8 +36,8 @@ the device, and verify the saved page and image restore correctly.
 ### Reusable icon sets
 
 Manage packs under **Settings → Devices & Displays → Icon Pack Library**.
-Import a ZIP containing up to 48 PNG, JPEG or static SVG icons (up to 512 KiB
-per image and 8 MiB ZIP limit). Settings supports renaming and removing
+Import a ZIP containing up to 256 PNG, JPEG or static SVG icons (up to 512 KiB
+per image, 32 MiB ZIP size and 64 MiB extracted-data limit). Settings supports renaming and removing
 packs and viewing each icon. Deleting a pack keeps previously used artwork
 in saved layouts. In the Deck editor, choose a pack and icon in
 **Reusable icon sets**, then Save & Apply.
