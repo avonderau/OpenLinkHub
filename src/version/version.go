@@ -18,7 +18,7 @@ type BuildInfo struct {
 
 // Version identifies this fork even when a build omits -ldflags.
 // Release builds inject the same value via -ldflags for reproducibility.
-var Version = "0.9.7N"
+var Version = "0.9.8N"
 var buildInfo *BuildInfo
 
 // GetBuildInfo will return BuildInfo struct
