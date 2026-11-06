@@ -57,6 +57,8 @@ func TestDeckSettingsSafeDuringBackgroundDiscovery(t *testing.T) {
  for i:=0;i<16;i++{
   UpdateSupportedDeckDevices(map[string]bool{"5548:6670":i%2==0})
  }
+ // Explicitly end on enabled; the loop's last odd iteration disables it.
+ UpdateSupportedDeckDevices(map[string]bool{"5548:6670":true})
  wg.Wait()
  if !DeckEnabled("5548:6670"){
   t.Fatal("last Deck settings update was not reflected in discovery")
