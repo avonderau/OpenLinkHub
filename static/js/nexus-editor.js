@@ -643,7 +643,7 @@ function renderNexusIconProperties(w,panel){
  }
  const settingsLink=document.createElement('a');
  settingsLink.className='nexus-icon-settings-link';
- settingsLink.href='/settings#olh-settings-devices';
+ settingsLink.href='/settings#olh-settings-icons';
  settingsLink.textContent='Manage icon packs in Settings';
  library.append(settingsLink);
  panel.append(library);
