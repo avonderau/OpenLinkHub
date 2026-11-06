@@ -31,6 +31,7 @@
   const selectedHero = document.getElementById('deck-selected-hero');
   const iconSetSelect = document.getElementById('deck-icon-set');
   const iconSetItem = document.getElementById('deck-icon-set-item');
+  const iconSetSearch = document.getElementById('deck-icon-set-search');
   const iconSetApply = document.getElementById('deck-apply-icon-set');
   let iconSets = [];
   const metricInput = document.getElementById('deck-key-metric');
@@ -595,7 +596,9 @@
     const placeholder = document.createElement('option');
     placeholder.value = ''; placeholder.textContent = 'Select icon';
     iconSetItem.appendChild(placeholder);
-    for (const icon of pack?.icons || []) {
+    const query=(iconSetSearch?.value || '').trim().toLocaleLowerCase();
+    const matches=(pack?.icons || []).filter(icon=>!query || icon.name.toLocaleLowerCase().includes(query) || (icon.tags||[]).some(tag=>tag.toLocaleLowerCase().includes(query)));
+    for (const icon of matches.slice(0,150)) {
       const option = document.createElement('option');
       option.value = icon.deckId;
       option.textContent = icon.name;
@@ -616,7 +619,8 @@
       setMessage('Icon packs are unavailable. Check Settings.', 'error');
     }
   }
-  iconSetSelect.addEventListener('change', refreshIconSetPicker);
+  iconSetSelect.addEventListener('change', () => { if(iconSetSearch) iconSetSearch.value=''; refreshIconSetPicker(); });
+  iconSetSearch?.addEventListener('input', refreshIconSetPicker);
   iconSetItem.addEventListener('change', refreshIconSetPicker);
   iconSetApply.addEventListener('click', () => {
     if (!validIconID(iconSetItem.value) || selected < 0) return;
