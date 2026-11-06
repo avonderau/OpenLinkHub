@@ -45,3 +45,27 @@ func TestHTTPResponseSecurityHeadersAlsoCoverRejectedRequests(t *testing.T) {
 		t.Fatal("denied requests must also receive anti-framing headers")
 	}
 }
+
+func TestHTTPResponseSecurityHeadersCoverAuthShortCircuit(t *testing.T) {
+	// The auth middleware can reject an unauthenticated request without
+	// calling setRoutes, so its outer wrapper must still set the headers.
+	unauthorized := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "Authentication required", http.StatusUnauthorized)
+	})
+	req := httptest.NewRequest(http.MethodGet, "https://example.org/api/nexus/screens", nil)
+	w := httptest.NewRecorder()
+	withHTTPResponseSecurityHeaders(unauthorized).ServeHTTP(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("unexpected auth rejection status: %d", w.Code)
+	}
+	for header, want := range map[string]string{
+		"X-Frame-Options": "SAMEORIGIN",
+		"Content-Security-Policy": "frame-ancestors 'self'",
+		"X-Content-Type-Options": "nosniff",
+		"Referrer-Policy": "same-origin",
+	} {
+		if got := w.Header().Get(header); got != want {
+			t.Errorf("auth short-circuit missing %s: got %q, want %q", header, got, want)
+		}
+	}
+}
