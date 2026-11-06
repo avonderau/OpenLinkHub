@@ -27,6 +27,31 @@ go test ./src/devices/nexus -count=1
 
 Hardware testing is necessary before treating touchscreen navigation and image output as production-ready.
 
+### Go formatting
+
+Fork-owned Go files, meaning files that do not exist in upstream
+`jurkovic-nikola/OpenLinkHub`, must be `gofmt`-clean. The
+[Fork Go formatting workflow](../.github/workflows/fork-gofmt.yml) checks this
+on every pull request and push to `main`. It works out which files are
+fork-owned by comparing against upstream `main`, so new fork files are covered
+automatically.
+
+Before committing, run `gofmt -w` on the fork-owned files you changed. **Do not
+reformat upstream-owned files**, such as `src/devices/devices.go`,
+`src/devices/nexus/nexus.go`, `src/server/requests/requests.go` or `main.go`,
+even when you edit them. Reformatting them would turn every later upstream merge
+into a whitespace conflict.
+
+The one-time formatting commit is listed in `.git-blame-ignore-revs`. GitHub
+skips it in blame views automatically. Locally, enable this with:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
+Merge pull requests that rewrite formatting with a merge commit, not squash
+or rebase, so the hash in that file stays valid.
+
 ## Credits
 
 Original project: Nikola Jurkovic and contributors. Fork modifications: contributors to `avonderau/OpenLinkHub-Nexus`. See repository history and the existing GPL license.
