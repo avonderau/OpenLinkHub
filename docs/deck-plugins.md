@@ -19,7 +19,9 @@ plugin host in your desktop session, as your user:
 2. The agent starts each plugin the first time one of its keys appears. It
    speaks the Stream Deck WebSocket protocol to the plugin on `127.0.0.1`,
    using a random port and a random registration token for each launch.
-   Connections from web pages (with a browser `Origin` header) are refused.
+   Connections from web pages (with a browser `Origin` header) and from
+   other users' programs are refused, even though other users can see the
+   token on the plugin's command line.
 3. The plugin's titles, images, states and settings travel back to the
    service. The service accepts only bounded PNG or JPEG images and JSON
    object settings for keys that are actually on screen. SVG images are

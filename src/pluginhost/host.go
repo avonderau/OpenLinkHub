@@ -34,8 +34,9 @@ const (
 
 // Host runs plugin processes and speaks the Stream Deck SDK WebSocket
 // protocol to them on 127.0.0.1. Each launch gets a random registration
-// token, and connections carrying a browser Origin header are refused, so
-// only processes we started can attach.
+// token, connections carrying a browser Origin header are refused, and
+// only sockets owned by the agent's own user are accepted, so other local
+// users cannot attach even though they can read the token.
 type Host struct {
 	mu        sync.Mutex
 	plugins   map[string]*Plugin
@@ -397,6 +398,10 @@ var upgrader = websocket.Upgrader{
 }
 
 func (h *Host) serveWebSocket(w http.ResponseWriter, r *http.Request) {
+	if uid, err := loopbackPeerUID(r.RemoteAddr, h.listener.Addr().String()); err != nil || uid != os.Geteuid() {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return

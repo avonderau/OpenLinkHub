@@ -6,10 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
+	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -640,5 +643,49 @@ func TestInstallQuestionIsPlainText(t *testing.T) {
 		Actions: []Action{{Name: "A"}, {Name: "B"}}})
 	if strings.ContainsAny(q, "\u202e\x1b") || !strings.Contains(q, "com.example.evil") || !strings.Contains(q, "Actions: A, B") {
 		t.Fatalf("question %q", q)
+	}
+}
+
+func TestPluginSocketsFromOtherUsersAreRefused(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	c, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	uid, err := loopbackPeerUID(c.LocalAddr().String(), ln.Addr().String())
+	if err != nil || uid != os.Geteuid() {
+		t.Fatalf("own socket: uid %d %v", uid, err)
+	}
+
+	// A connection owned by another user is refused before the WebSocket
+	// handshake.
+	table := filepath.Join(t.TempDir(), "tcp")
+	_, lport, _ := net.SplitHostPort(ln.Addr().String())
+	_, cport, _ := net.SplitHostPort(c.LocalAddr().String())
+	lp, _ := strconv.Atoi(lport)
+	cp, _ := strconv.Atoi(cport)
+	other := os.Geteuid() + 1
+	line := fmt.Sprintf("  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"+
+		"   0: 0100007F:%04X 0100007F:%04X 01 00000000:00000000 00:00000000 00000000  %d        0 1 1 0 20 4 30 10 -1\n", cp, lp, other)
+	os.WriteFile(table, []byte(line), 0o600)
+	saved := procNetTCP
+	procNetTCP = []string{table}
+	defer func() { procNetTCP = saved }()
+	if uid, _ := loopbackPeerUID(c.LocalAddr().String(), ln.Addr().String()); uid != other {
+		t.Fatalf("parsed uid %d", uid)
+	}
+	h, _, _ := testHost(t, func(*Host, *process) error { return nil })
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = c.LocalAddr().String()
+	h.listener = ln
+	h.serveWebSocket(w, r)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("other user's socket got %d", w.Code)
 	}
 }
