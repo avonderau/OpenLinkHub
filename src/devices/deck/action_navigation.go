@@ -72,10 +72,22 @@ func (d *Device) handleKeyPress(index int) {
 		return
 	}
 	if action == "plugin" {
-		// Release events are not yet read from the hardware, so a press
-		// is reported as a quick down/up pair.
 		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyDown, Context: target})
-		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: target})
+		if !d.Model.SupportsKeyRelease() {
+			// This Deck only reports presses, so a press is a quick
+			// down/up pair and hold actions cannot work.
+			plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: target})
+			return
+		}
+		d.mu.Lock()
+		if d.pluginHeld == nil {
+			d.pluginHeld = map[int]string{}
+		}
+		if previous, held := d.pluginHeld[index]; held && previous != target {
+			plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: previous})
+		}
+		d.pluginHeld[index] = target
+		d.mu.Unlock()
 		return
 	}
 	if action == "url" || action == "application" {
@@ -89,6 +101,27 @@ func (d *Device) handleKeyPress(index int) {
 		d.mu.Lock()
 		d.status = fmt.Sprintf("Button action failed: %v", err)
 		d.mu.Unlock()
+	}
+}
+
+// handleKeyRelease sends keyUp to the plugin key that was pressed, even if
+// the page changed while it was held.
+func (d *Device) handleKeyRelease(index int) {
+	d.mu.Lock()
+	ctx, held := d.pluginHeld[index]
+	delete(d.pluginHeld, index)
+	d.mu.Unlock()
+	if held {
+		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: ctx})
+	}
+}
+
+// releasePluginKeysLocked lets go of every held plugin key, for example
+// when the Deck disconnects in the middle of a press.
+func (d *Device) releasePluginKeysLocked() {
+	for index, ctx := range d.pluginHeld {
+		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeKeyUp, Context: ctx})
+		delete(d.pluginHeld, index)
 	}
 }
 

@@ -55,9 +55,11 @@ receive `didReceiveSettings`, `didReceiveGlobalSettings` and
 `sendToPropertyInspector`. A page is started the way the Stream Deck app
 starts it, with `connectElgatoStreamDeckSocket` (or `connectSocket`).
 
-Key release is not read from the hardware yet, so a press is sent as
-`keyDown` immediately followed by `keyUp`; hold and long-press actions do
-not work.
+On Decks that report key release (Elgato Stream Deck and the Mirabox
+HSV293SV3), plugins get `keyDown` when a key goes down and `keyUp` when it
+is let go, so hold actions such as push-to-talk work. The original Mirabox
+HSV293S and the Ajazz AKP153 only report presses; there a press is sent as
+`keyDown` immediately followed by `keyUp`, and hold actions do not work.
 
 ## Install a plugin
 

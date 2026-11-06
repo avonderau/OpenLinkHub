@@ -129,6 +129,7 @@ func (d *Device) clearPluginState(status string) {
 }
 
 func (d *Device) dropPluginKeysLocked() {
+	d.releasePluginKeysLocked()
 	for ctx := range d.pluginInstances {
 		plugins.enqueue(deckplugin.Message{Type: deckplugin.TypeDisappear, Context: ctx})
 		plugins.mu.Lock()

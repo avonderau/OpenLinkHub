@@ -76,8 +76,7 @@ hardware-dependent.
   registry entries.
 - Hardware validation, cross-platform support and multiple identical legacy
   Mirabox units. Legacy units often share a fake serial number.
-- Key-release events for plugins, and
-  plugin-process sandboxing beyond running as the desktop user.
+- Plugin-process sandboxing beyond running as the desktop user.
 
 No external plugin code is executed in the system service. Experimental
 action-plugin support runs plugins in the desktop agent as the logged-in

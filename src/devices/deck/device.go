@@ -65,6 +65,8 @@ type Device struct {
 	readerDone        chan struct{}
 	once              sync.Once
 	// Plugin keys on the active page, and what each plugin last drew.
+	// pluginHeld maps a pressed plugin key to its context until release.
+	pluginHeld      map[int]string
 	pluginInstances map[string]deckplugin.Instance
 	pluginKeys      map[string]*pluginKey
 }
@@ -456,6 +458,7 @@ func (d *Device) listen() {
 				d.connected = false
 				d.initialized = false
 				d.status = "Disconnected; waiting for Deck to reconnect"
+				d.releasePluginKeysLocked()
 				d.syncPluginKeysLocked()
 			}
 			d.mu.Unlock()
@@ -467,10 +470,13 @@ func (d *Device) listen() {
 		if n <= 0 {
 			continue
 		}
-		var presses []int
-		presses, keyStates = hardwareKeyPresses(d.Model, buffer[:n], keyStates)
+		var presses, releases []int
+		presses, releases, keyStates = hardwareKeyEvents(d.Model, buffer[:n], keyStates)
 		for _, key := range presses {
 			d.handleKeyPress(key)
+		}
+		for _, key := range releases {
+			d.handleKeyRelease(key)
 		}
 	}
 }

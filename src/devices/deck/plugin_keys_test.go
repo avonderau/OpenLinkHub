@@ -292,3 +292,58 @@ func TestEditorSaveKeepsPluginSettings(t *testing.T) {
 		t.Fatal("settings carried to a different action")
 	}
 }
+
+func TestPluginKeysHoldUntilReleaseWhereSupported(t *testing.T) {
+	m := elgatoModel(t, 0x0080)
+	down := make([]byte, 4+15)
+	down[0], down[4+7] = 0x01, 1
+	up := make([]byte, 4+15)
+	up[0] = 0x01
+	presses, releases, state := hardwareKeyEvents(m, down, nil)
+	if len(presses) != 1 || len(releases) != 0 {
+		t.Fatalf("press %v %v", presses, releases)
+	}
+	if presses, releases, _ = hardwareKeyEvents(m, up, state); len(presses) != 0 || len(releases) != 1 || releases[0] != 7 {
+		t.Fatalf("release %v %v", presses, releases)
+	}
+	// Mirabox protocol 1 never reports a release.
+	mira := testDevice(t).Model
+	if mira.SupportsKeyRelease() {
+		t.Fatal("HSV293S should not report releases")
+	}
+
+	out := capturePluginMessages(t)
+	d := testDevice(t)
+	d.Model = m
+	d.layout = pluginLayout()
+	d.layout.Pages[0].Keys = d.layout.Pages[0].Keys[:1] // key 7 only
+	d.layout.Pages[0].Keys[0].Index = 7
+	d.mu.Lock()
+	d.connected, d.hidDevice = true, new(fakeDeckSession)
+	d.syncPluginKeysLocked()
+	d.mu.Unlock()
+	ctx := d.pluginContext("home", 7)
+	d.handleKeyPress(7)
+	if nextPluginMessage(t, out, deckplugin.TypeKeyDown).Context != ctx {
+		t.Fatal("keyDown not sent")
+	}
+	select {
+	case m := <-out:
+		if m.Type == deckplugin.TypeKeyUp {
+			t.Fatal("keyUp sent before release")
+		}
+	default:
+	}
+	d.handleKeyRelease(7)
+	if nextPluginMessage(t, out, deckplugin.TypeKeyUp).Context != ctx {
+		t.Fatal("keyUp not sent on release")
+	}
+	// A key held when the Deck disconnects is released.
+	d.handleKeyPress(7)
+	d.mu.Lock()
+	d.releasePluginKeysLocked()
+	d.mu.Unlock()
+	if nextPluginMessage(t, out, deckplugin.TypeKeyUp).Context != ctx {
+		t.Fatal("held key not released on disconnect")
+	}
+}
