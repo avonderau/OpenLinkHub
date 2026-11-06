@@ -1,0 +1,25 @@
+name: Temporary Stream Deck Go formatting
+on:
+  push:
+    branches: [feature/streamdeck-icon-pack-import]
+    paths: ['.github/workflows/streamdeck-format-once.yml']
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Format changed Go files
+        run: |
+          gofmt -w src/server/icon_sets_api.go src/server/icon_sets_capacity_test.go src/server/streamdeck_icon_pack.go src/server/streamdeck_icon_pack_test.go src/devices/deck/key_icons.go
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/server/icon_sets_api.go src/server/icon_sets_capacity_test.go src/server/streamdeck_icon_pack.go src/server/streamdeck_icon_pack_test.go src/devices/deck/key_icons.go
+            git commit -m "style: gofmt larger icon pack implementation"
+            git push
+          fi
