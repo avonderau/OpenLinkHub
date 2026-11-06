@@ -626,24 +626,7 @@
 .deck-workspace #deck-brightness-property[hidden]{display:none!important}
 
 
-/* Keep the selected-key artwork preview visible regardless of which
- * artwork source is expanded. Icon library is open by default. */
-.deck-workspace .deck-artwork-selected{
-  display:flex;align-items:center;gap:12px;
-  padding:10px;margin:4px 0 12px;
-  border:1px solid var(--deck-border);border-radius:9px;
-  background:rgba(12,13,15,.22);
-}
-.deck-workspace .deck-artwork-selected-details{
-  display:flex;flex:1;flex-direction:column;align-items:flex-start;gap:8px;
-  min-width:0;
-}
-.deck-workspace .deck-artwork-selected-details small{
-  color:var(--deck-muted);font-size:.76rem;
-}
-.deck-workspace .deck-artwork-selected-details button{
-  font-size:.74rem;padding:7px 10px;
-}
+/* Keep custom artwork upload within Icons, but secondary and collapsed. */
 .deck-workspace .deck-artwork-upload-panel{
   margin-top:12px;padding-top:11px;
   border-top:1px solid var(--deck-border);
