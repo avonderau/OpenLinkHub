@@ -174,6 +174,10 @@ func(d *Device)UpdateLayout(layout Layout)(LayoutResult,error){
  if err:=layout.Validate(d.Model);err!=nil{return LayoutResult{},err}
  d.mu.Lock()
  defer d.mu.Unlock()
+ // Only physical Deck controls change brightness. Ignore stale browser
+ // brightness values during Save & Apply, even when the older browser
+ // snapshot has a nonzero setting from an earlier key press.
+ layout.Brightness=d.layout.Brightness
  if err:=SaveLayout(d.root,d.Serial,d.Model,layout);err!=nil{return LayoutResult{},err}
  d.layout=cloneLayout(layout)
  // A new metric or refresh interval must become due immediately after save.
@@ -265,6 +269,12 @@ func(d *Device)attachSession(handle hidSession)error{
  d.mu.Lock()
  defer d.mu.Unlock()
  select {case <-d.done:return errors.New("Deck driver stopping");default:}
+ if d.layout.Brightness!=0 {
+  // Replay persisted brightness after Mirabox's 50% startup default.
+  if err:=MiraboxBrightness(handle,d.Model,uint8(d.layout.Brightness));err!=nil {
+   return fmt.Errorf("restore brightness: %w",err)
+  }
+ }
  d.hidDevice=handle
  d.connected=true
  d.initialized=true

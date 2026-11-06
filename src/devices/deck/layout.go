@@ -8,6 +8,7 @@ import (
  "os"
  "path/filepath"
  "regexp"
+ "strconv"
 
  "OpenLinkHub/src/devices/nexus"
 )
@@ -39,6 +40,7 @@ type Page struct {
 type Layout struct {
  Version int `json:"version"`
  ActivePage string `json:"activePage"`
+ Brightness int `json:"brightness,omitempty"`
  Pages []Page `json:"pages"`
 }
 
@@ -49,6 +51,7 @@ func DefaultLayout(m Model)Layout {
 func (l Layout)Validate(m Model)error{
  if m.Keys()<=0 {return errors.New("unknown deck model")}
  if l.Version!=1 {return errors.New("unsupported layout version")}
+ if l.Brightness!=0 && (l.Brightness<10 || l.Brightness>100){return errors.New("Deck brightness must be 10 to 100 percent")}
  if len(l.Pages)<1||len(l.Pages)>MaxDeckPages{return errors.New("invalid page count")}
  ids:=make(map[string]bool,len(l.Pages))
  for _,page:=range l.Pages {
@@ -91,6 +94,11 @@ func (l Layout)Validate(m Model)error{
     if key.TargetPage!="" || key.Target!="" {return fmt.Errorf("key %d: unexpected action target for %q",key.Index,key.Action)}
    case "page-go":
     if !safePageID.MatchString(key.TargetPage) || key.Target!="" {return fmt.Errorf("key %d: invalid page navigation target",key.Index)}
+   case "brightness-up","brightness-down":
+    if key.Target!="" || key.TargetPage!="" {return fmt.Errorf("key %d: unexpected brightness action target",key.Index)}
+   case "brightness-set":
+    value,err:=strconv.Atoi(key.Target)
+    if err!=nil||value<10||value>100||key.TargetPage!="" {return fmt.Errorf("key %d: invalid brightness level",key.Index)}
    case "hotkey":
     if key.TargetPage!="" {return fmt.Errorf("key %d: unexpected hotkey page",key.Index)}
     if err:=nexus.ValidateDeckShortcut(key.Target);err!=nil{return fmt.Errorf("key %d: %w",key.Index,err)}

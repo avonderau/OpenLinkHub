@@ -12,6 +12,11 @@
   const uploadArtworkButton = document.getElementById('deck-upload-image');
   const removeArtworkButton = document.getElementById('deck-remove-image');
   const artworkStatus = document.getElementById('deck-icon-status');
+  const artworkPreview = document.getElementById('deck-artwork-preview');
+  const inspectorFields = document.getElementById('deck-key-settings');
+  const emptySelection = document.getElementById('deck-empty-state');
+  const selectedSummary = document.getElementById('deck-selected-summary');
+  const selectedHero = document.getElementById('deck-selected-hero');
   const iconSetSelect = document.getElementById('deck-icon-set');
   const iconSetItem = document.getElementById('deck-icon-set-item');
   const iconSetApply = document.getElementById('deck-apply-icon-set');
@@ -27,7 +32,15 @@
   const defaultMetricColor = '#d5a65a';
   const safeMetricColor = value => /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : '';
   const metricStatus = document.getElementById('deck-metric-status');
+  const metricDetails = document.getElementById('deck-metric-details');
+  const metricIndicator = document.getElementById('deck-metric-indicator');
+  const actionIndicator = document.getElementById('deck-action-indicator');
   const actionInput = document.getElementById('deck-key-action');
+  const deckControlInput = document.getElementById('deck-key-control');
+  const deckControlProperty = document.getElementById('deck-control-property');
+  const brightnessProperty = document.getElementById('deck-brightness-property');
+  const brightnessInput = document.getElementById('deck-key-brightness');
+  const deckControls = new Set(['page-next','page-previous','page-go','brightness-up','brightness-down','brightness-set']);
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
   const macroProperty = document.getElementById('deck-macro-property');
@@ -149,6 +162,9 @@
       'page-next': 'Next Page',
       'page-previous': 'Previous Page',
       'page-go': 'Go to Page',
+      'brightness-up': 'Brightness +',
+      'brightness-down': 'Brightness -',
+      'brightness-set': 'Set Brightness',
       hotkey: 'Shortcut',
       macro: 'Run Macro',
       media: 'Media',
@@ -161,7 +177,7 @@
     const key = { index: selected, ...assignment(selected), ...patch };
     if (!key.action || key.action === 'none') delete key.action;
     if (key.action !== 'page-go') delete key.targetPage;
-    if (key.action !== 'macro' && key.action !== 'media' && key.action !== 'hotkey') delete key.target;
+    if (key.action !== 'macro' && key.action !== 'media' && key.action !== 'hotkey' && key.action !== 'brightness-set') delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
     page.keys = page.keys.filter(item => item.index !== selected);
@@ -193,7 +209,8 @@
       button.className = 'deck-key';
       button.setAttribute('aria-pressed', i === selected ? 'true' : 'false');
       const mediaLabel = configured?.action === 'media' ? mediaKeyLabels[configured?.target] : '';
-      const displayName = configured?.label || mediaLabel || actionName(configured?.action) || '—';
+      const brightnessLabel = configured?.action === 'brightness-set' ? 'Brightness '+configured.target+'%' : '';
+      const displayName = configured?.label || mediaLabel || brightnessLabel || actionName(configured?.action) || '—';
       button.setAttribute('aria-label', `Key ${i + 1}: ${displayName}`);
 
       const number = document.createElement('small');
@@ -253,20 +270,38 @@
     removeButton.disabled = layout.pages.length <= 1;
   }
 
+  function updateSelectedSummary(key) {
+    selectedSummary.textContent = [
+      key?.label || 'Unlabeled key',
+      key?.metric ? 'Live data' : '',
+      key?.action ? 'Button action' : '',
+    ].filter(Boolean).join(' · ');
+  }
+
   function renderInspector() {
     const valid = selected >= 0 && selected < keyCount;
     const key = valid ? assignment(selected) : null;
+    inspectorFields.hidden = !valid;
+    emptySelection.hidden = valid;
+    selectedHero.hidden = !valid;
+    if (valid) updateSelectedSummary(key);
+    artworkPreview.dataset.hasArtwork = String(validIconID(key?.icon));
+    artworkPreview.style.backgroundImage = validIconID(key?.icon) ? `url("${iconURL(key.icon)}")` : '';
     labelInput.disabled = !valid;
     labelInput.value = key?.label || '';
     labelInput.placeholder = key?.action === 'media' ? (mediaKeyLabels[key.target] || '') : '';
     artworkInput.disabled = !valid;
     uploadArtworkButton.disabled = !valid;
     removeArtworkButton.disabled = !valid || !validIconID(key?.icon);
+    removeArtworkButton.hidden = !validIconID(key?.icon);
     iconSetApply.disabled = !valid || !validIconID(iconSetItem.value);
     artworkStatus.textContent = validIconID(key?.icon)
       ? 'Artwork assigned. Save & Apply to send it to the physical LCD.'
       : 'PNG/JPEG · up to 512 KiB · maximum 512 × 512 pixels.';
     const hasMetric = valid && !!key?.metric;
+    metricDetails.hidden = !hasMetric;
+    metricIndicator.textContent = hasMetric ? 'Active' : 'Off';
+    metricIndicator.dataset.active = String(hasMetric);
     metricInput.disabled = !valid;
     metricInput.value = key?.metric || '';
     const sourceChoices = metricSources[key?.metric] || [];
@@ -304,7 +339,16 @@
         : 'No current reading. Unavailable sensors display —.')
       : '';
     actionInput.disabled = !valid;
-    actionInput.value = key?.action || '';
+    actionInput.value = deckControls.has(key?.action) ? 'deck-control' : key?.action || '';
+    actionIndicator.textContent = actionInput.value ? 'Assigned' : 'None';
+    actionIndicator.dataset.active = String(!!actionInput.value);
+    const isDeckControl = valid && actionInput.value === 'deck-control';
+    deckControlProperty.hidden = !isDeckControl;
+    deckControlInput.disabled = !isDeckControl;
+    deckControlInput.value = deckControls.has(key?.action) ? key.action : 'page-next';
+    brightnessProperty.hidden = !isDeckControl || deckControlInput.value !== 'brightness-set';
+    brightnessInput.disabled = brightnessProperty.hidden;
+    brightnessInput.value = deckControlInput.value === 'brightness-set' ? key.target || '50' : '50';
     targetPageInput.replaceChildren();
     if (layout) {
       for (const page of layout.pages) {
@@ -315,7 +359,7 @@
       }
     }
     targetPageInput.value = key?.targetPage || layout?.activePage || '';
-    const hasTarget = valid && actionInput.value === 'page-go';
+    const hasTarget = isDeckControl && deckControlInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
     const hasShortcut = valid && actionInput.value === 'hotkey';
@@ -374,6 +418,7 @@
 
   labelInput.addEventListener('input', () => {
     setKeyProperties({ label: labelInput.value });
+    updateSelectedSummary(assignment(selected));
   });
   metricInput.addEventListener('change', () => {
     const metric = metricInput.value;
@@ -497,11 +542,14 @@
   });
 
   actionInput.addEventListener('change', () => {
+    const selectedAction = actionInput.value;
+    // The UI exposes one "Deck controls" action family; layouts retain
+    // the existing concrete page/brightness action IDs for compatibility.
+    const resolvedAction = selectedAction === 'deck-control'
+      ? (deckControls.has(assignment(selected)?.action) ? assignment(selected).action : 'page-next')
+      : selectedAction;
     setKeyProperties({
-      action: actionInput.value,
-      ...(actionInput.value === 'page-go'
-        ? { targetPage: assignment(selected)?.targetPage || layout.activePage }
-        : {}),
+      action: resolvedAction,
       ...(actionInput.value === 'media'
         ? { target: assignment(selected)?.action === 'media' ? assignment(selected)?.target || 'play-pause' : 'play-pause' }
         : {}),
@@ -516,8 +564,22 @@
     renderInspector();
   });
 
+  deckControlInput.addEventListener('change', () => {
+    if (actionInput.value !== 'deck-control') return;
+    const value = deckControlInput.value;
+    setKeyProperties({
+      action: value,
+      targetPage: value === 'page-go' ? assignment(selected)?.targetPage || layout.activePage : '',
+      target: value === 'brightness-set' ? '50' : '',
+    });
+    renderInspector();
+  });
+  brightnessInput.addEventListener('change', () => {
+    if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'brightness-set') return;
+    setKeyProperties({ target: brightnessInput.value });
+  });
   targetPageInput.addEventListener('change', () => {
-    if (actionInput.value !== 'page-go') return;
+    if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
   });
   shortcutInput.addEventListener('input', () => {

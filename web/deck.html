@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=sources-iconsets-3">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-controls-nested-2">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -64,26 +64,41 @@
                       aria-controls="deck-panel-key" tabindex="0"><i class="bi bi-keyboard" aria-hidden="true"></i> Key</button>
               <button type="button" id="deck-tab-pages" role="tab" aria-selected="false"
                       aria-controls="deck-panel-pages" tabindex="-1"><i class="bi bi-files" aria-hidden="true"></i> Pages</button>
-              <button type="button" role="tab" disabled title="Third-party actions are not implemented in this build"
-                      aria-label="Action plugins (planned)"><i class="bi bi-puzzle" aria-hidden="true"></i> Plugins</button>
             </div>
             <div class="deck-tabcontent">
               <section id="deck-panel-key" role="tabpanel" aria-labelledby="deck-tab-key">
-                <div class="deck-selected-hero">
+                <div class="deck-selected-hero" id="deck-selected-hero" hidden>
                   <span class="deck-selected-icon" aria-hidden="true"><i class="bi bi-grid-3x3-gap"></i></span>
                   <span>
                     <strong id="deck-selected-key">Select a key</strong>
-                    <small>Choose a key in the preview to edit its properties</small>
+                    <small id="deck-selected-summary">Choose a key in the device preview</small>
                   </span>
                 </div>
+                <div class="deck-empty-state" id="deck-empty-state">
+                  <i class="bi bi-hand-index-thumb" aria-hidden="true"></i>
+                  <strong>Nothing selected</strong>
+                  <small>Choose any LCD key on the left to edit its appearance, live data, and button behavior.</small>
+                </div>
+                <div id="deck-key-settings" hidden>
+                  <section class="deck-inspector-section" aria-labelledby="deck-appearance-heading">
+                    <header class="deck-inspector-section-header">
+                      <span class="deck-inspector-section-symbol"><i class="bi bi-palette2" aria-hidden="true"></i></span>
+                      <strong id="deck-appearance-heading">Appearance</strong>
+                    </header>
+                    <div class="deck-inspector-section-body">
                 <div class="deck-property">
                   <label for="deck-key-label">Display label</label>
                   <input class="form-control" id="deck-key-label" type="text" maxlength="48" autocomplete="off"
                          placeholder="e.g. CPU Temp" disabled>
                 </div>
                 <div class="deck-property">
-                  <label for="deck-key-image">Key artwork</label>
-                  <input id="deck-key-image" type="file" accept="image/png,image/jpeg" disabled>
+                  <label for="deck-key-image">Artwork</label>
+                  <div class="deck-artwork-row">
+                    <span class="deck-artwork-preview" id="deck-artwork-preview" aria-label="Selected key artwork preview">
+                      <i class="bi bi-image" aria-hidden="true"></i>
+                    </span>
+                    <div class="deck-artwork-upload">
+                      <input id="deck-key-image" type="file" accept="image/png,image/jpeg" disabled>
                   <div class="deck-artwork-controls">
                     <button type="button" id="deck-upload-image" class="deck-secondary" disabled>
                       <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> Upload artwork
@@ -91,6 +106,8 @@
                     <button type="button" id="deck-remove-image" class="deck-secondary" disabled>
                       <i class="bi bi-x-circle" aria-hidden="true"></i> Remove artwork
                     </button>
+                  </div>
+                    </div>
                   </div>
                   <small id="deck-icon-status" role="status">PNG or JPEG, maximum 512 KiB and 512 × 512 px. Artwork is stored privately on this computer.</small>
                   <details class="deck-icon-set-library">
@@ -105,8 +122,17 @@
                     </div>
                   </details>
                 </div>
+                    </div>
+                  </section>
+                  <section class="deck-inspector-section" aria-labelledby="deck-data-heading">
+                    <header class="deck-inspector-section-header">
+                      <span class="deck-inspector-section-symbol"><i class="bi bi-activity" aria-hidden="true"></i></span>
+                      <strong id="deck-data-heading">Live data</strong>
+                      <span class="deck-section-status" id="deck-metric-indicator" data-active="false">Off</span>
+                    </header>
+                    <div class="deck-inspector-section-body">
                 <div class="deck-property">
-                  <label for="deck-key-metric"><i class="bi bi-activity" aria-hidden="true"></i> Live metric</label>
+                  <label for="deck-key-metric">Metric</label>
                   <select class="form-select" id="deck-key-metric" disabled>
                     <option value="">No metric</option>
                     <option value="cpu.temperature">CPU temperature</option>
@@ -133,6 +159,7 @@
                     <option value="cpu.load_15m">CPU load (15m)</option>
                     <option value="gpu.vram.total_mb">VRAM total</option>
                   </select>
+                  <div id="deck-metric-details" hidden>
                   <div class="deck-metric-option" id="deck-metric-source-property" hidden>
                     <label for="deck-metric-source">Source</label>
                     <select class="form-select" id="deck-metric-source" disabled>
@@ -168,23 +195,55 @@
                     <button type="button" class="deck-secondary" id="deck-metric-color-reset" disabled>Default</button>
                   </div>
                   <small id="deck-metric-status" role="status">Only sensors available on your computer will show values.</small>
+                  </div>
                 </div>
+                    </div>
+                  </section>
+                  <section class="deck-inspector-section" aria-labelledby="deck-behavior-heading">
+                    <header class="deck-inspector-section-header">
+                      <span class="deck-inspector-section-symbol"><i class="bi bi-lightning-charge" aria-hidden="true"></i></span>
+                      <strong id="deck-behavior-heading">Button behavior</strong>
+                      <span class="deck-section-status" id="deck-action-indicator" data-active="false">None</span>
+                    </header>
+                    <div class="deck-inspector-section-body">
                 <div class="deck-property">
-                  <label for="deck-key-action"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Button action</label>
+                  <label for="deck-key-action">Button action</label>
                   <select class="form-select" id="deck-key-action" disabled>
                     <option value="">No action</option>
-                    <option value="page-next">Next page</option>
-                    <option value="page-previous">Previous page</option>
-                    <option value="page-go">Go to page</option>
+
+
+
                     <option value="hotkey">Keyboard shortcut</option>
                     <option value="macro">Run saved macro</option>
                     <option value="media">Media control</option>
+                    <option value="deck-control">Deck controls</option>
                   </select>
                 </div>
-                <div class="deck-property" id="deck-target-property" hidden>
-                  <label for="deck-key-target-page">Destination page</label>
-                  <select class="form-select" id="deck-key-target-page" disabled></select>
-                </div>
+                      <div class="deck-property" id="deck-control-property" hidden>
+                        <label for="deck-key-control">Deck command</label>
+                        <select class="form-select" id="deck-key-control" disabled>
+                          <option value="page-go">Go to page</option>
+                          <option value="page-previous">Previous page</option>
+                          <option value="page-next">Next page</option>
+                          <option value="brightness-up">Brightness up (+10%)</option>
+                          <option value="brightness-down">Brightness down (−10%)</option>
+                          <option value="brightness-set">Set brightness</option>
+                        </select>
+                      </div>
+                      <div class="deck-property" id="deck-target-property" hidden>
+                        <label for="deck-key-target-page">Destination page</label>
+                        <select class="form-select" id="deck-key-target-page" disabled></select>
+                      </div>
+                      <div class="deck-property" id="deck-brightness-property" hidden>
+                        <label for="deck-key-brightness">Brightness level</label>
+                        <select class="form-select" id="deck-key-brightness" disabled>
+                          <option value="10">10%</option>
+                          <option value="25">25%</option>
+                          <option value="50">50%</option>
+                          <option value="75">75%</option>
+                          <option value="100">100%</option>
+                        </select>
+                      </div>
                 <div class="deck-property" id="deck-hotkey-property" hidden>
                   <label for="deck-key-shortcut">Keyboard shortcut</label>
                   <input class="form-control" id="deck-key-shortcut" type="text" maxlength="80"
@@ -210,6 +269,9 @@
                     <a href="/macros" target="_blank" rel="noopener noreferrer">Manage macros</a>
                   </div>
                   <small id="deck-macro-status" role="status">Create a macro in OpenLinkHub Macros, then select it here.</small>
+                </div>
+                    </div>
+                  </section>
                 </div>
               </section>
               <section id="deck-panel-pages" role="tabpanel" aria-labelledby="deck-tab-pages" hidden>
@@ -239,7 +301,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=sources-iconsets-3"></script>
+<script src="/static/js/deck-editor.js?v=deck-controls-nested-2"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
