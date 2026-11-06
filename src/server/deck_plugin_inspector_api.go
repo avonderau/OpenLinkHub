@@ -157,10 +157,11 @@ if(document.readyState==="complete"){setTimeout(start,0);}else{window.addEventLi
 			at = i + j + 1
 		}
 	}
-	out := make([]byte, 0, len(page)+len(shim))
-	out = append(out, page[:at]...)
-	out = append(out, shim...)
-	return append(out, page[at:]...)
+	var out bytes.Buffer
+	out.Write(page[:at])
+	out.WriteString(shim)
+	out.Write(page[at:])
+	return out.Bytes()
 }
 
 var inspectorUpgrader = websocket.Upgrader{
