@@ -240,6 +240,13 @@ func(d *Device)drawKeyLocked(index int,key KeyConfig)error{
   frame=renderDeckArtwork(size,artwork,keyDisplayLabel(key))
  }else if key.Action=="media" {
   frame=renderDeckMediaKey(size,key)
+ }else if key.Action=="folder-open" || key.Action=="folder-back" {
+  if key.Action=="folder-open" && key.Label=="" {
+   for _,page:=range d.layout.Pages{
+    if page.ID==key.TargetPage {key.Label=page.Name;break}
+   }
+  }
+  frame=renderDeckFolderKey(size,key)
  }else {
   frame=renderKeyLabel(size,keyDisplayLabel(key))
  }
