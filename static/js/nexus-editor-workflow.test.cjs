@@ -16,7 +16,7 @@ function makeEditor(savedWidgetEntries=[]){
  const persisted={version:1,activeScreenId:'existing',cyclingMode:'manual',cyclingSeconds:15,screens:[{id:'existing',name:'Existing layout',widgets:[]}]};
  function makeNode(){
   return {
-   value:'',disabled:false,textContent:'',options:[],children:[],dataset:{},style:{setProperty(){}},classList:{add(){},remove(){}},listeners:{},
+   value:'',disabled:false,textContent:'',options:[],children:[],dataset:{},style:{setProperty(name,value){this[name]=value}},classList:{add(){},remove(){}},listeners:{},
    addEventListener(type,callback){this.listeners[type]=callback},
    replaceChildren(...children){this.children=[...children];this.options=[]},
    append(...children){this.children.push(...children)},
@@ -292,14 +292,21 @@ test('selected widget settings group opacity percentage and preserve it on save'
  const opacityNumber=walk(opacityLabel,item=>item.type==='number');
  assert.ok(opacityNumber);
  assert.equal(opacityNumber.value,'100');
+ assert.equal(opacitySlider.style['--nexus-opacity-progress'],'100%');
  opacitySlider.value='45';
  opacitySlider.listeners.input();
  assert.equal(screen.widgets[0].settings.opacity,'45');
  assert.equal(opacityNumber.value,'45');
+ assert.equal(opacitySlider.style['--nexus-opacity-progress'],'45%');
  opacityNumber.value='62';
  opacityNumber.listeners.change();
  assert.equal(screen.widgets[0].settings.opacity,'62');
  assert.equal(opacitySlider.value,'62');
+ assert.equal(opacitySlider.style['--nexus-opacity-progress'],'62%');
+ opacitySlider.value='100';opacitySlider.listeners.input();
+ assert.equal(opacityNumber.value,'100');
+ assert.equal(opacitySlider.style['--nexus-opacity-progress'],'100%');
+ opacitySlider.value='62';opacitySlider.listeners.input();
  const noFill=walk(sections[4],item=>item.options?.some(option=>option.label==='No fill'));
  assert.ok(noFill,'style label should distinguish no fill from opacity');
  assert.equal(noFill.options.some(option=>option.label==='Transparent'),false);
@@ -366,6 +373,9 @@ test('compact Appearance CSS prevents wrapping at narrow card widths',()=>{
  assert.match(css,/\.nexus-input-unit,[\s\S]*?\.nexus-opacity-value\s*\{[^}]*flex-wrap:nowrap/);
  assert.match(css,/\.nexus-colors-row label\.nexus-color-control\s*\{[^}]*flex-wrap:nowrap/);
  assert.match(css,/#nexus-editor #nexus-panel-widget #nexus-selected-panel #properties \.nexus-colors-row \.nexus-color-control input\[type=color\]/);
+ assert.match(css,/--nexus-opacity-progress,100%/);
+ assert.match(css,/::-webkit-slider-thumb/);
+ assert.match(css,/::-moz-range-thumb/);
 });
 
 test('new widgets use the full 48 pixel Nexus height without modifying existing items',async()=>{
@@ -701,7 +711,9 @@ test('fork release and installer security defaults are consistent',()=>{
  const remote=fs.readFileSync(path.join(root,'remote-install.sh'),'utf8');
  const system=fs.readFileSync(path.join(root,'install.sh'),'utf8');
  const userInstall=fs.readFileSync(path.join(root,'install-user-space.sh'),'utf8');
- assert.match(version,/var Version = "0\.9\.4N"/);
+ const releaseVersion=fs.readFileSync(path.join(root,'.github','releases','fork-version.txt'),'utf8').trim();
+ assert.equal(releaseVersion,'0.9.5N');
+ assert.ok(version.includes('var Version = "'+releaseVersion+'"'),'reported version matches the fork release version');
  assert.match(remote,/REPO_API="https:\/\/api\.github\.com\/repos\/avonderau\/OpenLinkHub-Nexus\/releases\/latest"/);
  assert.match(remote,/sha256sum --check --status/,'installer must check release checksum');
  assert.match(remote,/Release checksum verification failed; refusing to install/);
