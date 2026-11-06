@@ -69,6 +69,9 @@ type Plugin struct {
 	Actions []Action
 	// Err explains why an installed plugin cannot run.
 	Err error
+	// stamp changes when the manifest is rewritten (reinstall or edit), so
+	// a running copy can be restarted.
+	stamp string
 }
 
 func (p *Plugin) action(uuid string) (Action, bool) {
@@ -192,6 +195,9 @@ func loadPlugin(dir string, lookPath func(string) (string, error)) (*Plugin, err
 	}
 	p := &Plugin{UUID: uuid, Name: limitText(m.Name, 64), Version: limitText(m.Version, 32),
 		Author: limitText(m.Author, 64), Dir: dir}
+	if info, err := os.Stat(filepath.Join(dir, "manifest.json")); err == nil {
+		p.stamp = fmt.Sprintf("%d:%d", info.Size(), info.ModTime().UnixNano())
+	}
 	if p.Name == "" {
 		p.Name = uuid
 	}

@@ -78,6 +78,13 @@
   const pluginInput = document.getElementById('deck-key-plugin');
   const pluginStatus = document.getElementById('deck-plugin-status');
   const pluginRefreshButton = document.getElementById('deck-refresh-plugins');
+  const pluginManagerRefresh = document.getElementById('deck-plugin-manager-refresh');
+  const pluginHostStatus = document.getElementById('deck-plugin-host');
+  const pluginCount = document.getElementById('deck-plugin-count');
+  const pluginFileInput = document.getElementById('deck-plugin-file');
+  const pluginInstallButton = document.getElementById('deck-plugin-install');
+  const pluginInstallStatus = document.getElementById('deck-plugin-install-status');
+  const pluginList = document.getElementById('deck-plugin-list');
   const macroProperty = document.getElementById('deck-macro-property');
   const macroInput = document.getElementById('deck-key-macro');
   const macroStatus = document.getElementById('deck-macro-status');
@@ -102,10 +109,12 @@
   const tabs = {
     key: document.getElementById('deck-tab-key'),
     pages: document.getElementById('deck-tab-pages'),
+    plugins: document.getElementById('deck-tab-plugins'),
   };
   const panels = {
     key: document.getElementById('deck-panel-key'),
     pages: document.getElementById('deck-panel-pages'),
+    plugins: document.getElementById('deck-panel-plugins'),
   };
 
   let layout = null;
@@ -119,6 +128,9 @@
   let pluginCatalog = [];
   let pluginHostConnected = false;
   let pluginLoadMessage = '';
+  let pluginCanInstall = false;
+  let pluginMaxUpload = 0;
+  let pluginBusy = false;
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
@@ -552,7 +564,7 @@
     const broken = pluginCatalog.filter(plugin => plugin.error);
     pluginStatus.textContent = pluginLoadMessage ||
       (!pluginHostConnected ? 'The desktop agent is not connected. Start it in your desktop session, then Refresh.' :
-        !pluginCatalog.length ? 'No plugins installed. Run OpenLinkHub --install-deck-plugin <file> as your desktop user, then Refresh.' :
+        !pluginCatalog.length ? 'No plugins installed. Install one from the Plugins tab.' :
           broken.length ? `Experimental. ${broken.map(plugin => `${plugin.name}: ${plugin.error}`).join('; ')}` :
             'Experimental. The plugin runs in your desktop session when its key is on screen.');
     macroStatus.textContent = macroLoadMessage ||
@@ -875,6 +887,7 @@
   const pluginIDPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
   async function loadPlugins() {
     pluginRefreshButton.disabled = true;
+    pluginManagerRefresh.disabled = true;
     try {
       const response = await fetch('/api/deck/plugins', { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -883,10 +896,13 @@
         throw new Error('Invalid plugin list');
       }
       pluginHostConnected = payload.connected;
+      pluginCanInstall = payload.canInstall === true;
+      pluginMaxUpload = Number.isFinite(payload.maxUploadBytes) ? payload.maxUploadBytes : 0;
       pluginCatalog = payload.plugins
         .filter(plugin => plugin && pluginIDPattern.test(plugin.uuid) && Array.isArray(plugin.actions))
         .map(plugin => ({
           uuid: plugin.uuid, name: String(plugin.name || plugin.uuid), error: String(plugin.error || ''),
+          version: String(plugin.version || ''), author: String(plugin.author || ''),
           actions: plugin.actions.filter(action => action && pluginIDPattern.test(action.uuid))
             .map(action => ({ uuid: action.uuid, name: String(action.name || action.uuid) })),
         }));
@@ -895,6 +911,8 @@
       pluginLoadMessage = `Could not load plugins: ${error.message}`;
     } finally {
       pluginRefreshButton.disabled = false;
+      pluginManagerRefresh.disabled = false;
+      renderPluginManager();
       if (layout) {
         renderGrid();
         renderInspector();
@@ -902,6 +920,119 @@
     }
   }
   pluginRefreshButton.addEventListener('click', loadPlugins);
+  pluginManagerRefresh.addEventListener('click', loadPlugins);
+
+  // Keys on any page that use a plugin, so removal can warn about them.
+  function pluginKeyCount(uuid) {
+    let count = 0;
+    for (const page of layout?.pages || []) {
+      for (const key of page.keys || []) {
+        if (key.action === 'plugin' && key.plugin === uuid) count++;
+      }
+    }
+    return count;
+  }
+
+  function renderPluginManager() {
+    pluginHostStatus.dataset.connected = String(pluginHostConnected);
+    pluginHostStatus.textContent = pluginLoadMessage ||
+      (pluginHostConnected ? 'Desktop agent connected. Plugins run in your desktop session.' :
+        'The desktop agent is not connected. Start it in your desktop session to install or run plugins.');
+    const ready = pluginHostConnected && pluginCanInstall && !pluginBusy;
+    pluginFileInput.disabled = !ready;
+    pluginInstallButton.disabled = !ready || !pluginFileInput.files?.length;
+    if (!pluginBusy) {
+      pluginInstallStatus.textContent = !pluginCanInstall
+        ? 'For safety, plugins can only be installed from a browser on the computer running OpenLinkHub.'
+        : 'A .streamDeckPlugin or .zip file. A plugin is a program that runs as your desktop user, so install only plugins you trust.';
+    }
+    pluginCount.textContent = pluginCatalog.length === 1 ? '1 plugin installed' : `${pluginCatalog.length} plugins installed`;
+    const items = pluginCatalog.map(plugin => {
+      const item = document.createElement('li');
+      item.className = 'deck-plugin-item';
+      const text = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = plugin.version ? `${plugin.name} ${plugin.version}` : plugin.name;
+      const detail = document.createElement('small');
+      const actions = plugin.actions.length === 1 ? '1 action' : `${plugin.actions.length} actions`;
+      detail.textContent = [plugin.author, actions, plugin.uuid].filter(Boolean).join(' · ');
+      text.append(name, detail);
+      if (plugin.error) {
+        const error = document.createElement('small');
+        error.className = 'deck-plugin-error';
+        error.textContent = plugin.error;
+        text.append(error);
+      }
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'deck-secondary deck-danger';
+      remove.textContent = 'Remove';
+      remove.disabled = !pluginHostConnected || pluginBusy;
+      remove.setAttribute('aria-label', `Remove ${plugin.name}`);
+      remove.addEventListener('click', () => removePlugin(plugin));
+      item.append(text, remove);
+      return item;
+    });
+    if (!items.length) {
+      const empty = document.createElement('li');
+      empty.className = 'deck-plugin-empty';
+      empty.textContent = pluginHostConnected ? 'No plugins installed yet.' : 'Plugins appear here when the desktop agent is connected.';
+      items.push(empty);
+    }
+    pluginList.replaceChildren(...items);
+  }
+
+  async function pluginRequest(url, options) {
+    const response = await fetch(url, { cache: 'no-store', ...options });
+    if (!response.ok) throw new Error((await response.text()).trim() || `HTTP ${response.status}`);
+    return response.status === 204 ? null : response.json();
+  }
+
+  pluginFileInput.addEventListener('change', renderPluginManager);
+  pluginInstallButton.addEventListener('click', async () => {
+    const file = pluginFileInput.files?.[0];
+    if (!file || pluginBusy) return;
+    if (pluginMaxUpload && file.size > pluginMaxUpload) {
+      pluginInstallStatus.textContent = `That file is too large. The limit is ${Math.floor(pluginMaxUpload / 1048576)} MiB.`;
+      return;
+    }
+    pluginBusy = true;
+    pluginInstallStatus.textContent = `Installing ${file.name}...`;
+    renderPluginManager();
+    let result = '';
+    try {
+      const body = await pluginRequest('/api/deck/plugins', {
+        method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file,
+      });
+      const installed = String(body?.plugin || file.name);
+      result = `Installed ${installed}. Choose Plugin action on a key to use it.`;
+      pluginFileInput.value = '';
+    } catch (error) {
+      result = `Install failed: ${error.message}`;
+    }
+    pluginBusy = false;
+    await loadPlugins();
+    pluginInstallStatus.textContent = result;
+  });
+
+  async function removePlugin(plugin) {
+    if (pluginBusy) return;
+    const used = pluginKeyCount(plugin.uuid);
+    const warning = used ? ` ${used === 1 ? '1 key uses' : `${used} keys use`} it and will show "Plugin missing".` : '';
+    if (!window.confirm(`Remove ${plugin.name}?${warning}`)) return;
+    pluginBusy = true;
+    renderPluginManager();
+    let result = '';
+    try {
+      await pluginRequest(`/api/deck/plugins?plugin=${encodeURIComponent(plugin.uuid)}`, { method: 'DELETE' });
+      result = `Removed ${plugin.name}.`;
+    } catch (error) {
+      result = `Could not remove ${plugin.name}: ${error.message}`;
+    }
+    pluginBusy = false;
+    await loadPlugins();
+    pluginInstallStatus.textContent = result;
+  }
 
   pageNameInput.addEventListener('input', () => {
     const page = currentPage();

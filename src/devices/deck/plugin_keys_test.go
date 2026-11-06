@@ -152,3 +152,34 @@ func TestPluginCatalogIsSanitized(t *testing.T) {
 		t.Fatalf("catalog %+v", catalog)
 	}
 }
+
+func TestPluginManagerRequests(t *testing.T) {
+	if _, err := InstallPlugin([]byte("zip")); err != ErrPluginHostOffline {
+		t.Fatalf("offline install: %v", err)
+	}
+	out := capturePluginMessages(t)
+	go func() {
+		msg := <-out
+		if msg.Type != deckplugin.TypeInstall || string(msg.Archive) != "zip" || !deckplugin.ValidRequest(msg.Request) {
+			plugins.handle(deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request, Error: "bad message"})
+			return
+		}
+		// A result for another request is ignored.
+		plugins.handle(deckplugin.Message{Type: deckplugin.TypeResult, Request: "ffffffffffffffffffffffffffffffff", Plugin: "x.y"})
+		plugins.handle(deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request, Plugin: "com.example.counter"})
+	}()
+	uuid, err := InstallPlugin([]byte("zip"))
+	if err != nil || uuid != "com.example.counter" {
+		t.Fatalf("install: %q %v", uuid, err)
+	}
+	go func() {
+		msg := <-out
+		plugins.handle(deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request, Error: "plugin is not installed"})
+	}()
+	if err := RemovePlugin("com.example.counter"); err == nil || err.Error() != "plugin is not installed" {
+		t.Fatalf("remove error not passed through: %v", err)
+	}
+	if err := RemovePlugin("../bad"); err == nil {
+		t.Fatal("invalid ID sent")
+	}
+}

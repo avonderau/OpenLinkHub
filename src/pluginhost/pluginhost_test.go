@@ -405,3 +405,79 @@ ws.onmessage=m=>{const e=JSON.parse(m.data);
 		return m.Type == deckplugin.TypeTitle && *m.Title == "pressed on HSV293S"
 	})
 }
+
+func TestManagerInstallsAndRemoves(t *testing.T) {
+	plugins := t.TempDir()
+	data, err := os.ReadFile(zipFile(t, map[string]string{
+		"com.example.counter.sdPlugin/manifest.json": nodeManifest,
+		"com.example.counter.sdPlugin/bin/plugin.js": "//",
+	}, ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const request = "0123456789abcdef0123456789abcdef"
+	res := manage(deckplugin.Message{Type: deckplugin.TypeInstall, Request: request, Archive: data}, plugins)
+	if res.Type != deckplugin.TypeResult || res.Request != request || res.Error != "" || res.Plugin != "com.example.counter" {
+		t.Fatalf("install result %+v", res)
+	}
+	if res := manage(deckplugin.Message{Type: deckplugin.TypeInstall, Request: request, Archive: []byte("not a zip")}, plugins); res.Error == "" {
+		t.Fatal("garbage archive accepted")
+	}
+	if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: "bad", Plugin: "com.example.counter"}, plugins); res.Error == "" {
+		t.Fatal("invalid request ID accepted")
+	}
+	for _, bad := range []string{"../x", "com.example.other"} {
+		if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: request, Plugin: bad}, plugins); res.Error == "" {
+			t.Errorf("removed %q", bad)
+		}
+	}
+	if res := manage(deckplugin.Message{Type: deckplugin.TypeRemove, Request: request, Plugin: "com.example.counter"}, plugins); res.Error != "" {
+		t.Fatalf("remove: %s", res.Error)
+	}
+	if entries, _ := os.ReadDir(plugins); len(entries) != 0 {
+		t.Fatalf("plugins folder not empty after remove: %v", entries)
+	}
+}
+
+func TestSetPluginsRestartsChangedPlugins(t *testing.T) {
+	var mu sync.Mutex
+	launches := 0
+	h, rec, plugin := testHost(t, func(h *Host, p *process) error {
+		mu.Lock()
+		launches++
+		mu.Unlock()
+		return nil
+	})
+	in := deckplugin.Instance{Context: testContext, Plugin: plugin.UUID, Action: "com.example.counter.increment"}
+	h.HandleServiceMessage(deckplugin.Message{Type: deckplugin.TypeAppear, Instances: []deckplugin.Instance{in}})
+	count := func() int { mu.Lock(); defer mu.Unlock(); return launches }
+	if count() != 1 {
+		t.Fatalf("launches %d", count())
+	}
+
+	// Removed while on screen: the process stops and the key says so.
+	h.SetPlugins(nil)
+	rec.wait(t, func(m deckplugin.Message) bool {
+		return m.Type == deckplugin.TypeTitle && m.Title != nil && *m.Title == "Plugin missing"
+	})
+	h.mu.Lock()
+	running := h.running[plugin.UUID]
+	h.mu.Unlock()
+	if running != nil {
+		t.Fatal("removed plugin still running")
+	}
+
+	// Installed again: the key on screen starts it without a page change.
+	h.SetPlugins([]*Plugin{plugin})
+	if count() != 2 {
+		t.Fatalf("reinstall did not restart the plugin: %d launches", count())
+	}
+	// An unchanged rescan leaves it alone; a rewritten manifest restarts it.
+	h.SetPlugins([]*Plugin{plugin})
+	updated := *plugin
+	updated.stamp = "changed"
+	h.SetPlugins([]*Plugin{&updated})
+	if count() != 3 {
+		t.Fatalf("expected a restart after an update, got %d launches", count())
+	}
+}

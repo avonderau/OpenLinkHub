@@ -114,13 +114,46 @@ func (h *Host) Stop() {
 	}
 }
 
-// SetPlugins replaces the installed plugin list after a rescan.
+// SetPlugins replaces the installed plugin list after a rescan. A plugin
+// that was removed, reinstalled or edited is stopped, and its keys on
+// screen are set up again from the new copy (or marked missing).
 func (h *Host) SetPlugins(plugins []*Plugin) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	old := h.plugins
 	h.plugins = map[string]*Plugin{}
 	for _, p := range plugins {
 		h.plugins[p.UUID] = p
+	}
+	for uuid, before := range old {
+		if after := h.plugins[uuid]; after != nil && after.Dir == before.Dir && after.stamp == before.stamp {
+			continue
+		}
+		h.reloadLocked(uuid)
+	}
+	for uuid := range h.plugins {
+		if old[uuid] == nil {
+			h.reloadLocked(uuid)
+		}
+	}
+}
+
+// reloadLocked stops a plugin's process and replays its visible keys.
+func (h *Host) reloadLocked(uuid string) {
+	if p := h.running[uuid]; p != nil {
+		delete(h.running, uuid)
+		delete(h.byToken, p.token)
+		go p.kill()
+	}
+	var keys []deckplugin.Instance
+	for ctx, inst := range h.instances {
+		if inst.Plugin == uuid {
+			keys = append(keys, inst.Instance)
+			delete(h.instances, ctx)
+		}
+	}
+	for _, in := range keys {
+		h.appearLocked(in)
 	}
 }
 
@@ -188,18 +221,26 @@ func (h *Host) appearLocked(in deckplugin.Instance) {
 	if !deckplugin.ValidContext(in.Context) || deckplugin.ValidSettings(in.Settings) != nil {
 		return
 	}
-	plugin := h.plugins[in.Plugin]
-	if plugin == nil {
-		h.sendTitle(in.Context, "Plugin missing")
-		return
-	}
-	action, ok := plugin.action(in.Action)
-	if !ok || plugin.Err != nil {
-		h.sendTitle(in.Context, "Unavailable")
-		return
-	}
 	if existing := h.instances[in.Context]; existing != nil {
 		h.notifyLocked(existing, "willDisappear", nil)
+		delete(h.instances, in.Context)
+	}
+	plugin := h.plugins[in.Plugin]
+	var action Action
+	ok := plugin != nil && plugin.Err == nil
+	if ok {
+		action, ok = plugin.action(in.Action)
+	}
+	if !ok {
+		// Remember the key so it comes alive if the plugin is installed
+		// or fixed while it is on screen.
+		h.instances[in.Context] = &instance{Instance: in}
+		if plugin == nil {
+			h.sendTitle(in.Context, "Plugin missing")
+		} else {
+			h.sendTitle(in.Context, "Unavailable")
+		}
+		return
 	}
 	if in.State < 0 || in.State >= max(1, len(action.States)) {
 		in.State = 0

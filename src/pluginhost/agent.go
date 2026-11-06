@@ -49,6 +49,7 @@ func Run(ctx context.Context, socketPath string) error {
 	defer host.Stop()
 
 	signature := ""
+	var manageMu, scanMu sync.Mutex
 	rescan := func() bool {
 		next := folderSignature(pluginsDir)
 		if next == signature {
@@ -91,17 +92,36 @@ func Run(ctx context.Context, socketPath string) error {
 				case <-done:
 					return
 				case <-ticker.C:
-					if rescan() {
+					scanMu.Lock()
+					changed := rescan()
+					scanMu.Unlock()
+					if changed {
 						sendCatalog(send, pluginsDir)
 					}
 				}
 			}
 		}()
 		scanner := bufio.NewScanner(c)
-		scanner.Buffer(make([]byte, 64<<10), deckplugin.MaxMessageBytes)
+		scanner.Buffer(make([]byte, 64<<10), deckplugin.MaxServiceMessageBytes)
 		for scanner.Scan() {
 			var msg deckplugin.Message
-			if json.Unmarshal(scanner.Bytes(), &msg) == nil {
+			if json.Unmarshal(scanner.Bytes(), &msg) != nil {
+				continue
+			}
+			switch msg.Type {
+			case deckplugin.TypeInstall, deckplugin.TypeRemove:
+				// Unpacking can take a moment; keep key presses flowing.
+				go func() {
+					manageMu.Lock()
+					defer manageMu.Unlock()
+					result := manage(msg, pluginsDir)
+					scanMu.Lock()
+					rescan()
+					scanMu.Unlock()
+					sendCatalog(send, pluginsDir)
+					send(result)
+				}()
+			default:
 				host.HandleServiceMessage(msg)
 			}
 		}
@@ -117,6 +137,33 @@ func Run(ctx context.Context, socketPath string) error {
 		}
 	}
 	return nil
+}
+
+// manage runs one install or remove request from the editor.
+func manage(msg deckplugin.Message, pluginsDir string) deckplugin.Message {
+	result := deckplugin.Message{Type: deckplugin.TypeResult, Request: msg.Request}
+	if !deckplugin.ValidRequest(msg.Request) {
+		result.Error = "invalid request"
+		return result
+	}
+	switch msg.Type {
+	case deckplugin.TypeInstall:
+		plugin, err := InstallArchive(msg.Archive, pluginsDir)
+		if err != nil {
+			result.Error = limitText(err.Error(), 200)
+			return result
+		}
+		result.Plugin = plugin.UUID
+		fmt.Fprintf(os.Stderr, "Deck plugin %s installed from the editor\n", plugin.UUID)
+	case deckplugin.TypeRemove:
+		if err := Remove(msg.Plugin, pluginsDir); err != nil {
+			result.Error = limitText(err.Error(), 200)
+			return result
+		}
+		result.Plugin = msg.Plugin
+		fmt.Fprintf(os.Stderr, "Deck plugin %s removed from the editor\n", msg.Plugin)
+	}
+	return result
 }
 
 func sendCatalog(send func(deckplugin.Message), pluginsDir string) {

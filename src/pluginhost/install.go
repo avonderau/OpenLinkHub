@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"OpenLinkHub/src/deckplugin"
 )
 
 // Archive limits for .streamDeckPlugin / .zip installs.
@@ -81,6 +83,54 @@ func Install(source, pluginsDir string) (*Plugin, error) {
 		return nil, err
 	}
 	return LoadPlugin(target)
+}
+
+// InstallArchive installs a plugin archive received from the service.
+func InstallArchive(data []byte, pluginsDir string) (*Plugin, error) {
+	if len(data) == 0 || len(data) > deckplugin.MaxUploadBytes {
+		return nil, errors.New("plugin archive is empty or too large")
+	}
+	if err := os.MkdirAll(pluginsDir, 0o700); err != nil {
+		return nil, err
+	}
+	tmp, err := os.CreateTemp(pluginsDir, ".upload-*.zip")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmp.Name())
+	_, err = tmp.Write(data)
+	if cerr := tmp.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		return nil, err
+	}
+	return Install(tmp.Name(), pluginsDir)
+}
+
+// Remove uninstalls the plugin with this UUID from pluginsDir.
+func Remove(uuid, pluginsDir string) error {
+	if !deckplugin.ValidID(uuid) {
+		return errors.New("invalid plugin ID")
+	}
+	for _, p := range ScanPlugins(pluginsDir) {
+		if p.UUID != uuid {
+			continue
+		}
+		dir := filepath.Clean(p.Dir)
+		if filepath.Dir(dir) != filepath.Clean(pluginsDir) {
+			return errors.New("plugin is outside the plugins folder")
+		}
+		info, err := os.Lstat(dir)
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			return errors.New("plugin folder is not a directory")
+		}
+		return os.RemoveAll(dir)
+	}
+	return errors.New("plugin is not installed")
 }
 
 // extractArchive unpacks exactly one top-level *.sdPlugin folder, refusing

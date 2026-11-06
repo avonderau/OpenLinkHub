@@ -2,7 +2,10 @@ package deck
 
 import (
 	"bufio"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net"
 	"os"
 	"path/filepath"
@@ -26,9 +29,12 @@ type pluginBridge struct {
 	// contexts maps each visible plugin key to its device.
 	contexts map[string]*Device
 	devices  map[*Device]bool
+	// pending holds install/remove requests waiting for the agent's result.
+	pending map[string]chan deckplugin.Message
 }
 
-var plugins = &pluginBridge{contexts: map[string]*Device{}, devices: map[*Device]bool{}}
+var plugins = &pluginBridge{contexts: map[string]*Device{}, devices: map[*Device]bool{},
+	pending: map[string]chan deckplugin.Message{}}
 var pluginBridgeOnce sync.Once
 
 // StartPluginBridge opens the plugin socket beside the Nexus launch socket.
@@ -83,7 +89,11 @@ func (b *pluginBridge) accept() {
 func (b *pluginBridge) write(conn net.Conn, out chan deckplugin.Message) {
 	enc := json.NewEncoder(conn)
 	for msg := range out {
-		conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+		deadline := 2 * time.Second
+		if msg.Type == deckplugin.TypeInstall {
+			deadline = time.Minute
+		}
+		conn.SetWriteDeadline(time.Now().Add(deadline))
 		if enc.Encode(msg) != nil {
 			conn.Close()
 			for range out {
@@ -109,6 +119,10 @@ func (b *pluginBridge) read(conn net.Conn) {
 		close(b.out)
 		b.out = nil
 		b.catalog = nil
+		for id, ch := range b.pending {
+			close(ch)
+			delete(b.pending, id)
+		}
 	}
 	devices := make([]*Device, 0, len(b.devices))
 	for d := range b.devices {
@@ -140,6 +154,16 @@ func (b *pluginBridge) connected() bool {
 }
 
 func (b *pluginBridge) handle(msg deckplugin.Message) {
+	if msg.Type == deckplugin.TypeResult {
+		b.mu.Lock()
+		ch := b.pending[msg.Request]
+		delete(b.pending, msg.Request)
+		b.mu.Unlock()
+		if ch != nil {
+			ch <- deckplugin.Message{Type: msg.Type, Plugin: msg.Plugin, Error: trimRunes(msg.Error, 200)}
+		}
+		return
+	}
 	if msg.Type == deckplugin.TypeCatalog {
 		if len(msg.Catalog) > deckplugin.MaxCatalogItems {
 			return
@@ -182,6 +206,70 @@ func trimRunes(s string, n int) string {
 		return string(r[:n])
 	}
 	return s
+}
+
+// ErrPluginHostOffline means no desktop agent is attached.
+var ErrPluginHostOffline = errors.New("the desktop agent is not connected; start it in your desktop session")
+
+// request sends an install or remove to the agent and waits for its result.
+func (b *pluginBridge) request(msg deckplugin.Message, timeout time.Duration) (string, error) {
+	var raw [16]byte
+	if _, err := rand.Read(raw[:]); err != nil {
+		return "", err
+	}
+	msg.Request = hex.EncodeToString(raw[:])
+	ch := make(chan deckplugin.Message, 1)
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	b.mu.Lock()
+	if b.out == nil {
+		b.mu.Unlock()
+		return "", ErrPluginHostOffline
+	}
+	b.pending[msg.Request] = ch
+	out := b.out
+	// Hold the lock while queueing so a disconnect cannot close out
+	// underneath the send. The queue is drained by the writer.
+	select {
+	case out <- msg:
+	default:
+		delete(b.pending, msg.Request)
+		b.mu.Unlock()
+		return "", errors.New("the desktop agent is busy; try again")
+	}
+	b.mu.Unlock()
+	select {
+	case result, ok := <-ch:
+		if !ok {
+			return "", ErrPluginHostOffline
+		}
+		if result.Error != "" {
+			return "", errors.New(result.Error)
+		}
+		return result.Plugin, nil
+	case <-timer.C:
+		b.mu.Lock()
+		delete(b.pending, msg.Request)
+		b.mu.Unlock()
+		return "", errors.New("the desktop agent did not answer in time")
+	}
+}
+
+// InstallPlugin asks the desktop agent to install a plugin archive.
+func InstallPlugin(archive []byte) (string, error) {
+	if len(archive) == 0 || len(archive) > deckplugin.MaxUploadBytes {
+		return "", errors.New("plugin archive is empty or too large")
+	}
+	return plugins.request(deckplugin.Message{Type: deckplugin.TypeInstall, Archive: archive}, 2*time.Minute)
+}
+
+// RemovePlugin asks the desktop agent to uninstall a plugin.
+func RemovePlugin(uuid string) error {
+	if !deckplugin.ValidID(uuid) {
+		return errors.New("invalid plugin ID")
+	}
+	_, err := plugins.request(deckplugin.Message{Type: deckplugin.TypeRemove, Plugin: uuid}, 30*time.Second)
+	return err
 }
 
 // PluginCatalog lists the plugins the connected agent reported.

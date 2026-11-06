@@ -55,6 +55,8 @@ async function run() {
     'deck-key-shortcut', 'deck-hotkey-property',
     'deck-macro-property', 'deck-key-macro', 'deck-macro-status', 'deck-refresh-macros',
     'deck-plugin-property', 'deck-key-plugin', 'deck-plugin-status', 'deck-refresh-plugins',
+    'deck-tab-plugins', 'deck-panel-plugins', 'deck-plugin-manager-refresh', 'deck-plugin-host',
+    'deck-plugin-count', 'deck-plugin-file', 'deck-plugin-install', 'deck-plugin-install-status', 'deck-plugin-list',
     'deck-key-media', 'deck-media-property',
     'deck-url-property', 'deck-key-url', 'deck-application-property', 'deck-key-application',
     'deck-page-name', 'deck-selected-key', 'deck-save', 'deck-add-page',
@@ -68,6 +70,7 @@ async function run() {
   nodes['deck-key-grid'].dataset.columns = '6';
   nodes['deck-key-grid'].dataset.family = 'mirabox';
   const received = [];
+  const pluginCalls = [];
   const intervals = [];
   let cpuReading = 55.6;
   const documentListeners = {};
@@ -98,6 +101,16 @@ async function run() {
       return { ok: true, status: 200, json: async () => ({
         status: 1,
         data: { '7': { id: 7, name: 'Window Manager' }, '12': { id: 12, name: 'Editor Macro' } },
+      }) };
+    }
+    if (type === '/api/deck/plugins') {
+      pluginCalls.push({ url, method: options.method || 'GET', body: options.body });
+      if (options.method === 'POST') return { ok: true, status: 201, json: async () => ({ plugin: 'com.example.counter' }) };
+      if (options.method === 'DELETE') return { ok: true, status: 204, json: async () => null };
+      return { ok: true, status: 200, json: async () => ({
+        connected: true, canInstall: true, maxUploadBytes: 1024,
+        plugins: [{ uuid: 'com.example.counter', name: 'Counter', version: '1.0', author: 'Example',
+          actions: [{ uuid: 'com.example.counter.increment', name: 'Increment' }] }],
       }) };
     }
     if (type === '/api/deck/icon' && options.method === 'POST') {
@@ -623,6 +636,36 @@ async function run() {
   assert.equal(passive.label, 'System');
   assert.equal(passive.metric, 'cpu.temperature');
   assert.equal(passive.action, undefined);
+
+  // Plugins tab: list, install and remove.
+  nodes['deck-tab-plugins'].dispatch('click');
+  assert.equal(nodes['deck-panel-plugins'].hidden, false);
+  assert.equal(nodes['deck-panel-key'].hidden, true);
+  assert.equal(nodes['deck-plugin-host'].dataset.connected, 'true');
+  assert.equal(nodes['deck-plugin-count'].textContent, '1 plugin installed');
+  const listed = nodes['deck-plugin-list'].children;
+  assert.equal(listed.length, 1);
+  assert.equal(listed[0].children[0].children[0].textContent, 'Counter 1.0');
+  const fileInput = nodes['deck-plugin-file'];
+  assert.equal(fileInput.disabled, false);
+  assert.equal(nodes['deck-plugin-install'].disabled, true, 'install needs a chosen file');
+  fileInput.files = [{ name: 'big.streamDeckPlugin', size: 4096 }];
+  fileInput.dispatch('change');
+  await nodes['deck-plugin-install'].dispatch('click');
+  assert.match(nodes['deck-plugin-install-status'].textContent, /too large/);
+  const upload = { name: 'counter.streamDeckPlugin', size: 10 };
+  fileInput.files = [upload];
+  fileInput.dispatch('change');
+  assert.equal(nodes['deck-plugin-install'].disabled, false);
+  await nodes['deck-plugin-install'].dispatch('click');
+  const post = pluginCalls.find(call => call.method === 'POST');
+  assert.ok(post && post.body === upload, 'the chosen file is uploaded as the request body');
+  assert.match(nodes['deck-plugin-install-status'].textContent, /Installed com\.example\.counter/);
+  const removeButton = nodes['deck-plugin-list'].children[0].children[1];
+  await removeButton.dispatch('click');
+  const del = pluginCalls.find(call => call.method === 'DELETE');
+  assert.ok(del && del.url.endsWith('?plugin=com.example.counter'));
+  assert.match(nodes['deck-plugin-install-status'].textContent, /Removed Counter/);
 
   console.log('Deck Editor interaction test passed');
 }

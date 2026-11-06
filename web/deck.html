@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-folders-2">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-plugins-2">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -65,6 +65,8 @@
                       aria-controls="deck-panel-key" tabindex="0"><i class="bi bi-keyboard" aria-hidden="true"></i> Key</button>
               <button type="button" id="deck-tab-pages" role="tab" aria-selected="false"
                       aria-controls="deck-panel-pages" tabindex="-1"><i class="bi bi-files" aria-hidden="true"></i> Pages</button>
+              <button type="button" id="deck-tab-plugins" role="tab" aria-selected="false"
+                      aria-controls="deck-panel-plugins" tabindex="-1"><i class="bi bi-plug" aria-hidden="true"></i> Plugins</button>
             </div>
             <div class="deck-tabcontent">
               <section id="deck-panel-key" role="tabpanel" aria-labelledby="deck-tab-key">
@@ -333,6 +335,28 @@
                   </div>
                 </div>
               </section>
+              <section id="deck-panel-plugins" role="tabpanel" aria-labelledby="deck-tab-plugins" hidden>
+                <div class="deck-selected-hero">
+                  <span class="deck-selected-icon" aria-hidden="true"><i class="bi bi-plug"></i></span>
+                  <span><strong>Plugins <span class="deck-experimental">Experimental</span></strong><small id="deck-plugin-count">Stream Deck and OpenDeck action plugins</small></span>
+                </div>
+                <p class="deck-plugin-host" id="deck-plugin-host" role="status" data-connected="false">Checking the desktop agent...</p>
+                <div class="deck-property deck-plugin-install">
+                  <label for="deck-plugin-file">Install a plugin</label>
+                  <input id="deck-plugin-file" type="file" accept=".streamDeckPlugin,.zip,application/zip" disabled>
+                  <button type="button" id="deck-plugin-install" class="deck-secondary" disabled>
+                    <i class="bi bi-box-arrow-in-down" aria-hidden="true"></i> Install plugin
+                  </button>
+                  <small id="deck-plugin-install-status" role="status">A plugin is a program that runs as your desktop user. Install only plugins you trust.</small>
+                </div>
+                <div class="deck-property">
+                  <div class="deck-plugin-list-header">
+                    <label id="deck-plugin-list-label">Installed plugins</label>
+                    <button type="button" class="deck-secondary" id="deck-plugin-manager-refresh"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh</button>
+                  </div>
+                  <ul class="deck-plugin-list" id="deck-plugin-list" aria-labelledby="deck-plugin-list-label"></ul>
+                </div>
+              </section>
             </div>
             <footer class="deck-inspector-footer">
               <button id="deck-save" class="deck-primary" type="button" disabled>
@@ -346,7 +370,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=deck-folders-2"></script>
+<script src="/static/js/deck-editor.js?v=deck-plugins-2"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>

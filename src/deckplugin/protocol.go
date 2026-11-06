@@ -26,6 +26,13 @@ const (
 	MaxSettingsBytes = 8 << 10
 	MaxTitleRunes    = 64
 	MaxCatalogItems  = 256
+	// MaxUploadBytes bounds a plugin archive the service forwards from the
+	// editor. Install messages are the only lines larger than
+	// MaxMessageBytes, and only the agent accepts them.
+	MaxUploadBytes = 48 << 20
+	// MaxServiceMessageBytes is the agent's read limit: a base64-encoded
+	// upload plus room for the JSON around it.
+	MaxServiceMessageBytes = MaxUploadBytes/3*4 + 64<<10
 )
 
 // Message types, service to agent.
@@ -35,6 +42,8 @@ const (
 	TypeDisappear = "disappear" // Context: key left the screen
 	TypeKeyDown   = "keyDown"   // Context
 	TypeKeyUp     = "keyUp"     // Context
+	TypeInstall   = "install"   // Request, Archive: install a plugin
+	TypeRemove    = "remove"    // Request, Plugin: uninstall a plugin
 )
 
 // Message types, agent to service.
@@ -46,10 +55,15 @@ const (
 	TypeSettings = "settings" // Context, Settings
 	TypeAlert    = "alert"    // Context
 	TypeOK       = "ok"       // Context
+	TypeResult   = "result"   // Request, Plugin, Error: install/remove outcome
 )
 
 var idPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
 var contextPattern = regexp.MustCompile(`^[0-9a-f]{24}$`)
+var requestPattern = regexp.MustCompile(`^[0-9a-f]{32}$`)
+
+// ValidRequest reports whether s is an install/remove request ID.
+func ValidRequest(s string) bool { return requestPattern.MatchString(s) }
 
 // ValidID reports whether s is an acceptable plugin or action UUID
 // (reverse-DNS style, as used by Stream Deck and OpenAction manifests).
@@ -127,4 +141,9 @@ type Message struct {
 	Image     []byte          `json:"image,omitempty"`
 	State     int             `json:"state,omitempty"`
 	Settings  json.RawMessage `json:"settings,omitempty"`
+	// Request pairs an install or remove with its result.
+	Request string `json:"request,omitempty"`
+	Plugin  string `json:"plugin,omitempty"`
+	Archive []byte `json:"archive,omitempty"`
+	Error   string `json:"error,omitempty"`
 }

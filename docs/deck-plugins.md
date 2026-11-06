@@ -55,6 +55,32 @@ not work.
 
 ## Install a plugin
 
+### From the Deck editor
+
+1. Make sure the desktop agent is running (see
+   [Nexus desktop launch](nexus-desktop-launch.md)). The **Plugins** tab
+   shows whether it is connected.
+2. Open the Deck editor and select the **Plugins** tab.
+3. Choose a `.streamDeckPlugin` or `.zip` file (up to 48 MiB) and click
+   **Install plugin**.
+
+The editor sends the file to the service, which passes it to the desktop
+agent. The agent installs it as your user. Because a plugin is a program,
+installs are only accepted from a browser on the computer running
+OpenLinkHub, connecting directly to `127.0.0.1` or `::1`. A remote browser,
+or one that goes through a reverse proxy, can see and remove plugins but
+cannot install them.
+
+The Plugins tab also lists every installed plugin with its version, author,
+and why it cannot run if it cannot. Remove a plugin with its **Remove**
+button. Keys that used it show "Plugin missing" until you install it again
+or give them another action.
+
+Installing a plugin that is already installed replaces it. Its keys on
+screen restart with the new version.
+
+### From a terminal
+
 Run this **as your desktop user** (not with `sudo`):
 
 ```sh
@@ -62,13 +88,15 @@ Run this **as your desktop user** (not with `sudo`):
 ```
 
 The source can be a `.streamDeckPlugin` file (a zip archive) or an unpacked
-`*.sdPlugin` folder. Plugins are installed into
-`~/.local/share/OpenLinkHub/deck-plugins/`. The installer refuses archives
-with absolute paths, `..`, links, more than one plugin, or more than 256 MiB
-of content, and refuses hardware plugins.
+`*.sdPlugin` folder.
 
-To remove a plugin, delete its folder from that directory. The agent notices
-added and removed plugins within a few seconds.
+### Where plugins go
+
+Plugins are installed into `~/.local/share/OpenLinkHub/deck-plugins/`. The
+installer refuses archives with absolute paths, `..`, links, more than one
+plugin, or more than 256 MiB of content, and refuses hardware plugins. You
+can also delete a plugin's folder there yourself. The agent notices added,
+changed and removed plugins within a few seconds.
 
 **A plugin is a program that runs with your user's permissions.** Install
 only plugins you trust, preferably open-source ones.
