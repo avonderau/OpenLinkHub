@@ -49,11 +49,14 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config rpm cpio
+          sudo apt-get install -y libudev-dev libpipewire-0.3-dev pkg-config librsvg2-bin rpm cpio
       - name: Verify release sources
         run: |
-          go vet ./src/devices/nexus ./src/server ./src/version
-          go test ./src/devices/nexus ./src/server ./src/auth -count=1
+          # This release ships both Nexus and Deck code, so verify both.
+          go vet ./src/devices/nexus ./src/devices/deck ./src/server ./src/version
+          go test ./src/config ./src/devices ./src/devices/deck ./src/devices/nexus ./src/server ./src/auth -count=1
+          node --check static/js/deck-editor.js
+          node --test static/js/deck-editor.test.cjs static/js/deck-settings.test.cjs
           node --test static/js/nexus-editor-workflow.test.cjs static/js/nexus-layout-files.test.cjs static/js/nexus-starter-templates.test.cjs static/js/nexus-widget-library.test.cjs
           bash -n install.sh install-user-space.sh remote-install.sh
       - name: Build Linux amd64 bundle
