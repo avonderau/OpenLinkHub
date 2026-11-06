@@ -46,6 +46,7 @@ async function run() {
     'deck-key-settings', 'deck-empty-state', 'deck-selected-summary', 'deck-selected-hero', 'deck-artwork-preview',
     'deck-metric-details', 'deck-metric-indicator', 'deck-action-indicator',
     'deck-key-control', 'deck-control-property', 'deck-key-brightness', 'deck-brightness-property',
+    'deck-folder-target-property', 'deck-key-folder', 'deck-create-folder', 'deck-page-parent',
     'deck-key-metric', 'deck-metric-source', 'deck-metric-source-property',
     'deck-metric-interval', 'deck-metric-style',
     'deck-metric-color', 'deck-metric-color-reset', 'deck-metric-status',
@@ -466,6 +467,69 @@ async function run() {
   await nodes['deck-save'].dispatch('click');
   assert.equal(received.at(-1).pages[1].keys.find(key => key.index === 6).target, 'play-pause',
     'switching to media must not leave an app ID as the media target');
+
+  // Build two levels of folders from the selected physical key. The editor
+  // should create a Back key at the last position on each child page.
+  grid.children[7].dispatch('click');
+  action.value = 'deck-control';
+  action.dispatch('change');
+  controls.value = 'folder-open';
+  controls.dispatch('change');
+  assert.equal(nodes['deck-folder-target-property'].hidden, false);
+  assert.equal(nodes['deck-create-folder'].disabled, false);
+  nodes['deck-create-folder'].dispatch('click');
+  assert.equal(nodes['deck-page'].value, 'folder-1');
+  assert.equal(nodes['deck-page-parent'].textContent, 'Folder within Page 2');
+  assert.equal(nodes['deck-page-name'].value, 'Folder 1');
+  assert.equal(grid.children[17].dataset.hasFolderIcon, 'true');
+  assert.equal(grid.children[17].children[1].style.maskImage,
+    'url("/static/media-glyphs/folder-back.svg")');
+  await nodes['deck-save'].dispatch('click');
+  const firstFolderLayout = received.at(-1);
+  const firstFolder = firstFolderLayout.pages.find(page => page.id === 'folder-1');
+  assert.equal(firstFolder.parentPage, 'page-2');
+  assert.equal(firstFolder.keys[0].index, 17);
+  assert.equal(firstFolder.keys[0].action, 'folder-back');
+  assert.equal(firstFolderLayout.pages.find(page => page.id === 'page-2').keys
+    .find(key => key.index === 7).targetPage, 'folder-1');
+
+  nodes['deck-page-name'].value = 'Games';
+  nodes['deck-page-name'].dispatch('input');
+  grid.children[0].dispatch('click');
+  action.value = 'deck-control';
+  action.dispatch('change');
+  controls.value = 'folder-open';
+  controls.dispatch('change');
+  nodes['deck-create-folder'].dispatch('click');
+  assert.equal(nodes['deck-page'].value, 'folder-2');
+  assert.equal(nodes['deck-page-parent'].textContent, 'Folder within Games');
+  await nodes['deck-save'].dispatch('click');
+  const nestedLayout = received.at(-1);
+  assert.equal(nestedLayout.pages.find(page => page.id === 'folder-2').parentPage, 'folder-1');
+  assert.equal(nestedLayout.pages.find(page => page.id === 'folder-1').keys
+    .find(key => key.index === 0).targetPage, 'folder-2');
+  assert.equal(nestedLayout.pages.find(page => page.id === 'folder-2').keys
+    .find(key => key.index === 17).action, 'folder-back');
+
+  // Removing a folder with children should recursively clear the folder pages
+  // and the parent key link, without removing the surrounding regular page.
+  nodes['deck-page'].value = 'folder-1';
+  nodes['deck-page'].dispatch('change');
+  nodes['deck-remove-page'].dispatch('click');
+  assert.equal(nodes['deck-page'].value, 'page-2');
+  await nodes['deck-save'].dispatch('click');
+  const cleaned = received.at(-1);
+  assert.equal(cleaned.pages.some(page => page.id === 'folder-1' || page.id === 'folder-2'), false);
+  assert.equal(cleaned.pages.find(page => page.id === 'page-2').keys.some(key => key.index === 7), false);
+
+  // On an ordinary top-level page, Back must not be configured by mistake.
+  grid.children[7].dispatch('click');
+  action.value = 'deck-control';
+  action.dispatch('change');
+  controls.value = 'folder-back';
+  controls.dispatch('change');
+  assert.match(nodes['deck-message'].textContent, /only on a folder page/);
+  assert.notEqual(controls.value, 'folder-back');
 
   console.log('Deck Editor interaction test passed');
 }
