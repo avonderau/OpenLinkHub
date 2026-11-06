@@ -28,3 +28,26 @@ func TestMiraboxHardwareCapabilities(t *testing.T) {
  if old.NativeImagePixels(5)!=85 {t.Fatal("v1 image size")}
  if next.NativeImagePixels(5)!=82 || next.NativeImagePixels(4)!=95 {t.Fatal("v3 image size")}
 }
+
+func TestMiraboxHasFifteenButtonsAndThreePassiveLCDCells(t *testing.T) {
+ for _,id:=range [][2]uint16{{0x5548,0x6670},{0x6603,0x1014},{0x6603,0x1005},{0x5548,0x6674}} {
+  m,ok:=LookupModel(id[0],id[1])
+  if !ok {t.Fatalf("missing Mirabox-style model %04x:%04x",id[0],id[1])}
+  count:=0
+  for i:=0;i<m.Keys();i++ {
+   if m.CanPress(i){count++}
+   wantDisplay:=i==5||i==11||i==17
+   if m.IsDisplayOnly(i)!=wantDisplay {
+    t.Errorf("%s: display-only status wrong for position %d",m.Name,i+1)
+   }
+  }
+  if count!=15||m.PreferredBackIndex()!=16 {
+   t.Errorf("%s: %d physical buttons, Back position %d; want 15,17",m.Name,count,m.PreferredBackIndex()+1)
+  }
+ }
+ elgato,ok:=LookupModel(0x0fd9,0x0080)
+ if !ok {t.Fatal("missing Elgato model")}
+ if elgato.IsDisplayOnly(5)||elgato.IsDisplayOnly(11) || elgato.PreferredBackIndex()!=14 {
+  t.Fatal("Mirabox passive LCD geometry incorrectly applied to Elgato")
+ }
+}

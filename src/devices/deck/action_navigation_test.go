@@ -62,7 +62,7 @@ func TestUnassignedButtonDoesNotChangePage(t *testing.T){
  handle:=new(fakeDeckSession)
  if err:=d.attachSession(handle);err!=nil{t.Fatal(err)}
  before:=countMiraboxOperation(handle.reports,"STP")
- d.handleKeyPress(17)
+ d.handleKeyPress(16) // Physical button 17; LCD position 18 is display-only.
  if d.GetStatus().ActivePage!="home"{t.Fatal("unassigned key changed page")}
  if countMiraboxOperation(handle.reports,"STP")!=before{t.Fatal("unassigned key refreshed LCD")}
  if d.GetStatus().ButtonEvents!=1{t.Fatal("button event not tracked")}

@@ -225,6 +225,11 @@ func(d *Device)drawActivePageLocked()error{
 // Caller owns d.mu so physical page changes cannot interleave HID writes.
 func(d *Device)drawKeyLocked(index int,key KeyConfig)error{
  size:=d.Model.NativeImagePixels(index)
+ if key.Action=="folder-open" && key.Label=="" {
+  for _,page:=range d.layout.Pages {
+   if page.ID==key.TargetPage {key.Label=page.Name;break}
+  }
+ }
  var artwork image.Image
  if key.Icon!="" {
   var err error
@@ -240,6 +245,8 @@ func(d *Device)drawKeyLocked(index int,key KeyConfig)error{
   frame=renderDeckArtwork(size,artwork,keyDisplayLabel(key))
  }else if key.Action=="media" {
   frame=renderDeckMediaKey(size,key)
+ }else if key.Action=="folder-open" || key.Action=="folder-back" {
+  frame=renderDeckFolderKey(size,key)
  }else {
   frame=renderKeyLabel(size,keyDisplayLabel(key))
  }

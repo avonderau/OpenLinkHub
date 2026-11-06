@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Back">
+  <!-- Match the in-process LCD icon: left-pointing arrow, centered shaft. -->
+  <path fill="black" d="M7 24 L19 12 V21 H40 V28 H19 V36 Z"/>
+</svg>

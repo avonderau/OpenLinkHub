@@ -143,8 +143,28 @@
   -webkit-mask-size:contain;
   pointer-events:none;
 }
-.deck-key[data-has-media-icon="true"] span{font-size:clamp(.56rem,.7vw,.68rem)}
+.deck-key[data-has-media-icon="true"] span,
+.deck-key[data-has-folder-icon="true"] span{font-size:clamp(.56rem,.7vw,.68rem)}
+/* The rightmost LCD in each Mirabox row is a display, not a button.
+   Keep it selectable to edit artwork/metrics, but visually distinguish it. */
+.deck-key[data-display-only="true"]{
+  border-style:dashed;
+  border-color:rgba(180,192,208,.45);
+  background:linear-gradient(145deg,#283039,#1b2028);
+}
+.deck-key[data-display-only="true"]::after{
+  content:"LCD";
+  position:absolute;
+  right:4px;
+  top:3px;
+  font-size:.55rem;
+  line-height:1;
+  letter-spacing:.04em;
+  color:rgba(213,222,235,.75);
+  pointer-events:none;
+}
 .deck-key:hover{border-color:rgba(213,166,90,.6);background:linear-gradient(145deg,#393633,#242326)}
+.deck-workspace #deck-display-only-note[hidden]{display:none}
 .deck-key[aria-pressed="true"]{
   border-color:#e2b86f;
   background:linear-gradient(145deg,#544027,#2f2a24);

@@ -35,6 +35,7 @@ type KeyConfig struct {
 type Page struct {
  ID string `json:"id"`
  Name string `json:"name"`
+ ParentPage string `json:"parentPage,omitempty"`
  Keys []KeyConfig `json:"keys"`
 }
 type Layout struct {
@@ -63,6 +64,9 @@ func (l Layout)Validate(m Model)error{
   for _,key:=range page.Keys{
    if key.Index<0||key.Index>=m.Keys()||seen[key.Index] {return fmt.Errorf("invalid or duplicate key index: %d",key.Index)}
    seen[key.Index]=true
+   if m.IsDisplayOnly(key.Index) && key.Action!="" && key.Action!="none" {
+    return fmt.Errorf("key %d is display-only; button actions require a physical key",key.Index+1)
+   }
    if len(key.Label)>48 {return fmt.Errorf("key %d label too long",key.Index)}
    if key.Icon!="" && !deckIconID.MatchString(key.Icon) {
     return fmt.Errorf("key %d: invalid image reference",key.Index)
@@ -92,8 +96,12 @@ func (l Layout)Validate(m Model)error{
    switch key.Action {
    case "", "none", "page-next", "page-previous":
     if key.TargetPage!="" || key.Target!="" {return fmt.Errorf("key %d: unexpected action target for %q",key.Index,key.Action)}
-   case "page-go":
+   case "page-go","folder-open":
     if !safePageID.MatchString(key.TargetPage) || key.Target!="" {return fmt.Errorf("key %d: invalid page navigation target",key.Index)}
+   case "folder-back":
+    if page.ParentPage=="" || key.Target!="" || key.TargetPage!="" {
+     return fmt.Errorf("key %d: Back requires a folder page with no explicit target",key.Index)
+    }
    case "brightness-up","brightness-down":
     if key.Target!="" || key.TargetPage!="" {return fmt.Errorf("key %d: unexpected brightness action target",key.Index)}
    case "brightness-set":
@@ -120,10 +128,23 @@ func (l Layout)Validate(m Model)error{
    }
   }
  }
- for _,page:=range l.Pages{
+ parents:=make(map[string]string,len(l.Pages))
+ for _,page:=range l.Pages {
+  if page.ParentPage!="" && !ids[page.ParentPage] {
+   return fmt.Errorf("folder %q has missing parent %q",page.ID,page.ParentPage)
+  }
+  parents[page.ID]=page.ParentPage
+ }
+ for _,page:=range l.Pages {
+  for parent,depth:=page.ParentPage,0;parent!="";parent,depth=parents[parent],depth+1 {
+   if parent==page.ID || depth>=len(l.Pages) {return fmt.Errorf("folder parent cycle at %q",page.ID)}
+  }
   for _,key:=range page.Keys{
    if key.Action=="page-go" && !ids[key.TargetPage] {
     return fmt.Errorf("key %d: target page %q does not exist",key.Index,key.TargetPage)
+   }
+   if key.Action=="folder-open" && parents[key.TargetPage]!=page.ID {
+    return fmt.Errorf("key %d: folder must be a direct child of %q",key.Index,page.ID)
    }
   }
  }
@@ -136,6 +157,35 @@ func layoutFilename(root,id string)string{
  return filepath.Join(root,"database","deck",fmt.Sprintf("%x.json",digest[:12]))
 }
 
+// Earlier folder test builds placed Back at the final LCD cell, even
+// though Mirabox positions 6, 12 and 18 are not buttons. Preserve existing
+// artwork/metrics on those displays and migrate an old Back to an unused
+// physical key, preferring position 17. Non-Back actions in these passive
+// cells were never executable and are dropped without erasing visual data.
+func migrateDisplayOnlyActions(l *Layout,m Model) {
+ if m.Family!="mirabox" {return}
+ for pageIndex:=range l.Pages {
+  page:=&l.Pages[pageIndex]
+  for keyIndex:=range page.Keys {
+   key:=&page.Keys[keyIndex]
+   if !m.IsDisplayOnly(key.Index) || key.Action=="" || key.Action=="none" {continue}
+   moved:=false
+   if key.Action=="folder-back" && page.ParentPage!="" {
+    for dest:=m.PreferredBackIndex();dest>=0;dest-- {
+     if !m.CanPress(dest) {continue}
+     occupied:=false
+     for _,other:=range page.Keys {if other.Index==dest {occupied=true;break}}
+     if !occupied {key.Index=dest;moved=true;break}
+    }
+   }
+   if moved {continue}
+   key.Action=""
+   key.Target=""
+   key.TargetPage=""
+  }
+ }
+}
+
 func LoadLayout(root,id string,m Model)(Layout,error){
  path:=layoutFilename(root,id)
  data,err:=os.ReadFile(path)
@@ -144,6 +194,7 @@ func LoadLayout(root,id string,m Model)(Layout,error){
  if len(data)>MaxDeckLayoutBytes {return Layout{},errors.New("layout file too large")}
  var layout Layout
  if err:=json.Unmarshal(data,&layout);err!=nil{return Layout{},err}
+ migrateDisplayOnlyActions(&layout,m)
  if err:=layout.Validate(m);err!=nil{return Layout{},err}
  return layout,nil
 }

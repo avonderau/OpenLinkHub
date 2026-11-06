@@ -116,7 +116,7 @@ func MiraboxKeyEvent(m Model,report []byte)(key int,pressed bool,ok bool){
  raw:=int(report[9])
  if raw<1||raw>len(miraboxMapping){return 0,false,false}
  key=miraboxMapping[raw-1]
- if key>=m.Keys(){return 0,false,false}
+ if !m.CanPress(key){return 0,false,false}
  if m.Protocol==1{return key,true,true}
  return key,report[10]!=0,true
 }

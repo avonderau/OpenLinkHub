@@ -75,3 +75,60 @@ If OpenLinkHub runs as the packaged `openlinkhub` system service, it cannot laun
 ### Regression tests
 
 `go test ./src/devices/deck ./src/devices/nexus -count=1` and `node --test static/js/deck-editor.test.cjs`. On physical hardware, verify that launching a trusted website and an installed desktop entry works, bad IDs are refused when saving, and holding/pressing other keys while a slow launcher runs does not freeze display navigation.
+
+## Nested folders and Back navigation
+
+Folders are ordinary Deck pages with an optional saved `parentPage` relationship.
+Each folder is created under one parent page and can contain another folder,
+up to the existing 16-page limit. Layout version 1 remains compatible.
+
+1. Select a **key** on the parent page.
+2. Choose **Deck controls → Open folder**.
+3. Click **Create folder**. The editor makes a child page, links the selected
+   key to it, and automatically adds a **Back** key at physical button **17**.
+4. Rename the folder in the **Pages** tab and assign buttons to its empty keys.
+   To create another level, select a key inside that folder and repeat.
+5. Click **Save & Apply** before testing the physical Deck.
+
+**Open folder** can also link to an existing *direct child* through the Folder
+destination picker. **Deck controls → Back to parent folder** may be assigned to
+a different key inside a folder; it is not available on top-level pages. The
+Back key returns to the saved parent even after reconnecting or restarting
+OpenLinkHub. Folder buttons and Back buttons use built-in LCD icons unless
+custom artwork is assigned. A folder button without a custom label displays
+the destination folder's current name.
+
+Removing a folder in **Pages** also removes its nested child folders and clears
+links to the deleted pages. Removing a top-level page with children does the
+same; the last remaining top-level page cannot be removed.
+
+### Folder acceptance checks
+
+- Create **Home → Games → Tools**, add a button to Tools, and save.
+- On the physical Deck, open Games, then Tools, then press Back twice. Confirm
+  the LCD updates on every transition.
+- Unplug/replug or restart while inside Tools; Back must still go to Games.
+- Rename a folder and confirm the parent button's default caption updates.
+- Verify custom folder artwork, macros, media keys, brightness buttons and
+  normal page navigation are unchanged.
+- Delete Games in the editor and confirm its nested pages and links are removed.
+
+
+### Mirabox display-only cells (physical layout)
+
+On the supported **3×6 Mirabox-style hardware**, LCD positions **6, 12 and 18**
+(the rightmost LCD in each row) are **not pressable buttons**. They remain
+available for images, labels and live metrics, and the Deck Editor marks
+them `LCD` with a dashed border. Button actions cannot be assigned to
+these three cells.
+
+The automatic folder **Back** action is on physical button **17**
+(zero-based key index `16`), not on display-only position 18. The Go
+device model and HID event decoder both enforce this distinction; other
+families such as Elgato retain their own button geometry.
+
+Previously saved layouts that put Back on display 18 are migrated when
+loaded: Back moves to button 17 when free, or the closest free physical
+button if it is occupied. Artwork and metric assignments on passive
+displays remain intact. A corrected in-process left arrow and matching
+preview SVG replace the earlier malformed Back glyph.

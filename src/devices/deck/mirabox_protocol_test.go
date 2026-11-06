@@ -74,3 +74,21 @@ func TestMiraboxStartupHandshake(t *testing.T){
  bad:=&reportRecorder{fail:true}
  if err:=initializeMiraboxSession(bad,m);err==nil{t.Fatal("initialization failure must propagate")}
 }
+
+func TestMiraboxDoesNotEmitKeyEventsForPassiveDisplayCells(t *testing.T) {
+ for _,vidpid:=range [][2]uint16{{0x5548,0x6670},{0x6603,0x1014}} {
+  m,_:=LookupModel(vidpid[0],vidpid[1])
+  report:=make([]byte,512)
+  copy(report,"ACK")
+  report[10]=1
+  for raw,logical:=range miraboxMapping {
+   report[9]=byte(raw+1)
+   got,pressed,ok:=MiraboxKeyEvent(m,report)
+   if m.IsDisplayOnly(logical) {
+    if ok||pressed {t.Errorf("%s: display-only key %d emitted event %d",m.Name,logical+1,got)}
+   }else if !ok||!pressed||got!=logical {
+    t.Errorf("%s: physical key %d failed to decode: %d %v %v",m.Name,logical+1,got,pressed,ok)
+   }
+  }
+ }
+}

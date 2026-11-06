@@ -6,6 +6,18 @@
   if (!id || !grid) return;
 
   const keyCount = Number.parseInt(grid.dataset.keys || '0', 10);
+  const columns = Number.parseInt(grid.dataset.columns || '0', 10);
+  const isDisplayOnly = index => grid.dataset.family === 'mirabox' &&
+    index >= 0 && index < keyCount && columns > 0 && (index + 1) % columns === 0;
+  const physicalButtonCount = Array.from({ length: keyCount }, (_, i) => i)
+    .filter(index => !isDisplayOnly(index)).length;
+  const keyCountLabel = physicalButtonCount === keyCount
+    ? `${keyCount} LCD keys`
+    : `${physicalButtonCount} buttons · ${keyCount - physicalButtonCount} display-only LCDs`;
+  const defaultBackKeyIndex = () => {
+    for (let i = keyCount - 1; i >= 0; i -= 1) if (!isDisplayOnly(i)) return i;
+    return -1;
+  };
   const pageSelect = document.getElementById('deck-page');
   const labelInput = document.getElementById('deck-key-label');
   const artworkInput = document.getElementById('deck-key-image');
@@ -36,11 +48,16 @@
   const metricIndicator = document.getElementById('deck-metric-indicator');
   const actionIndicator = document.getElementById('deck-action-indicator');
   const actionInput = document.getElementById('deck-key-action');
+  const displayOnlyNote = document.getElementById('deck-display-only-note');
   const deckControlInput = document.getElementById('deck-key-control');
   const deckControlProperty = document.getElementById('deck-control-property');
   const brightnessProperty = document.getElementById('deck-brightness-property');
   const brightnessInput = document.getElementById('deck-key-brightness');
-  const deckControls = new Set(['page-next','page-previous','page-go','brightness-up','brightness-down','brightness-set']);
+  const deckControls = new Set(['page-next','page-previous','page-go','folder-open','folder-back','brightness-up','brightness-down','brightness-set']);
+  const folderTargetProperty = document.getElementById('deck-folder-target-property');
+  const folderTargetInput = document.getElementById('deck-key-folder');
+  const createFolderButton = document.getElementById('deck-create-folder');
+  const pageParentNote = document.getElementById('deck-page-parent');
   const shortcutInput = document.getElementById('deck-key-shortcut');
   const shortcutProperty = document.getElementById('deck-hotkey-property');
   const macroProperty = document.getElementById('deck-macro-property');
@@ -83,6 +100,15 @@
 
   const endpoint = (resource) => `/api/deck/${resource}?serial=${encodeURIComponent(id)}`;
   const currentPage = () => layout?.pages?.find(page => page.id === layout.activePage);
+  const childFolders = () => layout?.pages?.filter(page => page.parentPage === layout.activePage) || [];
+  const pageDepth = page => {
+    let depth = 0;
+    while (page?.parentPage && depth < (layout?.pages?.length || 0)) {
+      page = layout.pages.find(candidate => candidate.id === page.parentPage);
+      depth += 1;
+    }
+    return depth;
+  };
   const validIconID = id => typeof id === 'string' && /^[a-f0-9]{32}$/.test(id);
   const iconURL = id => `${endpoint('icon')}&id=${encodeURIComponent(id)}`;
 
@@ -166,6 +192,8 @@
       'page-next': 'Next Page',
       'page-previous': 'Previous Page',
       'page-go': 'Go to Page',
+      'folder-open': 'Folder',
+      'folder-back': 'Back',
       'brightness-up': 'Brightness +',
       'brightness-down': 'Brightness -',
       'brightness-set': 'Set Brightness',
@@ -181,8 +209,15 @@
     const page = currentPage();
     if (!page || selected < 0) return;
     const key = { index: selected, ...assignment(selected), ...patch };
+    if (isDisplayOnly(selected)) {
+      // Passive LCDs may display artwork and metrics, but pressing them
+      // is impossible. Never persist an action or its stale targets.
+      delete key.action;
+      delete key.target;
+      delete key.targetPage;
+    }
     if (!key.action || key.action === 'none') delete key.action;
-    if (key.action !== 'page-go') delete key.targetPage;
+    if (!['page-go','folder-open'].includes(key.action)) delete key.targetPage;
     if (!['macro','media','hotkey','brightness-set','url','application'].includes(key.action)) delete key.target;
     // Selecting an input action does not invent a valid target; the save
     // button remains available, and the server validates configured commands.
@@ -216,8 +251,14 @@
       button.setAttribute('aria-pressed', i === selected ? 'true' : 'false');
       const mediaLabel = configured?.action === 'media' ? mediaKeyLabels[configured?.target] : '';
       const brightnessLabel = configured?.action === 'brightness-set' ? 'Brightness '+configured.target+'%' : '';
-      const displayName = configured?.label || mediaLabel || brightnessLabel || actionName(configured?.action) || '—';
-      button.setAttribute('aria-label', `Key ${i + 1}: ${displayName}`);
+      const folderLabel = configured?.action === 'folder-open'
+        ? layout.pages.find(page => page.id === configured.targetPage)?.name || 'Folder' : '';
+      const displayName = configured?.label || mediaLabel || brightnessLabel || folderLabel || actionName(configured?.action) || '—';
+      button.setAttribute('aria-label', `${isDisplayOnly(i) ? 'Display' : 'Key'} ${i + 1}: ${displayName}`);
+      if (isDisplayOnly(i)) {
+        button.dataset.displayOnly = 'true';
+        button.title = 'Display-only LCD: labels, artwork and metrics; no button actions';
+      }
 
       const number = document.createElement('small');
       number.textContent = String(i + 1).padStart(2, '0');
@@ -233,6 +274,16 @@
         glyph.setAttribute('aria-hidden', 'true');
         button.appendChild(glyph);
         button.dataset.hasMediaIcon = 'true';
+      }
+      if (['folder-open','folder-back'].includes(configured?.action) && !configured?.metric &&
+          !validIconID(configured?.icon)) {
+        const glyph = document.createElement('span');
+        glyph.className = 'deck-media-glyph';
+        glyph.style.maskImage = `url("/static/media-glyphs/${configured.action}.svg?v=2")`;
+        glyph.style.webkitMaskImage = glyph.style.maskImage;
+        glyph.setAttribute('aria-hidden', 'true');
+        button.appendChild(glyph);
+        button.dataset.hasFolderIcon = 'true';
       }
       button.append(label);
       if (configured?.metric) {
@@ -257,7 +308,7 @@
       });
       grid.appendChild(button);
     }
-    keyCounter.textContent = `${keyCount} LCD keys · ${page.name}`;
+    keyCounter.textContent = `${keyCountLabel} · ${page.name}`;
   }
 
   function renderPages() {
@@ -266,14 +317,17 @@
     for (const page of layout.pages) {
       const option = document.createElement('option');
       option.value = page.id;
-      option.textContent = page.name;
+      option.textContent = (page.parentPage ? '  '.repeat(pageDepth(page)) + '↳ ' : '') + page.name;
       pageSelect.appendChild(option);
     }
     pageSelect.value = layout.activePage;
     pageNameInput.value = currentPage()?.name || '';
+    const parent = layout.pages.find(page => page.id === currentPage()?.parentPage);
+    pageParentNote.textContent = parent ? `Folder within ${parent.name}` : 'Top-level page';
     pageCounter.textContent = `${layout.pages.length} of 16 pages`;
     addButton.disabled = layout.pages.length >= 16;
-    removeButton.disabled = layout.pages.length <= 1;
+    removeButton.disabled = layout.pages.length <= 1 ||
+      (!currentPage()?.parentPage && layout.pages.filter(page => !page.parentPage).length <= 1);
   }
 
   function updateSelectedSummary(key) {
@@ -344,11 +398,13 @@
         ? 'Live reading available from this computer.'
         : 'No current reading. Unavailable sensors display —.')
       : '';
-    actionInput.disabled = !valid;
-    actionInput.value = deckControls.has(key?.action) ? 'deck-control' : key?.action || '';
-    actionIndicator.textContent = actionInput.value ? 'Assigned' : 'None';
-    actionIndicator.dataset.active = String(!!actionInput.value);
-    const isDeckControl = valid && actionInput.value === 'deck-control';
+    const passiveLCD = valid && isDisplayOnly(selected);
+    displayOnlyNote.hidden = !passiveLCD;
+    actionInput.disabled = !valid || passiveLCD;
+    actionInput.value = passiveLCD ? '' : (deckControls.has(key?.action) ? 'deck-control' : key?.action || '');
+    actionIndicator.textContent = passiveLCD ? 'Display only' : (actionInput.value ? 'Assigned' : 'None');
+    actionIndicator.dataset.active = String(!passiveLCD && !!actionInput.value);
+    const isDeckControl = valid && !passiveLCD && actionInput.value === 'deck-control';
     deckControlProperty.hidden = !isDeckControl;
     deckControlInput.disabled = !isDeckControl;
     deckControlInput.value = deckControls.has(key?.action) ? key.action : 'page-next';
@@ -368,6 +424,25 @@
     const hasTarget = isDeckControl && deckControlInput.value === 'page-go';
     targetProperty.hidden = !hasTarget;
     targetPageInput.disabled = !hasTarget;
+    const hasFolder = isDeckControl && deckControlInput.value === 'folder-open';
+    folderTargetProperty.hidden = !hasFolder;
+    const folders = childFolders();
+    folderTargetInput.replaceChildren();
+    if (!folders.length) {
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = 'Create a folder to begin';
+      folderTargetInput.appendChild(empty);
+    }
+    for (const folder of folders) {
+      const option = document.createElement('option');
+      option.value = folder.id;
+      option.textContent = folder.name;
+      folderTargetInput.appendChild(option);
+    }
+    folderTargetInput.value = hasFolder ? key?.targetPage || folders[0]?.id || '' : '';
+    folderTargetInput.disabled = !hasFolder || folders.length === 0;
+    createFolderButton.disabled = !hasFolder || !valid || passiveLCD || layout.pages.length >= 16;
     const hasShortcut = valid && actionInput.value === 'hotkey';
     shortcutProperty.hidden = !hasShortcut;
     shortcutInput.disabled = !hasShortcut;
@@ -406,7 +481,7 @@
     macroStatus.textContent = macroLoadMessage ||
       (macroIDs.length ? 'Select an existing macro. It runs on this computer when pressed.' :
         'No saved macros found. Create one in OpenLinkHub Macros, then Refresh.');
-    selectedText.textContent = valid ? `Key ${selected + 1}` : 'Select a key';
+    selectedText.textContent = valid ? `${passiveLCD ? 'Display' : 'Key'} ${selected + 1}` : 'Select a key';
   }
 
   function selectTab(which) {
@@ -556,6 +631,11 @@
   });
 
   actionInput.addEventListener('change', () => {
+    if (isDisplayOnly(selected)) {
+      setMessage('This Mirabox position is display-only; select a physical button for actions.', 'error');
+      renderInspector();
+      return;
+    }
     const selectedAction = actionInput.value;
     // The UI exposes one "Deck controls" action family; layouts retain
     // the existing concrete page/brightness action IDs for compatibility.
@@ -584,12 +664,23 @@
   deckControlInput.addEventListener('change', () => {
     if (actionInput.value !== 'deck-control') return;
     const value = deckControlInput.value;
+    if (value === 'folder-back' && !currentPage()?.parentPage) {
+      deckControlInput.value = assignment(selected)?.action || 'page-next';
+      setMessage('Back is available only on a folder page.', 'error');
+      return;
+    }
+    const existing = assignment(selected)?.targetPage;
+    const children = childFolders();
     setKeyProperties({
       action: value,
-      targetPage: value === 'page-go' ? assignment(selected)?.targetPage || layout.activePage : '',
+      targetPage: value === 'page-go' ? existing || layout.activePage :
+        value === 'folder-open' ? (children.some(page => page.id === existing) ? existing : children[0]?.id || '') : '',
       target: value === 'brightness-set' ? '50' : '',
     });
     renderInspector();
+    if (value === 'folder-open' && !children.length) {
+      setMessage('Create a folder to complete this button action.');
+    }
   });
   brightnessInput.addEventListener('change', () => {
     if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'brightness-set') return;
@@ -599,6 +690,41 @@
     if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'page-go') return;
     setKeyProperties({ targetPage: targetPageInput.value });
   });
+  folderTargetInput.addEventListener('change', () => {
+    if (actionInput.value !== 'deck-control' || deckControlInput.value !== 'folder-open') return;
+    setKeyProperties({ targetPage: folderTargetInput.value });
+  });
+
+  createFolderButton.addEventListener('click', () => {
+    if (!layout || selected < 0 || isDisplayOnly(selected) || layout.pages.length >= 16 ||
+        actionInput.value !== 'deck-control' || deckControlInput.value !== 'folder-open') return;
+    const parent = currentPage();
+    if (!parent) return;
+    let index = 1;
+    while (layout.pages.some(page => page.id === `folder-${index}`)) index += 1;
+    const backIndex = defaultBackKeyIndex();
+    if (backIndex < 0) return;
+    const folder = {
+      id: `folder-${index}`, name: `Folder ${index}`, parentPage: parent.id,
+      keys: [{ index: backIndex, label: '', action: 'folder-back' }],
+    };
+    layout.pages.push(folder);
+    // The selected key becomes a folder button; all previous metric/button
+    // targets are cleared instead of being carried into the new folder.
+    setKeyProperties({
+      action: 'folder-open', targetPage: folder.id, target: '',
+      metric: '', label: '', icon: '',
+    });
+    layout.activePage = folder.id;
+    selected = -1;
+    renderPages();
+    renderGrid();
+    renderInspector();
+    selectTab('pages');
+    pageNameInput.focus();
+    setDirty();
+  });
+
   shortcutInput.addEventListener('input', () => {
     if (actionInput.value !== 'hotkey') return;
     setKeyProperties({ target: shortcutInput.value });
@@ -645,9 +771,10 @@
     if (!page) return;
     page.name = pageNameInput.value;
     const option = pageSelect.selectedOptions[0];
-    if (option) option.textContent = page.name;
+    if (option) option.textContent =
+      (page.parentPage ? '  '.repeat(pageDepth(page)) + '↳ ' : '') + page.name;
     setDirty();
-    keyCounter.textContent = `${keyCount} LCD keys · ${page.name}`;
+    keyCounter.textContent = `${keyCountLabel} · ${page.name}`;
   });
 
   pageSelect.addEventListener('change', () => {
@@ -674,20 +801,37 @@
   });
 
   removeButton.addEventListener('click', () => {
-    if (!layout || layout.pages.length <= 1) return;
-    if (!window.confirm('Delete the selected page and all its key labels?')) return;
+    if (!layout || removeButton.disabled) return;
     const deletedPage = layout.activePage;
-    layout.pages = layout.pages.filter(page => page.id !== deletedPage);
+    const fallbackParent = currentPage()?.parentPage;
+    const removed = new Set([deletedPage]);
+    // Removing a parent also removes its descendant folders to avoid
+    // dangling parent pointers and Back navigation to deleted pages.
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const page of layout.pages) {
+        if (page.parentPage && removed.has(page.parentPage) && !removed.has(page.id)) {
+          removed.add(page.id);
+          changed = true;
+        }
+      }
+    }
+    const description = removed.size > 1
+      ? `Delete this page and its ${removed.size - 1} nested folder(s)?`
+      : 'Delete the selected page and all its keys?';
+    if (!window.confirm(description)) return;
+    layout.pages = layout.pages.filter(page => !removed.has(page.id));
     for (const page of layout.pages) {
       for (const key of page.keys) {
-        if (key.action === 'page-go' && key.targetPage === deletedPage) {
+        if (['page-go', 'folder-open'].includes(key.action) && removed.has(key.targetPage)) {
           delete key.action;
           delete key.targetPage;
         }
       }
       page.keys = page.keys.filter(key => key.label || key.action || key.icon || key.metric);
     }
-    layout.activePage = layout.pages[0].id;
+    layout.activePage = layout.pages.some(page => page.id === fallbackParent)
+      ? fallbackParent : layout.pages.find(page => !page.parentPage).id;
     selected = -1;
     renderPages();
     renderGrid();
