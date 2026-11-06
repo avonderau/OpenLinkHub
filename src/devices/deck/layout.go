@@ -35,6 +35,7 @@ type KeyConfig struct {
 type Page struct {
  ID string `json:"id"`
  Name string `json:"name"`
+ ParentPage string `json:"parentPage,omitempty"`
  Keys []KeyConfig `json:"keys"`
 }
 type Layout struct {
@@ -92,8 +93,12 @@ func (l Layout)Validate(m Model)error{
    switch key.Action {
    case "", "none", "page-next", "page-previous":
     if key.TargetPage!="" || key.Target!="" {return fmt.Errorf("key %d: unexpected action target for %q",key.Index,key.Action)}
-   case "page-go":
+   case "page-go","folder-open":
     if !safePageID.MatchString(key.TargetPage) || key.Target!="" {return fmt.Errorf("key %d: invalid page navigation target",key.Index)}
+   case "folder-back":
+    if page.ParentPage=="" || key.Target!="" || key.TargetPage!="" {
+     return fmt.Errorf("key %d: Back requires a folder page with no explicit target",key.Index)
+    }
    case "brightness-up","brightness-down":
     if key.Target!="" || key.TargetPage!="" {return fmt.Errorf("key %d: unexpected brightness action target",key.Index)}
    case "brightness-set":
@@ -120,10 +125,23 @@ func (l Layout)Validate(m Model)error{
    }
   }
  }
- for _,page:=range l.Pages{
+ parents:=make(map[string]string,len(l.Pages))
+ for _,page:=range l.Pages {
+  if page.ParentPage!="" && !ids[page.ParentPage] {
+   return fmt.Errorf("folder %q has missing parent %q",page.ID,page.ParentPage)
+  }
+  parents[page.ID]=page.ParentPage
+ }
+ for _,page:=range l.Pages {
+  for parent,depth:=page.ParentPage,0;parent!="";parent,depth=parents[parent],depth+1 {
+   if parent==page.ID || depth>=len(l.Pages) {return fmt.Errorf("folder parent cycle at %q",page.ID)}
+  }
   for _,key:=range page.Keys{
    if key.Action=="page-go" && !ids[key.TargetPage] {
     return fmt.Errorf("key %d: target page %q does not exist",key.Index,key.TargetPage)
+   }
+   if key.Action=="folder-open" && parents[key.TargetPage]!=page.ID {
+    return fmt.Errorf("key %d: folder must be a direct child of %q",key.Index,page.ID)
    }
   }
  }
