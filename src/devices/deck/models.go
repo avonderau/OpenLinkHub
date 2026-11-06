@@ -52,6 +52,27 @@ func DeviceKey(vendorID, productID uint16) string {
 
 func SupportedVendors() []uint16 { return []uint16{0x5548,0x6603,0x0fd9} }
 func (m Model) Keys() int { return m.Rows*m.Columns }
+
+// Mirabox's sixth LCD cell in every row is a passive display, not a
+// physical key. It can render labels, artwork and metrics but cannot run
+// actions. Other Deck families keep their own hardware geometry.
+func (m Model) IsDisplayOnly(index int) bool {
+ return m.Family=="mirabox" && index>=0 && index<m.Keys() &&
+  m.Columns>0 && (index+1)%m.Columns==0
+}
+
+func (m Model) CanPress(index int) bool {
+ return index>=0 && index<m.Keys() && !m.IsDisplayOnly(index)
+}
+
+// Default Back must land on a real key: position 17 (zero-based 16)
+// on all current 3x6 Mirabox devices, never display-only position 18.
+func (m Model) PreferredBackIndex() int {
+ for index:=m.Keys()-1;index>=0;index-- {
+  if m.CanPress(index){return index}
+ }
+ return -1
+}
 func (m Model) NativeImagePixels(key int) int {
  if m.Protocol == 3 && (key+1)%6 == 0 { return 82 }
  return m.KeyPixels
