@@ -228,9 +228,10 @@ func TestBackArrowPointsLeftOnPhysicalLCDArtwork(t *testing.T) {
   br,bg,bb,ba:=blank.At(x,y).RGBA()
   return ar!=br||ag!=bg||ab!=bb||aa!=ba
  }
- // Scale 48x48 glyph into the centered 76x76 area. The arrow tip is
- // at (7,24) and the shaft runs horizontally to the right.
- if !differs(22,48) {t.Fatal("left arrow tip is missing")}
- if differs(22,29) {t.Fatal("left arrow points diagonally/has old vertical strip")}
- if !differs(65,48) {t.Fatal("arrow shaft is missing")}
+ // The default Back caption leaves a 62x62 icon area at x=17, y=1.
+ // The source left arrow tip (7,24) maps near (27,32); the shaft stays
+ // horizontal, and (7,12) must not contain the old vertical strip.
+ if !differs(27,32) {t.Fatal("left arrow tip is missing")}
+ if differs(27,17) {t.Fatal("left arrow points diagonally/has old vertical strip")}
+ if !differs(62,32) {t.Fatal("arrow shaft is missing")}
 }
