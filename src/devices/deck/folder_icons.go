@@ -21,10 +21,13 @@ func renderDeckFolderKey(size int, key KeyConfig) image.Image {
   draw.Draw(icon,image.Rect(7,19,41,37),gold,image.Point{},draw.Src)
   draw.Draw(icon,image.Rect(10,23,38,34),image.NewUniform(color.RGBA{R:32,G:35,B:40,A:255}),image.Point{},draw.Src)
  case "folder-back":
-  draw.Draw(icon,image.Rect(15,22,40,27),gold,image.Point{},draw.Src)
-  for y:=12;y<=36;y++{
-   width:=12-absDeckIconInt(y-24)
-   for x:=7;x<=7+width;x++ {icon.Set(x,y,ink)}
+  // A real left-pointing arrowhead has its tip at (7,24) and its
+  // widest span at x=19. The original widening-to-the-right wedge
+  // looked like a crooked triangle on the physical LCD.
+  draw.Draw(icon,image.Rect(19,21,40,28),gold,image.Point{},draw.Src)
+  for y:=12;y<=36;y++ {
+   startX:=7+absDeckIconInt(y-24)
+   for x:=startX;x<=19;x++ {icon.Set(x,y,ink)}
   }
  }
  label:=keyDisplayLabel(key)
