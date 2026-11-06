@@ -330,12 +330,10 @@
           <div class="card-body text-left">
             <p class="olh-icon-pack-description">Import and manage reusable icons here. Choose installed icons inside the Nexus or Mirabox editor.</p>
             <div class="olh-icon-pack-import">
-              <label for="olh-icon-pack-name">Pack name</label>
-              <input id="olh-icon-pack-name" type="text" class="form-control" maxlength="60" placeholder="e.g. Media and navigation">
               <label for="olh-icon-pack-file">ZIP or Stream Deck icon pack</label>
               <input id="olh-icon-pack-file" type="file" accept=".zip,.streamDeckIconPack,application/zip">
               <button id="olh-icon-pack-import" class="system-button" type="button"><i class="bi bi-upload" aria-hidden="true"></i> Import icon pack</button>
-              <small>Up to 2,048 icons per pack, 512 KiB per image, 32 MiB per archive, and 64 MiB of extracted files. Nested Stream Deck bundles are imported as separately named packs with icon tags; animated GIF/WebP icons use a static first frame on both devices. SVG images are converted to PNG.</small>
+              <small>Up to 2,048 icons per pack, 512 KiB per image, 32 MiB per archive, and 64 MiB of extracted files. Stream Deck packs use their embedded names; ordinary image-only ZIPs are named NewPack1, NewPack2, etc. Nested bundles are imported as separate packs with icon tags; animated GIF/WebP icons use a static first frame on both devices. SVG images are converted to PNG.</small>
             </div>
             <p id="olh-icon-pack-status" role="status" aria-live="polite"></p>
             <div id="olh-icon-pack-library" class="olh-icon-pack-library" aria-label="Installed icon packs"></div>
