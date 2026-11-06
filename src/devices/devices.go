@@ -191,7 +191,7 @@ var (
 func Stop() {
 	// Wait until discovery has finished any in-flight HID enumeration
 	// before closing handles and exiting the shared HID library.
-	stopDeckDiscoveryLoop()
+	stopDeckDiscoveryEvents()
 	// Stop all cluster operations
 	cls.Stop()
 
@@ -783,8 +783,8 @@ func Init() {
 	appmonitor.SetDispatcher(Dispatch)
 
 	// Existing Decks are detected above; future USB attachments are
-	// discovered by a narrow polling loop. Corsair discovery is unchanged.
-	startDeckDiscoveryLoop()
+	// discovered from the existing Netlink USB monitor. Corsair discovery is unchanged.
+	startDeckDiscoveryEvents()
 }
 
 // deviceRegisterMap hold map of supported devices and their initialization call
