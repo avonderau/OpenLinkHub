@@ -146,7 +146,7 @@ func TestDeckHotplugRetriesFailedOpenOnLaterScan(t *testing.T) {
 	}
 }
 
-func TestDeckHotplugUsesVendorQualifiedIdentityAndKeepsElgatoDiscoveryOnly(t *testing.T) {
+func TestDeckHotplugUsesVendorQualifiedIdentity(t *testing.T) {
 	h := newFakeDeckDiscovery()
 	h.enabled[deck.DeviceKey(0x5548, 0x6670)] = true
 	h.enabled[deck.DeviceKey(0x0fd9, 0x0080)] = true

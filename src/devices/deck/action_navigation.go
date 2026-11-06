@@ -197,7 +197,7 @@ func (d *Device) selectKeyAction(index int) (string, string, func(string, string
 		return "", "", nil
 	}
 	if chosen.Action == "brightness-up" || chosen.Action == "brightness-down" || chosen.Action == "brightness-set" {
-		if d.Model.Family != "mirabox" || d.hidDevice == nil || !d.connected {
+		if d.hidDevice == nil || !d.connected {
 			return "", "", nil
 		}
 		if chosen.TargetPage != "" {
@@ -231,7 +231,7 @@ func (d *Device) selectKeyAction(index int) (string, string, func(string, string
 		if level > 100 {
 			level = 100
 		}
-		if err := MiraboxBrightness(d.hidDevice, d.Model, uint8(level)); err != nil {
+		if err := setHardwareBrightness(d.hidDevice, d.Model, uint8(level)); err != nil {
 			d.status = fmt.Sprintf("Deck brightness failed: %v", err)
 			return "", "", nil
 		}
@@ -319,7 +319,7 @@ func (d *Device) selectKeyAction(index int) (string, string, func(string, string
 		return "", "", nil
 	}
 	d.layout = updated
-	if d.hidDevice != nil && d.connected && d.Model.Family == "mirabox" {
+	if d.hidDevice != nil && d.connected {
 		if err := d.drawActivePageLocked(); err != nil {
 			d.status = fmt.Sprintf("Page changed; LCD refresh failed: %v", err)
 		} else {
