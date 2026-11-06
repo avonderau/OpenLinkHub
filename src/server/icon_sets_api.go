@@ -340,32 +340,32 @@ func renameIconSet(root, id, newName string) (iconSetManifest, error) {
 func iconSetPreviewAPI(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET")
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	if !nexusRequestHostAllowed(r) {
-		http.Error(w, "host not allowed", 403)
+		http.Error(w, "host not allowed", http.StatusForbidden)
 		return
 	}
 	root := config.GetConfig().ConfigPath
 	if root == "" {
-		http.Error(w, "config unavailable", 503)
+		http.Error(w, "config unavailable", http.StatusServiceUnavailable)
 		return
 	}
 	id := r.URL.Query().Get("id")
 	manifest, err := readIconSetManifest(root, id)
 	if err != nil {
-		http.Error(w, "icon set unavailable", 404)
+		http.Error(w, "icon set unavailable", http.StatusNotFound)
 		return
 	}
 	index, err := strconv.Atoi(r.URL.Query().Get("index"))
 	if err != nil || index < 0 || index >= len(manifest.Icons) {
-		http.Error(w, "icon unavailable", 404)
+		http.Error(w, "icon unavailable", http.StatusNotFound)
 		return
 	}
 	icon, err := deck.ReadDeckIcon(root, manifest.Icons[index].DeckID)
 	if err != nil {
-		http.Error(w, "icon unavailable", 404)
+		http.Error(w, "icon unavailable", http.StatusNotFound)
 		return
 	}
 	w.Header().Set("Content-Type", "image/png")
@@ -390,31 +390,31 @@ func iconSetsAPI(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		sets, err := listIconSets(root)
 		if err != nil {
-			http.Error(w, "icon sets unavailable", 500)
+			http.Error(w, "icon sets unavailable", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"sets": sets, "svgAvailable": svgConverterAvailable()})
 	case http.MethodPost:
 		if !nexusWriteAllowed(r) {
-			http.Error(w, "cross-origin write forbidden", 403)
+			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
 			return
 		}
 		mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 		if err != nil || mediaType != "application/zip" {
-			http.Error(w, "ZIP required", 415)
+			http.Error(w, "ZIP required", http.StatusUnsupportedMediaType)
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, maxIconSetZipBytes)
 		defer r.Body.Close()
 		contents, err := io.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, "invalid or oversized ZIP", 400)
+			http.Error(w, "invalid or oversized ZIP", http.StatusBadRequest)
 			return
 		}
 		set, err := importIconSet(root, r.URL.Query().Get("name"), contents)
 		if err != nil {
-			http.Error(w, err.Error(), 400)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -422,7 +422,7 @@ func iconSetsAPI(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"set": set})
 	case http.MethodPut:
 		if !nexusWriteAllowed(r) {
-			http.Error(w, "cross-origin write forbidden", 403)
+			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
 			return
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 4096)
@@ -433,38 +433,38 @@ func iconSetsAPI(w http.ResponseWriter, r *http.Request) {
 		dec := json.NewDecoder(r.Body)
 		dec.DisallowUnknownFields()
 		if err := dec.Decode(&request); err != nil {
-			http.Error(w, "invalid pack name", 400)
+			http.Error(w, "invalid pack name", http.StatusBadRequest)
 			return
 		}
 		renamed, err := renameIconSet(root, r.URL.Query().Get("id"), request.Name)
 		if err != nil {
-			http.Error(w, "unable to rename pack: "+err.Error(), 400)
+			http.Error(w, "unable to rename pack: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"set": renamed})
 	case http.MethodDelete:
 		if !nexusWriteAllowed(r) {
-			http.Error(w, "cross-origin write forbidden", 403)
+			http.Error(w, "cross-origin write forbidden", http.StatusForbidden)
 			return
 		}
 		id := r.URL.Query().Get("id")
 		dest, err := iconSetManifestPath(root, id)
 		if err != nil {
-			http.Error(w, "invalid icon set ID", 400)
+			http.Error(w, "invalid icon set ID", http.StatusBadRequest)
 			return
 		}
 		iconSetImportMu.Lock()
 		err = os.Remove(dest)
 		iconSetImportMu.Unlock()
 		if err != nil {
-			http.Error(w, "icon set not found", 404)
+			http.Error(w, "icon set not found", http.StatusNotFound)
 			return
 		}
 		// Imported content-addressed images remain for existing saved layouts.
 		w.WriteHeader(http.StatusNoContent)
 	default:
 		w.Header().Set("Allow", "GET, POST, PUT, DELETE")
-		http.Error(w, "method not allowed", 405)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
