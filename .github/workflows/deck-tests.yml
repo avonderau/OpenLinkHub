@@ -9,6 +9,10 @@ on:
       - 'src/server/svg_icon_import.go'
       - 'static/js/icon-pack-settings.js'
       - 'src/devices/devices.go'
+      - 'src/devices/deck_discovery.go'
+      - 'src/devices/deck_discovery_test.go'
+      - 'src/config/config.go'
+      - 'src/config/deck_settings_test.go'
       - 'src/common/common.go'
       - 'static/js/deck-editor.js'
       - '.github/workflows/deck-tests.yml'
@@ -56,6 +60,10 @@ jobs:
         env:
           CGO_CFLAGS_ALLOW: -fno-strict-overflow
         run: go test ./src/config ./src/devices ./src/devices/deck ./src/server -count=1 -v
+      - name: Race-test hotplug registry and device settings
+        env:
+          CGO_CFLAGS_ALLOW: -fno-strict-overflow
+        run: go test -race ./src/config ./src/devices -run 'TestDeckHotplug|TestDeckRegistry|TestDeckSettingsSafe' -count=1 -timeout=3m
       - name: Compile device manager
         env:
           CGO_CFLAGS_ALLOW: -fno-strict-overflow
