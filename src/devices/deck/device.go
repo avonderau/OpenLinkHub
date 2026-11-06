@@ -9,6 +9,7 @@ import (
 	imagedraw "image/draw"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"OpenLinkHub/src/common"
@@ -448,7 +449,7 @@ func (d *Device) listen() {
 			continue
 		}
 		n, err := handle.ReadWithTimeout(buffer, 250*time.Millisecond)
-		if errors.Is(err, hid.ErrTimeout) {
+		if errors.Is(err, hid.ErrTimeout) || isInterruptedRead(err) {
 			continue
 		}
 		if err != nil {
@@ -479,6 +480,15 @@ func (d *Device) listen() {
 			d.handleKeyRelease(key)
 		}
 	}
+}
+
+// isInterruptedRead reports a timed HID read that a signal cut short.
+// hidapi's Linux backend waits in poll(), which is never restarted after a
+// signal (for example SIGCHLD from a sensor or launch subprocess), and
+// returns it as a -1 read with strerror(EINTR). The device is still
+// attached, so this must not be treated as a disconnect.
+func isInterruptedRead(err error) bool {
+	return err != nil && strings.Contains(strings.ToLower(err.Error()), syscall.EINTR.Error())
 }
 
 // experimentalNote marks status text for the Elgato driver, which has not
