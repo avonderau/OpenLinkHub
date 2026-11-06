@@ -80,6 +80,10 @@ test('Settings owns pack installation and management, not editors',()=>{
  assert.doesNotMatch(markup,/Stream Deck packs use their embedded names/);
  assert.doesNotMatch(markup,/id="olh-icon-pack-name"/);
  assert.match(markup,/id="olh-settings-devices"/);
+ assert.match(markup,/id="olh-settings-tab-icons"[^>]*aria-controls="olh-settings-icons"/);
+ assert.match(markup,/id="olh-settings-icons"[^>]*aria-labelledby="olh-settings-tab-icons"/);
+ assert.match(nexus,/\/settings#olh-settings-icons/);
+ assert.match(fs.readFileSync(path.join(root,'web','deck.html'),'utf8'),/\/settings#olh-settings-icons/);
  assert.match(css,/olh-icon-pack-sidebar/);
  assert.match(css,/olh-icon-pack-detail/);
  assert.doesNotMatch(deck,/method:\s*'POST'\s*,\s*headers:\s*\{\s*'Content-Type':\s*'application\/zip'/);
