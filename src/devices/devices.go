@@ -188,12 +188,15 @@ var (
 
 // Stop will stop all active devices
 func Stop() {
+	// Wait until discovery has finished any in-flight HID enumeration
+	// before closing handles and exiting the shared HID library.
+	stopDeckDiscoveryLoop()
 	// Stop all cluster operations
 	cls.Stop()
 
-	for _, device := range devices {
+	for _, device := range GetDevices() {
 		CallDeviceMethod(device.Serial, "Stop")
-		delete(devices, device.Serial)
+		deleteDevice(device.Serial)
 	}
 	err := hid.Exit()
 	if err != nil {
@@ -763,35 +766,10 @@ func Init() {
 
 	inputmanager.SetDispatcher(Dispatch)
 	appmonitor.SetDispatcher(Dispatch)
-}
 
-// initializeDeckDevices detects the first supported Stream Deck and Mirabox
-// models without modifying the upstream-owned Corsair registry. Elgato devices
-// are discovery-only until their native output driver lands.
-func initializeDeckDevices() {
-	seen := make(map[string]bool)
-	for _, vendor := range deck.SupportedVendors() {
-		err := hid.Enumerate(vendor, hid.ProductIDAny, hid.EnumFunc(func(info *hid.DeviceInfo) error {
-			model, supported := deck.LookupModel(info.VendorID, info.ProductID)
-			if !supported || info.Path == "" { return nil }
-			if !config.DeckEnabled(deck.DeviceKey(info.VendorID, info.ProductID)) { return nil }
-			// Mirabox's command interface is the HID usage page required by
-			// the supported OpenDeck AKP153 driver. Do not claim other interfaces.
-			if model.Family == "mirabox" && (info.UsagePage != 65440 || info.Usage != 1) { return nil }
-			identity := strconv.Itoa(int(info.VendorID)) + ":" + strconv.Itoa(int(info.ProductID)) + ":" + info.SerialNbr
-			if seen[identity] { return nil }
-			// A successful open is required for Mirabox registration. An Elgato
-			// model is registered as discovery-only and never opens a HID handle.
-			if device := deck.Init(info); device != nil {
-				seen[identity] = true
-				addDevice(device)
-			}
-			return nil
-		}))
-		if err != nil {
-			logger.Log(logger.Fields{"vendorId": vendor, "error": err}).Warn("Unable to enumerate Deck devices")
-		}
-	}
+	// Existing Decks are detected above; future USB attachments are
+	// discovered by a narrow polling loop. Corsair discovery is unchanged.
+	startDeckDiscoveryLoop()
 }
 
 // deviceRegisterMap hold map of supported devices and their initialization call
