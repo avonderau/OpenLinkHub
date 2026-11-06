@@ -409,7 +409,7 @@
   font-variant-ligatures:none;
 }
 
-/* Shared reusable icon packs appear beneath the existing per-key upload. */
+/* Shared icon packs are the primary artwork choice; per-key upload is secondary. */
 .deck-workspace .deck-icon-set-library{
   display:block;margin-top:12px;padding-top:12px;
   border-top:1px solid var(--deck-border);
@@ -624,3 +624,57 @@
 /* Deck command is a conditional Button behavior field, just like Media command. */
 .deck-workspace #deck-control-property[hidden],
 .deck-workspace #deck-brightness-property[hidden]{display:none!important}
+
+
+/* Keep the selected-key artwork preview visible regardless of which
+ * artwork source is expanded. Icon library is open by default. */
+.deck-workspace .deck-artwork-selected{
+  display:flex;align-items:center;gap:12px;
+  padding:10px;margin:4px 0 12px;
+  border:1px solid var(--deck-border);border-radius:9px;
+  background:rgba(12,13,15,.22);
+}
+.deck-workspace .deck-artwork-selected-details{
+  display:flex;flex:1;flex-direction:column;align-items:flex-start;gap:8px;
+  min-width:0;
+}
+.deck-workspace .deck-artwork-selected-details small{
+  color:var(--deck-muted);font-size:.76rem;
+}
+.deck-workspace .deck-artwork-selected-details button{
+  font-size:.74rem;padding:7px 10px;
+}
+.deck-workspace .deck-artwork-upload-panel{
+  margin-top:12px;padding-top:11px;
+  border-top:1px solid var(--deck-border);
+}
+.deck-workspace .deck-artwork-upload-panel summary{
+  display:flex;align-items:center;gap:7px;
+  color:var(--deck-muted);font-size:.78rem;font-weight:600;
+  cursor:pointer;
+}
+.deck-workspace .deck-artwork-upload-panel[open] summary{
+  color:var(--deck-ink);
+}
+.deck-workspace .deck-artwork-upload-panel .deck-artwork-upload{
+  padding:11px 0 0;
+}
+.deck-workspace .deck-artwork-upload-panel .deck-artwork-upload label{
+  color:var(--deck-muted);font-size:.76rem;
+}
+.deck-workspace .deck-artwork-upload-panel #deck-upload-image{
+  justify-self:start;
+}
+.deck-workspace .deck-artwork-upload-panel #deck-icon-status{
+  color:var(--deck-muted);font-size:.72rem;
+}
+.deck-workspace .deck-icon-set-library{
+  border:1px solid rgba(213,166,90,.28);
+  border-radius:9px;
+  padding:11px 12px;
+  background:linear-gradient(130deg,rgba(213,166,90,.07),rgba(21,22,24,.24));
+}
+.deck-workspace .deck-icon-set-library summary{
+  color:var(--deck-ink);
+  font-weight:650;
+}
