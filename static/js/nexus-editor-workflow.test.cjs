@@ -712,7 +712,7 @@ test('fork release and installer security defaults are consistent',()=>{
  const system=fs.readFileSync(path.join(root,'install.sh'),'utf8');
  const userInstall=fs.readFileSync(path.join(root,'install-user-space.sh'),'utf8');
  const releaseVersion=fs.readFileSync(path.join(root,'.github','releases','fork-version.txt'),'utf8').trim();
- assert.equal(releaseVersion,'0.9.5N');
+ assert.match(releaseVersion,/^[0-9]+\.[0-9]+\.[0-9]+N$/,'fork release marker must be a valid release version');
  assert.ok(version.includes('var Version = "'+releaseVersion+'"'),'reported version matches the fork release version');
  assert.match(remote,/REPO_API="https:\/\/api\.github\.com\/repos\/avonderau\/OpenLinkHub-Nexus\/releases\/latest"/);
  assert.match(remote,/sha256sum --check --status/,'installer must check release checksum');
