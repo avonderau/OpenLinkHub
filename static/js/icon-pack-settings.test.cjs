@@ -25,7 +25,7 @@ function fixture(){
   addEventListener(type,fn){this.listeners[type]=fn}
  }
  const elements=Object.fromEntries([
-  'olh-icon-pack-library','olh-icon-pack-file',
+  'olh-icon-pack-library','olh-icon-pack-file','olh-icon-pack-file-name',
   'olh-icon-pack-import','olh-icon-pack-status'
  ].map(id=>[id,new Element()]));
  const calls=[];
@@ -74,6 +74,10 @@ const controls=f=>detail(f).children[1];
 test('Settings owns pack installation and management, not editors',()=>{
  assert.match(markup,/id="olh-icon-pack-library"/);
  assert.match(markup,/id="olh-icon-pack-import"/);
+ assert.match(markup,/class="system-button olh-icon-pack-choose"/);
+ assert.match(markup,/for="olh-icon-pack-file"/);
+ assert.match(markup,/id="olh-icon-pack-file-name"/);
+ assert.doesNotMatch(markup,/Stream Deck packs use their embedded names/);
  assert.doesNotMatch(markup,/id="olh-icon-pack-name"/);
  assert.match(markup,/id="olh-settings-devices"/);
  assert.match(css,/olh-icon-pack-sidebar/);
@@ -140,4 +144,16 @@ test('Import omits name parameter so the backend chooses embedded or NewPackN na
  assert.equal(post.url,'/api/icon-sets');
  assert.equal(post.body.name,'icons.zip');
  assert.equal(file.value,'');
+});
+
+test('Choose file shows selected archive name and resets after successful import',async()=>{
+ const f=fixture();await flush();
+ const selected=f.elements['olh-icon-pack-file'];
+ const filename=f.elements['olh-icon-pack-file-name'];
+ selected.files=[{name:'fluent-ui.zip',size:4096}];
+ selected.listeners.change();
+ assert.equal(filename.textContent,'fluent-ui.zip');
+ await f.elements['olh-icon-pack-import'].listeners.click();await flush();
+ assert.equal(filename.textContent,'No file selected');
+ assert.ok(f.calls.some(c=>c.method==='POST'&&c.url==='/api/icon-sets'));
 });
