@@ -124,10 +124,11 @@ func(d *Device)runDeckMacroAsync(target string,runner func(string,string)error){
 func(d *Device)selectKeyAction(index int)(string,string,func(string,string)error){
  d.mu.Lock()
  defer d.mu.Unlock()
+ // LCD positions 6/12/18 are passive on Mirabox hardware. They
+ // must never dispatch commands even if stale in-memory data assigns one.
+ if !d.Model.CanPress(index) {return "","",nil}
  d.eventCount++
  d.pressedKey=index
-
- if index<0||index>=d.Model.Keys(){return "","",nil}
  current:=-1
  for i:=range d.layout.Pages{
   if d.layout.Pages[i].ID==d.layout.ActivePage {current=i;break}
