@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "head" . }}
-<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-folders-1">
+<link rel="stylesheet" href="/static/css/deck-editor.css?v=deck-folders-2">
 <body>
 <div class="container-fluid">
   <div class="row">
@@ -43,6 +43,7 @@
               <div id="deck-key-grid" class="deck-grid"
                    data-columns="{{ .Device.Model.Columns }}"
                    data-keys="{{ .Device.Model.Keys }}"
+                   data-family="{{ .Device.Model.Family }}"
                    style="--deck-columns:{{ .Device.Model.Columns }}"></div>
             </div>
             <footer class="deck-preview-footer">
@@ -208,6 +209,7 @@
                     <div class="deck-inspector-section-body">
                 <div class="deck-property">
                   <label for="deck-key-action">Button action</label>
+                  <small id="deck-display-only-note" hidden>Display-only LCD: this position supports artwork, labels and live metrics, but cannot trigger button actions.</small>
                   <select class="form-select" id="deck-key-action" disabled>
                     <option value="">No action</option>
 
@@ -328,7 +330,7 @@
     </main>
   </div>
 </div>
-<script src="/static/js/deck-editor.js?v=deck-folders-1"></script>
+<script src="/static/js/deck-editor.js?v=deck-folders-2"></script>
 <script src="/static/js/sidebar.js"></script>
 {{ if .Dashboard.TemperatureBar }}
 <script src="/static/js/temperature-bar.js"></script>
