@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"slices"
 	"strings"
+	"sync"
 )
 
 type Configuration struct {
@@ -53,6 +54,7 @@ type Configuration struct {
 var (
 	location      = ""
 	configuration Configuration
+	deckExcludeMu sync.RWMutex
 	upgrade       = map[string]any{
 		"memorySku":                 "",
 		"deckExclude":               []string{},
@@ -111,7 +113,13 @@ func Init() {
 
 // GetConfig will return structs.Configuration struct
 func GetConfig() Configuration {
-	return configuration
+	deckExcludeMu.RLock()
+	defer deckExcludeMu.RUnlock()
+	// Return a detached Deck exclusion slice so callers cannot race a
+	// hot-plug scan against Settings mutating its backing array.
+	copyOf := configuration
+	copyOf.DeckExclude = append([]string(nil), configuration.DeckExclude...)
+	return copyOf
 }
 
 // UpdateSupportedDevices will update the Exclude slice based on the enabled flag for each product ID
@@ -135,12 +143,16 @@ func UpdateSupportedDevices(productIds map[uint16]bool) uint8 {
 // exclusions independent of the legacy PID-only Corsair list prevents cross-
 // vendor product ID collisions.
 func DeckEnabled(deviceKey string) bool {
+	deckExcludeMu.RLock()
+	defer deckExcludeMu.RUnlock()
 	return !slices.Contains(configuration.DeckExclude, deviceKey)
 }
 
 // UpdateSupportedDeckDevices persists vendor-qualified Deck exclusions.
 // IDs are validated against the model registry by the request layer.
 func UpdateSupportedDeckDevices(enabled map[string]bool) uint8 {
+	deckExcludeMu.Lock()
+	defer deckExcludeMu.Unlock()
 	for deviceKey, isEnabled := range enabled {
 		if isEnabled {
 			if i := slices.Index(configuration.DeckExclude, deviceKey); i != -1 {
