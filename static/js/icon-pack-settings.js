@@ -4,7 +4,6 @@
  function initialize() {
   const root = document.getElementById('olh-icon-pack-library');
   if (!root) return;
-  const name = document.getElementById('olh-icon-pack-name');
   const file = document.getElementById('olh-icon-pack-file');
   const importer = document.getElementById('olh-icon-pack-import');
   const status = document.getElementById('olh-icon-pack-status');
@@ -170,14 +169,12 @@
    if (!zip || zip.size<1 || zip.size>32*1024*1024) {
     message('Select a ZIP or .streamDeckIconPack file no larger than 32 MiB.',true);return;
    }
-   const streamDeck=/\.streamDeckIconPack$/i.test(zip.name);
-   const label=name.value.trim() || (streamDeck ? '' : zip.name.replace(/\.zip$/i,''));
    working=true;importer.disabled=true;
    try {
-    await request('/api/icon-sets?name='+encodeURIComponent(label),{
+    await request('/api/icon-sets',{
      method:'POST',headers:{'Content-Type':'application/zip'},body:zip
     });
-    name.value='';file.value='';
+    file.value='';
     message('Icon pack imported. Select its icons from the Nexus or Deck editor.');
     await refresh();
    } catch(e){message('Import failed: '+e.message,true);}
