@@ -307,8 +307,9 @@ test('selected widget settings group opacity percentage and preserve it on save'
  assert.equal(opacityNumber.value,'100');
  assert.equal(opacitySlider.style['--nexus-opacity-progress'],'100%');
  opacitySlider.value='62';opacitySlider.listeners.input();
- const noFill=walk(sections[4],item=>item.options?.some(option=>option.label==='No fill'));
+ const noFill=walk(appearance,item=>item.options?.some(option=>option.label==='No fill'));
  assert.ok(noFill,'style label should distinguish no fill from opacity');
+ assert.equal(walk(sections[4],item=>item.options?.some(option=>option.label==='No fill')),null,'fill style belongs under Appearance, not Actions');
  assert.equal(noFill.options.some(option=>option.label==='Transparent'),false);
  await node('save').onclick();
  assert.equal(writes.at(-1).screens[0].widgets[0].settings.opacity,'62');
