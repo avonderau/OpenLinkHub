@@ -284,7 +284,11 @@
 #nexus-editor .nexus-icon-library{display:flex;flex-direction:column;gap:.5rem;width:100%;min-width:0;padding-top:.6rem;border-top:1px solid var(--border-subtle,#49505a)}
 #nexus-editor .nexus-icon-pack-label{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin:0}
 #nexus-editor .nexus-icon-pack-label select{flex:1;min-width:0}
-#nexus-editor .nexus-icon-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:.45rem;min-width:0}
+#nexus-editor .nexus-icon-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:.45rem;min-width:0;max-height:min(320px,45vh);overflow-y:auto;overscroll-behavior:contain;padding-right:.2rem}
+#nexus-editor .nexus-icon-pager{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+#nexus-editor .nexus-icon-pager[hidden]{display:none}
+#nexus-editor .nexus-icon-pager small{flex:1;text-align:center;color:var(--text-muted,#aaa)}
+#nexus-editor .nexus-icon-pager button{flex:0 0 auto;margin:0}
 #nexus-editor .nexus-icon-gallery small{grid-column:1/-1}
 #nexus-editor .nexus-icon-gallery .nexus-icon-tile{
  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
@@ -299,7 +303,7 @@
  box-shadow:inset 0 0 0 1px var(--text-main,#e8eff5);
 }
 #nexus-editor .nexus-icon-tile img{display:block;width:40px;height:40px;max-width:100%;object-fit:contain}
-#nexus-editor .nexus-icon-tile span{display:block;max-width:100%;overflow-wrap:anywhere;text-align:center;font-size:.72rem;line-height:1.2}
+#nexus-editor .nexus-icon-tile span{display:block;width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:center;font-size:.72rem;line-height:1.2}
 #nexus-editor .nexus-icon-current{font-size:.77rem}
 #nexus-editor .nexus-icon-settings-link{align-self:flex-start;color:var(--text-muted,#a7bac7);font-size:.8rem}
 #nexus-editor .nexus-icon-settings-link:hover{color:var(--text-main,#e8eff5)}

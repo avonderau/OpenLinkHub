@@ -541,6 +541,7 @@ function renderWidgetColors(w,panel){
  }
 }
 // Icons belong to the selected widget inspector. Pack management stays in Settings.
+const NEXUS_ICON_PAGE_SIZE=24;
 function renderNexusIconProperties(w,panel){
  const sourceLabel=document.createElement('label');
  sourceLabel.className='nexus-icon-source';
@@ -594,8 +595,21 @@ function renderNexusIconProperties(w,panel){
  gallery.className='nexus-icon-gallery';
  gallery.setAttribute('role','group');
  gallery.setAttribute('aria-label','Icons in selected pack');
+ // Large packs hold thousands of icons. Render one page at a time inside a
+ // bounded, scrollable gallery so the inspector stays a manageable size.
+ const pager=document.createElement('div');
+ pager.className='nexus-icon-pager';
+ const prevPage=document.createElement('button');
+ prevPage.type='button';prevPage.textContent='‹ Prev';prevPage.setAttribute('aria-label','Previous page of icons');
+ const pageInfo=document.createElement('small');
+ pageInfo.setAttribute('aria-live','polite');
+ const nextPage=document.createElement('button');
+ nextPage.type='button';nextPage.textContent='Next ›';nextPage.setAttribute('aria-label','Next page of icons');
+ pager.append(prevPage,pageInfo,nextPage);
+ let page=0,pageInitialised=false;
  const fillGallery=()=>{
   gallery.replaceChildren();
+  pager.hidden=true;
   const pack=nexusIconSets.find(item=>item.id===packSelect.value);
   if(!pack){
    const note=document.createElement('small');
@@ -606,16 +620,33 @@ function renderNexusIconProperties(w,panel){
   const query=iconSearch.value.trim().toLocaleLowerCase();
   const matches=(pack.icons||[]).map((icon,index)=>({icon,index})).filter(({icon})=>
    !query || icon.name.toLocaleLowerCase().includes(query) || (icon.tags||[]).some(tag=>tag.toLocaleLowerCase().includes(query)));
-  const visible=matches.slice(0,96);
-  if(matches.length>visible.length){
-   const hint=document.createElement('small');
-   hint.textContent='Showing '+visible.length+' of '+matches.length+' matching icons. Refine your search.';
-   gallery.append(hint);
+  if(!matches.length){
+   const note=document.createElement('small');
+   note.textContent=query?'No icons match "'+iconSearch.value.trim()+'".':'This pack has no icons.';
+   gallery.append(note);
+   return;
+  }
+  const pages=Math.ceil(matches.length/NEXUS_ICON_PAGE_SIZE);
+  if(!pageInitialised){
+   // Open on the page that holds the widget's current icon.
+   pageInitialised=true;
+   const at=matches.findIndex(({icon})=>icon.nexusId===w.settings?.customIcon);
+   if(at>=0)page=Math.floor(at/NEXUS_ICON_PAGE_SIZE);
+  }
+  page=Math.min(Math.max(page,0),pages-1);
+  const first=page*NEXUS_ICON_PAGE_SIZE;
+  const visible=matches.slice(first,first+NEXUS_ICON_PAGE_SIZE);
+  if(pages>1){
+   pager.hidden=false;
+   pageInfo.textContent=(first+1)+'–'+(first+visible.length)+' of '+matches.length+' icons';
+   prevPage.disabled=page===0;
+   nextPage.disabled=page>=pages-1;
   }
   for(const {index,icon} of visible){
    const tile=document.createElement('button');
    tile.type='button';
    tile.className='nexus-icon-tile';
+   tile.title=icon.name;
    tile.setAttribute('aria-label','Use '+icon.name+' icon');
    tile.setAttribute('aria-pressed',String(icon.nexusId===w.settings?.customIcon));
    const preview=document.createElement('img');
@@ -634,11 +665,14 @@ function renderNexusIconProperties(w,panel){
    });
    gallery.append(tile);
   }
+  gallery.scrollTop=0;
  };
- packSelect.addEventListener('change',()=>{iconSearch.value='';fillGallery();});
- iconSearch.addEventListener('input',fillGallery);
+ prevPage.addEventListener('click',()=>{page--;fillGallery();});
+ nextPage.addEventListener('click',()=>{page++;fillGallery();});
+ packSelect.addEventListener('change',()=>{iconSearch.value='';page=0;fillGallery();});
+ iconSearch.addEventListener('input',()=>{page=0;fillGallery();});
  fillGallery();
- library.append(gallery);
+ library.append(gallery,pager);
  if(w.settings?.customIcon){
   const current=document.createElement('small');
   current.className='nexus-icon-current';
