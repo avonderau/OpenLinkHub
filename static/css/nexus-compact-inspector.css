@@ -273,6 +273,9 @@
 #nexus-panel-widget #properties .nexus-appearance-row .nexus-gradient-control{
   grid-column:2;grid-row:1;
 }
+#nexus-panel-widget #properties .nexus-appearance-row .nexus-fill-style-control{
+  grid-column:1/-1;
+}
 #nexus-panel-widget #properties .nexus-property-section label.nexus-opacity-control{
   grid-column:1/-1;grid-row:2;
   display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;

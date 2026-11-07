@@ -271,6 +271,15 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
    }
   }
  renderWidgetColors(w,colorsRow);
+ if(isActionWidget){
+  // Fill style is a look, not an action, so it lives under Appearance.
+  const styleLabel=document.createElement('label');styleLabel.className='nexus-fill-style-control';styleLabel.textContent='Style ';
+  const styleSelect=document.createElement('select');
+  for(const [v,t] of [['solid','Solid fill'],['outline','Outline only'],['flat','No fill']])styleSelect.add(new Option(t,v));
+  styleSelect.value=w.settings?.style||'solid';
+  styleSelect.addEventListener('change',()=>{w.settings??={};w.settings.style=styleSelect.value;render()});
+  styleLabel.append(styleSelect);appearanceRow.append(styleLabel);
+ }
  if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){
   // Opacity is an independent percentage, not a preset background style.
   const radiusLabel=document.createElement('label');
@@ -740,9 +749,6 @@ function renderTouchProperties(w,panel){
   input.addEventListener('change',()=>{update(input.value.trim());message('Shortcut updated. Save Layout to apply.')});
   label.append(input);panel.append(label);
  };
- if(w.type==='button'||w.type==='macro'||w.type==='image'){
-  field('Style',w.settings?.style||'solid',[['solid','Solid fill'],['outline','Outline only'],['flat','No fill']],v=>{w.settings??={};w.settings.style=v});
- }
  if(w.type==='button'){
   field('Action',w.action||'next',actions,v=>{w.action=v;w.target=v==='screen'?cfg.screens[0].id:v==='media'?'play-pause':v==='device'?'rgb-on':v==='hotkey'?'Ctrl+Alt+T':v==='mouse'?'left':v==='url'?'https://example.com':v==='application'?'org.gnome.Terminal.desktop':v==='text'?'Hello':'';if(v==='media'&&!w.settings?.customIcon){w.settings??={};w.settings.icon='play-pause'}if(v==='macro')w.target=Object.keys(nexusSharedMacros)[0]||'1'});
   if(w.action==='macro'){
