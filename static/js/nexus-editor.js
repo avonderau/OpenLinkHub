@@ -271,15 +271,6 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
    }
   }
  renderWidgetColors(w,colorsRow);
- if(isActionWidget){
-  // Fill style is a look, not an action, so it lives under Appearance.
-  const styleLabel=document.createElement('label');styleLabel.className='nexus-fill-style-control';styleLabel.textContent='Style ';
-  const styleSelect=document.createElement('select');
-  for(const [v,t] of [['solid','Solid fill'],['outline','Outline only'],['flat','No fill']])styleSelect.add(new Option(t,v));
-  styleSelect.value=w.settings?.style||'solid';
-  styleSelect.addEventListener('change',()=>{w.settings??={};w.settings.style=styleSelect.value;render()});
-  styleLabel.append(styleSelect);appearanceRow.append(styleLabel);
- }
  if(['button','macro','metric','bar','graph','text','clock','image'].includes(w.type)){
   // Opacity is an independent percentage, not a preset background style.
   const radiusLabel=document.createElement('label');
@@ -297,6 +288,15 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   const radiusInline=document.createElement('span');radiusInline.className='nexus-input-unit';
   const radiusUnit=document.createElement('span');radiusUnit.className='nexus-input-suffix';radiusUnit.textContent='px';
   radiusInline.append(radius,radiusUnit);radiusLabel.append(radiusInline);appearanceRow.append(radiusLabel);
+  if(isActionWidget){
+   // Fill style is a look, not an action, so it lives under Appearance.
+   const styleLabel=document.createElement('label');styleLabel.className='nexus-fill-style-control';styleLabel.textContent='Style ';
+   const styleSelect=document.createElement('select');
+   for(const [v,t] of [['solid','Solid fill'],['outline','Outline only'],['flat','No fill']])styleSelect.add(new Option(t,v));
+   styleSelect.value=w.settings?.style||'solid';
+   styleSelect.addEventListener('change',()=>{w.settings??={};w.settings.style=styleSelect.value;render()});
+   styleLabel.append(styleSelect);appearanceRow.append(styleLabel);
+  }
   const opacityLabel=document.createElement('label');opacityLabel.className='nexus-opacity-control';
   opacityLabel.textContent='Opacity ';
   const opacitySlider=document.createElement('input');

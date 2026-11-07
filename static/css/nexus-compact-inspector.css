@@ -273,8 +273,19 @@
 #nexus-panel-widget #properties .nexus-appearance-row .nexus-gradient-control{
   grid-column:2;grid-row:1;
 }
+/* Action widgets add fill Style between Corner radius and Gradient. */
+#nexus-panel-widget #properties .nexus-appearance-row:has(.nexus-fill-style-control){
+  grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);
+  column-gap:14px;
+}
 #nexus-panel-widget #properties .nexus-appearance-row .nexus-fill-style-control{
-  grid-column:1/-1;
+  grid-column:2;grid-row:1;
+}
+#nexus-panel-widget #properties .nexus-appearance-row:has(.nexus-fill-style-control) .nexus-gradient-control{
+  grid-column:3;
+}
+#nexus-panel-widget #properties .nexus-fill-style-control select{
+  width:100%;min-width:0;
 }
 #nexus-panel-widget #properties .nexus-property-section label.nexus-opacity-control{
   grid-column:1/-1;grid-row:2;
