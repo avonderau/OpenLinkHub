@@ -288,8 +288,8 @@ function render(){const s=current();nexusElementById('screen').replaceChildren()
   const radiusInline=document.createElement('span');radiusInline.className='nexus-input-unit';
   const radiusUnit=document.createElement('span');radiusUnit.className='nexus-input-suffix';radiusUnit.textContent='px';
   radiusInline.append(radius,radiusUnit);radiusLabel.append(radiusInline);appearanceRow.append(radiusLabel);
-  if(isActionWidget){
-   // Fill style is a look, not an action, so it lives under Appearance.
+  {
+   // Fill style applies to every styled widget (the renderer honours it for all of them).
    const styleLabel=document.createElement('label');styleLabel.className='nexus-fill-style-control';styleLabel.textContent='Style ';
    const styleSelect=document.createElement('select');
    for(const [v,t] of [['solid','Solid fill'],['outline','Outline only'],['flat','No fill']])styleSelect.add(new Option(t,v));

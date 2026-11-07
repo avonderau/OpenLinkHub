@@ -273,7 +273,7 @@
 #nexus-panel-widget #properties .nexus-appearance-row .nexus-gradient-control{
   grid-column:2;grid-row:1;
 }
-/* Action widgets add fill Style between Corner radius and Gradient. */
+/* Fill Style sits between Corner radius and Gradient. */
 #nexus-panel-widget #properties .nexus-appearance-row:has(.nexus-fill-style-control){
   grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);
   column-gap:14px;
